@@ -1370,7 +1370,7 @@ export type Database = {
           schedule_id: string | null
           user_agent: string | null
           user_id: string
-          work_date: string
+          work_date: string | null
         }
         Insert: {
           anomaly_type?: string | null
@@ -1392,7 +1392,7 @@ export type Database = {
           schedule_id?: string | null
           user_agent?: string | null
           user_id: string
-          work_date: string
+          work_date?: string | null
         }
         Update: {
           anomaly_type?: string | null
@@ -1414,7 +1414,7 @@ export type Database = {
           schedule_id?: string | null
           user_agent?: string | null
           user_id?: string
-          work_date?: string
+          work_date?: string | null
         }
         Relationships: [
           {
