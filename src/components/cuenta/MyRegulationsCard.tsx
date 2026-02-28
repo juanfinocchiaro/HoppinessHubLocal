@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchUserLocalRoles,
+  fetchLatestRegulation,
+  fetchRegulationSignature,
+  fetchRegulationSignatureHistory,
+  getStorageSignedUrl,
+} from '@/services/hrService';
 import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,12 +28,7 @@ export default function MyRegulationsCard() {
     queryKey: ['my-local-roles', userId],
     queryFn: async () => {
       if (!userId) return [];
-      const { data } = await supabase
-        .from('user_branch_roles')
-        .select('local_role')
-        .eq('user_id', userId)
-        .eq('is_active', true);
-      return (data || []).map((r) => r.local_role as LocalRole);
+      return fetchUserLocalRoles(userId) as Promise<LocalRole[]>;
     },
     enabled: !!userId,
   });
@@ -38,16 +39,7 @@ export default function MyRegulationsCard() {
   // Fetch latest regulation
   const { data: latestRegulation } = useQuery({
     queryKey: ['latest-regulation'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('regulations')
-        .select('*')
-        .eq('is_active', true)
-        .order('version', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchLatestRegulation(),
   });
 
   // Fetch user's signature for latest regulation
@@ -55,13 +47,7 @@ export default function MyRegulationsCard() {
     queryKey: ['my-regulation-signature', userId, latestRegulation?.id],
     queryFn: async () => {
       if (!userId || !latestRegulation) return null;
-      const { data } = await supabase
-        .from('regulation_signatures')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('regulation_id', latestRegulation.id)
-        .maybeSingle();
-      return data;
+      return fetchRegulationSignature(userId, latestRegulation.id);
     },
     enabled: !!userId && !!latestRegulation,
   });
@@ -71,36 +57,20 @@ export default function MyRegulationsCard() {
     queryKey: ['my-regulation-history', userId],
     queryFn: async () => {
       if (!userId) return [];
-      const { data } = await supabase
-        .from('regulation_signatures')
-        .select('*')
-        .eq('user_id', userId)
-        .order('signed_at', { ascending: false });
-      return data || [];
+      return fetchRegulationSignatureHistory(userId);
     },
     enabled: !!userId && expanded,
   });
 
   const handleDownloadRegulation = async () => {
     if (!latestRegulation?.pdf_url) return;
-
-    const { data } = await supabase.storage
-      .from('regulations')
-      .createSignedUrl(latestRegulation.pdf_url, 3600);
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank');
-    }
+    const signedUrl = await getStorageSignedUrl('regulations', latestRegulation.pdf_url);
+    if (signedUrl) window.open(signedUrl, '_blank');
   };
 
   const handleViewSignature = async (url: string) => {
-    const { data } = await supabase.storage
-      .from('regulation-signatures')
-      .createSignedUrl(url, 3600);
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank');
-    }
+    const signedUrl = await getStorageSignedUrl('regulation-signatures', url);
+    if (signedUrl) window.open(signedUrl, '_blank');
   };
 
   if (isOnlyFranquiciado) return null;

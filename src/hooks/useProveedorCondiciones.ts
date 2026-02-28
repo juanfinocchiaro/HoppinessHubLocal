@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import {
+  fetchCondicionesByBranch,
+  fetchCondicionesProveedor,
+  upsertCondiciones,
+} from '@/services/proveedoresService';
 
 export interface CondicionesLocal {
   id: string;
@@ -26,11 +30,7 @@ export function useCondicionesByBranch(branchId?: string) {
   return useQuery({
     queryKey: ['proveedor-condiciones', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proveedor_condiciones_local')
-        .select('*')
-        .eq('branch_id', branchId!);
-      if (error) throw error;
+      const data = await fetchCondicionesByBranch(branchId!);
       const map: Record<string, CondicionesLocal> = {};
       data?.forEach((r: any) => {
         map[r.proveedor_id] = r;
@@ -47,13 +47,7 @@ export function useCondicionesProveedor(branchId?: string, proveedorId?: string)
   return useQuery({
     queryKey: ['proveedor-condiciones', branchId, proveedorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('proveedor_condiciones_local')
-        .select('*')
-        .eq('branch_id', branchId!)
-        .eq('proveedor_id', proveedorId!)
-        .maybeSingle();
-      if (error) throw error;
+      const data = await fetchCondicionesProveedor(branchId!, proveedorId!);
       return data as CondicionesLocal | null;
     },
     enabled: !!user && !!branchId && !!proveedorId,
@@ -64,7 +58,7 @@ export function useCondicionesMutations() {
   const qc = useQueryClient();
 
   const upsert = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       proveedorId,
       branchId,
       data,
@@ -72,20 +66,7 @@ export function useCondicionesMutations() {
       proveedorId: string;
       branchId: string;
       data: CondicionesFormData;
-    }) => {
-      const { error } = await supabase.from('proveedor_condiciones_local').upsert(
-        {
-          proveedor_id: proveedorId,
-          branch_id: branchId,
-          permite_cuenta_corriente: data.permite_cuenta_corriente,
-          dias_pago_habitual: data.dias_pago_habitual ?? null,
-          descuento_pago_contado: data.descuento_pago_contado ?? null,
-          observaciones: data.observaciones ?? null,
-        },
-        { onConflict: 'proveedor_id,branch_id' },
-      );
-      if (error) throw error;
-    },
+    }) => upsertCondiciones(proveedorId, branchId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['proveedor-condiciones'] });
       toast.success('Condiciones guardadas');

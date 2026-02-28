@@ -1,23 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchAfipConfig,
+  saveAfipConfig,
+  saveAfipKeyAndCSR,
+  saveAfipCertificate,
+  testAfipConnection,
+  emitirFactura as emitirFacturaService,
+} from '@/services/fiscalService';
 
-export interface ReglasFacturacion {
-  canales_internos: {
-    efectivo: boolean;
-    debito: boolean;
-    credito: boolean;
-    qr: boolean;
-    transferencia: boolean;
-  };
-  canales_externos: {
-    rappi: boolean;
-    pedidosya: boolean;
-    mas_delivery_efectivo: boolean;
-    mas_delivery_digital: boolean;
-    mp_delivery: boolean;
-  };
-}
+export type { ReglasFacturacion } from '@/types/shiftClosure';
+import type { ReglasFacturacion } from '@/types/shiftClosure';
 
 export const DEFAULT_REGLAS_FACTURACION: ReglasFacturacion = {
   canales_internos: {
@@ -65,12 +58,7 @@ export function useAfipConfig(branchId: string | undefined) {
     queryKey: ['afip-config', branchId],
     queryFn: async () => {
       if (!branchId) return null;
-      const { data, error } = await (supabase
-        .from('afip_config' as any)
-        .select('*')
-        .eq('branch_id', branchId)
-        .maybeSingle() as any);
-      if (error) throw error;
+      const data = await fetchAfipConfig(branchId);
       return data as AfipConfig | null;
     },
     enabled: !!branchId,
@@ -94,22 +82,7 @@ export function useAfipConfigMutations(branchId: string | undefined) {
 
   const save = useMutation({
     mutationFn: async (input: SaveAfipConfigInput) => {
-      const { data: existing } = await (supabase
-        .from('afip_config' as any)
-        .select('id')
-        .eq('branch_id', input.branch_id)
-        .maybeSingle() as any);
-
-      if (existing) {
-        const { error } = await (supabase
-          .from('afip_config' as any)
-          .update(input)
-          .eq('branch_id', input.branch_id) as any);
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase.from('afip_config' as any).insert(input) as any);
-        if (error) throw error;
-      }
+      await saveAfipConfig(input);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['afip-config', variables.branch_id] });
@@ -120,31 +93,9 @@ export function useAfipConfigMutations(branchId: string | undefined) {
     },
   });
 
-  const saveKeyAndCSR = useMutation({
+  const saveKeyAndCSRMutation = useMutation({
     mutationFn: async (input: { branch_id: string; privateKeyPem: string; csrPem: string }) => {
-      const payload = {
-        branch_id: input.branch_id,
-        clave_privada_enc: btoa(input.privateKeyPem),
-        csr_pem: input.csrPem,
-        estado_certificado: 'csr_generado',
-      };
-
-      const { data: existing } = await (supabase
-        .from('afip_config' as any)
-        .select('id')
-        .eq('branch_id', input.branch_id)
-        .maybeSingle() as any);
-
-      if (existing) {
-        const { error } = await (supabase
-          .from('afip_config' as any)
-          .update(payload)
-          .eq('branch_id', input.branch_id) as any);
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase.from('afip_config' as any).insert(payload) as any);
-        if (error) throw error;
-      }
+      await saveAfipKeyAndCSR(input);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['afip-config', variables.branch_id] });
@@ -155,16 +106,9 @@ export function useAfipConfigMutations(branchId: string | undefined) {
     },
   });
 
-  const saveCertificate = useMutation({
+  const saveCertificateMutation = useMutation({
     mutationFn: async (input: { branch_id: string; certificado_crt: string }) => {
-      const { error } = await (supabase
-        .from('afip_config' as any)
-        .update({
-          certificado_crt: input.certificado_crt,
-          estado_certificado: 'certificado_subido',
-        })
-        .eq('branch_id', input.branch_id) as any);
-      if (error) throw error;
+      await saveAfipCertificate(input.branch_id, input.certificado_crt);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['afip-config', variables.branch_id] });
@@ -177,11 +121,7 @@ export function useAfipConfigMutations(branchId: string | undefined) {
   const testConnection = useMutation({
     mutationFn: async () => {
       if (!branchId) throw new Error('Branch ID requerido');
-      const { data, error } = await supabase.functions.invoke('probar-conexion-afip', {
-        body: { branch_id: branchId },
-      });
-      if (error) throw error;
-      return data;
+      return testAfipConnection(branchId);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['afip-config', branchId] });
@@ -196,7 +136,7 @@ export function useAfipConfigMutations(branchId: string | undefined) {
     },
   });
 
-  return { save, saveKeyAndCSR, saveCertificate, testConnection };
+  return { save, saveKeyAndCSR: saveKeyAndCSRMutation, saveCertificate: saveCertificateMutation, testConnection };
 }
 
 interface EmitirFacturaInput {
@@ -213,20 +153,7 @@ interface EmitirFacturaInput {
 export function useEmitirFactura() {
   return useMutation({
     mutationFn: async (input: EmitirFacturaInput) => {
-      const { data, error } = await supabase.functions.invoke('emitir-factura', {
-        body: input,
-      });
-      if (error) {
-        const bodyError = (data as Record<string, unknown> | null)?.error;
-        if (typeof bodyError === 'string') {
-          throw new Error(bodyError);
-        }
-        throw error;
-      }
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-      return data;
+      return emitirFacturaService(input);
     },
     onSuccess: (data) => {
       if (data?.simulado) {

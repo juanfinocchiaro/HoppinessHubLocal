@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { resendEmailConfirmation } from '@/services/authService';
 import { Mail, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -15,10 +15,7 @@ export function EmailConfirmBanner() {
 
   const handleResend = async () => {
     setResending(true);
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: user.email!,
-    });
+    const { error } = await resendEmailConfirmation(user.email!);
     setResending(false);
     if (error) {
       toast.error('No se pudo reenviar el email');

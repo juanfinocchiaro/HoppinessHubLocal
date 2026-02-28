@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button';
 import type { WebappConfig, TipoServicioWebapp } from '@/types/webapp';
 import { WebappHeader } from './WebappHeader';
 import { StaticBranchMap } from './StaticBranchMap';
-import { AddressAutocomplete, type AddressResult } from './AddressAutocomplete';
+import { AddressAutocomplete } from './AddressAutocomplete';
+import type { AddressResult } from '@/types/webapp';
 import { DeliveryCostDisplay, DeliveryCostLoading } from './DeliveryCostDisplay';
 import { DeliveryUnavailable } from './DeliveryUnavailable';
 import { useDynamicPrepTime } from '@/hooks/useDeliveryConfig';
 import { useCalculateDelivery } from '@/hooks/useDeliveryConfig';
 import type { DeliveryCalcResult } from '@/types/webapp';
+import { formatPrice } from '@/lib/formatters';
 
 interface Props {
   branch: {
@@ -41,10 +43,6 @@ interface Props {
   googleApiKey?: string | null;
   onDeliveryValidated?: (address: AddressResult, calc: DeliveryCalcResult) => void;
   initialDeliveryAddress?: AddressResult | null;
-}
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
 }
 
 function formatTime(time: string | null): string {

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchRdoFinanciero } from '@/services/rdoService';
 import { useAuth } from './useAuth';
 
 export interface RdoFinancieroData {
@@ -25,14 +25,7 @@ export function useRdoFinanciero(branchId: string, periodo: string) {
 
   return useQuery({
     queryKey: ['rdo-financiero', branchId, periodo],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_rdo_financiero', {
-        _branch_id: branchId,
-        _periodo: periodo,
-      });
-      if (error) throw error;
-      return data as unknown as RdoFinancieroData;
-    },
+    queryFn: () => fetchRdoFinanciero(branchId, periodo),
     enabled: !!user && !!branchId && !!periodo,
   });
 }

@@ -5,7 +5,13 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchName,
+  fetchMenuCategoriesByName,
+  fetchShiftPedidoIds,
+  fetchItemQuantitiesByCategories,
+  updatePedidoEstado,
+} from '@/services/posService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,26 +100,13 @@ function useHamburguesasCount(branchId: string, shiftOpenedAt: string | null) {
     queryKey: ['shift-hamburguesas', branchId, shiftOpenedAt],
     queryFn: async () => {
       if (!shiftOpenedAt) return 0;
-      const { data: cats } = await supabase
-        .from('menu_categorias')
-        .select('id')
-        .ilike('nombre', '%hamburguesa%');
-      const catIds = (cats ?? []).map((c) => c.id);
+      const cats = await fetchMenuCategoriesByName('%hamburguesa%');
+      const catIds = cats.map((c) => c.id);
       if (catIds.length === 0) return 0;
-      const { data: validPedidos } = await supabase
-        .from('pedidos')
-        .select('id')
-        .eq('branch_id', branchId)
-        .gte('created_at', shiftOpenedAt)
-        .not('estado', 'eq', 'cancelado');
-      const pedidoIds = (validPedidos ?? []).map((p) => p.id);
+      const pedidoIds = await fetchShiftPedidoIds(branchId, shiftOpenedAt);
       if (pedidoIds.length === 0) return 0;
-      const { data: items } = await supabase
-        .from('pedido_items')
-        .select('cantidad')
-        .in('categoria_carta_id', catIds)
-        .in('pedido_id', pedidoIds);
-      if (!items || items.length === 0) return 0;
+      const items = await fetchItemQuantitiesByCategories(catIds, pedidoIds);
+      if (items.length === 0) return 0;
       return items.reduce((sum, i) => sum + (i.cantidad ?? 0), 0);
     },
     enabled: !!branchId && !!shiftOpenedAt,
@@ -161,10 +154,7 @@ export function PendingOrdersBar({ pedidos, branchId, shiftOpenedAt }: Props) {
   const allPrinters = printersData ?? [];
   const { data: branchInfo } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
-      return data;
-    },
+    queryFn: () => fetchBranchName(branchId),
     enabled: !!branchId,
   });
 
@@ -172,11 +162,7 @@ export function PendingOrdersBar({ pedidos, branchId, shiftOpenedAt }: Props) {
 
   const updateEstado = useMutation({
     mutationFn: async ({ pedidoId, estado }: { pedidoId: string; estado: string }) => {
-      const updateData: Record<string, unknown> = { estado };
-      if (estado === 'en_preparacion') updateData.tiempo_inicio_prep = new Date().toISOString();
-      if (estado === 'listo') updateData.tiempo_listo = new Date().toISOString();
-      const { error } = await supabase.from('pedidos').update(updateData).eq('id', pedidoId);
-      if (error) throw error;
+      await updatePedidoEstado(pedidoId, estado);
     },
     onSuccess: async (_, { pedidoId, estado }) => {
       qc.invalidateQueries({ queryKey: ['pos-kitchen', branchId] });

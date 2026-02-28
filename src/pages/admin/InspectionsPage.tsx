@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Plus, MapPin, Calendar, User, ChevronRight, Filter, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranchNames } from '@/services/adminService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,14 +38,7 @@ export default function InspectionsPage() {
   // Fetch branches for filter
   const { data: branches } = useQuery({
     queryKey: ['branches-for-filter'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      return data || [];
-    },
+    queryFn: fetchActiveBranchNames,
   });
 
   // Fetch inspections

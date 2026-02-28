@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchDeliveryZones,
+  createDeliveryZone,
+  updateDeliveryZone,
+  deleteDeliveryZone,
+  toggleDeliveryZoneActive,
+} from '@/services/deliveryService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,13 +43,8 @@ function useDeliveryZones(branchId: string | undefined) {
   return useQuery({
     queryKey: ['delivery-zones', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('delivery_zones' as any)
-        .select('*')
-        .eq('branch_id', branchId!)
-        .order('orden', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as unknown as DeliveryZone[];
+      const data = await fetchDeliveryZones(branchId!);
+      return data as unknown as DeliveryZone[];
     },
     enabled: !!branchId,
   });
@@ -60,19 +61,7 @@ export function DeliveryZonesManager({ branchId }: Props) {
   const [draft, setDraft] = useState<Partial<DeliveryZone>>({});
 
   const createZone = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('delivery_zones' as any).insert({
-        branch_id: branchId,
-        nombre: 'Nueva zona',
-        costo_envio: 0,
-        pedido_minimo: 0,
-        tiempo_estimado_min: 40,
-        barrios: [],
-        orden: zones.length,
-        is_active: true,
-      } as any);
-      if (error) throw error;
-    },
+    mutationFn: () => createDeliveryZone(branchId, zones.length),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['delivery-zones', branchId] });
       toast.success('Zona creada');
@@ -82,11 +71,7 @@ export function DeliveryZonesManager({ branchId }: Props) {
 
   const updateZone = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<DeliveryZone> }) => {
-      const { error } = await supabase
-        .from('delivery_zones' as any)
-        .update(patch as any)
-        .eq('id', id);
-      if (error) throw error;
+      await updateDeliveryZone(id, patch as Record<string, unknown>);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['delivery-zones', branchId] });
@@ -96,14 +81,8 @@ export function DeliveryZonesManager({ branchId }: Props) {
     onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
 
-  const deleteZone = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('delivery_zones' as any)
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
+  const deleteZoneMut = useMutation({
+    mutationFn: (id: string) => deleteDeliveryZone(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['delivery-zones', branchId] });
       toast.success('Zona eliminada');
@@ -112,13 +91,8 @@ export function DeliveryZonesManager({ branchId }: Props) {
   });
 
   const toggleActive = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from('delivery_zones' as any)
-        .update({ is_active } as any)
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      toggleDeliveryZoneActive(id, is_active),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-zones', branchId] }),
     onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
@@ -171,7 +145,7 @@ export function DeliveryZonesManager({ branchId }: Props) {
                 }`}
               >
                 {editingId === zone.id ? (
-                  /* ── Editing mode ─────────────────────── */
+                  /* â”€â”€ Editing mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
                   <div className="space-y-3">
                     <div>
                       <Label className="text-xs">Nombre de zona</Label>
@@ -278,7 +252,7 @@ export function DeliveryZonesManager({ branchId }: Props) {
                     </div>
                   </div>
                 ) : (
-                  /* ── Display mode ─────────────────────── */
+                  /* â”€â”€ Display mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
                       <GripVertical className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -329,7 +303,7 @@ export function DeliveryZonesManager({ branchId }: Props) {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteZone.mutate(zone.id)}>
+                            <AlertDialogAction onClick={() => deleteZoneMut.mutate(zone.id)}>
                               Eliminar
                             </AlertDialogAction>
                           </AlertDialogFooter>

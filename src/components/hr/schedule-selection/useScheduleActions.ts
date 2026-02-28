@@ -5,7 +5,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import type { ScheduleValue } from '../ScheduleCellPopover';
+import type { ScheduleValue } from '@/types/schedule';
 import { cellKeyString, parseCellKey, type CellKey, type ClipboardDataV2 } from './types';
 import {
   DEBUG,

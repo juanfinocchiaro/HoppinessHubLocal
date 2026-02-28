@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MyMeetingsCard - Card de reuniones pendientes para Mi Cuenta
  * Shows: convocadas (upcoming) + cerradas sin leer
  */
@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale';
 import { useMyMeetings, useMarkMeetingAsRead } from '@/hooks/useMeetings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,7 +39,7 @@ export function MyMeetingsCard() {
       toast.success('Marcado como leído');
       setSelectedMeeting(null);
     } catch (error) {
-      toast.error('Error al marcar como leído');
+      handleError(error, { userMessage: 'Error al marcar como leído', context: 'MyMeetingsCard' });
     }
   };
 

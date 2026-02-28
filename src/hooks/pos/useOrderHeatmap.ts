@@ -3,7 +3,7 @@
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchDeliveredOrders } from '@/services/posService';
 import { subDays, startOfDay, format, getDay, getHours } from 'date-fns';
 
 export interface HeatmapCell {
@@ -30,17 +30,7 @@ export function useOrderHeatmap(branchId: string | undefined, daysBack: number) 
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['pos-order-heatmap', branchId, daysBack],
-    queryFn: async () => {
-      if (!branchId) return [];
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('created_at, total')
-        .eq('branch_id', branchId)
-        .eq('estado', 'entregado')
-        .gte('created_at', fromDate);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => fetchDeliveredOrders(branchId!, fromDate),
     enabled: !!branchId,
   });
 

@@ -12,7 +12,7 @@ import { useItemExtras } from '@/hooks/useItemExtras';
 import { useItemRemovibles } from '@/hooks/useItemRemovibles';
 import { useGruposOpcionales } from '@/hooks/useGruposOpcionales';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { CartItem, CartItemExtra, CartItemRemovible, CartItemOpcional } from './ProductGrid';
+import type { CartItem, CartItemExtra, CartItemRemovible, CartItemOpcional } from '@/types/pos';
 
 interface ModifiersModalProps {
   open: boolean;
@@ -117,12 +117,12 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
 
   const parsedGroups = useMemo<ParsedGroup[]>(() => {
     if (!gruposOpcionales) return [];
-    return (gruposOpcionales as any[]).map((g: any) => ({
+    return (gruposOpcionales as Array<Record<string, unknown>>).map((g: any) => ({
       id: g.id,
       nombre: g.nombre,
       es_obligatorio: g.es_obligatorio ?? false,
       max_selecciones: g.max_selecciones ?? 1,
-      opciones: ((g.items || []) as any[]).map((it: any) => ({
+      opciones: ((g.items || []) as Array<Record<string, unknown>>).map((it: any) => ({
         id: it.id,
         nombre: it.insumos?.nombre || it.preparaciones?.nombre || 'Opción',
       })),

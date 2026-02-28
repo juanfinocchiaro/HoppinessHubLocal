@@ -10,7 +10,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserPlus, Trash2, Shirt, Sparkles, MessageSquare, Users } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchInspectionStaffMembers,
+  fetchInspectionStaffPresent,
+  addInspectionStaffPresent,
+  removeInspectionStaffPresent,
+  updateInspectionStaffEvaluation,
+  updateInspectionStaffObservation,
+} from '@/services/inspectionsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,68 +68,23 @@ export function InspectionStaffChecklist({
   const [editingObservation, setEditingObservation] = useState<string | null>(null);
   const [observationText, setObservationText] = useState('');
 
-  // Fetch all staff members for this branch (excluding franquiciados)
   const { data: allStaff = [] } = useQuery({
     queryKey: ['inspection-staff-members', branchId],
-    queryFn: async () => {
-      const { data: roles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .in('local_role', ['cajero', 'empleado']);
-
-      if (!roles?.length) return [];
-
-      const userIds = [...new Set(roles.map((r) => r.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      return (profiles || []).map((p) => {
-        const role = roles.find((r) => r.user_id === p.id);
-        return {
-          id: p.id,
-          full_name: p.full_name,
-          local_role: role?.local_role || 'empleado',
-        };
-      }) as StaffMember[];
-    },
+    queryFn: () => fetchInspectionStaffMembers(branchId) as Promise<StaffMember[]>,
     enabled: !!branchId,
   });
 
-  // Fetch present staff records
   const { data: presentStaff = [] } = useQuery({
     queryKey: ['inspection-staff-present', inspectionId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('inspection_staff_present')
-        .select('id, user_id, uniform_ok, station_clean, observations')
-        .eq('inspection_id', inspectionId);
-      return (data || []) as StaffPresent[];
-    },
+    queryFn: () => fetchInspectionStaffPresent(inspectionId) as Promise<StaffPresent[]>,
     enabled: !!inspectionId,
   });
 
   // Available staff (not yet added)
   const availableStaff = allStaff.filter((s) => !presentStaff.some((p) => p.user_id === s.id));
 
-  // Add staff member mutation
   const addStaff = useMutation({
-    mutationFn: async (userId: string) => {
-      const { data, error } = await supabase
-        .from('inspection_staff_present')
-        .insert({
-          inspection_id: inspectionId,
-          user_id: userId,
-        })
-        .select('id, user_id, uniform_ok, station_clean, observations')
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (userId: string) => addInspectionStaffPresent(inspectionId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspection-staff-present', inspectionId] });
       setSelectedUserId('');
@@ -132,12 +94,8 @@ export function InspectionStaffChecklist({
     },
   });
 
-  // Remove staff member mutation
   const removeStaff = useMutation({
-    mutationFn: async (recordId: string) => {
-      const { error } = await supabase.from('inspection_staff_present').delete().eq('id', recordId);
-      if (error) throw error;
-    },
+    mutationFn: (recordId: string) => removeInspectionStaffPresent(recordId),
     onMutate: async (recordId) => {
       await queryClient.cancelQueries({ queryKey: ['inspection-staff-present', inspectionId] });
       const previous = queryClient.getQueryData<StaffPresent[]>([
@@ -161,7 +119,6 @@ export function InspectionStaffChecklist({
     },
   });
 
-  // Update evaluation mutation
   const updateEvaluation = useMutation({
     mutationFn: async ({
       recordId,
@@ -172,11 +129,7 @@ export function InspectionStaffChecklist({
       field: 'uniform_ok' | 'station_clean';
       value: boolean | null;
     }) => {
-      const { error } = await supabase
-        .from('inspection_staff_present')
-        .update({ [field]: value })
-        .eq('id', recordId);
-      if (error) throw error;
+      await updateInspectionStaffEvaluation(recordId, field, value);
     },
     onMutate: async ({ recordId, field, value }) => {
       await queryClient.cancelQueries({ queryKey: ['inspection-staff-present', inspectionId] });
@@ -201,14 +154,9 @@ export function InspectionStaffChecklist({
     },
   });
 
-  // Save observation mutation
   const saveObservation = useMutation({
     mutationFn: async ({ recordId, observations }: { recordId: string; observations: string }) => {
-      const { error } = await supabase
-        .from('inspection_staff_present')
-        .update({ observations: observations || null })
-        .eq('id', recordId);
-      if (error) throw error;
+      await updateInspectionStaffObservation(recordId, observations);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspection-staff-present', inspectionId] });
@@ -357,9 +305,9 @@ export function InspectionStaffChecklist({
                       <TooltipContent>
                         Uniforme:{' '}
                         {record.uniform_ok === true
-                          ? '✓ Correcto'
+                          ? 'âœ“ Correcto'
                           : record.uniform_ok === false
-                            ? '✗ Incorrecto'
+                            ? 'âœ— Incorrecto'
                             : 'Sin evaluar'}
                       </TooltipContent>
                     </Tooltip>
@@ -389,9 +337,9 @@ export function InspectionStaffChecklist({
                       <TooltipContent>
                         Estación:{' '}
                         {record.station_clean === true
-                          ? '✓ Limpia'
+                          ? 'âœ“ Limpia'
                           : record.station_clean === false
-                            ? '✗ Sucia'
+                            ? 'âœ— Sucia'
                             : 'Sin evaluar'}
                       </TooltipContent>
                     </Tooltip>

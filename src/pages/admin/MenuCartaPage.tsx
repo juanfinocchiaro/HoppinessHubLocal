@@ -45,16 +45,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { formatCurrency } from '@/lib/formatters';
 
 type MenuCategoria = Tables<'menu_categorias'>;
 type ItemCarta = Tables<'items_carta'>;
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(value);
+
 
 /* ─── Sortable category card ─── */
 interface SortableCatProps {

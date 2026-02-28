@@ -5,18 +5,13 @@
 import { Flame, Clock, CheckCircle2, Truck, Package } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchActiveOrdersForUser,
+  fetchActiveOrdersByTrackingCode,
+} from '@/services/webappOrderService';
 
-const ACTIVE_STATES = [
-  'pendiente',
-  'confirmado',
-  'en_preparacion',
-  'listo',
-  'listo_retiro',
-  'listo_mesa',
-  'listo_envio',
-  'en_camino',
-];
+import { ORDER_ACTIVE_STATES } from '@/lib/constants';
+const ACTIVE_STATES = ORDER_ACTIVE_STATES;
 
 const ESTADO_CONFIG: Record<string, { label: string; icon: typeof Flame }> = {
   pendiente: { label: 'fue enviado', icon: Clock },
@@ -39,25 +34,10 @@ export function ActiveOrderBanner({ onShowTracking }: Props) {
   const { data: activeOrders } = useQuery({
     queryKey: ['active-order-banner', user?.id],
     queryFn: async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('pedidos')
-          .select('numero_pedido, estado, webapp_tracking_code')
-          .eq('cliente_user_id', user.id)
-          .eq('origen', 'webapp')
-          .in('estado', ACTIVE_STATES)
-          .order('created_at', { ascending: false });
-        return data || [];
-      }
-      // Guest
+      if (user) return fetchActiveOrdersForUser(user.id);
       const code = localStorage.getItem('hoppiness_last_tracking');
       if (!code) return [];
-      const { data } = await supabase
-        .from('pedidos')
-        .select('numero_pedido, estado, webapp_tracking_code')
-        .eq('webapp_tracking_code', code)
-        .in('estado', ACTIVE_STATES);
-      return data || [];
+      return fetchActiveOrdersByTrackingCode(code);
     },
     refetchInterval: 30000,
     staleTime: 15000,

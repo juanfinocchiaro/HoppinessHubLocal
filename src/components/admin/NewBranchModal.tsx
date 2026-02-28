@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createBranch } from '@/services/adminService';
 import {
   Dialog,
   DialogContent,
@@ -44,16 +44,16 @@ export default function NewBranchModal({ open, onOpenChange, onCreated }: NewBra
     setSaving(true);
     const slug = generateSlug(name);
 
-    const { error } = await supabase.from('branches').insert({
-      name: name.trim(),
-      address: address.trim(),
-      city: city.trim() || null,
-      slug,
-      is_active: true,
-    });
-
-    if (error) {
-      if (error.code === '23505') {
+    try {
+      await createBranch({
+        name: name.trim(),
+        address: address.trim(),
+        city: city.trim() || null,
+        slug,
+        is_active: true,
+      });
+    } catch (error: any) {
+      if (error?.code === '23505') {
         toast.error('Ya existe una sucursal con ese nombre');
       } else {
         toast.error('Error al crear la sucursal');

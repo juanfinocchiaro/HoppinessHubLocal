@@ -15,6 +15,7 @@ import {
 import { ChevronDown, Banknote, HelpCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ArqueoCaja } from '@/types/shiftClosure';
+import { formatCurrency } from '@/lib/formatters';
 
 interface CashCountSectionProps {
   data: ArqueoCaja;
@@ -24,12 +25,7 @@ interface CashCountSectionProps {
 export function CashCountSection({ data, onChange }: CashCountSectionProps) {
   const tieneAlerta = data.diferencia_caja !== 0;
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Allow negative values for cash difference

@@ -1,6 +1,13 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  createWarningRecord,
+  uploadWarningSignatureWithAck,
+  fetchWarningEmployeeProfile,
+  fetchWarningBranchName,
+  fetchWarningIssuerName,
+  sendWarningNotification,
+} from '@/services/warningsService';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
@@ -81,100 +88,45 @@ export function WarningModal({
   // Fetch employee data
   const { data: employeeProfile } = useQuery({
     queryKey: ['profile-for-warning', userId],
-    queryFn: async () => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .maybeSingle();
-
-      const { data: empData } = await supabase
-        .from('employee_data')
-        .select('dni')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .maybeSingle();
-
-      const { data: role } = await supabase
-        .from('user_branch_roles')
-        .select('local_role')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .maybeSingle();
-
-      return {
-        fullName: profile?.full_name || 'Sin nombre',
-        dni: empData?.dni || undefined,
-        role: role?.local_role || 'empleado',
-      };
-    },
+    queryFn: () => fetchWarningEmployeeProfile(userId, branchId),
     enabled: open,
   });
 
-  // Fetch branch name
   const { data: branch } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('name')
-        .eq('id', branchId)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchWarningBranchName(branchId),
     enabled: open,
   });
 
-  // Fetch issuer name
   const { data: issuerProfile } = useQuery({
     queryKey: ['issuer-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchWarningIssuerName(user!.id),
     enabled: open && !!user?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase
-        .from('warnings')
-        .insert({
-          user_id: userId,
-          branch_id: branchId,
-          warning_type: type,
-          description,
-          warning_date: format(date, 'yyyy-MM-dd'),
-          issued_by: user?.id,
-          is_active: true,
-        })
-        .select('id')
-        .single();
+      const result = await createWarningRecord({
+        userId,
+        branchId,
+        warningType: type,
+        description,
+        warningDate: format(date, 'yyyy-MM-dd'),
+        issuedBy: user?.id!,
+      });
 
-      if (error) throw error;
+      sendWarningNotification({
+        warningId: result.id,
+        employeeId: userId,
+        branchId,
+        warningType: type,
+        description,
+        issuedByName: issuerProfile?.full_name,
+      }).catch((err) => {
+        if (import.meta.env.DEV) console.error('Failed to send warning notification:', err);
+      });
 
-      // Trigger email notification (fire and forget)
-      supabase.functions
-        .invoke('send-warning-notification', {
-          body: {
-            warning_id: data.id,
-            employee_id: userId,
-            branch_id: branchId,
-            warning_type: type,
-            description,
-            issued_by_name: issuerProfile?.full_name,
-          },
-        })
-        .catch((err) => {
-          if (import.meta.env.DEV) console.error('Failed to send warning notification:', err);
-        });
-
-      return data.id;
+      return result.id;
     },
     onSuccess: (warningId) => {
       toast.success('Apercibimiento registrado');
@@ -190,22 +142,7 @@ export function WarningModal({
 
     setUploading(true);
     try {
-      // Upload file
-      const filePath = `${userId}/${savedWarningId}_${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from('warning-signatures')
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      // Update warning with signed document URL
-      const { error: updateError } = await supabase
-        .from('warnings')
-        .update({ signed_document_url: filePath, acknowledged_at: new Date().toISOString() })
-        .eq('id', savedWarningId);
-
-      if (updateError) throw updateError;
-
+      await uploadWarningSignatureWithAck(savedWarningId, userId, selectedFile);
       toast.success('Documento firmado subido correctamente');
       queryClient.invalidateQueries({ queryKey: ['employee-warnings', userId, branchId] });
       handleClose();

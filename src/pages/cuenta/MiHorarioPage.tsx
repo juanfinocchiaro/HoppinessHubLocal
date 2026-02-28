@@ -11,7 +11,7 @@
  */
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMySchedules } from '@/services/schedulesService';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -99,16 +99,7 @@ export default function MiHorarioPage() {
       const startDate = format(startOfMonth(new Date(currentYear, currentMonth - 1)), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(currentYear, currentMonth - 1)), 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('id, schedule_date, start_time, end_time, is_day_off, work_position')
-        .eq('user_id', userId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate)
-        .order('schedule_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ScheduleEntry[];
+      return fetchMySchedules(userId, startDate, endDate) as Promise<ScheduleEntry[]>;
     },
     enabled: !!userId,
     staleTime: 10 * 1000,

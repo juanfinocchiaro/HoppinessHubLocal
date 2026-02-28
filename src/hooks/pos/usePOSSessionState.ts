@@ -4,8 +4,7 @@
  * Keyed by branchId so different branches have independent carts.
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { CartItem } from '@/components/pos/ProductGrid';
-import type { LocalPayment, OrderConfig } from '@/types/pos';
+import type { CartItem, LocalPayment, OrderConfig } from '@/types/pos';
 import { DEFAULT_ORDER_CONFIG } from '@/types/pos';
 
 interface POSSessionData {

@@ -2,12 +2,26 @@
  * useShiftClosures - CRUD hooks for shift closures
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchShiftClosuresByDate,
+  fetchShiftClosuresByDateRange,
+  fetchShiftClosureSingle,
+  fetchAllShiftClosuresInRange,
+  fetchAllBranches,
+  fetchActiveBranchShifts,
+  upsertShiftClosure,
+  fetchEnabledBranchShifts,
+} from '@/services/schedulesService';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import { getOperationalDate } from '@/lib/operationalDate';
+import {
+  SHIFT_LABELS as UNIFIED_SHIFT_LABELS,
+  getUnifiedShiftLabel,
+  type CanonicalShiftType,
+} from '@/types/shift';
 import type {
   ShiftClosure,
   ShiftClosureInput,
@@ -39,15 +53,8 @@ export function useDateClosures(branchId: string, date: Date) {
   return useQuery({
     queryKey: ['shift-closures', branchId, dateStr],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shift_closures')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('fecha', dateStr)
-        .order('turno');
-
-      if (error) throw error;
-      return (data || []).map(parseShiftClosure);
+      const data = await fetchShiftClosuresByDate(branchId, dateStr);
+      return data.map(parseShiftClosure);
     },
     enabled: !!branchId,
   });
@@ -71,17 +78,8 @@ export function useClosuresByDateRange(branchId: string, from: Date, to: Date) {
   return useQuery({
     queryKey: ['shift-closures-range', branchId, fromStr, toStr],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shift_closures')
-        .select('*')
-        .eq('branch_id', branchId)
-        .gte('fecha', fromStr)
-        .lte('fecha', toStr)
-        .order('fecha', { ascending: false })
-        .order('turno');
-
-      if (error) throw error;
-      return (data || []).map(parseShiftClosure);
+      const data = await fetchShiftClosuresByDateRange(branchId, fromStr, toStr);
+      return data.map(parseShiftClosure);
     },
     enabled: !!branchId,
   });
@@ -94,15 +92,7 @@ export function useShiftClosure(branchId: string, fecha: string, turno: ShiftTyp
   return useQuery({
     queryKey: ['shift-closure', branchId, fecha, turno],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shift_closures')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('fecha', fecha)
-        .eq('turno', turno)
-        .maybeSingle();
-
-      if (error) throw error;
+      const data = await fetchShiftClosureSingle(branchId, fecha, turno);
       return data ? parseShiftClosure(data) : null;
     },
     enabled: !!branchId && !!fecha && !!turno,
@@ -119,30 +109,9 @@ export function useBrandClosuresSummary(from: Date, to: Date) {
   return useQuery({
     queryKey: ['brand-closures-summary', fromStr, toStr],
     queryFn: async () => {
-      // Get all closures in range
-      const { data: closures, error: closuresError } = await supabase
-        .from('shift_closures')
-        .select('*')
-        .gte('fecha', fromStr)
-        .lte('fecha', toStr);
-
-      if (closuresError) throw closuresError;
-
-      // Get all branches
-      const { data: branches, error: branchesError } = await supabase
-        .from('branches')
-        .select('id, name, slug')
-        .order('name');
-
-      if (branchesError) throw branchesError;
-
-      // Get active shifts per branch
-      const { data: branchShifts, error: shiftsError } = await supabase
-        .from('branch_shifts')
-        .select('branch_id, name')
-        .eq('is_active', true);
-
-      if (shiftsError) throw shiftsError;
+      const closures = await fetchAllShiftClosuresInRange(fromStr, toStr);
+      const branches = await fetchAllBranches();
+      const branchShifts = await fetchActiveBranchShifts();
 
       // Build summary per branch
       const summary = (branches || []).map((branch) => {
@@ -290,30 +259,22 @@ export function useSaveShiftClosure() {
 
       // Atomic upsert: avoids race condition where two users
       // could create duplicate closures for the same branch+date+shift.
-      const { data, error } = await supabase
-        .from('shift_closures')
-        .upsert(
-          {
-            branch_id: input.branch_id,
-            fecha: input.fecha,
-            turno: input.turno,
-            ...closureData,
-            cerrado_por: user.id,
-            updated_by: user.id,
-          },
-          { onConflict: 'branch_id,fecha,turno' },
-        )
-        .select()
-        .single();
+      const data = await upsertShiftClosure({
+        branch_id: input.branch_id,
+        fecha: input.fecha,
+        turno: input.turno,
+        ...closureData,
+        cerrado_por: user.id,
+        updated_by: user.id,
+      });
 
-      if (error) throw error;
       return parseShiftClosure(data);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['shift-closures'] });
       queryClient.invalidateQueries({ queryKey: ['shift-closure'] });
       queryClient.invalidateQueries({ queryKey: ['brand-closures-summary'] });
-      toast.success(`Cierre guardado — Turno ${data.turno}`);
+      toast.success(`Cierre guardado â€” Turno ${data.turno}`);
     },
     onError: (error: Error) => {
       toast.error(`Error al guardar: ${error.message}`);
@@ -322,15 +283,13 @@ export function useSaveShiftClosure() {
 }
 
 // Shift label helpers
-export const SHIFT_LABELS: Record<ShiftType, string> = {
-  mañana: 'Mañana',
-  mediodía: 'Mediodía',
-  noche: 'Noche',
-  trasnoche: 'Trasnoche',
-};
+export const SHIFT_LABELS: Record<ShiftType, string> = UNIFIED_SHIFT_LABELS as Record<
+  CanonicalShiftType,
+  string
+>;
 
 export function getShiftLabel(shift: string): string {
-  return SHIFT_LABELS[shift as ShiftType] || shift;
+  return getUnifiedShiftLabel(shift);
 }
 
 // Get enabled shifts from branch_shifts table
@@ -338,17 +297,9 @@ export function useEnabledShifts(branchId: string) {
   return useQuery({
     queryKey: ['branch-shifts-enabled', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branch_shifts')
-        .select('id, name, start_time, end_time, is_active, sort_order')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .order('sort_order');
+      const data = await fetchEnabledBranchShifts(branchId);
 
-      if (error) throw error;
-
-      // Map to shift types
-      return (data || []).map((s) => ({
+      return data.map((s) => ({
         id: s.id,
         value: s.name.toLowerCase() as ShiftType,
         label: s.name,

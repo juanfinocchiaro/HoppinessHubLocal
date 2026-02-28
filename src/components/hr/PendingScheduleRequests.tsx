@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchPendingScheduleRequestsWithProfiles,
+  respondToScheduleRequest as respondToScheduleRequestService,
+} from '@/services/schedulesService';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -64,46 +67,7 @@ export default function PendingScheduleRequests({ branchId }: PendingScheduleReq
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['pending-schedule-requests', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .select(
-          `
-          id,
-          user_id,
-          request_type,
-          request_date,
-          reason,
-          status,
-          created_at,
-          evidence_url,
-          absence_type
-        `,
-        )
-        .eq('branch_id', branchId)
-        .eq('status', 'pending')
-        .order('request_date', { ascending: true });
-
-      if (error) throw error;
-
-      // Fetch profiles for each user (profiles.id = user_id after migration)
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map((r) => r.user_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', userIds);
-
-        const profileMap = new Map(profiles?.map((p) => [p.id, p]));
-
-        return data.map((r) => ({
-          ...r,
-          profile: profileMap.get(r.user_id),
-        })) as PendingRequest[];
-      }
-
-      return data as PendingRequest[];
-    },
+    queryFn: () => fetchPendingScheduleRequestsWithProfiles(branchId) as Promise<PendingRequest[]>,
     enabled: !!branchId,
   });
 
@@ -117,19 +81,7 @@ export default function PendingScheduleRequests({ branchId }: PendingScheduleReq
       status: 'approved' | 'rejected';
       note?: string;
     }) => {
-      const { error } = await supabase
-        .from('schedule_requests')
-        .update({
-          status,
-          response_note: note || null,
-          responded_by: user?.id,
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      // TODO: Create automatic communication to notify the employee
+      await respondToScheduleRequestService(requestId, status, user?.id ?? '', note);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pending-schedule-requests', branchId] });

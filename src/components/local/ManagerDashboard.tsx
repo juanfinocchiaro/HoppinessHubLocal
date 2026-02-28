@@ -8,8 +8,6 @@
  */
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,13 +35,9 @@ import {
   ChevronRight,
   Lock,
 } from 'lucide-react';
-import { format, differenceInMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { useTodayClosures, useEnabledShifts } from '@/hooks/useShiftClosures';
-import {
-  getOperationalDateString,
-  formatOperationalDate,
-  isEarlyMorning,
-} from '@/lib/operationalDate';
+import { formatOperationalDate, isEarlyMorning } from '@/lib/operationalDate';
 import { ShiftClosureModal } from '@/components/local/closure/ShiftClosureModal';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useGenerateZClosing } from '@/hooks/useFiscalReports';
@@ -53,155 +47,18 @@ import { StockAlertCard } from '@/components/stock/StockAlertCard';
 import { DeliveryRadiusControl } from '@/components/local/DeliveryRadiusControl';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { formatCurrency } from '@/lib/formatters';
+import {
+  useCurrentlyWorkingTeam,
+  usePendingDashboardItems,
+  usePosSalesToday,
+} from '@/hooks/useManagerDashboardData';
 
 type Branch = Tables<'branches'>;
 
 interface ManagerDashboardProps {
   branch: Branch;
   posEnabled?: boolean;
-}
-
-// Hook to get currently clocked-in team members using clock_entries
-function useCurrentlyWorking(branchId: string) {
-  return useQuery({
-    queryKey: ['currently-working', branchId],
-    queryFn: async () => {
-      // Usar fecha operativa para que el personal de cierre siga visible
-      const today = getOperationalDateString();
-
-      // Obtener todas las entradas/salidas de la jornada operativa
-      const { data: entries, error } = await supabase
-        .from('clock_entries')
-        .select('user_id, entry_type, created_at')
-        .eq('branch_id', branchId)
-        .gte('created_at', today)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      if (!entries?.length) return [];
-
-      // Calcular quién está fichado (última acción = entrada)
-      const userStatus = new Map<string, { type: string; time: string }>();
-      entries.forEach((e) => {
-        userStatus.set(e.user_id, {
-          type: e.entry_type,
-          time: e.created_at,
-        });
-      });
-
-      const workingUserIds = [...userStatus.entries()]
-        .filter(([_, v]) => v.type === 'clock_in')
-        .map(([k, v]) => ({ user_id: k, clock_in: v.time }));
-
-      if (!workingUserIds.length) return [];
-
-      // Obtener perfiles (profiles.id = user_id after migration)
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in(
-          'id',
-          workingUserIds.map((u) => u.user_id),
-        );
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-      return workingUserIds.map((w) => ({
-        id: w.user_id,
-        user_id: w.user_id,
-        check_in: w.clock_in,
-        profile: profileMap.get(w.user_id),
-        minutesWorking: differenceInMinutes(new Date(), new Date(w.clock_in)),
-      }));
-    },
-    refetchInterval: 60000,
-  });
-}
-
-// Hook to get pending items count
-function usePendingItems(branchId: string) {
-  return useQuery({
-    queryKey: ['pending-items', branchId],
-    queryFn: async () => {
-      const { count: pendingRequests } = await supabase
-        .from('schedule_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId)
-        .eq('status', 'pending');
-
-      const { data: roles } = await supabase
-        .from('user_roles_v2')
-        .select('user_id, branch_ids')
-        .not('local_role', 'is', null);
-
-      const userIds = (roles || [])
-        .filter((r) => Array.isArray(r.branch_ids) && r.branch_ids.includes(branchId))
-        .map((r) => r.user_id);
-
-      const { data: latestReg } = await supabase
-        .from('regulations')
-        .select('id, version')
-        .order('version', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      let pendingSignatures = 0;
-      if (latestReg && userIds.length > 0) {
-        const { data: signatures } = await supabase
-          .from('regulation_signatures')
-          .select('user_id')
-          .eq('regulation_id', latestReg.id)
-          .in('user_id', userIds);
-
-        const signedUserIds = new Set(signatures?.map((s) => s.user_id) || []);
-        pendingSignatures = userIds.filter((id) => !signedUserIds.has(id)).length;
-      }
-
-      // Calculate unread communications for branch employees
-      let unreadComms = 0;
-      if (userIds.length > 0) {
-        // Get published communications targeting this branch
-        const { data: comms } = await supabase
-          .from('communications')
-          .select('id, target_branch_ids')
-          .eq('is_published', true);
-
-        const branchComms = (comms || []).filter(
-          (c) =>
-            !c.target_branch_ids ||
-            c.target_branch_ids.length === 0 ||
-            c.target_branch_ids.includes(branchId),
-        );
-
-        if (branchComms.length > 0) {
-          const commIds = branchComms.map((c) => c.id);
-          const { data: reads } = await supabase
-            .from('communication_reads')
-            .select('communication_id, user_id')
-            .in('communication_id', commIds)
-            .in('user_id', userIds);
-
-          const readSet = new Set((reads || []).map((r) => `${r.communication_id}_${r.user_id}`));
-
-          // Count total unread: each comm × each employee that hasn't read it
-          for (const comm of branchComms) {
-            for (const userId of userIds) {
-              if (!readSet.has(`${comm.id}_${userId}`)) {
-                unreadComms++;
-              }
-            }
-          }
-        }
-      }
-
-      return {
-        pendingRequests: pendingRequests || 0,
-        unreadComms,
-        pendingSignatures,
-        total: (pendingRequests || 0) + unreadComms + pendingSignatures,
-      };
-    },
-  });
 }
 
 export function ManagerDashboard({ branch, posEnabled = false }: ManagerDashboardProps) {
@@ -222,20 +79,15 @@ export function ManagerDashboard({ branch, posEnabled = false }: ManagerDashboar
   const { data: todayClosures, isLoading: loadingClosures } = useTodayClosures(branch.id);
 
   // Currently working team (solo para no-cajeros)
-  const { data: workingTeam, isLoading: loadingTeam } = useCurrentlyWorking(branch.id);
+  const { data: workingTeam, isLoading: loadingTeam } = useCurrentlyWorkingTeam(branch.id);
 
   // Pending items (solo para no-cajeros)
-  const { data: pending, isLoading: loadingPending } = usePendingItems(branch.id);
+  const { data: pending, isLoading: loadingPending } = usePendingDashboardItems(branch.id);
 
   const loadedShifts = todayClosures?.map((c) => c.turno) || [];
   const todayTotal = todayClosures?.reduce((sum, c) => sum + Number(c.total_vendido || 0), 0) || 0;
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -256,26 +108,7 @@ export function ManagerDashboard({ branch, posEnabled = false }: ManagerDashboar
   };
 
   // Hook for POS sales when posEnabled
-  const { data: posSales, isLoading: loadingPosSales } = useQuery({
-    queryKey: ['pos-sales-today', branch.id],
-    queryFn: async () => {
-      const today = getOperationalDateString();
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('id, total, estado, created_at')
-        .eq('branch_id', branch.id)
-        .gte('created_at', today)
-        .not('estado', 'eq', 'cancelado');
-      if (error) throw error;
-      const pedidos = data || [];
-      const totalVendido = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
-      const cantidad = pedidos.length;
-      const ticketPromedio = cantidad > 0 ? totalVendido / cantidad : 0;
-      return { totalVendido, cantidad, ticketPromedio };
-    },
-    enabled: posEnabled,
-    refetchInterval: 60000,
-  });
+  const { data: posSales, isLoading: loadingPosSales } = usePosSalesToday(branch.id, posEnabled);
 
   const isLoading = posEnabled ? loadingPosSales : loadingShifts || loadingClosures;
 

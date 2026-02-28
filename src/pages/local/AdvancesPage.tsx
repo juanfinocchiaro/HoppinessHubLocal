@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchTeamMembersBasic } from '@/services/warningsService';
 import {
   useSalaryAdvances,
   useCreateAdvance,
@@ -66,6 +66,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import { formatCurrency } from '@/lib/formatters';
 
 type Branch = Tables<'branches'>;
 
@@ -89,40 +90,13 @@ export default function AdvancesPage() {
   const approveAdvance = useApproveAdvance();
   const rejectAdvance = useRejectAdvance();
 
-  // Fetch team members using user_branch_roles + profiles
   const { data: teamMembers } = useQuery({
     queryKey: ['branch-team-members', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', branchId!)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const userIds = data?.map((r) => r.user_id) || [];
-      if (userIds.length === 0) return [];
-
-      // profiles.id = user_id after migration
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      if (profilesError) throw profilesError;
-      return (profiles || []).map((p) => ({ user_id: p.id, full_name: p.full_name }));
-    },
+    queryFn: () => fetchBranchTeamMembersBasic(branchId!),
     enabled: !!branchId,
   });
 
-  const formatCurrency = (n: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(n);
+  
 
   const handleCreateAdvance = async () => {
     if (!selectedUser || !amount || parseFloat(amount) <= 0 || !branchId) {

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  checkClockPinAvailability,
+  updateBranchRoleClockPin,
+  verifyBranchRoleClockPin,
+} from '@/services/profileService';
 import {
   Dialog,
   DialogContent,
@@ -62,14 +66,12 @@ export function PinManagementModal({
 
     setCheckingPin(true);
     try {
-      const { data, error } = await supabase.rpc('is_clock_pin_available', {
-        _branch_id: branchId,
-        _pin: pinValue,
-        _exclude_user_id: userId && userId.trim() !== '' ? userId : null,
-      });
-
-      if (error) throw error;
-      setPinAvailable(data);
+      const available = await checkClockPinAvailability(
+        branchId,
+        pinValue,
+        userId && userId.trim() !== '' ? userId : null,
+      );
+      setPinAvailable(available);
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error checking PIN availability:', error);
       setPinAvailable(null);
@@ -85,32 +87,16 @@ export function PinManagementModal({
         throw new Error('Datos de sucursal incompletos');
       }
 
-      // First verify availability
-      const { data: available, error: checkError } = await supabase.rpc('is_clock_pin_available', {
-        _branch_id: branchId,
-        _pin: newPin,
-        _exclude_user_id: userId && userId.trim() !== '' ? userId : null,
-      });
-
-      if (checkError) throw checkError;
+      const available = await checkClockPinAvailability(
+        branchId,
+        newPin,
+        userId && userId.trim() !== '' ? userId : null,
+      );
       if (!available) throw new Error('Este PIN ya está en uso en esta sucursal');
 
-      // Save to user_branch_roles
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ clock_pin: newPin })
-        .eq('id', roleId);
+      await updateBranchRoleClockPin(roleId, newPin);
 
-      if (error) throw error;
-
-      // Verify the PIN was saved
-      const { data: verification, error: verifyError } = await supabase
-        .from('user_branch_roles')
-        .select('clock_pin')
-        .eq('id', roleId)
-        .single();
-
-      if (verifyError) throw new Error('No se pudo verificar el guardado del PIN');
+      const verification = await verifyBranchRoleClockPin(roleId);
       if (verification?.clock_pin !== newPin) {
         throw new Error('El PIN no se guardó correctamente. Intentá de nuevo.');
       }
@@ -177,7 +163,7 @@ export function PinManagementModal({
                   inputMode="numeric"
                   value={pin}
                   onChange={(e) => handlePinChange(e.target.value)}
-                  placeholder="••••"
+                  placeholder="â€¢â€¢â€¢â€¢"
                   maxLength={4}
                   className="text-center text-2xl tracking-[0.5em] font-mono pr-10 h-12"
                   autoFocus

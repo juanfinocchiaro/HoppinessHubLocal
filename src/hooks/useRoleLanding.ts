@@ -32,6 +32,7 @@ export function useRoleLanding() {
   const {
     loading,
     accessibleBranches,
+    branchRoles,
     canAccessBrandPanel,
     canAccessLocalPanel,
     isSuperadmin,
@@ -47,6 +48,15 @@ export function useRoleLanding() {
     isViewingAs,
     realUserPermissions,
   } = perms;
+
+  // When no currentBranchId is provided, localRole is null and all isXxx local
+  // flags are false. Derive them from branchRoles so login redirect works.
+  const primaryLocalRole = branchRoles[0]?.local_role ?? null;
+  const effectiveFranquiciado = isFranquiciado || primaryLocalRole === 'franquiciado';
+  const effectiveEncargado = isEncargado || primaryLocalRole === 'encargado';
+  const effectiveContadorLocal = isContadorLocal || primaryLocalRole === 'contador_local';
+  const effectiveCajero = isCajero || primaryLocalRole === 'cajero';
+  const effectiveEmpleado = isEmpleado || primaryLocalRole === 'empleado';
 
   // Access decisions use REAL permissions during impersonation to prevent
   // the superadmin from being redirected away from the current page.
@@ -109,7 +119,7 @@ export function useRoleLanding() {
       };
     }
 
-    if (isFranquiciado) {
+    if (effectiveFranquiciado) {
       const firstBranch = accessibleBranches[0]?.id;
       return {
         type: 'franquiciado',
@@ -119,7 +129,7 @@ export function useRoleLanding() {
       };
     }
 
-    if (isEncargado) {
+    if (effectiveEncargado) {
       const firstBranch = accessibleBranches[0]?.id;
       return {
         type: 'encargado',
@@ -129,7 +139,7 @@ export function useRoleLanding() {
       };
     }
 
-    if (isContadorLocal) {
+    if (effectiveContadorLocal) {
       const firstBranch = accessibleBranches[0]?.id;
       return {
         type: 'contador_local',
@@ -139,7 +149,7 @@ export function useRoleLanding() {
       };
     }
 
-    if (isCajero) {
+    if (effectiveCajero) {
       return {
         type: 'cajero',
         label: 'Cajero',
@@ -148,7 +158,7 @@ export function useRoleLanding() {
       };
     }
 
-    if (isEmpleado) {
+    if (effectiveEmpleado) {
       return {
         type: 'empleado',
         label: 'Empleado',

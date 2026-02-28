@@ -10,8 +10,9 @@ export function TopBarLoader() {
           left: 0,
           right: 0,
           height: '3px',
-          zIndex: 9998,
+          zIndex: 40,
           overflow: 'hidden',
+          pointerEvents: 'none',
           background: 'rgba(0,19,155,0.08)',
         }}
       >

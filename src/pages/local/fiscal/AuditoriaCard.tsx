@@ -18,7 +18,8 @@ import { useFiscalAuditReport, useZClosings } from '@/hooks/useFiscalReports';
 import { usePrintConfig } from '@/hooks/usePrintConfig';
 import { useBranchPrinters, type BranchPrinter } from '@/hooks/useBranchPrinters';
 import { generateInformeAuditoria, type FiscalAuditData } from '@/lib/escpos';
-import { errMsg, fmtCurrency, Row, type FiscalBranchData } from './shared';
+import { errMsg, fmtCurrency, Row } from './shared';
+import type { FiscalBranchData } from '@/types/fiscal';
 
 export function AuditoriaCard({
   branchId,

@@ -2,7 +2,10 @@ import { useMemo } from 'react';
 import { useItemIngredientesDeepList } from './useItemIngredientesDeepList';
 import { useItemCartaComposicion, useItemsCarta } from './useItemsCarta';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchExtraAssignmentsWithJoin,
+  fetchExtraAssignmentsForExtra,
+} from '@/services/menuService';
 
 export interface DiscoveredExtra {
   tipo: 'preparacion' | 'insumo';
@@ -29,15 +32,7 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
   // Fetch assignments for this item
   const { data: asignaciones } = useQuery({
     queryKey: ['item-extra-asignaciones', itemId],
-    queryFn: async () => {
-      if (!itemId) return [];
-      const { data, error } = await supabase
-        .from('item_extra_asignaciones' as any)
-        .select('*, extra:extra_id(id, nombre, precio_base, costo_total, tipo)')
-        .eq('item_carta_id', itemId);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchExtraAssignmentsWithJoin(itemId!),
     enabled: !!itemId,
   });
 
@@ -83,22 +78,22 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
     }
 
     // Cross with existing extras (items_carta tipo='extra')
-    const extras = (allItems || []).filter((e: any) => e.tipo === 'extra');
-    const asigSet = new Set((asignaciones || []).map((a: any) => a.extra_id));
+    const extras = (allItems || []).filter((e: Record<string, unknown>) => e.tipo === 'extra');
+    const asigSet = new Set((asignaciones || []).map((a: Record<string, unknown>) => a.extra_id));
 
     return Array.from(unique.values()).map((d) => {
       const existing = extras.find(
-        (e: any) =>
+        (e: Record<string, unknown>) =>
           (d.tipo === 'preparacion' && e.composicion_ref_preparacion_id === d.ref_id) ||
           (d.tipo === 'insumo' && e.composicion_ref_insumo_id === d.ref_id),
       );
       return {
         ...d,
         cantidad: d.cantidad,
-        extra_id: existing?.id || null,
-        extra_nombre: existing?.nombre || `Extra ${d.nombre}`,
-        extra_precio: existing?.precio_base || 0,
-        activo: existing ? asigSet.has(existing.id) : false,
+        extra_id: (existing as Record<string, unknown>)?.id as string || null,
+        extra_nombre: ((existing as Record<string, unknown>)?.nombre as string) || `Extra ${d.nombre}`,
+        extra_precio: ((existing as Record<string, unknown>)?.precio_base as number) || 0,
+        activo: existing ? asigSet.has((existing as Record<string, unknown>).id) : false,
       };
     });
   }, [deepGroups, composicion, allItems, asignaciones]);
@@ -108,29 +103,25 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
  * For an extra item (tipo='extra'), discovers which products contain
  * this component and which have it assigned.
  */
-export function useExtraAssignableItems(extraItem: any) {
+export function useExtraAssignableItems(extraItem: Record<string, unknown> | undefined) {
   const { data: allItems } = useItemsCarta();
 
   const { data: allAsignaciones } = useQuery({
     queryKey: ['item-extra-asignaciones-for-extra', extraItem?.id],
-    queryFn: async () => {
-      if (!extraItem?.id) return [];
-      const { data, error } = await supabase
-        .from('item_extra_asignaciones' as any)
-        .select('*')
-        .eq('extra_id', extraItem.id);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchExtraAssignmentsForExtra(extraItem!.id as string),
     enabled: !!extraItem?.id,
   });
 
   const productItems = useMemo(() => {
-    return (allItems || []).filter((i: any) => i.tipo !== 'extra' && i.activo);
+    return (allItems || []).filter(
+      (i: Record<string, unknown>) => i.tipo !== 'extra' && i.activo,
+    );
   }, [allItems]);
 
   const assignedSet = useMemo(() => {
-    return new Set((allAsignaciones || []).map((a: any) => a.item_carta_id));
+    return new Set(
+      (allAsignaciones || []).map((a: Record<string, unknown>) => a.item_carta_id as string),
+    );
   }, [allAsignaciones]);
 
   return { productItems, assignedSet };

@@ -26,6 +26,7 @@ import { Download, DollarSign, ShoppingBag, TrendingUp, Receipt } from 'lucide-r
 import { useRdoMultivista } from '@/hooks/useRdoMultivista';
 import { exportToExcel } from '@/lib/exportExcel';
 import { ShiftSalesAnalysis } from './ShiftSalesAnalysis';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 const CANALES_DEFAULT = [
   { id: 'mostrador', label: 'Mostrador' },
@@ -48,19 +49,6 @@ const RANGE_OPTIONS = [
   { value: '15', label: 'Últimos 15 días' },
   { value: '30', label: 'Últimos 30 días' },
 ];
-
-function fmtCurrency(value: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value || 0);
-}
-
-function fmtPercent(value: number) {
-  return `${(value || 0).toFixed(1)}%`;
-}
 
 function fileDateTag(): string {
   const now = new Date();
@@ -266,7 +254,7 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-1.5">
             <DollarSign className="w-4 h-4 text-primary" />
-            <span className="font-medium">{fmtCurrency(totalVentas)}</span>
+            <span className="font-medium">{formatCurrency(totalVentas)}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <ShoppingBag className="w-4 h-4 text-muted-foreground" />
@@ -274,11 +262,11 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
           </div>
           <div className="flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-muted-foreground" />
-            <span>Ticket prom: {fmtCurrency(ticketPromedio)}</span>
+            <span>Ticket prom: {formatCurrency(ticketPromedio)}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Receipt className="w-4 h-4 text-muted-foreground" />
-            <span>Facturado: {fmtCurrency(totalFacturado)}</span>
+            <span>Facturado: {formatCurrency(totalFacturado)}</span>
           </div>
         </div>
       </div>
@@ -425,9 +413,9 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
                     <TableRow key={r.canal}>
                       <TableCell>{r.canal}</TableCell>
                       <TableCell className="text-right">{r.pedidos}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.ventas)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.porcentaje)}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.ticket_promedio)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.ventas)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.porcentaje)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.ticket_promedio)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -461,9 +449,9 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
                     <TableRow key={r.medio_pago}>
                       <TableCell>{r.medio_pago}</TableCell>
                       <TableCell className="text-right">{r.pedidos}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.ventas)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.porcentaje)}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.facturado)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.ventas)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.porcentaje)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.facturado)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -498,10 +486,10 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
                     <TableRow key={r.categoria_id || `cat-${idx}`}>
                       <TableCell>{r.categoria_nombre}</TableCell>
                       <TableCell className="text-right">{r.cantidad}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.ventas)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.porcentaje)}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.costo_total)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.food_cost)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.ventas)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.porcentaje)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.costo_total)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.food_cost)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -537,9 +525,9 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
                       <TableCell>{r.producto_nombre}</TableCell>
                       <TableCell>{r.categoria_nombre}</TableCell>
                       <TableCell className="text-right">{r.cantidad}</TableCell>
-                      <TableCell className="text-right">{fmtCurrency(r.ventas)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.porcentaje)}</TableCell>
-                      <TableCell className="text-right">{fmtPercent(r.food_cost)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.ventas)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.porcentaje)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(r.food_cost)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

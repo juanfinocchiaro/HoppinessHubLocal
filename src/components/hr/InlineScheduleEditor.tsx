@@ -27,7 +27,11 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  upsertSchedulesBatch,
+  deleteScheduleEntriesBatch,
+} from '@/services/schedulesService';
+import { fetchEmployeeBirthdays } from '@/services/hrService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +79,7 @@ import { useMonthlySchedules, type ScheduleEntry } from '@/hooks/useSchedules';
 import { sendBulkScheduleNotifications } from '@/hooks/useScheduleNotifications';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { useAuth } from '@/hooks/useAuth';
-import { type ScheduleValue } from './ScheduleCellPopover';
+import type { ScheduleValue } from '@/types/schedule';
 import { SaveScheduleDialog } from './SaveScheduleDialog';
 import { useScheduleSelection, SelectionToolbar } from './schedule-selection';
 import { usePreviousMonthPattern, applyPatternToMonth } from '@/hooks/usePreviousMonthSchedules';
@@ -220,17 +224,9 @@ export default function InlineScheduleEditor({
       });
   }, [rawTeam]);
 
-  // Fetch birthdays from employee_data
   useQuery({
     queryKey: ['employee-birthdays', branchId],
-    queryFn: async () => {
-      if (!branchId) return [];
-      const { data } = await supabase
-        .from('employee_data')
-        .select('user_id, birth_date')
-        .eq('branch_id', branchId);
-      return data || [];
-    },
+    queryFn: () => fetchEmployeeBirthdays(branchId),
     enabled: !!branchId,
   });
 
@@ -438,28 +434,14 @@ export default function InlineScheduleEditor({
         }
       });
 
-      // Batch UPSERT all records at once
       if (recordsToUpsert.length > 0) {
-        const { error } = await supabase.from('employee_schedules').upsert(recordsToUpsert, {
-          onConflict: 'user_id,schedule_date',
-          ignoreDuplicates: false,
-        });
-        if (error) throw error;
+        await upsertSchedulesBatch(recordsToUpsert);
       }
 
       if (recordsToDelete.length > 0) {
-        const deleteResults = await Promise.all(
-          recordsToDelete.map((record) =>
-            supabase
-              .from('employee_schedules')
-              .delete()
-              .eq('user_id', record.userId)
-              .eq('schedule_date', record.date)
-              .eq('branch_id', branchId),
-          ),
+        await deleteScheduleEntriesBatch(
+          recordsToDelete.map((record) => ({ ...record, branchId })),
         );
-        const failed = deleteResults.find((r) => r.error);
-        if (failed?.error) throw failed.error;
       }
     },
     onSuccess: async (_, { notifyEmail, notifyCommunication }) => {

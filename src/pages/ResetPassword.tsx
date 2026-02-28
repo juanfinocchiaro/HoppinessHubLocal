@@ -5,10 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { SpinnerLoader } from '@/components/ui/loaders';
+import {
+  getSession,
+  onAuthStateChange,
+  setSession,
+  signOut,
+  updateUserPassword,
+} from '@/services/authService';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -27,7 +33,7 @@ export default function ResetPassword() {
     // This ensures we catch the PASSWORD_RECOVERY event from Supabase
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         isValidRef.current = true;
         setIsValidSession(true);
@@ -44,7 +50,7 @@ export default function ResetPassword() {
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await getSession();
 
       if (session) {
         isValidRef.current = true;
@@ -72,7 +78,7 @@ export default function ResetPassword() {
           try {
             const refreshToken = hashParams.get('refresh_token');
             if (refreshToken) {
-              const { error: sessionError } = await supabase.auth.setSession({
+              const { error: sessionError } = await setSession({
                 access_token: accessToken,
                 refresh_token: refreshToken,
               });
@@ -124,9 +130,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
+      const { error } = await updateUserPassword(password);
 
       if (error) {
         toast.error('Error al actualizar la contraseña: ' + error.message);
@@ -136,11 +140,11 @@ export default function ResetPassword() {
 
         // Sign out and redirect to login after 2 seconds
         redirectTimerRef.current = setTimeout(async () => {
-          await supabase.auth.signOut();
+          await signOut();
           navigate('/ingresar');
         }, 2000);
       }
-    } catch (err) {
+    } catch {
       toast.error('Error inesperado');
     } finally {
       setLoading(false);

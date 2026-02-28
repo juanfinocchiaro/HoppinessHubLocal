@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchGoogleMapsApiKey } from '@/services/checkoutService';
 import { useWebappConfig, useWebappMenuItems } from '@/hooks/useWebappMenu';
 import { useWebappCart } from '@/hooks/useWebappCart';
 import { useMercadoPagoStatus } from '@/hooks/useMercadoPagoConfig';
@@ -17,7 +17,7 @@ import { ProductCustomizeSheet } from '@/components/webapp/ProductCustomizeSheet
 import { SEO } from '@/components/SEO';
 import { SpinnerLoader } from '@/components/ui/loaders';
 import type { TipoServicioWebapp, WebappMenuItem, DeliveryCalcResult } from '@/types/webapp';
-import type { AddressResult } from '@/components/webapp/AddressAutocomplete';
+import type { AddressResult } from '@/types/webapp';
 
 export default function PedirPage() {
   const { branchSlug } = useParams<{ branchSlug: string }>();
@@ -72,14 +72,9 @@ export default function PedirPage() {
   const mpEnabled = mpStatus?.estado_conexion === 'conectado';
   const reorderChecked = useRef(false);
 
-  // Google Maps API key (shared between BranchLanding and CartSheet)
   const { data: googleApiKey } = useQuery({
     queryKey: ['google-maps-api-key'],
-    queryFn: async () => {
-      const { data: d, error } = await supabase.functions.invoke('google-maps-key');
-      if (error) return null;
-      return d?.apiKey as string | null;
-    },
+    queryFn: fetchGoogleMapsApiKey,
     staleTime: Infinity,
   });
 
@@ -234,7 +229,7 @@ export default function PedirPage() {
     setCartOpen(true);
   };
 
-  // Handler for MisPedidosSheet tracking — feeds into same mechanism
+  // Handler for MisPedidosSheet tracking â€” feeds into same mechanism
   const handleMisPedidosTrack = (trackingCode: string) => {
     setExternalTrackingCode(trackingCode);
     setTrackingTrigger((prev) => prev + 1);
@@ -287,7 +282,7 @@ export default function PedirPage() {
             />
           </div>
 
-          {/* Cart bar (mobile + desktop) — opens CartSheet */}
+          {/* Cart bar (mobile + desktop) â€” opens CartSheet */}
           {cart.totalItems > 0 && (
             <CartBar
               totalItems={cart.totalItems}

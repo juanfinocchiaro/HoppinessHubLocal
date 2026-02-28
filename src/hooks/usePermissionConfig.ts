@@ -5,7 +5,7 @@
  * activar/desactivar permisos por rol.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchPermissionConfig, updatePermissionRoles } from '@/services/permissionsService';
 import { toast } from 'sonner';
 
 export interface PermissionConfigRow {
@@ -53,15 +53,7 @@ export function usePermissionConfig() {
   } = useQuery({
     queryKey: ['permission-config'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('permission_config')
-        .select('*')
-        .order('scope')
-        .order('category')
-        .order('permission_label');
-
-      if (error) throw error;
-      return data as PermissionConfigRow[];
+      return (await fetchPermissionConfig()) as PermissionConfigRow[];
     },
     staleTime: 60 * 1000,
   });
@@ -96,12 +88,7 @@ export function usePermissionConfig() {
         newRoles = permission.allowed_roles.filter((r) => r !== role);
       }
 
-      const { error } = await supabase
-        .from('permission_config')
-        .update({ allowed_roles: newRoles })
-        .eq('id', permissionId);
-
-      if (error) throw error;
+      await updatePermissionRoles(permissionId, newRoles);
       return { permissionId, newRoles };
     },
     onSuccess: () => {

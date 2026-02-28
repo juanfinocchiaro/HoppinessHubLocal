@@ -42,7 +42,6 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
     const db = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
@@ -59,19 +58,16 @@ Deno.serve(async (req) => {
       _branch_code: branch_code,
       _pin: pin,
     })
-
     if (pinError) {
       console.error('PIN validation error:', pinError)
       return jsonRes({ error: 'Error al validar PIN' }, 500)
     }
-
     if (!validatedUsers?.length) {
       return jsonRes(
         { error: 'PIN incorrecto. Verificá que hayas configurado tu PIN para esta sucursal.' },
         401,
       )
     }
-
     const user: ValidatedUser = validatedUsers[0]
 
     // --- Read employee_time_state ---
@@ -90,7 +86,6 @@ Deno.serve(async (req) => {
       .select('clock_window_before_min, clock_window_after_min')
       .eq('id', user.branch_id)
       .single()
-
     const beforeMin = branch?.clock_window_before_min ?? 90
     const afterMin = branch?.clock_window_after_min ?? 60
 
@@ -114,10 +109,8 @@ Deno.serve(async (req) => {
     if (currentState === 'working' && ets) {
       const openSince = new Date(ets.last_updated)
       const elapsedHours = (now.getTime() - openSince.getTime()) / (1000 * 60 * 60)
-
       const crossedMidnight =
         openSince.toISOString().slice(0, 10) !== now.toISOString().slice(0, 10)
-
       const isStale =
         (crossedMidnight && elapsedHours > STALE_THRESHOLD_HOURS) ||
         elapsedHours > MAX_SHIFT_HOURS
@@ -125,14 +118,12 @@ Deno.serve(async (req) => {
       if (isStale) {
         // Auto-close the stale shift
         let estimatedOut = new Date(openSince)
-
         if (ets.open_schedule_id) {
           const { data: sched } = await db
             .from('employee_schedules')
             .select('end_time, schedule_date')
             .eq('id', ets.open_schedule_id)
             .single()
-
           if (sched?.end_time && sched?.schedule_date) {
             const [h, m] = sched.end_time.split(':').map(Number)
             estimatedOut = new Date(`${sched.schedule_date}T00:00:00`)
@@ -173,8 +164,8 @@ Deno.serve(async (req) => {
           })
           .select('id')
           .single()
-
         autoClosedId = closedEntry?.id ?? null
+
         resolvedEntryType = forceType ?? 'clock_in'
       } else {
         resolvedEntryType = forceType ?? 'clock_out'
@@ -188,7 +179,6 @@ Deno.serve(async (req) => {
       const todayStr = todayArgentina
       const argParts = todayArgentina.split('-').map(Number)
       const argLocal = new Date(argParts[0], argParts[1] - 1, argParts[2])
-
       const nowMinutes = (() => {
         const timeFmt = new Intl.DateTimeFormat('en-GB', {
           timeZone: 'America/Argentina/Buenos_Aires',
@@ -237,7 +227,6 @@ Deno.serve(async (req) => {
             // Today's schedule: accept if within [start - beforeMin, end + afterMin]
             const [eh, em] = s.end_time!.split(':').map(Number)
             const schedEndMin = eh * 60 + em
-
             const winStart = ((schedStartMin - beforeMin) % 1440 + 1440) % 1440
             const winEnd = ((schedEndMin + afterMin) % 1440 + 1440) % 1440
 
@@ -261,7 +250,6 @@ Deno.serve(async (req) => {
             // and current time is before end + afterMin
             const [eh, em] = s.end_time!.split(':').map(Number)
             const schedEndMin = eh * 60 + em
-
             if (schedEndMin < schedStartMin && nowMinutes <= schedEndMin + afterMin) {
               const dist = nowMinutes + (1440 - schedStartMin)
               if (dist < bestDist) {
@@ -271,7 +259,6 @@ Deno.serve(async (req) => {
             }
           }
         }
-
         if (bestId) {
           scheduleId = bestId
           resolvedType = 'scheduled'
@@ -288,7 +275,6 @@ Deno.serve(async (req) => {
 
     // --- Compute work_date ---
     let workDate = todayArgentina
-
     if (scheduleId) {
       const { data: schedForDate } = await db
         .from('employee_schedules')
@@ -360,7 +346,6 @@ Deno.serve(async (req) => {
 
     // --- Update employee_time_state ---
     const newState = resolvedEntryType === 'clock_in' ? 'working' : 'off'
-
     await db.from('employee_time_state').upsert(
       {
         employee_id: user.user_id,
@@ -382,7 +367,6 @@ Deno.serve(async (req) => {
         .select('created_at')
         .eq('id', ets.open_clock_in_id)
         .single()
-
       if (openEntry) {
         shiftDurationMin = Math.round(
           (now.getTime() - new Date(openEntry.created_at).getTime()) / 60000,
@@ -398,7 +382,6 @@ Deno.serve(async (req) => {
         .select('start_time, end_time')
         .eq('id', scheduleId)
         .single()
-
       if (sched?.start_time && sched?.end_time) {
         scheduleLabel = `${sched.start_time.slice(0, 5)} - ${sched.end_time.slice(0, 5)}`
       }

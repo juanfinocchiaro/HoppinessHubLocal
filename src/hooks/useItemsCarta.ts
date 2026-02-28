@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchBranchItemAvailability,
+  fetchItemsCarta as fetchItemsCartaSvc,
+  fetchItemCartaComposicion,
+  fetchItemCartaHistorial,
+  createItemCarta,
+  updateItemCarta,
+  softDeleteItemCarta,
+  saveItemCartaComposicion,
+  cambiarPrecioItemCarta,
+} from '@/services/menuService';
 
 export function useItemsCarta(branchId?: string) {
   return useQuery({
@@ -8,27 +18,9 @@ export function useItemsCarta(branchId?: string) {
     refetchOnMount: 'always',
     staleTime: 0,
     queryFn: async () => {
-      // If branchId provided, apply branch-level salon availability overrides
       if (branchId) {
-        const { data: availability, error: avErr } = await supabase
-          .from('branch_item_availability' as any)
-          .select('item_carta_id, available, available_salon, out_of_stock')
-          .eq('branch_id', branchId);
-        if (avErr) throw avErr;
-
-        const { data, error } = await supabase
-          .from('items_carta')
-          .select(
-            `
-            *,
-            menu_categorias:categoria_carta_id(id, nombre, orden),
-            rdo_categories:rdo_category_code(code, name)
-          `,
-          )
-          .eq('activo', true)
-          .is('deleted_at', null)
-          .order('orden');
-        if (error) throw error;
+        const availability = await fetchBranchItemAvailability(branchId);
+        const data = await fetchItemsCartaSvc();
 
         const availabilityMap = new Map(
           (availability || []).map((row: any) => [row.item_carta_id, row]),
@@ -36,26 +28,12 @@ export function useItemsCarta(branchId?: string) {
 
         return (data || []).filter((item: any) => {
           const row = availabilityMap.get(item.id);
-          // Missing row means no local override yet -> keep available by default
           if (!row) return true;
           return !!row.available && !!row.available_salon && !row.out_of_stock;
         });
       }
 
-      const { data, error } = await supabase
-        .from('items_carta')
-        .select(
-          `
-          *,
-          menu_categorias:categoria_carta_id(id, nombre, orden),
-          rdo_categories:rdo_category_code(code, name)
-        `,
-        )
-        .eq('activo', true)
-        .is('deleted_at', null)
-        .order('orden');
-      if (error) throw error;
-      return data;
+      return fetchItemsCartaSvc();
     },
   });
 }
@@ -65,19 +43,7 @@ export function useItemCartaComposicion(itemId: string | undefined) {
     queryKey: ['item-carta-composicion', itemId],
     queryFn: async () => {
       if (!itemId) return [];
-      const { data, error } = await supabase
-        .from('item_carta_composicion')
-        .select(
-          `
-          *,
-          preparaciones(id, nombre, costo_calculado, tipo),
-          insumos(id, nombre, costo_por_unidad_base, unidad_base)
-        `,
-        )
-        .eq('item_carta_id', itemId)
-        .order('orden');
-      if (error) throw error;
-      return data;
+      return fetchItemCartaComposicion(itemId);
     },
     enabled: !!itemId,
   });
@@ -88,13 +54,7 @@ export function useItemCartaHistorial(itemId: string | undefined) {
     queryKey: ['item-carta-historial', itemId],
     queryFn: async () => {
       if (!itemId) return [];
-      const { data, error } = await supabase
-        .from('item_carta_precios_historial')
-        .select('*')
-        .eq('item_carta_id', itemId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      return fetchItemCartaHistorial(itemId);
     },
     enabled: !!itemId,
   });
@@ -104,7 +64,7 @@ export function useItemCartaMutations() {
   const qc = useQueryClient();
 
   const create = useMutation({
-    mutationFn: async (data: {
+    mutationFn: (data: {
       nombre: string;
       nombre_corto?: string;
       descripcion?: string;
@@ -114,15 +74,7 @@ export function useItemCartaMutations() {
       fc_objetivo?: number;
       disponible_delivery?: boolean;
       tipo?: string;
-    }) => {
-      const { data: item, error } = await supabase
-        .from('items_carta')
-        .insert(data as any)
-        .select()
-        .single();
-      if (error) throw error;
-      return item;
-    },
+    }) => createItemCarta(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['items-carta'] });
       toast.success('Item de carta creado');
@@ -131,13 +83,7 @@ export function useItemCartaMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase
-        .from('items_carta')
-        .update({ ...data } as any)
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateItemCarta(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['items-carta'] });
       toast.success('Item actualizado');
@@ -146,13 +92,7 @@ export function useItemCartaMutations() {
   });
 
   const softDelete = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('items_carta')
-        .update({ activo: false, deleted_at: new Date().toISOString() } as any)
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => softDeleteItemCarta(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['items-carta'] });
       toast.success('Item eliminado');
@@ -161,31 +101,13 @@ export function useItemCartaMutations() {
   });
 
   const saveComposicion = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       item_carta_id,
       items,
     }: {
       item_carta_id: string;
       items: { preparacion_id?: string; insumo_id?: string; cantidad: number }[];
-    }) => {
-      await supabase.from('item_carta_composicion').delete().eq('item_carta_id', item_carta_id);
-
-      if (items.length > 0) {
-        const { error } = await supabase.from('item_carta_composicion').insert(
-          items.map((item, index) => ({
-            item_carta_id,
-            preparacion_id: item.preparacion_id || null,
-            insumo_id: item.insumo_id || null,
-            cantidad: item.cantidad,
-            orden: index,
-          })) as any,
-        );
-        if (error) throw error;
-      }
-
-      // Recalculate cost
-      await supabase.rpc('recalcular_costo_item_carta', { _item_id: item_carta_id });
-    },
+    }) => saveItemCartaComposicion(item_carta_id, items),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['item-carta-composicion', vars.item_carta_id] });
       qc.invalidateQueries({ queryKey: ['item-ingredientes-deep', vars.item_carta_id] });
@@ -196,37 +118,13 @@ export function useItemCartaMutations() {
   });
 
   const cambiarPrecio = useMutation({
-    mutationFn: async ({
-      itemId,
-      precioAnterior,
-      precioNuevo,
-      motivo,
-      userId,
-    }: {
+    mutationFn: (params: {
       itemId: string;
       precioAnterior: number;
       precioNuevo: number;
       motivo?: string;
       userId?: string;
-    }) => {
-      const { error: errUpdate } = await supabase
-        .from('items_carta')
-        .update({ precio_base: precioNuevo } as any)
-        .eq('id', itemId);
-      if (errUpdate) throw errUpdate;
-
-      const { error: errHist } = await supabase.from('item_carta_precios_historial').insert({
-        item_carta_id: itemId,
-        precio_anterior: precioAnterior,
-        precio_nuevo: precioNuevo,
-        motivo: motivo || null,
-        usuario_id: userId || null,
-      } as any);
-      if (errHist) throw errHist;
-
-      // Recalculate FC
-      await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
-    },
+    }) => cambiarPrecioItemCarta(params),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['items-carta'] });
       qc.invalidateQueries({ queryKey: ['item-carta-historial'] });

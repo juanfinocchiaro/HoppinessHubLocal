@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Receipt, Banknote, CreditCard } from 'lucide-react';
 import { DotsLoader } from '@/components/ui/loaders';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchUserActiveRoles } from '@/services/posService';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddExpenseMovement } from '@/hooks/useCashRegister';
 import { SupervisorPinDialog } from '@/components/pos/SupervisorPinDialog';
@@ -31,6 +31,7 @@ import { RdoCategorySelector } from '@/components/rdo/RdoCategorySelector';
 import { CATEGORIA_GASTO_OPTIONS } from '@/types/compra';
 import { type OperatorInfo } from '@/hooks/useOperatorVerification';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/formatters';
 
 interface QuickExpenseModalProps {
   open: boolean;
@@ -64,12 +65,8 @@ export function QuickExpenseModal({
   useEffect(() => {
     async function checkRole() {
       if (!user) return;
-      const { data } = await supabase
-        .from('user_roles_v2')
-        .select('brand_role, local_role')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-      const roles = data?.flatMap((r) => [r.brand_role, r.local_role].filter(Boolean)) || [];
+      const data = await fetchUserActiveRoles(user.id);
+      const roles = data.flatMap((r) => [r.brand_role, r.local_role].filter(Boolean));
       setIsSupervisor(
         roles.some((r) =>
           ['encargado', 'franquiciado', 'admin', 'coordinador'].includes(r as string),
@@ -136,16 +133,6 @@ export function QuickExpenseModal({
     createExpense(supervisor.userId);
   };
 
-  const formatCurrency = (value: string) => {
-    const num = parseFloat(value);
-    if (isNaN(num)) return '';
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(num);
-  };
-
   const amountNum = parseFloat(amount) || 0;
   const needsPin = !isSupervisor && amountNum >= pinThreshold;
 
@@ -193,7 +180,7 @@ export function QuickExpenseModal({
                   className="pl-8"
                 />
               </div>
-              {amount && <p className="text-sm text-muted-foreground">{formatCurrency(amount)}</p>}
+              {amount && <p className="text-sm text-muted-foreground">{formatCurrency(parseFloat(amount) || 0)}</p>}
             </div>
 
             <div className="space-y-2">
@@ -261,7 +248,7 @@ export function QuickExpenseModal({
 
             {needsPin && (
               <div className="p-3 rounded-lg bg-accent/50 border border-border text-foreground text-sm">
-                Monto mayor a {formatCurrency(pinThreshold.toString())} requiere PIN de encargado
+                Monto mayor a {formatCurrency(pinThreshold)} requiere PIN de encargado
               </div>
             )}
           </div>
@@ -288,7 +275,7 @@ export function QuickExpenseModal({
         branchId={branchId}
         onSuccess={handlePinSuccess}
         title="Autorizar Gasto"
-        description={`Gasto de ${formatCurrency(amount)} requiere autorización`}
+        description={`Gasto de ${formatCurrency(parseFloat(amount) || 0)} requiere autorización`}
       />
     </>
   );

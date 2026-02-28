@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchHelpPreferences,
+  updateHelpDismissedPages,
+  updateShowFloatingHelp,
+} from '@/services/configService';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { getHelpConfig, type HelpConfig } from '@/lib/helpConfig';
@@ -23,20 +27,9 @@ export function useContextualHelp(pageId: string): UseContextualHelpResult {
   // Query user's help preferences
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile-help-prefs', user?.id],
-    queryFn: async () => {
+    queryFn: () => {
       if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('help_dismissed_pages, show_floating_help')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as {
-        help_dismissed_pages: string[] | null;
-        show_floating_help: boolean | null;
-      } | null;
+      return fetchHelpPreferences(user.id);
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -53,14 +46,7 @@ export function useContextualHelp(pageId: string): UseContextualHelpResult {
       const currentDismissed = profile?.help_dismissed_pages || [];
       if (currentDismissed.includes(pageId)) return;
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          help_dismissed_pages: [...currentDismissed, pageId],
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      return updateHelpDismissedPages(user.id, [...currentDismissed, pageId]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile-help-prefs'] });
@@ -72,15 +58,7 @@ export function useContextualHelp(pageId: string): UseContextualHelpResult {
   const toggleMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) return;
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          show_floating_help: !showFloatingHelp,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      return updateShowFloatingHelp(user.id, !showFloatingHelp);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile-help-prefs'] });

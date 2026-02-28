@@ -21,12 +21,7 @@ interface Props {
   daysBack: number;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 export function OrderHeatmapChart({ branchId, daysBack }: Props) {
   const [metric, setMetric] = useState<HeatmapMetric>('count');
@@ -108,7 +103,7 @@ export function OrderHeatmapChart({ branchId, daysBack }: Props) {
                           {day} {h}:00
                         </p>
                         <p>{cell.count} pedidos</p>
-                        <p>{fmt(cell.total)}</p>
+                        <p>{formatCurrency(cell.total)}</p>
                       </TooltipContent>
                     </Tooltip>
                   );

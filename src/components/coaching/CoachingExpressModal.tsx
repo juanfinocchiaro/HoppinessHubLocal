@@ -135,7 +135,7 @@ export function CoachingExpressModal({
       onOpenChange(false);
       onSuccess?.();
       setScores([]);
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };

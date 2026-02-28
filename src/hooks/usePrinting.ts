@@ -6,7 +6,14 @@
  */
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  insertPrintJob,
+  updatePrintJobStatus,
+  logCompletedPrintJob,
+  fetchPedidoForTracking,
+  fetchBranchCoords,
+  insertDeliveryTracking,
+} from '@/services/printingService';
 import { toast } from 'sonner';
 import { printRawBase64, detectPrintBridge } from '@/lib/qz-print';
 import {
@@ -50,7 +57,7 @@ async function sendToPrinter(printer: BranchPrinter, dataBase64: string): Promis
       );
     }
     throw new Error(
-      `No se pudo conectar a ${printer.ip_address}:${printer.port} — ${msg || 'verificá que la impresora esté encendida y en la misma red.'}`,
+      `No se pudo conectar a ${printer.ip_address}:${printer.port} â€” ${msg || 'verificá que la impresora esté encendida y en la misma red.'}`,
     );
   }
 }
@@ -74,33 +81,25 @@ export function usePrinting(branchId: string) {
 
   const printMutation = useMutation({
     mutationFn: async ({ printer, jobType, pedidoId, dataBase64 }: PrintJobInput) => {
-      const { data: jobRecord, error: insertError } = await supabase
-        .from('print_jobs')
-        .insert({
-          branch_id: branchId,
-          printer_id: printer.id,
-          job_type: jobType,
-          pedido_id: pedidoId || null,
-          payload: { data_base64: dataBase64 },
-          status: 'printing',
-        })
-        .select('id')
-        .single();
-      if (insertError) console.error('Failed to log print job:', insertError.message);
+      const jobRecord = await insertPrintJob({
+        branch_id: branchId,
+        printer_id: printer.id,
+        job_type: jobType,
+        pedido_id: pedidoId || null,
+        payload: { data_base64: dataBase64 },
+        status: 'printing',
+      });
 
       try {
         const success = await sendToPrinter(printer, dataBase64);
         if (!success) throw new Error('No se pudo imprimir');
         if (jobRecord?.id) {
-          await supabase.from('print_jobs').update({ status: 'completed' }).eq('id', jobRecord.id);
+          await updatePrintJobStatus(jobRecord.id, 'completed');
         }
       } catch (err) {
         if (jobRecord?.id) {
           const errMsg = err instanceof Error ? err.message : 'Unknown';
-          await supabase
-            .from('print_jobs')
-            .update({ status: 'error', error_message: errMsg })
-            .eq('id', jobRecord.id);
+          await updatePrintJobStatus(jobRecord.id, 'error', errMsg);
         }
         throw err;
       }
@@ -238,33 +237,20 @@ export function usePrinting(branchId: string) {
       !order.canal_venta || order.canal_venta === 'mostrador' || order.canal_venta === 'webapp';
     if (pedidoId && order.tipo_servicio === 'delivery' && isCanalPropio) {
       try {
-        const { data: pedido } = await supabase
-          .from('pedidos')
-          .select('delivery_lat, delivery_lng, branch_id')
-          .eq('id', pedidoId)
-          .single();
-
+        const pedido = await fetchPedidoForTracking(pedidoId);
         if (!pedido?.branch_id) throw new Error('Pedido not found for tracking');
 
-        const { data: branch } = await supabase
-          .from('branches')
-          .select('latitude, longitude')
-          .eq('id', pedido.branch_id)
-          .single();
+        const branch = await fetchBranchCoords(pedido.branch_id);
 
-        const { data: tracking, error: trackingErr } = await (supabase as any)
-          .from('delivery_tracking')
-          .insert({
-            pedido_id: pedidoId,
-            dest_lat: pedido?.delivery_lat ?? null,
-            dest_lng: pedido?.delivery_lng ?? null,
-            store_lat: branch?.latitude ?? null,
-            store_lng: branch?.longitude ?? null,
-          } as any)
-          .select('tracking_token')
-          .single();
+        const tracking = await insertDeliveryTracking({
+          pedido_id: pedidoId,
+          dest_lat: pedido?.delivery_lat ?? null,
+          dest_lng: pedido?.delivery_lng ?? null,
+          store_lat: branch?.latitude ?? null,
+          store_lng: branch?.longitude ?? null,
+        });
 
-        if (!trackingErr && tracking) {
+        if (tracking) {
           trackingToken = tracking.tracking_token;
         }
       } catch (err) {
@@ -289,7 +275,7 @@ export function usePrinting(branchId: string) {
       if (printer) {
         try {
           await sendToPrinter(printer, job.dataBase64);
-          const { error: logErr } = await supabase.from('print_jobs').insert({
+          await logCompletedPrintJob({
             branch_id: branchId,
             printer_id: printer.id,
             pedido_id: pedidoId || null,
@@ -297,11 +283,10 @@ export function usePrinting(branchId: string) {
             payload: { data_base64: job.dataBase64 },
             status: 'completed',
           });
-          if (logErr) console.error('Failed to log print job:', logErr.message);
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Error desconocido';
           toast.error(`Error al imprimir ${job.label}`, { description: msg });
-          const { error: logErr } = await supabase.from('print_jobs').insert({
+          await logCompletedPrintJob({
             branch_id: branchId,
             printer_id: printer.id,
             pedido_id: pedidoId || null,
@@ -310,7 +295,6 @@ export function usePrinting(branchId: string) {
             status: 'error',
             error_message: msg,
           });
-          if (logErr) console.error('Failed to log print job error:', logErr.message);
         }
       }
     }

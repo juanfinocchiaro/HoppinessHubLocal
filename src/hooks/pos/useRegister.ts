@@ -2,20 +2,12 @@
  * useRegister - Turnos de caja
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchOpenRegister } from '@/services/posService';
 
 export function useRegister(branchId: string) {
   return useQuery({
     queryKey: ['pos-register', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('turnos_caja')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('estado', 'abierto')
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchOpenRegister(branchId),
     enabled: !!branchId,
   });
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAllRegulations, fetchRegulationSignatureStats, uploadRegulationPdf, deactivateAllRegulations, createRegulation, getRegulationSignedUrl } from '@/services/adminService';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,44 +33,14 @@ export default function RegulationsManager() {
   // Fetch all regulations
   const { data: regulations = [] } = useQuery({
     queryKey: ['all-regulations'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('regulations')
-        .select('*')
-        .order('version', { ascending: false });
-      return data || [];
-    },
+    queryFn: fetchAllRegulations,
   });
 
   // Fetch signature stats for latest regulation
   const latestRegulation = regulations[0];
   const { data: signatureStats } = useQuery({
     queryKey: ['regulation-signature-stats', latestRegulation?.id],
-    queryFn: async () => {
-      if (!latestRegulation) return null;
-
-      // Count unique employees (excluding franchisees) from user_branch_roles
-      const { data: employeeRoles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('is_active', true)
-        .neq('local_role', 'franquiciado');
-
-      // Eliminate duplicates (an employee can work at multiple branches)
-      const uniqueEmployees = new Set(employeeRoles?.map((r) => r.user_id) || []);
-      const totalEmployees = uniqueEmployees.size;
-
-      // Count signatures for this regulation
-      const { count: signedCount } = await supabase
-        .from('regulation_signatures')
-        .select('*', { count: 'exact', head: true })
-        .eq('regulation_id', latestRegulation.id);
-
-      return {
-        total: totalEmployees || 0,
-        signed: signedCount || 0,
-      };
-    },
+    queryFn: () => fetchRegulationSignatureStats(latestRegulation!.id),
     enabled: !!latestRegulation,
   });
 
@@ -82,32 +52,19 @@ export default function RegulationsManager() {
       // Calculate next version
       const nextVersion = (regulations[0]?.version || 0) + 1;
 
-      // Upload PDF
       const filePath = `v${nextVersion}_${Date.now()}.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from('regulations')
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      // Deactivate previous regulations
-      await supabase.from('regulations').update({ is_active: false }).neq('version', 0);
-
-      // Create new regulation record
-      const { error: insertError } = await supabase.from('regulations').insert([
-        {
-          version: nextVersion,
-          title: newTitle,
-          description: newDescription || null,
-          pdf_url: filePath,
-          document_url: filePath,
-          published_at: new Date().toISOString(),
-          is_active: true,
-          created_by: user.id,
-        },
-      ]);
-
-      if (insertError) throw insertError;
+      await uploadRegulationPdf(filePath, selectedFile);
+      await deactivateAllRegulations();
+      await createRegulation({
+        version: nextVersion,
+        title: newTitle,
+        description: newDescription || null,
+        pdf_url: filePath,
+        document_url: filePath,
+        published_at: new Date().toISOString(),
+        is_active: true,
+        created_by: user.id,
+      });
 
       toast.success(`Reglamento v${nextVersion} publicado correctamente`);
       queryClient.invalidateQueries({ queryKey: ['all-regulations'] });
@@ -124,10 +81,9 @@ export default function RegulationsManager() {
 
   const handleViewPdf = async (pdfUrl: string | null) => {
     if (!pdfUrl) return;
-    const { data } = await supabase.storage.from('regulations').createSignedUrl(pdfUrl, 3600);
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank');
+    const signedUrl = await getRegulationSignedUrl(pdfUrl);
+    if (signedUrl) {
+      window.open(signedUrl, '_blank');
     }
   };
 

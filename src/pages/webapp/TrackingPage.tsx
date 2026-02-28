@@ -1,6 +1,10 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  subscribeToTrackingUpdates,
+  subscribeToDeliveryTracking,
+  unsubscribeChannel,
+} from '@/services/webappOrderService';
 import {
   CheckCircle2,
   Clock,
@@ -17,6 +21,7 @@ import { SEO } from '@/components/SEO';
 import { OrderChat } from '@/components/webapp/OrderChat';
 import { PostPurchaseSignup } from '@/components/webapp/PostPurchaseSignup';
 import { WebappHeader } from '@/components/webapp/WebappHeader';
+import { formatPrice, formatTime } from '@/lib/formatters';
 
 const DeliveryTrackingMap = lazy(() =>
   import('@/components/webapp/DeliveryTrackingMap').then((m) => ({
@@ -125,14 +130,6 @@ function getEstadoConfig(
   return map[estado] ?? map.pendiente;
 }
 
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-}
-
 export default function TrackingPage() {
   const { trackingCode } = useParams<{ trackingCode: string }>();
   const navigate = useNavigate();
@@ -168,46 +165,25 @@ export default function TrackingPage() {
     fetchTracking();
   }, [trackingCode]);
 
-  // Realtime: subscribe to pedido changes
   useEffect(() => {
     if (!trackingCode) return;
-
-    const channel = supabase
-      .channel(`tracking-${trackingCode}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'pedidos',
-          filter: `webapp_tracking_code=eq.${trackingCode}`,
-        },
-        () => {
-          fetchTracking();
-        },
-      )
-      .subscribe();
-
+    const channel = subscribeToTrackingUpdates(
+      trackingCode,
+      `tracking-${trackingCode}`,
+      () => fetchTracking(),
+    );
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [trackingCode]);
 
-  // Realtime: subscribe to delivery_tracking position updates
   useEffect(() => {
     if (!data?.pedido?.id || !data?.delivery_tracking) return;
 
-    const channel = supabase
-      .channel(`delivery-pos-${data.pedido.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'delivery_tracking',
-          filter: `pedido_id=eq.${data.pedido.id}`,
-        },
-        (payload: any) => {
+    const channel = subscribeToDeliveryTracking(
+      data.pedido.id,
+      `delivery-pos-${data.pedido.id}`,
+      (payload: any) => {
           const row = payload.new;
           setData((prev) =>
             prev
@@ -227,11 +203,10 @@ export default function TrackingPage() {
               : prev,
           );
         },
-      )
-      .subscribe();
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [data?.pedido?.id, !!data?.delivery_tracking]);
 

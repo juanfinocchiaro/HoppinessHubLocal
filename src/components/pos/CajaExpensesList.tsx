@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Download, Search, CheckCircle, XCircle } from 'lucide-react';
 import { CATEGORIA_GASTO_OPTIONS } from '@/types/compra';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchShiftExpenses, updateExpenseApproval } from '@/services/posService';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { cashRegisterKeys } from '@/hooks/useCashRegister';
@@ -60,15 +60,8 @@ export function CajaExpensesList({
     if (!shiftId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('cash_register_movements')
-        .select('*')
-        .eq('shift_id', shiftId)
-        .eq('type', 'expense')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      setExpenses((data || []) as unknown as ExpenseMovement[]);
+      const data = await fetchShiftExpenses(shiftId);
+      setExpenses(data as unknown as ExpenseMovement[]);
       setLoaded(true);
     } catch {
       toast.error('Error al cargar egresos');
@@ -100,35 +93,29 @@ export function CajaExpensesList({
   ).length;
 
   const handleApprove = async (id: string) => {
-    const { error } = await supabase
-      .from('cash_register_movements')
-      .update({ estado_aprobacion: 'aprobado' } as any)
-      .eq('id', id);
-    if (error) {
+    try {
+      await updateExpenseApproval(id, 'aprobado');
+      toast.success('Gasto aprobado');
+      setExpenses((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, estado_aprobacion: 'aprobado' } : e)),
+      );
+      queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
+    } catch {
       toast.error('Error al aprobar');
-      return;
     }
-    toast.success('Gasto aprobado');
-    setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, estado_aprobacion: 'aprobado' } : e)),
-    );
-    queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
   };
 
   const handleReject = async (id: string) => {
-    const { error } = await supabase
-      .from('cash_register_movements')
-      .update({ estado_aprobacion: 'rechazado' } as any)
-      .eq('id', id);
-    if (error) {
+    try {
+      await updateExpenseApproval(id, 'rechazado');
+      toast.success('Gasto rechazado');
+      setExpenses((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, estado_aprobacion: 'rechazado' } : e)),
+      );
+      queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
+    } catch {
       toast.error('Error al rechazar');
-      return;
     }
-    toast.success('Gasto rechazado');
-    setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, estado_aprobacion: 'rechazado' } : e)),
-    );
-    queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
   };
 
   const handleExport = () => {
@@ -165,14 +152,14 @@ export function CajaExpensesList({
   return (
     <div className="mt-2">
       <Button variant="ghost" size="sm" onClick={handleToggle} className="text-muted-foreground">
-        {expanded ? '▾' : '▸'} Ver egresos {pendingCount > 0 && `(${pendingCount} pendientes)`}
+        {expanded ? 'â–¾' : 'â–¸'} Ver egresos {pendingCount > 0 && `(${pendingCount} pendientes)`}
       </Button>
 
       {expanded && (
         <Card className="mt-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle className="text-sm">Egresos — {registerLabel}</CardTitle>
+              <CardTitle className="text-sm">Egresos â€” {registerLabel}</CardTitle>
               <div className="flex gap-2">
                 <div className="relative w-48">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -234,7 +221,7 @@ export function CajaExpensesList({
                           $ {Number(e.amount).toLocaleString('es-AR')}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {e.categoria_gasto ? getCategoriaLabel(e.categoria_gasto) : '—'}
+                          {e.categoria_gasto ? getCategoriaLabel(e.categoria_gasto) : 'â€”'}
                         </TableCell>
                         <TableCell>{getEstadoBadge(e.estado_aprobacion)}</TableCell>
                         {canApprove && (

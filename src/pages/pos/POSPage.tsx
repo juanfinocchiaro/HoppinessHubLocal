@@ -2,11 +2,12 @@
  * POSPage - Punto de venta con modelo de cuenta progresiva
  * Items y pagos se mantienen en estado local hasta "Enviar a cocina".
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { ProductGrid, type CartItem } from '@/components/pos/ProductGrid';
+import { fetchBranchName, fetchMenuCategoriasPrint, cancelPedido } from '@/services/posService';
+import { ProductGrid } from '@/components/pos/ProductGrid';
+import type { CartItem } from '@/types/pos';
 import { AccountPanel } from '@/components/pos/AccountPanel';
 import { ConfigForm } from '@/components/pos/OrderConfigPanel';
 import { RegisterPaymentPanel } from '@/components/pos/RegisterPaymentPanel';
@@ -17,7 +18,6 @@ import { registerCodeUsage } from '@/hooks/useCodigosDescuento';
 import { useKitchen } from '@/hooks/pos/useKitchen';
 import { usePOSSessionState } from '@/hooks/pos/usePOSSessionState';
 import { useShiftStatus } from '@/hooks/useShiftStatus';
-import { useCashRegisters, useOpenShift } from '@/hooks/useCashRegister';
 import { useAuth } from '@/hooks/useAuth';
 import { usePrinting } from '@/hooks/usePrinting';
 import { usePrintConfig } from '@/hooks/usePrintConfig';
@@ -26,121 +26,17 @@ import { useAfipConfig, useEmitirFactura } from '@/hooks/useAfipConfig';
 import { evaluateInvoicing, type SalesChannel, type OrderPayment } from '@/lib/invoicing-rules';
 import type { FacturaPrintData, PaymentPrintData } from '@/lib/print-router';
 import { toast } from 'sonner';
+import { IVA } from '@/lib/constants';
 import type { LocalPayment } from '@/types/pos';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Banknote, ChefHat, PlusCircle, ShoppingBag } from 'lucide-react';
+import { ChefHat, PlusCircle, ShoppingBag } from 'lucide-react';
 import { PendingOrdersBar } from '@/components/pos/PendingOrdersBar';
 import { WebappOrdersPanel } from '@/components/pos/WebappOrdersPanel';
 import { PointPaymentModal } from '@/components/pos/PointPaymentModal';
 import { POSOnboarding } from '@/components/pos/POSOnboarding';
 import { useMercadoPagoConfig } from '@/hooks/useMercadoPagoConfig';
-
-/* Inline cash open form - shown when no register is open */
-function InlineCashOpen({ branchId, onOpened }: { branchId: string; onOpened: () => void }) {
-  const { user } = useAuth();
-  const { data: registersData } = useCashRegisters(branchId);
-  const openShift = useOpenShift(branchId);
-  const [selectedRegister, setSelectedRegister] = useState('');
-  const [openingAmount, setOpeningAmount] = useState('');
-  const [isOpening, setIsOpening] = useState(false);
-  const registers = (registersData?.active ?? []).filter((r) => r.register_type === 'ventas');
-
-  useEffect(() => {
-    if (registers.length > 0 && !selectedRegister) {
-      setSelectedRegister(registers[0].id);
-    }
-  }, [registers, selectedRegister]);
-
-  const handleOpen = async () => {
-    if (!user || !selectedRegister) return;
-    setIsOpening(true);
-    try {
-      await openShift.mutateAsync({
-        registerId: selectedRegister,
-        userId: user.id,
-        openingAmount: parseFloat(openingAmount) || 0,
-      });
-      setOpeningAmount('');
-      onOpened();
-    } catch (e: any) {
-      toast.error(e?.message ?? 'Error al abrir caja');
-    } finally {
-      setIsOpening(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center text-center gap-6">
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-        <Banknote className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <div>
-        <h2 className="text-xl font-semibold">Caja cerrada</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Abrí la caja para empezar a tomar pedidos
-        </p>
-      </div>
-      {registers.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No hay cajas configuradas para esta sucursal.
-        </p>
-      ) : (
-        <div className="w-full space-y-4 text-left">
-          {registers.length > 1 && (
-            <div className="space-y-2">
-              <Label>Caja</Label>
-              <Select value={selectedRegister} onValueChange={setSelectedRegister}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar caja" />
-                </SelectTrigger>
-                <SelectContent>
-                  {registers.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label>Efectivo inicial</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                $
-              </span>
-              <Input
-                type="number"
-                placeholder="0"
-                value={openingAmount}
-                onChange={(e) => setOpeningAmount(e.target.value)}
-                className="pl-7"
-              />
-            </div>
-          </div>
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleOpen}
-            disabled={isOpening || !selectedRegister}
-          >
-            <Banknote className="h-4 w-4 mr-2" />
-            {isOpening ? 'Abriendo...' : 'Abrir Caja'}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
+import { InlineCashOpen } from '@/components/pos/InlineCashOpen';
+import { calculatePOSTotals } from '@/utils/posCalculations';
 
 export default function POSPage() {
   const { branchId } = useParams<{ branchId: string }>();
@@ -196,22 +92,13 @@ function POSPageContent({ branchId }: { branchId: string }) {
 
   const { data: branchInfo } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
-      return data;
-    },
+    queryFn: () => fetchBranchName(branchId),
     enabled: !!branchId,
   });
 
   const { data: menuCategorias } = useQuery({
     queryKey: ['menu-categorias-print', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('menu_categorias')
-        .select('id, nombre, tipo_impresion')
-        .eq('activo', true);
-      return (data ?? []) as { id: string; nombre: string; tipo_impresion: string }[];
-    },
+    queryFn: fetchMenuCategoriasPrint,
   });
 
   // Cart management
@@ -306,7 +193,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
         if (!orderConfig.clienteDireccion?.trim()) return 'Ingresá la dirección de entrega';
       }
     }
-    // Validate invoice fields — required only for Factura A
+    // Validate invoice fields â€” required only for Factura A
     if (orderConfig.tipoFactura === 'A') {
       if (!orderConfig.receptorCuit?.trim()) return 'Ingresá el CUIT del cliente';
       if (!orderConfig.receptorRazonSocial?.trim()) return 'Ingresá la razón social del cliente';
@@ -377,7 +264,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
     // Cancel the order that was created in pendiente_pago
     if (pointPedidoId) {
       try {
-        await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', pointPedidoId);
+        await cancelPedido(pointPedidoId);
       } catch {
         // best-effort
       }
@@ -492,7 +379,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
           if (invoiceResult) {
             const pvStr = String(invoiceResult.punto_venta).padStart(5, '0');
             const numStr = String(invoiceResult.numero).padStart(8, '0');
-            const neto = result.invoiceableAmount / 1.21;
+            const neto = result.invoiceableAmount / IVA;
             const iva = result.invoiceableAmount - neto;
             const afipExtra = afipConfig as unknown as { iibb?: string; condicion_iva?: string };
             facturaData = {
@@ -610,39 +497,16 @@ function POSPageContent({ branchId }: { branchId: string }) {
   }, []);
 
   const isAppsChannel = orderConfig.canalVenta === 'apps';
-  const subtotal = cart.reduce((s, i) => s + i.subtotal, 0);
-  const costoEnvio =
-    orderConfig.tipoServicio === 'delivery' || isAppsChannel ? (orderConfig.costoDelivery ?? 0) : 0;
-  const descRestauranteRaw = orderConfig.descuentoRestaurante ?? 0;
-  const descRestauranteCalc =
-    orderConfig.descuentoModo === 'porcentaje'
-      ? Math.round((subtotal * descRestauranteRaw) / 100)
-      : descRestauranteRaw;
-  const voucherDesc = orderConfig.voucherDescuento ?? 0;
-  const promoDescTotal = cart.reduce((s, i) => s + (i.promo_descuento ?? 0) * i.cantidad, 0);
-  const descuentos = (orderConfig.descuentoPlataforma ?? 0) + descRestauranteCalc + promoDescTotal;
-  const totalToPay = subtotal + costoEnvio - descuentos - voucherDesc;
-  const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
-  const paidCash = payments
-    .filter((p) => p.method === 'efectivo')
-    .reduce((s, p) => s + p.amount, 0);
-  const paidDigital = totalPaid - paidCash;
-
-  const minCashRequired = cart
-    .filter((i) => i.promo_restriccion_pago === 'solo_efectivo')
-    .reduce((s, i) => s + i.subtotal, 0);
-  const minDigitalRequired = cart
-    .filter((i) => i.promo_restriccion_pago === 'solo_digital')
-    .reduce((s, i) => s + i.subtotal, 0);
-  const minCashRemaining = Math.max(0, minCashRequired - paidCash);
-  const minDigitalRemaining = Math.max(0, minDigitalRequired - paidDigital);
-
-  const saldo = isAppsChannel ? 0 : totalToPay - totalPaid;
-  const meetsPromoPaymentRestrictions =
-    paidCash + 0.0001 >= minCashRequired && paidDigital + 0.0001 >= minDigitalRequired;
-  const canSend = isAppsChannel
-    ? cart.length > 0
-    : Math.abs(totalToPay - totalPaid) < 0.01 && cart.length > 0 && meetsPromoPaymentRestrictions;
+  const {
+    costoEnvio,
+    descuentos,
+    totalToPay,
+    totalPaid,
+    minCashRemaining,
+    minDigitalRemaining,
+    saldo,
+    canSend,
+  } = calculatePOSTotals(cart, payments, orderConfig);
 
   // Show full-page "Abrir Caja" when cash register is closed
   if (!shiftStatus.loading && !shiftStatus.hasCashOpen) {
@@ -662,7 +526,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
   return (
     <POSPortalProvider>
       <div className="flex flex-col h-[calc(100vh-6rem)] pb-16 lg:pb-0">
-        {/* Pending orders bar — always visible */}
+        {/* Pending orders bar â€” always visible */}
         <PendingOrdersBar
           pedidos={(kitchenPedidos ?? []).filter((p) => p.origen !== 'webapp')}
           branchId={branchId!}

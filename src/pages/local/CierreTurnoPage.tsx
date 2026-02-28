@@ -6,7 +6,7 @@ import { useState, useRef } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchShiftClosureReport } from '@/services/rdoService';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import html2canvas from 'html2canvas';
@@ -42,8 +42,10 @@ import {
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 import type { Tables } from '@/integrations/supabase/types';
 import { HoppinessLoader } from '@/components/ui/hoppiness-loader';
+import { formatCurrency } from '@/lib/formatters';
 
 type Branch = Tables<'branches'>;
 
@@ -79,48 +81,8 @@ export default function CierreTurnoPage() {
 
   const { data: shiftData, isLoading } = useQuery({
     queryKey: ['shift-closure-data', branchId, dateStr],
-    queryFn: async (): Promise<ShiftData> => {
-      const { data: ordersData } = await supabase
-        .from('pedidos')
-        .select(
-          `
-          id, created_at, total, estado, canal_venta, tipo_servicio, canal_app,
-          pedido_pagos (metodo, monto),
-          pedido_items (nombre, cantidad, precio_unitario, subtotal)
-        `,
-        )
-        .eq('branch_id', branchId!)
-        .gte('created_at', start)
-        .lt('created_at', end)
-        .neq('estado', 'cancelado');
-
-      const { data: cancelledData } = await supabase
-        .from('pedidos')
-        .select('id, numero_llamador, total, cliente_notas, created_at')
-        .eq('branch_id', branchId!)
-        .eq('estado', 'cancelado')
-        .gte('created_at', start)
-        .lt('created_at', end);
-
-      const { data: cashShiftsData } = await supabase
-        .from('cash_register_shifts')
-        .select(
-          `
-          id, opened_at, closed_at, opening_amount, closing_amount,
-          expected_amount, difference, status, notes,
-          cash_registers (name)
-        `,
-        )
-        .eq('branch_id', branchId!)
-        .gte('opened_at', start)
-        .lt('opened_at', end);
-
-      return {
-        orders: ordersData || [],
-        cancelledOrders: cancelledData || [],
-        cashShifts: cashShiftsData || [],
-      };
-    },
+    queryFn: (): Promise<ShiftData> =>
+      fetchShiftClosureReport(branchId!, start, end),
     enabled: !!branchId,
   });
 
@@ -169,14 +131,6 @@ export default function CierreTurnoPage() {
         {} as Record<string, { quantity: number; total: number }>,
       ) || {};
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const handleExportPDF = async () => {
     if (!reportRef.current) return;
     setIsExporting(true);
@@ -189,7 +143,7 @@ export default function CierreTurnoPage() {
       pdf.save(`cierre-turno-${dateStr}.pdf`);
       toast.success('PDF descargado');
     } catch (error) {
-      toast.error('Error al exportar PDF');
+      handleError(error, { userMessage: 'Error al exportar PDF', context: 'CierreTurnoPage' });
     } finally {
       setIsExporting(false);
     }

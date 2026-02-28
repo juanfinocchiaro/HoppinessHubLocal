@@ -5,7 +5,7 @@
  * de la sucursal. Solo lectura.
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchManager, fetchManagerCoachings } from '@/services/coachingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,61 +46,16 @@ interface MyManagerCoachingTabProps {
 }
 
 export function MyManagerCoachingTab({ branchId }: MyManagerCoachingTabProps) {
-  // 1. Obtener el encargado de esta sucursal
   const { data: manager, isLoading: loadingManager } = useQuery({
     queryKey: ['branch-manager', branchId],
-    queryFn: async (): Promise<ManagerInfo | null> => {
-      const { data: roles, error } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', branchId)
-        .eq('local_role', 'encargado')
-        .eq('is_active', true)
-        .limit(1);
-
-      if (error || !roles?.length) return null;
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('id', roles[0].user_id)
-        .single();
-
-      return profile;
-    },
+    queryFn: (): Promise<ManagerInfo | null> => fetchBranchManager(branchId),
     enabled: !!branchId,
   });
 
-  // 2. Obtener coachings del encargado
   const { data: coachings, isLoading: loadingCoachings } = useQuery({
     queryKey: ['manager-coachings', manager?.id, branchId],
-    queryFn: async (): Promise<ManagerCoaching[]> => {
-      if (!manager?.id) return [];
-
-      const { data, error } = await supabase
-        .from('coachings')
-        .select('*')
-        .eq('user_id', manager.id)
-        .eq('branch_id', branchId)
-        .order('coaching_year', { ascending: false })
-        .order('coaching_month', { ascending: false });
-
-      if (error) throw error;
-
-      // Obtener evaluadores
-      const evaluatorIds = [...new Set(data.map((c) => c.evaluated_by))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', evaluatorIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) ?? []);
-
-      return data.map((c) => ({
-        ...c,
-        evaluator: profileMap.get(c.evaluated_by) || null,
-      }));
-    },
+    queryFn: (): Promise<ManagerCoaching[]> =>
+      fetchManagerCoachings(manager!.id, branchId),
     enabled: !!manager?.id && !!branchId,
   });
 

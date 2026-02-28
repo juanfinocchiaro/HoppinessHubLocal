@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MeetingDetail - Vista detalle de reunión refactorizada para v2.0
  * Renderiza diferentes UIs según el estado: convocada, en_curso, cerrada
  */
@@ -38,6 +38,7 @@ import { useMarkMeetingAsRead, useStartMeeting, useCancelMeeting } from '@/hooks
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 import { generateGoogleCalendarLink } from '@/lib/calendarLinks';
 
 interface MeetingDetailProps {
@@ -74,7 +75,7 @@ export function MeetingDetail({
       await markAsRead.mutateAsync(meeting.id);
       toast.success('Marcado como leído');
     } catch (error) {
-      toast.error('Error al marcar como leído');
+      handleError(error, { userMessage: 'Error al marcar como leído', context: 'MeetingDetail' });
     }
   };
 
@@ -88,7 +89,7 @@ export function MeetingDetail({
       await startMeeting.mutateAsync(meeting.id);
       toast.success('Reunión iniciada');
     } catch (error) {
-      toast.error('Error al iniciar la reunión');
+      handleError(error, { userMessage: 'Error al iniciar la reunión', context: 'MeetingDetail' });
     }
   };
 
@@ -98,7 +99,7 @@ export function MeetingDetail({
       toast.success('Reunión cancelada');
       onBack();
     } catch (error) {
-      toast.error('Error al cancelar la reunión');
+      handleError(error, { userMessage: 'Error al cancelar la reunión', context: 'MeetingDetail' });
     }
   };
 

@@ -36,7 +36,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBrandCommunications, createBrandCommunication, deleteBrandCommunication } from '@/services/adminService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import ReadersModal from '@/components/communications/ReadersModal';
@@ -104,15 +104,7 @@ function CommunicationsPageContent() {
 
   const { data: communications, isLoading } = useQuery({
     queryKey: ['brand-communications'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*, communication_reads(user_id, confirmed_at)')
-        .eq('source_type', 'brand')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchBrandCommunications,
     staleTime: 30000,
   });
 
@@ -120,7 +112,6 @@ function CommunicationsPageContent() {
     mutationFn: async () => {
       if (!user) throw new Error('No autenticado');
 
-      // Build target_roles array based on checkboxes
       let targetRoles: string[] | null = null;
       if (!formData.target_all) {
         const roles: string[] = [];
@@ -129,7 +120,7 @@ function CommunicationsPageContent() {
         targetRoles = roles.length > 0 ? roles : null;
       }
 
-      const { error } = await supabase.from('communications').insert({
+      await createBrandCommunication({
         title: formData.title,
         body: formData.body,
         type: formData.type,
@@ -142,7 +133,6 @@ function CommunicationsPageContent() {
         published_at: new Date().toISOString(),
         requires_confirmation: formData.requires_confirmation,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand-communications'] });
@@ -164,10 +154,7 @@ function CommunicationsPageContent() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('communications').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteBrandCommunication(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand-communications'] });
       toast.success('Comunicado eliminado');
@@ -419,10 +406,10 @@ function CommunicationsPageContent() {
                         >
                           <Eye className="w-3 h-3 mr-1" />
                           {readCount} lecturas
-                          {comm.requires_confirmation && ` • ${confirmedCount} confirmaciones`}
+                          {comm.requires_confirmation && ` â€¢ ${confirmedCount} confirmaciones`}
                         </Button>
                         {comm.target_roles && comm.target_roles.length > 0 && (
-                          <span>→ {comm.target_roles.join(', ')}</span>
+                          <span>â†’ {comm.target_roles.join(', ')}</span>
                         )}
                       </div>
                     </div>

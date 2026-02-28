@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchProfileCompleteness, fetchEmployeeDataCompleteness } from '@/services/profileService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Circle, UserCog } from 'lucide-react';
@@ -17,33 +17,13 @@ interface CompletionField {
 export function ProfileCompletenessCard({ userId }: ProfileCompletenessCardProps) {
   const { data: profile } = useQuery({
     queryKey: ['profile-completeness', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(
-          'phone, dni, birth_date, cbu, emergency_contact_name, emergency_contact_phone, avatar_url',
-        )
-        .eq('id', userId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchProfileCompleteness(userId),
     enabled: !!userId,
   });
 
   const { data: employeeData } = useQuery({
     queryKey: ['employee-data-completeness', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_data')
-        .select(
-          'dni, birth_date, personal_address, emergency_contact, emergency_phone, bank_name, cbu, cuil, hire_date',
-        )
-        .eq('user_id', userId)
-        .limit(1);
-      if (error) throw error;
-      return data?.[0] || null;
-    },
+    queryFn: () => fetchEmployeeDataCompleteness(userId),
     enabled: !!userId,
   });
 

@@ -1,7 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import {
+  fetchSocios,
+  fetchMovimientosSocio,
+  createSocio,
+  updateSocio,
+  createMovimientoSocio,
+} from '@/services/financialService';
 
 export interface SocioFormData {
   branch_id: string;
@@ -39,16 +45,7 @@ export function useSocios(branchId: string) {
 
   return useQuery({
     queryKey: ['socios', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('socios')
-        .select('*')
-        .eq('branch_id', branchId)
-        .is('deleted_at', null)
-        .order('porcentaje_participacion', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSocios(branchId),
     enabled: !!user && !!branchId,
   });
 }
@@ -58,20 +55,7 @@ export function useMovimientosSocio(branchId: string, socioId?: string) {
 
   return useQuery({
     queryKey: ['movimientos_socio', branchId, socioId],
-    queryFn: async () => {
-      let q = supabase
-        .from('movimientos_socio')
-        .select('*')
-        .eq('branch_id', branchId)
-        .is('deleted_at', null)
-        .order('fecha', { ascending: false });
-
-      if (socioId) q = q.eq('socio_id', socioId);
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchMovimientosSocio(branchId, socioId),
     enabled: !!user && !!branchId,
   });
 }
@@ -80,15 +64,9 @@ export function useSocioMutations() {
   const qc = useQueryClient();
   const { user } = useAuth();
 
-  const createSocio = useMutation({
+  const createSocioMut = useMutation({
     mutationFn: async (data: SocioFormData) => {
-      const { data: result, error } = await supabase
-        .from('socios')
-        .insert({ ...data, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return createSocio(data, user?.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['socios'] });
@@ -97,10 +75,9 @@ export function useSocioMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const updateSocio = useMutation({
+  const updateSocioMut = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SocioFormData> }) => {
-      const { error } = await supabase.from('socios').update(data).eq('id', id);
-      if (error) throw error;
+      await updateSocio(id, data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['socios'] });
@@ -109,15 +86,9 @@ export function useSocioMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const createMovimiento = useMutation({
+  const createMovimientoMut = useMutation({
     mutationFn: async (data: MovimientoSocioFormData) => {
-      const { data: result, error } = await supabase
-        .from('movimientos_socio')
-        .insert({ ...data, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return createMovimientoSocio(data, user?.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['movimientos_socio'] });
@@ -127,5 +98,5 @@ export function useSocioMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  return { createSocio, updateSocio, createMovimiento };
+  return { createSocio: createSocioMut, updateSocio: updateSocioMut, createMovimiento: createMovimientoMut };
 }

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { DotsLoader } from '@/components/ui/loaders';
 import type { MetodoPago } from '@/types/pos';
-import type { CartItem } from '@/components/pos/ProductGrid';
+import type { CartItem } from '@/types/pos';
 import { SplitPayment, type PaymentLine } from '@/components/pos/SplitPayment';
 import { cn } from '@/lib/utils';
 

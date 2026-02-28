@@ -5,7 +5,20 @@
  * for specific day scheduling (monthly system)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchMonthlySchedules,
+  fetchEmployeeMonthSchedule as fetchEmployeeScheduleService,
+  fetchHasPublishedSchedule as fetchHasPublishedService,
+  deleteUserMonthSchedules,
+  insertScheduleRecords,
+  fetchScheduleById,
+  updateScheduleEntry,
+  deleteUserBranchMonthSchedules,
+  sendScheduleNotificationComm,
+  sendScheduleEmailNotification,
+  fetchScheduleRequests as fetchScheduleRequestsService,
+  updateScheduleRequestStatus,
+} from '@/services/schedulesService';
 import { useAuth } from '@/hooks/useAuth';
 import { format, endOfMonth } from 'date-fns';
 import { toast } from 'sonner';
@@ -71,77 +84,37 @@ export function useMonthlySchedules(branchId: string | undefined, month: number,
     queryKey: ['monthly-schedules', branchId, year, month],
     queryFn: async () => {
       if (!branchId) return [];
-
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('*')
-        .eq('branch_id', branchId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate)
-        .order('schedule_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ScheduleEntry[];
+      return (await fetchMonthlySchedules(branchId, startDate, endDate)) as ScheduleEntry[];
     },
     enabled: !!branchId,
     staleTime: 30 * 1000,
   });
 }
 
-/**
- * Fetch schedules for a specific employee for a month
- */
 export function useEmployeeMonthSchedule(userId: string | undefined, month: number, year: number) {
   return useQuery({
     queryKey: ['employee-schedule', userId, year, month],
     queryFn: async () => {
       if (!userId) return [];
-
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate)
-        .order('schedule_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ScheduleEntry[];
+      return (await fetchEmployeeScheduleService(userId, startDate, endDate)) as ScheduleEntry[];
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
   });
 }
 
-/**
- * Check if an employee has published schedule for a month
- */
 export function useHasPublishedSchedule(userId: string | undefined, month: number, year: number) {
   return useQuery({
     queryKey: ['has-published-schedule', userId, year, month],
     queryFn: async () => {
       if (!userId) return false;
-
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('id, published_at')
-        .eq('user_id', userId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate)
-        .not('published_at', 'is', null)
-        .limit(1);
-
-      if (error) throw error;
-      return (data?.length || 0) > 0;
+      return fetchHasPublishedService(userId, startDate, endDate);
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
@@ -189,23 +162,12 @@ export function useSaveMonthlySchedule() {
         employee_id: input.user_id, // Legacy compatibility
       }));
 
-      // Delete existing entries for this user/month first
       const startDate = format(new Date(input.year, input.month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(input.year, input.month - 1, 1)), 'yyyy-MM-dd');
 
-      const { error: deleteError } = await supabase
-        .from('employee_schedules')
-        .delete()
-        .eq('user_id', input.user_id)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate);
+      await deleteUserMonthSchedules(input.user_id, startDate, endDate);
 
-      if (deleteError) throw deleteError;
-
-      // Insert new entries
-      const { data, error } = await supabase.from('employee_schedules').insert(records).select();
-
-      if (error) throw error;
+      const data = await insertScheduleRecords(records);
 
       // Send notifications if requested
       if (input.notify_email || input.notify_communication) {
@@ -246,31 +208,16 @@ export function useModifySchedule() {
 
       const now = new Date().toISOString();
 
-      // First get the existing entry
-      const { data: existing, error: fetchError } = await supabase
-        .from('employee_schedules')
-        .select('*')
-        .eq('id', input.schedule_id)
-        .single();
+      const existing = await fetchScheduleById(input.schedule_id);
 
-      if (fetchError) throw fetchError;
-
-      // Update the entry
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .update({
-          start_time: input.start_time ?? existing.start_time,
-          end_time: input.end_time ?? existing.end_time,
-          is_day_off: input.is_day_off ?? existing.is_day_off,
-          modified_at: now,
-          modified_by: user.id,
-          modification_reason: input.modification_reason,
-        })
-        .eq('id', input.schedule_id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await updateScheduleEntry(input.schedule_id, {
+        start_time: input.start_time ?? existing.start_time,
+        end_time: input.end_time ?? existing.end_time,
+        is_day_off: input.is_day_off ?? existing.is_day_off,
+        modified_at: now,
+        modified_by: user.id,
+        modification_reason: input.modification_reason,
+      });
 
       // Send notifications if requested
       if (input.notify_email || input.notify_communication) {
@@ -320,15 +267,7 @@ export function useDeleteMonthSchedule() {
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
 
-      const { error } = await supabase
-        .from('employee_schedules')
-        .delete()
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate);
-
-      if (error) throw error;
+      await deleteUserBranchMonthSchedules(userId, branchId, startDate, endDate);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['monthly-schedules', variables.branchId] });
@@ -384,30 +323,24 @@ async function sendScheduleNotification(input: NotificationInput) {
       ? `Tu encargado modificó tu horario. ${input.modification_reason ? `Motivo: ${input.modification_reason}` : ''} Revisalo en 'Mi Horario'.`
       : `Tu encargado publicó el horario del mes. Revisalo en 'Mi Horario'.`;
 
-    await supabase.from('communications').insert({
+    await sendScheduleNotificationComm({
       title,
       body,
-      type: 'info',
-      source_type: 'local',
-      source_branch_id: input.branch_id,
-      target_user_id: input.user_id,
-      is_published: true,
-      published_at: new Date().toISOString(),
-      created_by: input.sender_id,
+      branch_id: input.branch_id,
+      user_id: input.user_id,
+      sender_id: input.sender_id,
     });
   }
 
   // Send email notification
   if (input.notify_email) {
     try {
-      await supabase.functions.invoke('send-schedule-notification', {
-        body: {
-          user_id: input.user_id,
-          month: input.month,
-          year: input.year,
-          is_modification: input.is_modification,
-          modification_reason: input.modification_reason,
-        },
+      await sendScheduleEmailNotification({
+        user_id: input.user_id,
+        month: input.month,
+        year: input.year,
+        is_modification: input.is_modification,
+        modification_reason: input.modification_reason,
       });
     } catch (e) {
       if (import.meta.env.DEV) console.error('Failed to send email notification:', e);
@@ -432,16 +365,7 @@ export function useEmployeeScheduleRequests(
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('request_date', startDate)
-        .lte('request_date', endDate)
-        .order('request_date', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      return fetchScheduleRequestsService(userId, startDate, endDate);
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
@@ -459,20 +383,12 @@ export function useApproveScheduleRequest() {
     mutationFn: async ({ requestId, notes }: { requestId: string; notes?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .update({
-          status: 'approved',
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          notes,
-        })
-        .eq('id', requestId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return updateScheduleRequestStatus(requestId, {
+        status: 'approved',
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+        notes,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-schedule-requests'] });
@@ -494,20 +410,12 @@ export function useRejectScheduleRequest() {
     mutationFn: async ({ requestId, notes }: { requestId: string; notes?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .update({
-          status: 'rejected',
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          notes,
-        })
-        .eq('id', requestId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return updateScheduleRequestStatus(requestId, {
+        status: 'rejected',
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+        notes,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-schedule-requests'] });

@@ -3,7 +3,7 @@
  * Indica si hay caja abierta y opcionalmente turno operativo (branch_shifts)
  */
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchVentasRegisters, fetchOpenCashShift } from '@/services/schedulesService';
 import type { CashRegisterShift } from './useCashRegister';
 
 export interface ShiftStatus {
@@ -28,28 +28,15 @@ export function useShiftStatus(branchId: string | undefined): ShiftStatus {
         return;
       }
       try {
-        const { data: ventasRegisters } = await supabase
-          .from('cash_registers')
-          .select('id')
-          .eq('branch_id', branchId)
-          .eq('register_type', 'ventas');
+        const ventasRegisters = await fetchVentasRegisters(branchId);
         if (signal?.cancelled) return;
 
-        const ventasIds = (ventasRegisters ?? []).map((r) => r.id);
+        const ventasIds = ventasRegisters.map((r) => r.id);
 
         let data = null;
         if (ventasIds.length > 0) {
-          const { data: shiftData } = await supabase
-            .from('cash_register_shifts')
-            .select('*')
-            .eq('branch_id', branchId)
-            .eq('status', 'open')
-            .in('cash_register_id', ventasIds)
-            .order('opened_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          data = await fetchOpenCashShift(branchId, ventasIds);
           if (signal?.cancelled) return;
-          data = shiftData;
         }
         setActiveCashShift(data as CashRegisterShift | null);
       } catch (e) {

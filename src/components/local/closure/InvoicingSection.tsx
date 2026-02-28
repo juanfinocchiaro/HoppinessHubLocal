@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Receipt, AlertTriangle, CheckCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
 
 interface InvoicingSectionProps {
   totalFacturado: number;
@@ -30,12 +31,7 @@ export function InvoicingSection({
   const tieneAlerta = facturacionEsperada > 0 && Math.abs(porcentajeDiferencia) > 10;
   const esValido = totalFacturado > 0 && !tieneAlerta;
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   const parseNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value) || 0;

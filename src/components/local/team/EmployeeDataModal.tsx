@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { upsertEmployeeData, updateBranchRole } from '@/services/staffService';
 import {
   Dialog,
   DialogContent,
@@ -119,19 +119,8 @@ export function EmployeeDataModal({
         registered_hours: registeredHours ? parseInt(registeredHours, 10) : null,
       };
 
-      // Save employee data
-      if (existingData?.id) {
-        const { error } = await supabase
-          .from('employee_data')
-          .update(data)
-          .eq('id', existingData.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('employee_data').insert(data);
-        if (error) throw error;
-      }
+      await upsertEmployeeData(existingData?.id, data);
 
-      // Save role and default position if changed
       if (roleId) {
         const roleUpdates: { local_role?: LocalRole; default_position?: string | null } = {};
         if (selectedRole !== currentRole) {
@@ -141,11 +130,7 @@ export function EmployeeDataModal({
           roleUpdates.default_position = defaultPosition || null;
         }
         if (Object.keys(roleUpdates).length > 0) {
-          const { error: roleError } = await supabase
-            .from('user_branch_roles')
-            .update(roleUpdates)
-            .eq('id', roleId);
-          if (roleError) throw roleError;
+          await updateBranchRole(roleId, roleUpdates);
         }
       }
     },

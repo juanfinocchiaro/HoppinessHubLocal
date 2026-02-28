@@ -18,7 +18,8 @@ import { useFiscalXReport } from '@/hooks/useFiscalReports';
 import { usePrintConfig } from '@/hooks/usePrintConfig';
 import { useBranchPrinters, type BranchPrinter } from '@/hooks/useBranchPrinters';
 import { generateInformeX, type FiscalXData } from '@/lib/escpos';
-import { errMsg, fmtCurrency, Row, type FiscalBranchData } from './shared';
+import { errMsg, fmtCurrency, Row } from './shared';
+import type { FiscalBranchData } from '@/types/fiscal';
 
 export function InformeXCard({
   branchId,

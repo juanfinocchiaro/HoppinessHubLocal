@@ -7,7 +7,7 @@
  * 3. Se usa como override de los permisos hardcodeados en usePermissions
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchPermissionConfig } from '@/services/permissionsService';
 import type { BrandRole, LocalRole } from './usePermissions';
 
 interface PermissionConfig {
@@ -27,15 +27,7 @@ export function usePermissionOverrides() {
   const { data: configs = [], isLoading } = useQuery({
     queryKey: ['permission-config-overrides'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('permission_config')
-        .select('*')
-        .order('scope')
-        .order('category')
-        .order('permission_label');
-
-      if (error) throw error;
-      return data as PermissionConfig[];
+      return (await fetchPermissionConfig()) as PermissionConfig[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000,

@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchAllWorkStations,
+  fetchStationCompetencies as fetchStationCompetenciesService,
+  fetchAllStationCompetencies as fetchAllStationCompetenciesService,
+  fetchAllGeneralCompetencies,
+  fetchManagerCompetencies as fetchManagerCompetenciesService,
+} from '@/services/coachingService';
 import type {
   WorkStation,
   StationCompetency,
@@ -7,106 +13,53 @@ import type {
   ManagerCompetency,
 } from '@/types/coaching';
 
-/**
- * Hook para obtener estaciones de trabajo
- */
 export function useWorkStations() {
   return useQuery({
     queryKey: ['work-stations'],
     queryFn: async (): Promise<WorkStation[]> => {
-      const { data, error } = await supabase
-        .from('work_stations')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as WorkStation[];
+      return (await fetchAllWorkStations()) as WorkStation[];
     },
-    staleTime: 1000 * 60 * 30, // 30 minutos - datos estáticos
+    staleTime: 1000 * 60 * 30,
   });
 }
 
-/**
- * Hook para obtener competencias de una estación específica
- */
 export function useStationCompetencies(stationId: string | null) {
   return useQuery({
     queryKey: ['station-competencies', stationId],
     queryFn: async (): Promise<StationCompetency[]> => {
       if (!stationId) return [];
-
-      const { data, error } = await supabase
-        .from('station_competencies')
-        .select('*')
-        .eq('station_id', stationId)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as StationCompetency[];
+      return (await fetchStationCompetenciesService(stationId)) as StationCompetency[];
     },
     enabled: !!stationId,
     staleTime: 1000 * 60 * 30,
   });
 }
 
-/**
- * Hook para obtener todas las competencias de todas las estaciones
- */
 export function useAllStationCompetencies() {
   return useQuery({
     queryKey: ['all-station-competencies'],
     queryFn: async (): Promise<StationCompetency[]> => {
-      const { data, error } = await supabase
-        .from('station_competencies')
-        .select('*')
-        .eq('is_active', true)
-        .order('station_id')
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as StationCompetency[];
+      return (await fetchAllStationCompetenciesService()) as StationCompetency[];
     },
     staleTime: 1000 * 60 * 30,
   });
 }
 
-/**
- * Hook para obtener competencias generales
- */
 export function useGeneralCompetencies() {
   return useQuery({
     queryKey: ['general-competencies'],
     queryFn: async (): Promise<GeneralCompetency[]> => {
-      const { data, error } = await supabase
-        .from('general_competencies')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as GeneralCompetency[];
+      return (await fetchAllGeneralCompetencies()) as GeneralCompetency[];
     },
     staleTime: 1000 * 60 * 30,
   });
 }
 
-/**
- * Hook para obtener competencias de encargado
- */
 export function useManagerCompetencies() {
   return useQuery({
     queryKey: ['manager-competencies'],
     queryFn: async (): Promise<ManagerCompetency[]> => {
-      const { data, error } = await supabase
-        .from('manager_competencies')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as ManagerCompetency[];
+      return (await fetchManagerCompetenciesService()) as ManagerCompetency[];
     },
     staleTime: 1000 * 60 * 30,
   });

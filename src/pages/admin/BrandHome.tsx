@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAllBranches, fetchBrandMonthlyStats } from '@/services/adminService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Store, Clock, DollarSign, Utensils, BarChart3, MapPin, ArrowRight } from 'lucide-react';
@@ -8,6 +8,7 @@ import { BrandDailySalesTable } from '@/components/admin/BrandDailySalesTable';
 import { PageHelp } from '@/components/ui/PageHelp';
 import { PageHeader } from '@/components/ui/page-header';
 import type { Tables } from '@/integrations/supabase/types';
+import { formatCurrency } from '@/lib/formatters';
 
 type Branch = Tables<'branches'>;
 
@@ -38,28 +39,14 @@ export default function BrandHome() {
         .toISOString()
         .split('T')[0];
 
-      const [branchesRes, closuresRes, clockRes] = await Promise.all([
-        supabase.from('branches').select('*').order('name'),
-        // Get shift closures for the month (actual sales data)
-        supabase
-          .from('shift_closures')
-          .select('branch_id, total_facturado, total_hamburguesas')
-          .gte('fecha', firstDayOfMonth)
-          .lte('fecha', lastDayOfMonth),
-        // Get clock entries for calculating hours
-        supabase
-          .from('clock_entries')
-          .select('user_id, branch_id, entry_type, created_at')
-          .gte('created_at', `${firstDayOfMonth}T00:00:00`)
-          .lte('created_at', `${lastDayOfMonth}T23:59:59`)
-          .order('created_at', { ascending: true }),
+      const [branchesData, monthlyStats] = await Promise.all([
+        fetchAllBranches(),
+        fetchBrandMonthlyStats(firstDayOfMonth, lastDayOfMonth),
       ]);
 
-      const branchesData = branchesRes.data || [];
-      setBranches(branchesData);
+      setBranches(branchesData as Branch[]);
 
-      // Calculate totals from shift_closures
-      const closures = closuresRes.data || [];
+      const closures = monthlyStats.closures;
       let globalRevenue = 0;
       let globalHamburguesas = 0;
 
@@ -68,8 +55,7 @@ export default function BrandHome() {
         globalHamburguesas += Number(closure.total_hamburguesas || 0);
       });
 
-      // Calculate hours from clock_entries
-      const clockEntries = clockRes.data || [];
+      const clockEntries = monthlyStats.clockEntries;
       const userSessions = new Map<string, Date | null>();
       let globalTotalMinutes = 0;
 
@@ -107,12 +93,7 @@ export default function BrandHome() {
     fetchData();
   }, []);
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   return (
     <div className="space-y-6">

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { approvePagoProveedor, rejectPagoProveedor } from '@/services/financialService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle } from 'lucide-react';
@@ -23,26 +23,9 @@ export function VerificarPagoModal({ open, onOpenChange, pago }: VerificarPagoMo
   const verificar = useMutation({
     mutationFn: async (aprobado: boolean) => {
       if (aprobado) {
-        const { error } = await supabase
-          .from('pagos_proveedores')
-          .update({
-            verificado: true,
-            verificado_por: user?.id,
-            verificado_at: new Date().toISOString(),
-            verificado_notas: notas || null,
-          })
-          .eq('id', pago.id);
-        if (error) throw error;
+        await approvePagoProveedor(pago.id, user?.id ?? '', notas || null);
       } else {
-        // Reject = soft delete the payment
-        const { error } = await supabase
-          .from('pagos_proveedores')
-          .update({
-            deleted_at: new Date().toISOString(),
-            verificado_notas: `RECHAZADO: ${notas}`,
-          })
-          .eq('id', pago.id);
-        if (error) throw error;
+        await rejectPagoProveedor(pago.id, notas);
       }
     },
     onSuccess: () => {

@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchClockInfoMaybe } from '@/services/hrService';
 import { Clock, AlertCircle, QrCode } from 'lucide-react';
 import { SpinnerLoader } from '@/components/ui/loaders';
 import { useState, useEffect } from 'react';
@@ -35,16 +35,7 @@ export default function FichajeQRDisplay() {
     error,
   } = useQuery({
     queryKey: ['branch-for-qr', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name, clock_code')
-        .eq('id', branchId)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchBranchClockInfoMaybe(branchId!),
     enabled: !!branchId,
   });
 

@@ -3,7 +3,7 @@ import { MapPin, Pause, RefreshCw } from 'lucide-react';
 import { SpinnerLoader } from '@/components/ui/loaders';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchesForPedir } from '@/services/publicBranchService';
 import { WebappHeader } from '@/components/webapp/WebappHeader';
 import { StaticBranchMap } from '@/components/webapp/StaticBranchMap';
 import { SEO } from '@/components/SEO';
@@ -31,7 +31,7 @@ interface BranchWithWebapp {
   tiempo_delivery: number | null;
 }
 
-/** Monday-based index: 0=Mon..6=Sun — canonical for public_hours keys */
+/** Monday-based index: 0=Mon..6=Sun â€” canonical for public_hours keys */
 function getMondayBasedDayIdx(): number {
   const jsDay = new Date().getDay();
   return jsDay === 0 ? 6 : jsDay - 1;
@@ -82,32 +82,9 @@ function useBranchesForPedir() {
     queryKey: ['branches-pedir'],
     retry: 2,
     queryFn: async () => {
-      const { data: branches, error: bErr } = await supabase
-        .from('branches_public')
-        .select(
-          'id, name, address, city, slug, public_status, cover_image_url, latitude, longitude, opening_time, closing_time, public_hours',
-        )
-        .in('public_status', ['active', 'coming_soon'])
-        .order('name');
-      if (bErr) throw bErr;
+      const { branches, configMap } = await fetchBranchesForPedir();
 
-      const branchIds = (branches || []).map((b: any) => b.id);
-      let configMap: Record<string, any> = {};
-      if (branchIds.length > 0) {
-        const { data: configs } = await supabase
-          .from('webapp_config' as any)
-          .select(
-            'branch_id, webapp_activa, estado, delivery_habilitado, retiro_habilitado, delivery_costo, tiempo_estimado_retiro_min, tiempo_estimado_delivery_min',
-          )
-          .in('branch_id', branchIds);
-        if (configs) {
-          (configs as any[]).forEach((c) => {
-            configMap[c.branch_id] = c;
-          });
-        }
-      }
-
-      return (branches || [])
+      return branches
         .filter((b: any) => b.public_status === 'active')
         .map((b: any): BranchWithWebapp => {
           const cfg = configMap[b.id];
@@ -133,7 +110,7 @@ function useBranchesForPedir() {
           const bOpen = b.webapp_activa ? b.estado === 'abierto' : isBranchOpenBySchedule(b);
           if (aOpen && !bOpen) return -1;
           if (!aOpen && bOpen) return 1;
-          return a.name.localeCompare(b.name);
+          return (a.name ?? '').localeCompare(b.name ?? '');
         });
     },
   });
@@ -166,6 +143,11 @@ export default function Pedir() {
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                 Hubo un problema de conexión. Intentá de nuevo.
               </p>
+              {error instanceof Error && error.message && (
+                <p className="text-xs text-muted-foreground max-w-md mx-auto font-mono break-all">
+                  {error.message}
+                </p>
+              )}
               <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5" />
                 Reintentar

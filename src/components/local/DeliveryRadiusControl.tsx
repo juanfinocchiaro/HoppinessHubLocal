@@ -11,7 +11,7 @@ import {
   useUpdateBranchDeliveryConfig,
 } from '@/hooks/useDeliveryConfig';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveDeliveryStats } from '@/services/deliveryService';
 
 interface DeliveryRadiusControlProps {
   branchId: string;
@@ -24,33 +24,9 @@ export function DeliveryRadiusControl({ branchId }: DeliveryRadiusControlProps) 
 
   const [sliderValue, setSliderValue] = useState<number | null>(null);
 
-  // Active delivery orders count + avg time
   const { data: stats } = useQuery({
     queryKey: ['delivery-stats', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('id, created_at, tiempo_en_camino')
-        .eq('branch_id', branchId)
-        .eq('tipo_servicio', 'delivery')
-        .in('estado', ['confirmado', 'en_preparacion', 'listo', 'en_camino'])
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-      if (error) return { activeCount: 0, avgMinutes: null };
-
-      const activeCount = data?.length ?? 0;
-      const deliveredWithTime = (data ?? []).filter((p) => p.tiempo_en_camino);
-      let avgMinutes: number | null = null;
-      if (deliveredWithTime.length > 0) {
-        const totalMin = deliveredWithTime.reduce((sum, p) => {
-          const created = new Date(p.created_at!).getTime();
-          const delivered = new Date(p.tiempo_en_camino!).getTime();
-          return sum + (delivered - created) / 60000;
-        }, 0);
-        avgMinutes = Math.round(totalMin / deliveredWithTime.length);
-      }
-      return { activeCount, avgMinutes };
-    },
+    queryFn: () => fetchActiveDeliveryStats(branchId),
     refetchInterval: 30_000,
     enabled: !!branchId,
   });

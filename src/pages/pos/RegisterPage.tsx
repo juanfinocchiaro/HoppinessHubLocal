@@ -44,7 +44,7 @@ import { CashierDiscrepancyStats } from '@/components/pos/CashierDiscrepancyStat
 import { CajaAlivioCard } from '@/components/pos/CajaAlivioCard';
 import { CajaFuerteCard } from '@/components/pos/CajaFuerteCard';
 import { CashTransferModal } from '@/components/pos/CashTransferModal';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchName } from '@/services/posService';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -76,10 +76,7 @@ export default function RegisterPage() {
 
   const { data: branchData } = useQuery({
     queryKey: ['branch-basic', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId!).single();
-      return data;
-    },
+    queryFn: () => fetchBranchName(branchId!),
     enabled: !!branchId,
   });
 
@@ -235,7 +232,7 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <PageHeader title="Cajas" subtitle="Gestión de efectivo por turno" />
 
-      {/* ── Modals ── */}
+      {/* â”€â”€ Modals â”€â”€ */}
       <RegisterOpenModal
         open={showOpenModal}
         onOpenChange={setShowOpenModal}
@@ -372,7 +369,7 @@ export default function RegisterPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Retiro Alivio → Fuerte */}
+      {/* Retiro Alivio â†’ Fuerte */}
       <CashTransferModal
         open={showRetiroAlivioModal}
         onOpenChange={setShowRetiroAlivioModal}
@@ -398,14 +395,14 @@ export default function RegisterPage() {
         conceptPrefix="Retiro de Caja Fuerte"
       />
 
-      {/* ═══ SECCIÓN 1: CAJA DE VENTAS ═══ */}
+      {/* â•â•â• SECCIÃ“N 1: CAJA DE VENTAS â•â•â• */}
       {shiftStatus.hasCashOpen && activeShift ? (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="default">Caja de Ventas — Abierta</Badge>
+                  <Badge variant="default">Caja de Ventas â€” Abierta</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Abierta el {new Date(activeShift.opened_at).toLocaleString('es-AR')}
@@ -445,12 +442,12 @@ export default function RegisterPage() {
             </div>
             {movements.length > 0 && (
               <div className="mt-4 pt-4 border-t">
-                <p className="text-sm font-medium mb-2">Últimos movimientos</p>
+                <p className="text-sm font-medium mb-2">Ãšltimos movimientos</p>
                 <ul className="text-sm space-y-1 text-muted-foreground">
                   {movements.slice(0, 5).map((m) => (
                     <li key={m.id}>
                       {m.type === 'income' || m.type === 'deposit' ? '+' : '-'} ${' '}
-                      {Number(m.amount).toLocaleString('es-AR')} — {m.concept}
+                      {Number(m.amount).toLocaleString('es-AR')} â€” {m.concept}
                     </li>
                   ))}
                 </ul>
@@ -488,7 +485,7 @@ export default function RegisterPage() {
         />
       )}
 
-      {/* ═══ SECCIÓN 2: CAJA DE ALIVIO ═══ */}
+      {/* â•â•â• SECCIÃ“N 2: CAJA DE ALIVIO â•â•â• */}
       {showAlivioSection && alivio && (
         <CajaAlivioCard
           register={alivio}
@@ -511,7 +508,7 @@ export default function RegisterPage() {
         />
       )}
 
-      {/* ═══ SECCIÓN 3: CAJA FUERTE ═══ */}
+      {/* â•â•â• SECCIÃ“N 3: CAJA FUERTE â•â•â• */}
       {showFuerteSection && fuerte && (
         <CajaFuerteCard
           register={fuerte}

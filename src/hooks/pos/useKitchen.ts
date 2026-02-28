@@ -3,7 +3,11 @@
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchKitchenOrders,
+  subscribeToPedidosChanges,
+  removeSupabaseChannel,
+} from '@/services/posService';
 
 export interface KitchenModificador {
   id: string;
@@ -46,16 +50,8 @@ export function useKitchen(branchId: string) {
   const query = useQuery({
     queryKey: ['pos-kitchen', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(
-          'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, pedido_items(id, nombre, cantidad, notas, estacion, estado, pedido_item_modificadores(id, descripcion, tipo, precio_extra))',
-        )
-        .eq('branch_id', branchId)
-        .in('estado', ['pendiente', 'confirmado', 'en_preparacion', 'listo'])
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as unknown as KitchenPedido[];
+      const data = await fetchKitchenOrders(branchId);
+      return data as unknown as KitchenPedido[];
     },
     enabled: !!branchId,
     refetchInterval: 30000, // fallback polling every 30s
@@ -81,19 +77,12 @@ export function useKitchen(branchId: string) {
   // Realtime subscription
   useEffect(() => {
     if (!branchId) return;
-    const channel = supabase
-      .channel(`kitchen-${branchId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'pedidos', filter: `branch_id=eq.${branchId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ['pos-kitchen', branchId] });
-        },
-      )
-      .subscribe();
+    const channel = subscribeToPedidosChanges(branchId, () => {
+      qc.invalidateQueries({ queryKey: ['pos-kitchen', branchId] });
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      removeSupabaseChannel(channel);
     };
   }, [branchId, qc]);
 

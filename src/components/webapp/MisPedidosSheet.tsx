@@ -4,7 +4,7 @@
  */
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrders, fetchBranchNamesAndSlugs } from '@/services/webappOrderService';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,38 +44,14 @@ export function MisPedidosSheet({ open, onOpenChange, onShowTracking, currentBra
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['my-orders-sheet', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(
-          `
-          id, numero_pedido, estado, tipo_servicio,
-          total, created_at, webapp_tracking_code,
-          branch_id,
-          pedido_items(nombre, cantidad, precio_unitario, subtotal)
-        `,
-        )
-        .eq('cliente_user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchUserOrders(user!.id, 30),
     enabled: !!user && open,
   });
 
   const branchIds = [...new Set((orders || []).map((o) => o.branch_id).filter(Boolean))];
   const { data: branches } = useQuery({
     queryKey: ['branches-names-slugs-sheet', branchIds],
-    queryFn: async () => {
-      if (branchIds.length === 0) return {};
-      const { data } = await supabase.from('branches').select('id, name, slug').in('id', branchIds);
-      const map: Record<string, { name: string; slug: string | null }> = {};
-      data?.forEach((b) => {
-        map[b.id] = { name: b.name, slug: b.slug };
-      });
-      return map;
-    },
+    queryFn: () => fetchBranchNamesAndSlugs(branchIds),
     enabled: branchIds.length > 0,
   });
 

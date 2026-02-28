@@ -1,5 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
 import { printRawBase64 } from '@/lib/qz-print';
+import {
+  fetchPedidoForTicket,
+  fetchPedidoForDeliveryTicket,
+  logCompletedPrintJob,
+} from '@/services/printingService';
 import {
   generateTicketCliente,
   generateTicketDelivery,
@@ -116,19 +120,7 @@ export async function printReadyTicketByPedidoId(params: {
     throw new Error('No hay impresora de ticket activa/configurada para on_ready');
   }
 
-  const { data, error } = await supabase
-    .from('pedidos')
-    .select(
-      `
-      id, numero_pedido, tipo_servicio, canal_venta, canal_app, numero_llamador, cliente_nombre, cliente_telefono, cliente_direccion, created_at, total, descuento,
-      pedido_items(nombre, cantidad, notas, precio_unitario, subtotal, categoria_carta_id),
-      pedido_pagos(metodo, monto, monto_recibido, vuelto, tarjeta_marca),
-      facturas_emitidas(anulada, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, fecha_emision, neto, iva, total, receptor_cuit, receptor_razon_social, receptor_condicion_iva)
-    `,
-    )
-    .eq('id', pedidoId)
-    .single();
-  if (error) throw error;
+  const data = await fetchPedidoForTicket(pedidoId);
   const pedido = data as unknown as PedidoRow;
 
   const activeInvoice = (pedido.facturas_emitidas || []).find((f) => !f.anulada);
@@ -207,7 +199,7 @@ export async function printReadyTicketByPedidoId(params: {
 
   try {
     await printRawBase64(printer.ip_address, printer.port, base64);
-    const { error: logErr } = await supabase.from('print_jobs').insert({
+    await logCompletedPrintJob({
       branch_id: branchId,
       printer_id: printer.id,
       pedido_id: pedidoId,
@@ -215,11 +207,10 @@ export async function printReadyTicketByPedidoId(params: {
       payload: { data_base64: base64 },
       status: 'completed',
     });
-    if (logErr) console.error('Failed to log print job:', logErr.message);
   } catch (err) {
     console.error('[ready-ticket] printReadyTicketByPedidoId error:', err);
     const msg = extractErrorMessage(err);
-    const { error: logErr } = await supabase.from('print_jobs').insert({
+    await logCompletedPrintJob({
       branch_id: branchId,
       printer_id: printer.id,
       pedido_id: pedidoId,
@@ -228,7 +219,6 @@ export async function printReadyTicketByPedidoId(params: {
       status: 'error',
       error_message: msg,
     });
-    if (logErr) console.error('Failed to log print job error:', logErr.message);
     throw new Error(msg);
   }
 }
@@ -252,19 +242,7 @@ export async function printDeliveryTicketByPedidoId(params: {
   const printer = printers.find((p) => p.id === printerId && p.is_active);
   if (!printer?.ip_address) return;
 
-  const { data, error } = await supabase
-    .from('pedidos')
-    .select(
-      `
-      id, numero_pedido, tipo_servicio, canal_venta, canal_app, numero_llamador,
-      cliente_nombre, cliente_telefono, cliente_direccion,
-      created_at, total, descuento,
-      pedido_items(nombre, cantidad, notas, precio_unitario, subtotal, categoria_carta_id)
-    `,
-    )
-    .eq('id', pedidoId)
-    .single();
-  if (error) throw error;
+  const data = await fetchPedidoForDeliveryTicket(pedidoId);
   const pedido = data as unknown as PedidoRow;
 
   const deliveryData: DeliveryTicketData = {
@@ -301,7 +279,7 @@ export async function printDeliveryTicketByPedidoId(params: {
 
   try {
     await printRawBase64(printer.ip_address, printer.port, base64);
-    const { error: logErr } = await supabase.from('print_jobs').insert({
+    await logCompletedPrintJob({
       branch_id: branchId,
       printer_id: printer.id,
       pedido_id: pedidoId,
@@ -309,11 +287,10 @@ export async function printDeliveryTicketByPedidoId(params: {
       payload: { data_base64: base64 },
       status: 'completed',
     });
-    if (logErr) console.error('Failed to log print job:', logErr.message);
   } catch (err) {
     console.error('[ready-ticket] printDeliveryTicketByPedidoId error:', err);
     const msg = extractErrorMessage(err);
-    const { error: logErr } = await supabase.from('print_jobs').insert({
+    await logCompletedPrintJob({
       branch_id: branchId,
       printer_id: printer.id,
       pedido_id: pedidoId,
@@ -322,7 +299,6 @@ export async function printDeliveryTicketByPedidoId(params: {
       status: 'error',
       error_message: msg,
     });
-    if (logErr) console.error('Failed to log print job error:', logErr.message);
     throw new Error(msg);
   }
 }

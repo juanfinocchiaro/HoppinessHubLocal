@@ -3,7 +3,15 @@
  * Mejora #2: Vista Comparativa en Mi Local
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchCoachingsLast6Months,
+  fetchProfilesByIds,
+  fetchStationScoresByBranch,
+  fetchActiveWorkStations,
+  fetchCompetencyScoresByBranch,
+  fetchActiveGeneralCompetencies,
+  fetchEmployeeCoachingComparison,
+} from '@/services/coachingService';
 
 interface EmployeeScore {
   userId: string;
@@ -61,19 +69,7 @@ export function useTeamCoachingAnalysis(branchId: string | null) {
         };
       }
 
-      // 1. Get all coachings for this branch (last 6 months)
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-      const { data: coachings, error: coachingsError } = await supabase
-        .from('coachings')
-        .select('user_id, overall_score, coaching_month, coaching_year')
-        .eq('branch_id', branchId)
-        .gte('coaching_date', sixMonthsAgo.toISOString().split('T')[0])
-        .order('coaching_year', { ascending: false })
-        .order('coaching_month', { ascending: false });
-
-      if (coachingsError) throw coachingsError;
+      const coachings = await fetchBranchCoachingsLast6Months(branchId);
       if (!coachings?.length) {
         return {
           ranking: [],
@@ -84,16 +80,9 @@ export function useTeamCoachingAnalysis(branchId: string | null) {
         };
       }
 
-      // Get unique user IDs
       const userIds = [...new Set(coachings.map((c) => c.user_id))];
 
-      // Get profiles
-      const { data: profiles, error: profilesErr } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesErr) throw profilesErr;
+      const profiles = await fetchProfilesByIds(userIds);
       const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
       // 2. Calculate ranking by average score
@@ -145,27 +134,9 @@ export function useTeamCoachingAnalysis(branchId: string | null) {
           ? Number((allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(2))
           : null;
 
-      // 4. Get station scores for champions
-      const { data: stationScores, error: stationScoresErr } = await supabase
-        .from('coaching_station_scores')
-        .select(
-          `
-          station_id,
-          score,
-          coaching:coachings!inner(user_id, branch_id)
-        `,
-        )
-        .eq('coaching.branch_id', branchId);
+      const stationScores = await fetchStationScoresByBranch(branchId);
 
-      if (stationScoresErr) throw stationScoresErr;
-
-      // Get stations
-      const { data: stations, error: stationsErr } = await supabase
-        .from('work_stations')
-        .select('id, name, key')
-        .eq('is_active', true);
-
-      if (stationsErr) throw stationsErr;
+      const stations = await fetchActiveWorkStations();
       const stationMap = new Map(stations?.map((s) => [s.id, s]) || []);
 
       // Calculate champions per station
@@ -230,28 +201,9 @@ export function useTeamCoachingAnalysis(branchId: string | null) {
         }
       });
 
-      // 6. Get competency analysis (general competencies)
-      const { data: competencyScores, error: compScoresErr } = await supabase
-        .from('coaching_competency_scores')
-        .select(
-          `
-          competency_id,
-          score,
-          competency_type,
-          coaching:coachings!inner(user_id, branch_id)
-        `,
-        )
-        .eq('coaching.branch_id', branchId)
-        .eq('competency_type', 'general');
+      const competencyScores = await fetchCompetencyScoresByBranch(branchId);
 
-      if (compScoresErr) throw compScoresErr;
-
-      const { data: competencies, error: compErr } = await supabase
-        .from('general_competencies')
-        .select('id, name, key')
-        .eq('is_active', true);
-
-      if (compErr) throw compErr;
+      const competencies = await fetchActiveGeneralCompetencies();
       const compMap = new Map(competencies?.map((c) => [c.id, c]) || []);
 
       const competencyUserScores = new Map<
@@ -320,23 +272,7 @@ export function useEmployeeVsTeam(userId: string | null, branchId: string | null
     queryFn: async () => {
       if (!userId || !branchId) return null;
 
-      // Get employee's scores
-      const { data: myScores } = await supabase
-        .from('coachings')
-        .select('overall_score, coaching_month, coaching_year')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .not('overall_score', 'is', null)
-        .order('coaching_year', { ascending: true })
-        .order('coaching_month', { ascending: true })
-        .limit(6);
-
-      // Get team average per month
-      const { data: allScores } = await supabase
-        .from('coachings')
-        .select('overall_score, coaching_month, coaching_year, user_id')
-        .eq('branch_id', branchId)
-        .not('overall_score', 'is', null);
+      const { myScores, allScores } = await fetchEmployeeCoachingComparison(userId, branchId);
 
       // Group team scores by month
       const teamByMonth = new Map<string, number[]>();

@@ -1,5 +1,5 @@
 /**
- * ShiftSalesAnalysis — Análisis automático de ventas por turno configurado
+ * ShiftSalesAnalysis â€” Análisis automático de ventas por turno configurado
  *
  * Muestra ventas agrupadas por las franjas horarias (turnos) configurados
  * en la sección Configuración > Turnos del local.
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchShifts, fetchShiftAnalysisOrders } from '@/services/posService';
 
 const fmtCurrency = (v: number) =>
   new Intl.NumberFormat('es-AR', {
@@ -64,14 +64,8 @@ export function ShiftSalesAnalysis({
   const { data: shifts, isLoading: loadingShifts } = useQuery({
     queryKey: ['branch-shifts', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branch_shifts')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return (data || []) as BranchShift[];
+      const data = await fetchBranchShifts(branchId);
+      return data as BranchShift[];
     },
     enabled: !!branchId,
   });
@@ -80,14 +74,7 @@ export function ShiftSalesAnalysis({
     queryKey: ['shift-analysis-orders', branchId, daysBack],
     queryFn: async () => {
       const since = new Date(Date.now() - daysBack * 86400000).toISOString();
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('id, total, created_at, estado')
-        .eq('branch_id', branchId)
-        .gte('created_at', since)
-        .neq('estado', 'cancelado');
-      if (error) throw error;
-      return data || [];
+      return fetchShiftAnalysisOrders(branchId, since);
     },
     enabled: !!branchId,
   });
@@ -125,7 +112,7 @@ export function ShiftSalesAnalysis({
           <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>No hay turnos configurados.</p>
           <p className="text-xs mt-1">
-            Configurá turnos en Configuración → Turnos para ver el análisis automático.
+            Configurá turnos en Configuración â†’ Turnos para ver el análisis automático.
           </p>
         </CardContent>
       </Card>
@@ -140,7 +127,7 @@ export function ShiftSalesAnalysis({
           Análisis por Turno
         </CardTitle>
         <CardDescription>
-          Ventas automáticas por franja horaria — últimos {daysBack} días
+          Ventas automáticas por franja horaria â€” últimos {daysBack} días
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -168,7 +155,7 @@ export function ShiftSalesAnalysis({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="font-mono text-xs">
-                  {m.shift.start_time}–{m.shift.end_time}
+                  {m.shift.start_time}â€“{m.shift.end_time}
                 </Badge>
                 <span className="text-sm font-medium">{m.shift.name}</span>
               </div>

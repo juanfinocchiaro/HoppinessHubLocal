@@ -22,7 +22,7 @@ import {
   Plus,
   Building2,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranches } from '@/services/adminService';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,14 +53,7 @@ function BrandMeetingsPageContent() {
   // Fetch branches for filter
   const { data: branches } = useQuery({
     queryKey: ['branches-for-filter'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('name');
-      return data || [];
-    },
+    queryFn: fetchActiveBranches,
   });
 
   const { data: meetings, isLoading: loadingMeetings } = useBrandMeetings();
@@ -339,9 +332,9 @@ function BrandMeetingsPageContent() {
                                 <span>{branch?.name || 'Sin sucursal'}</span>
                               </>
                             )}
-                            <span>•</span>
+                            <span>â€¢</span>
                             <span className="capitalize">{meeting.area}</span>
-                            <span>•</span>
+                            <span>â€¢</span>
                             <span>
                               {format(parseISO(meeting.scheduled_at || meeting.date), 'HH:mm')}
                             </span>
@@ -358,7 +351,7 @@ function BrandMeetingsPageContent() {
                                 <span className="text-muted-foreground">
                                   {presentCount}/{participants.length} presentes
                                 </span>
-                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground">â€¢</span>
                                 <span className="text-muted-foreground">
                                   {readCount}/{participants.length} confirmaron lectura
                                 </span>

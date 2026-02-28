@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import {
+  fetchConceptosServicio,
+  createConceptoServicio,
+  updateConceptoServicio,
+  softDeleteConceptoServicio,
+} from '@/services/financialService';
 
 export interface ConceptoServicioFormData {
   nombre: string;
@@ -22,16 +27,7 @@ export function useConceptosServicio() {
 
   return useQuery({
     queryKey: ['conceptos-servicio'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conceptos_servicio')
-        .select('*')
-        .is('deleted_at', null)
-        .order('tipo')
-        .order('nombre');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchConceptosServicio(),
     enabled: !!user,
   });
 }
@@ -41,13 +37,7 @@ export function useConceptoServicioMutations() {
 
   const create = useMutation({
     mutationFn: async (data: ConceptoServicioFormData) => {
-      const { data: result, error } = await supabase
-        .from('conceptos_servicio')
-        .insert(data as any)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return createConceptoServicio(data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conceptos-servicio'] });
@@ -58,11 +48,7 @@ export function useConceptoServicioMutations() {
 
   const update = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ConceptoServicioFormData> }) => {
-      const { error } = await supabase
-        .from('conceptos_servicio')
-        .update(data as any)
-        .eq('id', id);
-      if (error) throw error;
+      await updateConceptoServicio(id, data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conceptos-servicio'] });
@@ -73,11 +59,7 @@ export function useConceptoServicioMutations() {
 
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('conceptos_servicio')
-        .update({ deleted_at: new Date().toISOString(), activo: false } as any)
-        .eq('id', id);
-      if (error) throw error;
+      await softDeleteConceptoServicio(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conceptos-servicio'] });

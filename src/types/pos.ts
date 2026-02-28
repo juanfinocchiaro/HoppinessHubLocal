@@ -93,6 +93,48 @@ export type MetodoPago =
   | 'mercadopago_qr'
   | 'transferencia';
 
+export interface CartItemExtra {
+  id: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+}
+
+export interface CartItemRemovible {
+  id: string;
+  nombre: string;
+}
+
+export interface CartItemOpcional {
+  grupoId: string;
+  grupoNombre: string;
+  itemId: string;
+  nombre: string;
+}
+
+export interface CartItem {
+  item_carta_id: string;
+  nombre: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+  notas?: string;
+  extras?: CartItemExtra[];
+  removibles?: CartItemRemovible[];
+  opcionales?: CartItemOpcional[];
+  precio_referencia?: number;
+  categoria_carta_id?: string | null;
+  createdAt?: number;
+  /** Promo aplicada (si corresponde) */
+  promo_id?: string;
+  /** Restricción de pago de la promo aplicada */
+  promo_restriccion_pago?: 'cualquiera' | 'solo_efectivo' | 'solo_digital';
+  /** Descuento unitario automático por promoción */
+  promo_descuento?: number;
+  /** Nombre de la promoción aplicada */
+  promo_nombre?: string;
+}
+
 /** Pago registrado localmente antes de enviar a cocina */
 export interface LocalPayment {
   id: string;

@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import {
+  fetchInversiones,
+  createInversion,
+  updateInversion,
+  softDeleteInversion,
+} from '@/services/financialService';
 
 export interface InversionFormData {
   branch_id: string;
@@ -39,20 +44,7 @@ export function useInversiones(branchId: string, periodo?: string) {
 
   return useQuery({
     queryKey: ['inversiones', branchId, periodo],
-    queryFn: async () => {
-      let q = supabase
-        .from('inversiones')
-        .select('*')
-        .eq('branch_id', branchId)
-        .is('deleted_at', null)
-        .order('fecha', { ascending: false });
-
-      if (periodo) q = q.eq('periodo', periodo);
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchInversiones(branchId, periodo),
     enabled: !!user && !!branchId,
   });
 }
@@ -63,13 +55,7 @@ export function useInversionMutations() {
 
   const create = useMutation({
     mutationFn: async (data: InversionFormData) => {
-      const { data: result, error } = await supabase
-        .from('inversiones')
-        .insert({ ...data, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return createInversion(data, user?.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inversiones'] });
@@ -80,8 +66,7 @@ export function useInversionMutations() {
 
   const update = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InversionFormData> }) => {
-      const { error } = await supabase.from('inversiones').update(data).eq('id', id);
-      if (error) throw error;
+      await updateInversion(id, data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inversiones'] });
@@ -92,11 +77,7 @@ export function useInversionMutations() {
 
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('inversiones')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      await softDeleteInversion(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inversiones'] });

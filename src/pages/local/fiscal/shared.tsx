@@ -1,17 +1,4 @@
-import type { Tables } from '@/integrations/supabase/types';
-import type { FiscalReportBranchData } from '@/lib/escpos';
-
-export type FiscalBranchData = FiscalReportBranchData & {
-  razon_social: string;
-  iibb: string;
-  condicion_iva: string;
-  inicio_actividades: string;
-  direccion_fiscal: string;
-};
-
-export type FacturaEmitidaWithPedido = Tables<'facturas_emitidas'> & {
-  pedidos: Pick<Tables<'pedidos'>, 'numero_pedido' | 'total' | 'cliente_nombre'>;
-};
+export type { FiscalBranchData, FacturaEmitidaWithPedido } from '@/types/fiscal';
 
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Error desconocido');
 

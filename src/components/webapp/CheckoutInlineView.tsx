@@ -19,22 +19,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { useWebappCart } from '@/hooks/useWebappCart';
 import type { DeliveryCalcResult } from '@/types/webapp';
-import { AddressAutocomplete, type AddressResult } from './AddressAutocomplete';
+import { AddressAutocomplete } from './AddressAutocomplete';
+import type { AddressResult } from '@/types/webapp';
 import { DeliveryCostDisplay, DeliveryCostLoading } from './DeliveryCostDisplay';
 import { DeliveryUnavailable } from './DeliveryUnavailable';
 import { PromoCodeInput } from './PromoCodeInput';
 import { useCalculateDelivery } from '@/hooks/useDeliveryConfig';
 import { useActivePromos, useActivePromoItems } from '@/hooks/usePromociones';
 import { normalizePhone } from '@/lib/normalizePhone';
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
-}
+import {
+  createMercadoPagoCheckout,
+  createWebappOrder,
+  fetchGoogleMapsApiKey,
+  fetchSavedAddresses,
+  fetchUserProfile,
+  fetchWebappConfigPayments,
+} from '@/services/checkoutService';
+import { useCheckoutPaymentRestrictions } from '@/hooks/useCheckoutFlow';
+import { formatPrice } from '@/lib/formatters';
 
 function FieldError({ error }: { error: string | null }) {
   if (!error) return null;
@@ -79,15 +85,7 @@ export function CheckoutInlineView({
 
   const { data: webappConfig } = useQuery({
     queryKey: ['webapp-config-payments', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webapp_config' as any)
-        .select('service_schedules')
-        .eq('branch_id', branchId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
+    queryFn: () => fetchWebappConfigPayments(branchId),
     enabled: !!branchId,
   });
 
@@ -96,7 +94,10 @@ export function CheckoutInlineView({
       serviceKey === 'delivery'
         ? { efectivo: false, mercadopago: true }
         : { efectivo: true, mercadopago: true };
-    const pm = (webappConfig?.service_schedules as any)?.[serviceKey]?.payment_methods;
+    const schedules = webappConfig?.service_schedules as
+      | Record<string, { payment_methods?: { efectivo?: boolean; mercadopago?: boolean } }>
+      | undefined;
+    const pm = schedules?.[serviceKey]?.payment_methods;
     return {
       efectivo: pm?.efectivo ?? defaults.efectivo,
       mercadopago: pm?.mercadopago ?? defaults.mercadopago,
@@ -106,86 +107,26 @@ export function CheckoutInlineView({
   const { data: activePromos = [] } = useActivePromos(branchId, 'webapp');
   const { data: activePromoItems = [] } = useActivePromoItems(branchId, 'webapp');
 
-  const promoPayment = useMemo(() => {
-    const promoItemByItemId = new Map(
-      activePromoItems.map((pi) => [pi.item_carta_id, pi] as const),
-    );
-    const promoById = new Map(activePromos.map((p) => [p.id, p] as const));
-
-    let hasCashOnly = false;
-    let hasDigitalOnly = false;
-    for (const ci of cart.items) {
-      const pi = promoItemByItemId.get(ci.itemId);
-      if (!pi) continue;
-      const promo = promoById.get(pi.promocion_id);
-      const r = promo?.restriccion_pago ?? pi.restriccion_pago ?? 'cualquiera';
-      if (r === 'solo_efectivo') hasCashOnly = true;
-      if (r === 'solo_digital') hasDigitalOnly = true;
-    }
-
-    const cashAllowed = !!servicePayments.efectivo;
-    const mpAllowed = !!servicePayments.mercadopago && mpEnabled;
-
-    // Apply promo requirements as an intersection over allowed methods
-    let allowCash = cashAllowed;
-    let allowMp = mpAllowed;
-    if (hasCashOnly) allowMp = false;
-    if (hasDigitalOnly) allowCash = false;
-
-    const conflict = (hasCashOnly && hasDigitalOnly) || (!allowCash && !allowMp);
-
-    const forced: MetodoPago | null = conflict
-      ? null
-      : allowCash !== allowMp
-        ? allowCash
-          ? 'efectivo'
-          : 'mercadopago'
-        : null;
-
-    const svcLabel = serviceKey === 'delivery' ? 'delivery' : 'retiro';
-    const reason = conflict
-      ? hasCashOnly && !cashAllowed
-        ? `Este local no acepta efectivo para ${svcLabel}.`
-        : hasDigitalOnly && !mpAllowed
-          ? `Este local no acepta MercadoPago para ${svcLabel}.`
-          : !cashAllowed && !mpAllowed
-            ? `Este local no tiene medios de pago habilitados para ${svcLabel}.`
-            : hasCashOnly && hasDigitalOnly
-              ? 'Tu carrito tiene promociones con restricciones incompatibles (solo efectivo y solo digital).'
-              : 'No hay un método de pago disponible para este carrito.'
-      : hasCashOnly
-        ? 'Esta promo requiere pago en efectivo.'
-        : hasDigitalOnly
-          ? 'Esta promo requiere pago digital (MercadoPago).'
-          : !cashAllowed
-            ? `Efectivo no está habilitado para ${svcLabel}.`
-            : null;
-
-    return { conflict, forced, cashAllowed, mpAllowed, hasCashOnly, hasDigitalOnly, reason };
-  }, [activePromoItems, activePromos, cart.items, servicePayments, mpEnabled, serviceKey]);
+  const promoPayment = useCheckoutPaymentRestrictions({
+    activePromoItems,
+    activePromos,
+    cartItems: cart.items,
+    servicePayments,
+    mpEnabled,
+    serviceKey,
+  });
 
   // Profile prefill
   const { data: userProfile } = useQuery({
     queryKey: ['webapp-profile-prefill', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name, phone, email')
-        .eq('id', user!.id)
-        .single();
-      return data;
-    },
+    queryFn: () => fetchUserProfile(user!.id),
     enabled: !!user,
   });
 
   // Dynamic delivery
   const { data: googleApiKey } = useQuery({
     queryKey: ['google-maps-api-key'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('google-maps-key');
-      if (error) return null;
-      return data?.apiKey as string | null;
-    },
+    queryFn: fetchGoogleMapsApiKey,
     staleTime: Infinity,
   });
   const calculateDelivery = useCalculateDelivery();
@@ -200,21 +141,7 @@ export function CheckoutInlineView({
   // Saved addresses
   const { data: savedAddresses = [] } = useQuery({
     queryKey: ['saved-addresses-checkout', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cliente_direcciones')
-        .select('id, etiqueta, direccion, piso, referencia')
-        .eq('user_id', user!.id)
-        .order('es_principal', { ascending: false });
-      if (error) throw error;
-      return (data || []) as Array<{
-        id: string;
-        etiqueta: string;
-        direccion: string;
-        piso: string | null;
-        referencia: string | null;
-      }>;
-    },
+    queryFn: () => fetchSavedAddresses(user!.id),
     enabled: !!user && isDelivery,
   });
 
@@ -433,32 +360,27 @@ export function CheckoutInlineView({
         notas: item.notas || null,
       }));
 
-      const { data: orderData, error: orderErr } = await supabase.functions.invoke(
-        'create-webapp-order',
-        {
-          body: {
-            branch_id: branchId,
-            tipo_servicio: cart.tipoServicio,
-            cliente_nombre: nombre.trim(),
-            cliente_telefono: normalizePhone(telefono) || telefono.trim(),
-            cliente_email: email.trim() || null,
-            cliente_direccion: isDelivery ? direccion.trim() : null,
-            cliente_piso: isDelivery ? piso.trim() || null : null,
-            cliente_referencia: isDelivery ? referencia.trim() || null : null,
-            cliente_notas: notas.trim() || null,
-            metodo_pago: metodoPago,
-            paga_con: metodoPago === 'efectivo' && pagaCon ? parseInt(pagaCon) : null,
-            delivery_zone_id: null,
-            delivery_lat: deliveryAddress?.lat ?? null,
-            delivery_lng: deliveryAddress?.lng ?? null,
-            delivery_cost_calculated: costoEnvio > 0 ? costoEnvio : null,
-            delivery_distance_km: deliveryCalc?.distance_km ?? null,
-            codigo_descuento_id: promoCode?.codigoId ?? null,
-            descuento_codigo: promoDescuento > 0 ? promoDescuento : null,
-            items: orderItems,
-          },
-        },
-      );
+      const { data: orderData, error: orderErr } = await createWebappOrder({
+        branch_id: branchId,
+        tipo_servicio: cart.tipoServicio,
+        cliente_nombre: nombre.trim(),
+        cliente_telefono: normalizePhone(telefono) || telefono.trim(),
+        cliente_email: email.trim() || null,
+        cliente_direccion: isDelivery ? direccion.trim() : null,
+        cliente_piso: isDelivery ? piso.trim() || null : null,
+        cliente_referencia: isDelivery ? referencia.trim() || null : null,
+        cliente_notas: notas.trim() || null,
+        metodo_pago: metodoPago,
+        paga_con: metodoPago === 'efectivo' && pagaCon ? parseInt(pagaCon) : null,
+        delivery_zone_id: null,
+        delivery_lat: deliveryAddress?.lat ?? null,
+        delivery_lng: deliveryAddress?.lng ?? null,
+        delivery_cost_calculated: costoEnvio > 0 ? costoEnvio : null,
+        delivery_distance_km: deliveryCalc?.distance_km ?? null,
+        codigo_descuento_id: promoCode?.codigoId ?? null,
+        descuento_codigo: promoDescuento > 0 ? promoDescuento : null,
+        items: orderItems,
+      });
 
       if (orderErr) {
         let errorMsg = 'Error al crear el pedido';
@@ -496,19 +418,17 @@ export function CheckoutInlineView({
           checkoutItems.push({ title: 'Envío', quantity: 1, unit_price: costoEnvio });
         }
         const trackingUrl = `${window.location.origin}/pedido/${tracking_code}`;
-        const { data: mpData, error: mpErr } = await supabase.functions.invoke('mp-checkout', {
-          body: {
-            branch_id: branchId,
-            items: checkoutItems,
-            external_reference: pedido_id,
-            payer: {
-              name: nombre.trim(),
-              email: email.trim() || undefined,
-              phone: telefono.trim(),
-            },
-            back_url: trackingUrl,
-            webapp_order: true,
+        const { data: mpData, error: mpErr } = await createMercadoPagoCheckout({
+          branch_id: branchId,
+          items: checkoutItems,
+          external_reference: pedido_id,
+          payer: {
+            name: nombre.trim(),
+            email: email.trim() || undefined,
+            phone: telefono.trim(),
           },
+          back_url: trackingUrl,
+          webapp_order: true,
         });
         if (mpErr) throw mpErr;
         if (mpData?.init_point) {

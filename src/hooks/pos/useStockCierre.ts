@@ -2,8 +2,21 @@
  * useStockCierre - Cierre mensual de stock: cálculo esperado y guardado
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchStockMovimientosPeriod,
+  fetchCierreAnterior,
+  fetchStockActualWithNames,
+  fetchInsumosById,
+  fetchPrevCierreForInsumo,
+  fetchStockMovimientosForInsumo,
+  upsertCierreMensual,
+  fetchStockActualRow,
+  upsertStockActual,
+  insertStockMovimiento,
+  fetchInsumoCostInfo,
+  insertConsumoManual,
+} from '@/services/posService';
 
 function periodToRange(periodo: string) {
   const [y, m] = periodo.split('-').map(Number);
@@ -33,28 +46,22 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
       const { start, end } = periodToRange(periodo);
       const [y, m] = periodo.split('-').map(Number);
 
-      const { data: movimientos } = await supabase
-        .from('stock_movimientos')
-        .select('insumo_id, tipo, cantidad, created_at')
-        .eq('branch_id', branchId)
-        .gte('created_at', start)
-        .lt('created_at', end);
+      const movimientos = await fetchStockMovimientosPeriod(branchId, start, end);
 
-      const { data: cierreAnterior } = await supabase
-        .from('stock_cierre_mensual')
-        .select('insumo_id, stock_cierre_fisico')
-        .eq('branch_id', branchId)
-        .eq('periodo', new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10));
+      const cierreAnterior = await fetchCierreAnterior(
+        branchId,
+        new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10),
+      );
 
       const prevMap = new Map(
-        (cierreAnterior ?? []).map((r) => [r.insumo_id, Number(r.stock_cierre_fisico)]),
+        cierreAnterior.map((r) => [r.insumo_id, Number(r.stock_cierre_fisico)]),
       );
-      const insumoIds = new Set<string>((movimientos ?? []).map((m) => m.insumo_id));
+      const insumoIds = new Set<string>(movimientos.map((m) => m.insumo_id));
       prevMap.forEach((_, id) => insumoIds.add(id));
 
       const comprasByInsumo = new Map<string, number>();
       const ventasByInsumo = new Map<string, number>();
-      for (const m of movimientos ?? []) {
+      for (const m of movimientos) {
         const id = m.insumo_id;
         const q = Number(m.cantidad ?? 0);
         if (m.tipo === 'compra') comprasByInsumo.set(id, (comprasByInsumo.get(id) ?? 0) + q);
@@ -62,11 +69,8 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
       }
 
       if (insumoIds.size === 0) {
-        const { data: stockActual } = await supabase
-          .from('stock_actual')
-          .select('insumo_id, cantidad, unidad, insumos(nombre)')
-          .eq('branch_id', branchId);
-        return (stockActual ?? []).map(
+        const stockActual = await fetchStockActualWithNames(branchId);
+        return stockActual.map(
           (r: {
             insumo_id: string;
             cantidad: number;
@@ -84,13 +88,10 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
         );
       }
 
-      const { data: insumos } = await supabase
-        .from('insumos')
-        .select('id, nombre, unidad_base')
-        .in('id', Array.from(insumoIds));
+      const insumos = await fetchInsumosById(Array.from(insumoIds));
 
       const insumoInfo = new Map(
-        (insumos ?? []).map((i: { id: string; nombre?: string; unidad_base?: string }) => [
+        insumos.map((i: { id: string; nombre?: string; unidad_base?: string }) => [
           i.id,
           { nombre: i.nombre ?? i.id, unidad: i.unidad_base ?? 'un' },
         ]),
@@ -129,63 +130,43 @@ export function useSaveCierreMensual(branchId: string) {
       const periodEnd = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
       const prevMonthDate = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
       for (const it of p.items) {
-        const { data: prevCierre } = await supabase
-          .from('stock_cierre_mensual')
-          .select('stock_cierre_fisico')
-          .eq('branch_id', branchId)
-          .eq('insumo_id', it.insumo_id)
-          .eq('periodo', prevMonthDate)
-          .maybeSingle();
+        const prevCierre = await fetchPrevCierreForInsumo(branchId, it.insumo_id, prevMonthDate);
         const stock_apertura = Number(prevCierre?.stock_cierre_fisico ?? 0);
-        const { data: movs } = await supabase
-          .from('stock_movimientos')
-          .select('tipo, cantidad')
-          .eq('branch_id', branchId)
-          .eq('insumo_id', it.insumo_id)
-          .gte('created_at', periodDate)
-          .lt('created_at', periodEnd);
+        const movs = await fetchStockMovimientosForInsumo(
+          branchId,
+          it.insumo_id,
+          periodDate,
+          periodEnd,
+        );
         let compras = 0;
         let consumo_ventas = 0;
-        for (const mov of movs ?? []) {
+        for (const mov of movs) {
           if (mov.tipo === 'compra') compras += Number(mov.cantidad);
           if (mov.tipo === 'venta') consumo_ventas += Number(mov.cantidad);
         }
         const stock_esperado = stock_apertura + compras - consumo_ventas;
         const merma = Math.max(0, stock_esperado - it.stock_cierre_fisico);
-        const { error: errCierre } = await supabase.from('stock_cierre_mensual').upsert(
-          {
-            branch_id: branchId,
-            insumo_id: it.insumo_id,
-            periodo: periodDate,
-            stock_apertura,
-            compras,
-            consumo_ventas,
-            stock_esperado,
-            stock_cierre_fisico: it.stock_cierre_fisico,
-            merma,
-          },
-          { onConflict: 'branch_id,insumo_id,periodo' },
-        );
-        if (errCierre) throw errCierre;
-        const { data: actualRow } = await supabase
-          .from('stock_actual')
-          .select('cantidad, unidad')
-          .eq('branch_id', branchId)
-          .eq('insumo_id', it.insumo_id)
-          .maybeSingle();
+        await upsertCierreMensual({
+          branch_id: branchId,
+          insumo_id: it.insumo_id,
+          periodo: periodDate,
+          stock_apertura,
+          compras,
+          consumo_ventas,
+          stock_esperado,
+          stock_cierre_fisico: it.stock_cierre_fisico,
+          merma,
+        });
+        const actualRow = await fetchStockActualRow(branchId, it.insumo_id);
         const cantidadAnterior = Number(actualRow?.cantidad ?? 0);
-        const { error: errStock } = await supabase.from('stock_actual').upsert(
-          {
-            branch_id: branchId,
-            insumo_id: it.insumo_id,
-            cantidad: it.stock_cierre_fisico,
-            unidad: actualRow?.unidad ?? 'un',
-          },
-          { onConflict: 'branch_id,insumo_id' },
+        await upsertStockActual(
+          branchId,
+          it.insumo_id,
+          it.stock_cierre_fisico,
+          actualRow?.unidad ?? 'un',
         );
-        if (errStock) throw errStock;
         if (merma > 0) {
-          await supabase.from('stock_movimientos').insert({
+          await insertStockMovimiento({
             branch_id: branchId,
             insumo_id: it.insumo_id,
             tipo: 'merma',
@@ -194,11 +175,7 @@ export function useSaveCierreMensual(branchId: string) {
             cantidad_nueva: it.stock_cierre_fisico,
             motivo: `Cierre mensual ${p.periodo}`,
           });
-          const { data: insumo } = await supabase
-            .from('insumos')
-            .select('categoria_pl, costo_por_unidad_base, nombre')
-            .eq('id', it.insumo_id)
-            .single();
+          const insumo = await fetchInsumoCostInfo(it.insumo_id);
           const costo = Number(insumo?.costo_por_unidad_base ?? 0);
           const montoConsumo = merma * costo;
           const catPl =
@@ -214,7 +191,7 @@ export function useSaveCierreMensual(branchId: string) {
               ? insumo.categoria_pl
               : 'materia_prima';
           if (montoConsumo > 0) {
-            await supabase.from('consumos_manuales').insert({
+            await insertConsumoManual({
               branch_id: branchId,
               periodo: p.periodo,
               categoria_pl: catPl,

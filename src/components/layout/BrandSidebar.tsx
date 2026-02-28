@@ -4,7 +4,7 @@
  */
 import { useState, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAllBranchSlugs } from '@/services/configService';
 import { useLocation } from 'react-router-dom';
 import { useUnreadMessagesCount } from '@/hooks/useContactMessages';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
@@ -62,7 +62,7 @@ import {
 } from './WorkSidebar';
 import NewBranchModal from '@/components/admin/NewBranchModal';
 
-/* ── Sortable wrapper for a section ── */
+/* â”€â”€ Sortable wrapper for a section â”€â”€ */
 function SortableSection({
   id,
   children,
@@ -115,10 +115,7 @@ export function BrandSidebar() {
 
   const { data: branches, refetch: refetchBranches } = useQuery({
     queryKey: ['brand-sidebar-branches'],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('id, name, slug').order('name');
-      return data || [];
-    },
+    queryFn: fetchAllBranchSlugs,
   });
 
   const p = location.pathname;

@@ -19,6 +19,7 @@ import { DotsLoader } from '@/components/ui/loaders';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddMovement } from '@/hooks/useCashRegister';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/formatters';
 
 interface ManualIncomeModalProps {
   open: boolean;
@@ -89,16 +90,6 @@ export function ManualIncomeModal({
     } catch (e: any) {
       toast.error(e?.message || 'Error al registrar el ingreso');
     }
-  };
-
-  const formatCurrency = (value: string) => {
-    const num = parseFloat(value);
-    if (isNaN(num)) return '';
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(num);
   };
 
   return (
@@ -172,7 +163,7 @@ export function ManualIncomeModal({
                 className="pl-8"
               />
             </div>
-            {amount && <p className="text-sm text-muted-foreground">{formatCurrency(amount)}</p>}
+            {amount && <p className="text-sm text-muted-foreground">{formatCurrency(parseFloat(amount) || 0)}</p>}
           </div>
 
           <div className="space-y-2">

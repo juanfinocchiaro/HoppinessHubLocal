@@ -24,7 +24,14 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { DotsLoader } from '@/components/ui/loaders';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  getAuthUser,
+  deletePedidoPagos,
+  insertPedidoPagos,
+  insertPaymentEditAudit,
+  findOpenCashShiftForBranch,
+  insertCashMovement,
+} from '@/services/posService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -131,15 +138,12 @@ export function PaymentEditModal({
     if (!canSave) return;
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getAuthUser();
       if (!user) throw new Error('No autenticado');
 
       const pagosBefore = currentPayments.map((p) => ({ metodo: p.metodo, monto: p.monto }));
       const pagosAfter = rows.map((r) => ({ metodo: r.metodo, monto: r.monto }));
 
-      // Calculate cash delta for cash register adjustment
       const cashBefore = currentPayments
         .filter((p) => p.metodo === 'efectivo')
         .reduce((s, p) => s + p.monto, 0);
@@ -148,12 +152,7 @@ export function PaymentEditModal({
         .reduce((s, r) => s + r.monto, 0);
       const cashDelta = cashAfter - cashBefore;
 
-      // Delete old payments and insert new ones (batch)
-      const { error: delErr } = await supabase
-        .from('pedido_pagos')
-        .delete()
-        .eq('pedido_id', pedidoId);
-      if (delErr) throw delErr;
+      await deletePedidoPagos(pedidoId);
 
       const insertRows = rows.map((row) => ({
         pedido_id: pedidoId,
@@ -163,31 +162,21 @@ export function PaymentEditModal({
         vuelto: 0,
         created_by: user.id,
       }));
-      const { error: insErr } = await supabase.from('pedido_pagos').insert(insertRows);
-      if (insErr) throw insErr;
+      await insertPedidoPagos(insertRows);
 
-      // Audit record
-      const { error: auditErr } = await supabase.from('pedido_payment_edits' as any).insert({
+      await insertPaymentEditAudit({
         pedido_id: pedidoId,
         pagos_antes: pagosBefore,
         pagos_despues: pagosAfter,
         motivo: motivo.trim(),
         editado_por: user.id,
       });
-      if (auditErr) throw auditErr;
 
-      // Cash register adjustment if cash amount changed
       if (cashDelta !== 0) {
-        const { data: openShift } = await supabase
-          .from('cash_register_shifts')
-          .select('id')
-          .eq('branch_id', branchId)
-          .eq('status', 'open')
-          .limit(1)
-          .maybeSingle();
+        const openShift = await findOpenCashShiftForBranch(branchId);
 
         if (openShift) {
-          await supabase.from('cash_register_movements').insert({
+          await insertCashMovement({
             shift_id: openShift.id,
             branch_id: branchId,
             type: cashDelta > 0 ? 'income' : 'expense',

@@ -2,6 +2,13 @@
  * Tipos para la WebApp pública de pedidos
  */
 
+export interface AddressResult {
+  formatted_address: string;
+  lat: number;
+  lng: number;
+  neighborhood_name?: string;
+}
+
 export type TipoServicioWebapp = 'retiro' | 'delivery';
 
 export interface WebappConfig {

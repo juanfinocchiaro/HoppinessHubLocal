@@ -1,5 +1,6 @@
 import type { Tables } from '@/integrations/supabase/types';
 import type { usePreparacionMutations } from '@/hooks/usePreparaciones';
+import { formatCurrency } from '@/lib/formatters';
 
 export type Preparacion = Tables<'preparaciones'>;
 export type CategoriaPreparacion = Tables<'categorias_preparacion'>;
@@ -24,12 +25,7 @@ export interface IngredienteLine {
   } | null;
 }
 
-export const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 2,
-  }).format(value);
+
 
 export const UNIDADES = [
   { value: 'g', label: 'Gramos (g)' },

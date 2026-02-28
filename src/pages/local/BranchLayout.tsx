@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchPosConfig, subscribeToBranchStatusUpdates } from '@/services/configService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useRoleLanding } from '@/hooks/useRoleLanding';
@@ -49,18 +49,7 @@ export default function BranchLayout() {
 
   const { data: posConfig } = useQuery({
     queryKey: ['pos-config', branchId],
-    queryFn: async () => {
-      try {
-        const { data } = await supabase
-          .from('pos_config')
-          .select('pos_enabled')
-          .eq('branch_id', branchId!)
-          .maybeSingle();
-        return data;
-      } catch {
-        return null;
-      }
-    },
+    queryFn: () => fetchPosConfig(branchId!),
     enabled: !!branchId,
   });
   const posEnabled = posConfig?.pos_enabled ?? false;
@@ -113,26 +102,12 @@ export default function BranchLayout() {
   useEffect(() => {
     if (!branchId) return;
 
-    const channel = supabase
-      .channel(`branch-status-${branchId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'branches',
-          filter: `id=eq.${branchId}`,
-        },
-        (payload) => {
-          const updated = payload.new as Branch;
-          setSelectedBranch((prev) => (prev ? { ...prev, ...updated } : updated));
-        },
-      )
-      .subscribe();
+    const unsubscribe = subscribeToBranchStatusUpdates(branchId, (payload) => {
+      const updated = payload.new as Branch;
+      setSelectedBranch((prev) => (prev ? { ...prev, ...updated } : updated));
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return unsubscribe;
   }, [branchId]);
 
   // Redirect empleados a Mi Cuenta (skip during impersonation)
@@ -161,7 +136,7 @@ export default function BranchLayout() {
   }
 
   // Cajero: solo puede ver el panel Local si está fichado en este branch
-  // Skip during impersonation — the real user is a superadmin
+  // Skip during impersonation â€” the real user is a superadmin
   if (
     !permissions.isViewingAs &&
     canAccessLocal &&

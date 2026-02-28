@@ -1,5 +1,6 @@
 import { Plus, Minus } from 'lucide-react';
 import type { WebappMenuItem } from '@/types/webapp';
+import { formatPrice } from '@/lib/formatters';
 
 interface Props {
   item: WebappMenuItem;
@@ -9,10 +10,6 @@ interface Props {
   onIncrement: () => void;
   onDecrement: () => void;
   layout?: 'list' | 'grid' | 'desktop';
-}
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
 }
 
 function PromoBadge({ label }: { label: string }) {

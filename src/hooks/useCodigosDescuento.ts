@@ -1,8 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { fromUntyped } from '@/lib/supabase-helpers';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import {
+  fetchCodigosDescuento as fetchCodigosDescuentoService,
+  findCodigoDescuento,
+  countCodigoUsageByUser,
+  registerCodeUsage as registerCodeUsageService,
+  createCodigoDescuento as createCodigoDescuentoService,
+  updateCodigoDescuento as updateCodigoDescuentoService,
+  softDeleteCodigoDescuento,
+} from '@/services/promoService';
 
 export interface CodigoDescuento {
   id: string;
@@ -26,11 +33,7 @@ export function useCodigosDescuento() {
   return useQuery({
     queryKey: ['codigos-descuento'],
     queryFn: async () => {
-      const { data, error } = await fromUntyped('codigos_descuento')
-        .select('*')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const data = await fetchCodigosDescuentoService();
       return data as CodigoDescuento[];
     },
   });
@@ -44,14 +47,8 @@ export function useValidateCode(
 
   return useMutation({
     mutationFn: async ({ codigo, subtotal }: { codigo: string; subtotal: number }) => {
-      const { data, error } = await fromUntyped('codigos_descuento')
-        .select('*')
-        .ilike('codigo', codigo.trim())
-        .eq('activo', true)
-        .is('deleted_at', null)
-        .maybeSingle();
+      const data = await findCodigoDescuento(codigo);
 
-      if (error) throw error;
       if (!data) throw new Error('Código no válido');
 
       const code = data as CodigoDescuento;
@@ -73,11 +70,8 @@ export function useValidateCode(
 
       if (context === 'webapp' && code.uso_unico_por_usuario) {
         if (!user) throw new Error('Iniciá sesión para usar este código');
-        const { count } = await fromUntyped('codigos_descuento_usos')
-          .select('id', { count: 'exact', head: true })
-          .eq('codigo_id', code.id)
-          .eq('user_id', user.id);
-        if (count && count > 0) throw new Error('Ya usaste este código');
+        const count = await countCodigoUsageByUser(code.id, user.id);
+        if (count > 0) throw new Error('Ya usaste este código');
       }
 
       let descuento = 0;
@@ -93,35 +87,13 @@ export function useValidateCode(
 }
 
 /** Register usage of a discount code (call after order is confirmed) */
-export async function registerCodeUsage({
-  codigoId,
-  userId,
-  pedidoId,
-  montoDescontado,
-}: {
+export async function registerCodeUsage(params: {
   codigoId: string;
   userId?: string;
   pedidoId?: string;
   montoDescontado: number;
 }) {
-  await supabase.from('codigos_descuento_usos').insert({
-    codigo_id: codigoId,
-    user_id: userId || null,
-    pedido_id: pedidoId || null,
-    monto_descontado: montoDescontado,
-  } as any);
-
-  const { data } = await supabase
-    .from('codigos_descuento')
-    .select('usos_actuales')
-    .eq('id', codigoId)
-    .single();
-  if (data) {
-    await supabase
-      .from('codigos_descuento')
-      .update({ usos_actuales: (data as any).usos_actuales + 1 } as any)
-      .eq('id', codigoId);
-  }
+  await registerCodeUsageService(params);
 }
 
 export function useCodigoDescuentoMutations() {
@@ -129,14 +101,8 @@ export function useCodigoDescuentoMutations() {
   const { user } = useAuth();
 
   const create = useMutation({
-    mutationFn: async (data: CodigoDescuentoFormData) => {
-      const { data: result, error } = await fromUntyped('codigos_descuento')
-        .insert({ ...data, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: (data: CodigoDescuentoFormData) =>
+      createCodigoDescuentoService(data as unknown as Record<string, unknown>, user?.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['codigos-descuento'] });
       toast.success('Código creado');
@@ -145,12 +111,8 @@ export function useCodigoDescuentoMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CodigoDescuentoFormData> }) => {
-      const { error } = await fromUntyped('codigos_descuento')
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, data }: { id: string; data: Partial<CodigoDescuentoFormData> }) =>
+      updateCodigoDescuentoService(id, data as Record<string, unknown>),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['codigos-descuento'] });
       toast.success('Código actualizado');
@@ -159,12 +121,7 @@ export function useCodigoDescuentoMutations() {
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await fromUntyped('codigos_descuento')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => softDeleteCodigoDescuento(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['codigos-descuento'] });
       toast.success('Código eliminado');

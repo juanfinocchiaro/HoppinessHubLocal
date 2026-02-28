@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { lovable } from '@/integrations/lovable';
-import { supabase } from '@/integrations/supabase/client';
 import logoHoppiness from '@/assets/logo-hoppiness-blue.png';
+import { getSession, onAuthStateChange } from '@/services/authService';
 
 /**
  * AuthPopup — Minimal page opened in a popup window for Google OAuth.
@@ -18,7 +18,7 @@ export default function AuthPopup() {
     const checkSession = async () => {
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await getSession();
       if (session) {
         // Notify the opener window
         if (window.opener) {
@@ -66,7 +66,7 @@ export default function AuthPopup() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         if (window.opener) {
           window.opener.postMessage(

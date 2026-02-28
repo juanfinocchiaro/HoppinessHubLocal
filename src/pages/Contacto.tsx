@@ -22,7 +22,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { handleError } from '@/lib/errorHandler';
+import {
+  submitContactMessage,
+  sendContactNotification,
+  uploadCV,
+} from '@/services/contactService';
+import { fetchPublicBranchNames } from '@/services/publicBranchService';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -139,14 +145,10 @@ export default function Contacto() {
   // Fetch branches for dropdowns
   const { data: branches } = useQuery({
     queryKey: ['branches-public'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches_public')
-        .select('id, name, public_status')
-        .order('name');
-      if (error) throw error;
-      return data as { id: string; name: string; public_status: BranchPublicStatus }[];
-    },
+    queryFn: () =>
+      fetchPublicBranchNames() as Promise<
+        { id: string; name: string; public_status: BranchPublicStatus }[]
+      >,
   });
 
   // Detect URL params
@@ -234,11 +236,11 @@ export default function Contacto() {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       ];
       if (!validTypes.includes(file.type)) {
-        toast.error('Formato no válido — Solo se permiten archivos PDF, DOC o DOCX');
+        toast.error('Formato no válido â€” Solo se permiten archivos PDF, DOC o DOCX');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Archivo muy grande — El archivo no puede superar 5MB');
+        toast.error('Archivo muy grande â€” El archivo no puede superar 5MB');
         return;
       }
       setCvFile(file);
@@ -290,22 +292,14 @@ export default function Contacto() {
     try {
       let cvUrl = '';
 
-      // Upload CV if exists
       if (cvFile && formData.subject === 'empleo') {
-        const fileExt = cvFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${formData.email.replace('@', '_at_')}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('cv-uploads')
-          .upload(fileName, cvFile);
-
-        if (uploadError) {
-          toast.error('Error al subir el CV. Intentá de nuevo.');
+        try {
+          cvUrl = await uploadCV(cvFile, formData.email);
+        } catch (error) {
+      handleError(error, { userMessage: 'Error al subir el CV. Intentá de nuevo.', context: 'Contacto' });
           setLoading(false);
           return;
         }
-        const { data: urlData } = supabase.storage.from('cv-uploads').getPublicUrl(fileName);
-        cvUrl = urlData?.publicUrl || fileName;
       }
 
       const insertData: Record<string, unknown> = {
@@ -353,19 +347,12 @@ ${formData.message || 'Sin mensaje adicional'}
           break;
       }
 
-      const { data, error } = await supabase
-        .from('contact_messages')
-        .insert([insertData as never])
-        .select()
-        .single();
+      const { data, error } = await submitContactMessage(insertData);
 
       if (error) throw error;
 
-      // Send email notification (fire and forget)
       try {
-        await supabase.functions.invoke('contact-notification', {
-          body: data,
-        });
+        await sendContactNotification(data);
       } catch (emailErr) {
         console.warn('Email notification failed:', emailErr);
       }
@@ -375,8 +362,7 @@ ${formData.message || 'Sin mensaje adicional'}
 
       setSubmitted(true);
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error sending message:', error);
-      toast.error('Error al enviar — Hubo un problema. Por favor intentá de nuevo.');
+      handleError(error, { userMessage: 'Error', context: 'Contacto' });
     } finally {
       setLoading(false);
     }
@@ -529,7 +515,7 @@ ${formData.message || 'Sin mensaje adicional'}
                   {branches?.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       Hoppiness {branch.name}
-                      {branch.public_status === 'coming_soon' ? ' (PRÓXIMAMENTE)' : ''}
+                      {branch.public_status === 'coming_soon' ? ' (PRÃ“XIMAMENTE)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -625,7 +611,7 @@ ${formData.message || 'Sin mensaje adicional'}
                   {branches?.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       Hoppiness {branch.name}
-                      {branch.public_status === 'coming_soon' ? ' (PRÓXIMAMENTE)' : ''}
+                      {branch.public_status === 'coming_soon' ? ' (PRÃ“XIMAMENTE)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchGruposOpcionales,
+  createGrupoOpcional,
+  updateGrupoOpcional,
+  deleteGrupoOpcional,
+  saveGrupoOpcionalItems,
+  updateGrupoOpcionalCosto,
+  recalcularCostoItemCarta,
+} from '@/services/menuService';
 
 export interface GrupoOpcionalItem {
   id: string;
@@ -28,22 +36,7 @@ export function useGruposOpcionales(itemId: string | undefined) {
     queryKey: ['grupos-opcionales', itemId],
     queryFn: async () => {
       if (!itemId) return [];
-      const { data, error } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .select(
-          `
-          *,
-          items:item_carta_grupo_opcional_items(
-            *,
-            insumos(id, nombre, costo_por_unidad_base),
-            preparaciones(id, nombre, costo_calculado)
-          )
-        `,
-        )
-        .eq('item_carta_id', itemId)
-        .order('orden');
-      if (error) throw error;
-      return (data || []) as unknown as GrupoOpcional[];
+      return (await fetchGruposOpcionales(itemId)) as unknown as GrupoOpcional[];
     },
     enabled: !!itemId,
   });
@@ -57,28 +50,9 @@ export function useGruposOpcionalesMutations() {
     qc.invalidateQueries({ queryKey: ['items-carta'] });
   };
 
-  const recalcularCosto = async (itemId: string) => {
-    await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
-  };
-
-  const createGrupo = useMutation({
-    mutationFn: async ({
-      item_carta_id,
-      nombre,
-      orden,
-    }: {
-      item_carta_id: string;
-      nombre: string;
-      orden: number;
-    }) => {
-      const { data, error } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .insert({ item_carta_id, nombre, orden } as any)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+  const createGrupoMut = useMutation({
+    mutationFn: (params: { item_carta_id: string; nombre: string; orden: number }) =>
+      createGrupoOpcional(params),
     onSuccess: (_, vars) => {
       invalidate(vars.item_carta_id);
       toast.success('Grupo creado');
@@ -86,8 +60,8 @@ export function useGruposOpcionalesMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const updateGrupo = useMutation({
-    mutationFn: async ({
+  const updateGrupoMut = useMutation({
+    mutationFn: ({
       id,
       item_carta_id: _item_carta_id,
       data,
@@ -95,25 +69,15 @@ export function useGruposOpcionalesMutations() {
       id: string;
       item_carta_id: string;
       data: { nombre?: string };
-    }) => {
-      const { error } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .update(data as any)
-        .eq('id', id);
-      if (error) throw error;
-    },
+    }) => updateGrupoOpcional(id, data),
     onSuccess: (_, vars) => invalidate(vars.item_carta_id),
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const deleteGrupo = useMutation({
+  const deleteGrupoMut = useMutation({
     mutationFn: async ({ id, item_carta_id }: { id: string; item_carta_id: string }) => {
-      const { error } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      await recalcularCosto(item_carta_id);
+      await deleteGrupoOpcional(id);
+      await recalcularCostoItemCarta(item_carta_id);
     },
     onSuccess: (_, vars) => {
       invalidate(vars.item_carta_id);
@@ -122,7 +86,7 @@ export function useGruposOpcionalesMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const saveGrupoItems = useMutation({
+  const saveGrupoItemsMut = useMutation({
     mutationFn: async ({
       grupo_id,
       item_carta_id,
@@ -137,41 +101,15 @@ export function useGruposOpcionalesMutations() {
         costo_unitario: number;
       }[];
     }) => {
-      // Delete existing items
-      await supabase
-        .from('item_carta_grupo_opcional_items' as any)
-        .delete()
-        .eq('grupo_id', grupo_id);
+      await saveGrupoOpcionalItems(grupo_id, items);
 
-      // Insert new items
-      if (items.length > 0) {
-        const { error } = await supabase.from('item_carta_grupo_opcional_items' as any).insert(
-          items.map((item) => ({
-            grupo_id,
-            insumo_id: item.insumo_id || null,
-            preparacion_id: item.preparacion_id || null,
-            cantidad: item.cantidad,
-            costo_unitario: item.costo_unitario,
-          })) as any,
-        );
-        if (error) throw error;
-      }
-
-      // Calculate average cost
       const avg =
         items.length > 0
           ? items.reduce((sum, i) => sum + i.cantidad * i.costo_unitario, 0) / items.length
           : 0;
 
-      // Update group with average
-      const { error: updErr } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .update({ costo_promedio: Math.round(avg * 100) / 100 } as any)
-        .eq('id', grupo_id);
-      if (updErr) throw updErr;
-
-      // Recalculate item cost
-      await recalcularCosto(item_carta_id);
+      await updateGrupoOpcionalCosto(grupo_id, avg);
+      await recalcularCostoItemCarta(item_carta_id);
     },
     onSuccess: (_, vars) => {
       invalidate(vars.item_carta_id);
@@ -180,5 +118,10 @@ export function useGruposOpcionalesMutations() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  return { createGrupo, updateGrupo, deleteGrupo, saveGrupoItems };
+  return {
+    createGrupo: createGrupoMut,
+    updateGrupo: updateGrupoMut,
+    deleteGrupo: deleteGrupoMut,
+    saveGrupoItems: saveGrupoItemsMut,
+  };
 }

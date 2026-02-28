@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleLanding } from '@/hooks/useRoleLanding';
 import { useGooglePopupAuth } from '@/hooks/useGooglePopupAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { linkGuestOrders } from '@/services/userOnboardingService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,7 +45,7 @@ export default function Ingresar() {
   // También vincula pedidos históricos hechos como invitado con el teléfono/email del usuario.
   useEffect(() => {
     if (!loading && !roleLoading && user) {
-      supabase.functions.invoke('link-guest-orders', {}).catch(() => {});
+      linkGuestOrders().catch(() => {});
 
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       if (from && from !== '/ingresar') {

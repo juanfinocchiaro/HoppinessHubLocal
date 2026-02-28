@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import type { VentasAppsData } from '@/types/shiftClosure';
 import { calcularDiferenciasApps } from '@/types/shiftClosure';
 import { useBranchClosureConfig } from '@/hooks/useClosureConfig';
+import { formatCurrency } from '@/lib/formatters';
 
 interface AppSalesSectionProps {
   branchId: string;
@@ -45,12 +46,7 @@ export function AppSalesSection({ branchId, data, onChange, subtotal }: AppSales
     return Math.max(0, val);
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   // Check which apps are enabled
   const isAppEnabled = (appKey: string) => {

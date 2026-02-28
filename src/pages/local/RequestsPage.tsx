@@ -10,7 +10,10 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchScheduleRequestsWithProfiles,
+  respondToScheduleRequest as respondToScheduleRequestService,
+} from '@/services/schedulesService';
 import { useAuth } from '@/hooks/useAuth';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { Card, CardContent } from '@/components/ui/card';
@@ -88,47 +91,7 @@ export default function RequestsPage() {
   // Fetch all requests
   const { data: requests, isLoading } = useQuery({
     queryKey: ['schedule-requests', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .select(
-          `
-          id,
-          user_id,
-          request_type,
-          request_date,
-          reason,
-          status,
-          created_at,
-          responded_at,
-          response_note,
-          evidence_url,
-          absence_type
-        `,
-        )
-        .eq('branch_id', branchId!)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch profiles
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map((r) => r.user_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', userIds);
-
-        const profileMap = new Map(profiles?.map((p) => [p.id, p]));
-
-        return data.map((r) => ({
-          ...r,
-          profile: profileMap.get(r.user_id),
-        })) as ScheduleRequest[];
-      }
-
-      return data as ScheduleRequest[];
-    },
+    queryFn: () => fetchScheduleRequestsWithProfiles(branchId!) as Promise<ScheduleRequest[]>,
     enabled: !!branchId,
   });
 
@@ -158,17 +121,7 @@ export default function RequestsPage() {
       status: 'approved' | 'rejected';
       note?: string;
     }) => {
-      const { error } = await supabase
-        .from('schedule_requests')
-        .update({
-          status,
-          response_note: note || null,
-          responded_by: user?.id,
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
+      await respondToScheduleRequestService(requestId, status, user?.id!, note);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['schedule-requests', branchId] });

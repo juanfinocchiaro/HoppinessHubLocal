@@ -1,6 +1,12 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  getSession,
+  onAuthStateChange,
+  signInWithPassword,
+  signOut as signOutFromService,
+  signUpWithPassword,
+} from '@/services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // when no auth event has fired yet.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -42,19 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Trigger initial session check — the result is handled by the
     // listener above (fires INITIAL_SESSION event), avoiding double state updates.
-    supabase.auth.getSession();
+    getSession();
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string, captchaToken?: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: {
-        captchaToken,
-      },
-    });
+    const { error } = await signInWithPassword(email, password, captchaToken);
     return { error: error as Error | null };
   };
 
@@ -66,25 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fullName: string,
     captchaToken?: string,
   ) => {
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        captchaToken,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
+    const { error } = await signUpWithPassword(email, password, fullName, captchaToken);
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOutFromService();
     } catch {
       // Even if signOut fails (e.g. offline), clear local state
       // so the user can always leave the session

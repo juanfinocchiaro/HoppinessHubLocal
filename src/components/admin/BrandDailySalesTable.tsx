@@ -2,7 +2,7 @@
  * BrandDailySalesTable - Tabla consolidada de ventas diarias usando shift_closures
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchesIdName, fetchBrandClosures } from '@/services/adminService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
@@ -23,6 +23,7 @@ import {
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useMemo } from 'react';
+import { formatCurrency } from '@/lib/formatters';
 type DateRange = {
   from: Date;
   to: Date;
@@ -71,25 +72,17 @@ export function BrandDailySalesTable() {
   // Fetch branches
   const { data: branches } = useQuery({
     queryKey: ['branches-all'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('branches').select('id, name').order('name');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchBranchesIdName,
   });
 
   // Fetch closures for current period
   const { data: closuresData, isLoading } = useQuery({
     queryKey: ['brand-closures', dateRange.from, dateRange.to],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shift_closures')
-        .select('*')
-        .gte('fecha', format(dateRange.from, 'yyyy-MM-dd'))
-        .lte('fecha', format(dateRange.to, 'yyyy-MM-dd'));
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () =>
+      fetchBrandClosures(
+        format(dateRange.from, 'yyyy-MM-dd'),
+        format(dateRange.to, 'yyyy-MM-dd'),
+      ),
     enabled: !!branches,
   });
 
@@ -181,12 +174,7 @@ export function BrandDailySalesTable() {
     );
   }, [aggregatedData]);
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   return (
     <Card>

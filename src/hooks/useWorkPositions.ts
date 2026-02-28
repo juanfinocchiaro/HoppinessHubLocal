@@ -5,7 +5,13 @@
  * desde la tabla work_positions en lugar de estar hardcodeadas.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchActiveWorkPositions,
+  fetchAllWorkPositions,
+  createWorkPosition,
+  updateWorkPosition,
+  deleteWorkPosition,
+} from '@/services/hrService';
 import { toast } from 'sonner';
 
 export interface WorkPosition {
@@ -25,16 +31,9 @@ export function useWorkPositions() {
   return useQuery({
     queryKey: ['work-positions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('work_positions')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data as WorkPosition[];
+      return (await fetchActiveWorkPositions()) as WorkPosition[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos - estas posiciones cambian poco
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -45,10 +44,7 @@ export function useAllWorkPositions() {
   return useQuery({
     queryKey: ['work-positions', 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('work_positions').select('*').order('sort_order');
-
-      if (error) throw error;
-      return data as WorkPosition[];
+      return (await fetchAllWorkPositions()) as WorkPosition[];
     },
   });
 }
@@ -72,20 +68,8 @@ export function useCreateWorkPosition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { key: string; label: string; sort_order?: number }) => {
-      const { data: result, error } = await supabase
-        .from('work_positions')
-        .insert({
-          key: data.key.toLowerCase().replace(/\s+/g, '_'),
-          label: data.label,
-          sort_order: data.sort_order ?? 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result as WorkPosition;
-    },
+    mutationFn: async (data: { key: string; label: string; sort_order?: number }) =>
+      createWorkPosition(data) as Promise<WorkPosition>,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-positions'] });
       toast.success('Posición creada');
@@ -101,17 +85,8 @@ export function useUpdateWorkPosition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<WorkPosition> & { id: string }) => {
-      const { data: result, error } = await supabase
-        .from('work_positions')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result as WorkPosition;
-    },
+    mutationFn: async ({ id, ...data }: Partial<WorkPosition> & { id: string }) =>
+      updateWorkPosition(id, data) as Promise<WorkPosition>,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-positions'] });
       toast.success('Posición actualizada');
@@ -127,14 +102,7 @@ export function useDeleteWorkPosition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('work_positions')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => deleteWorkPosition(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-positions'] });
       toast.success('Posición eliminada');

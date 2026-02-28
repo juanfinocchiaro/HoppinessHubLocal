@@ -1,6 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchPriceLists as fetchPriceListsService,
+  fetchPriceListItems as fetchPriceListItemsService,
+  fetchAllPriceListItems as fetchAllPriceListItemsService,
+  fetchItemsCartaForPricing,
+  updatePriceListConfig as updatePriceListConfigService,
+  bulkUpsertPriceListItems,
+  deletePriceOverride as deletePriceOverrideService,
+  fetchActiveItemsPrices,
+  fetchPriceListsByChannels,
+  fetchExistingPriceListChannels,
+  insertPriceLists,
+} from '@/services/promoService';
 
 export type Channel = 'mostrador' | 'webapp' | 'rappi' | 'pedidos_ya' | 'mp_delivery';
 export type PricingMode = 'base' | 'percentage' | 'fixed_amount' | 'mirror' | 'manual';
@@ -88,12 +100,8 @@ export function usePriceLists() {
   return useQuery({
     queryKey: ['price-lists'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('price_lists' as any)
-        .select('*')
-        .order('channel');
-      if (error) throw error;
-      return (data || []) as unknown as PriceList[];
+      const data = await fetchPriceListsService();
+      return data as unknown as PriceList[];
     },
   });
 }
@@ -102,12 +110,8 @@ export function usePriceListItems(priceListId: string | undefined) {
   return useQuery({
     queryKey: ['price-list-items', priceListId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('price_list_items' as any)
-        .select('*')
-        .eq('price_list_id', priceListId!);
-      if (error) throw error;
-      return (data || []) as unknown as PriceListItem[];
+      const data = await fetchPriceListItemsService(priceListId!);
+      return data as unknown as PriceListItem[];
     },
     enabled: !!priceListId,
   });
@@ -118,14 +122,10 @@ export function useAllPriceListItems(priceListIds: string[]) {
     queryKey: ['all-price-list-items', priceListIds],
     queryFn: async () => {
       if (priceListIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from('price_list_items' as any)
-        .select('*')
-        .in('price_list_id', priceListIds);
-      if (error) throw error;
+      const data = await fetchAllPriceListItemsService(priceListIds);
 
       const map: Record<string, Record<string, number>> = {};
-      for (const row of (data || []) as unknown as PriceListItem[]) {
+      for (const row of data as unknown as PriceListItem[]) {
         if (!map[row.price_list_id]) map[row.price_list_id] = {};
         map[row.price_list_id][row.item_carta_id] = row.precio;
       }
@@ -138,40 +138,25 @@ export function useAllPriceListItems(priceListIds: string[]) {
 export function useMenuItemsForPricing() {
   return useQuery({
     queryKey: ['menu-items-all'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('items_carta')
-        .select(
-          'id, nombre, orden, precio_base, activo, categoria_carta_id, menu_categorias(id, nombre, orden)',
-        )
-        .eq('activo', true)
-        .order('orden');
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: fetchItemsCartaForPricing,
   });
 }
 
 export function useUpdatePriceListConfig() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: {
+    mutationFn: (params: {
       id: string;
       pricing_mode: PricingMode;
       pricing_value: number;
       mirror_channel?: Channel | null;
-    }) => {
-      const { error } = await supabase
-        .from('price_lists' as any)
-        .update({
-          pricing_mode: params.pricing_mode,
-          pricing_value: params.pricing_value,
-          mirror_channel: params.mirror_channel ?? null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', params.id);
-      if (error) throw error;
-    },
+    }) =>
+      updatePriceListConfigService({
+        id: params.id,
+        pricing_mode: params.pricing_mode,
+        pricing_value: params.pricing_value,
+        mirror_channel: params.mirror_channel ?? null,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['price-lists'] });
       toast.success('Configuración de canal actualizada');
@@ -185,21 +170,10 @@ export function useUpdatePriceListConfig() {
 export function useBulkUpdatePriceList() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: {
+    mutationFn: (params: {
       price_list_id: string;
       items: Array<{ item_carta_id: string; precio: number }>;
-    }) => {
-      const rows = params.items.map((i) => ({
-        price_list_id: params.price_list_id,
-        item_carta_id: i.item_carta_id,
-        precio: i.precio,
-        updated_at: new Date().toISOString(),
-      }));
-      const { error } = await supabase
-        .from('price_list_items' as any)
-        .upsert(rows, { onConflict: 'price_list_id,item_carta_id' });
-      if (error) throw error;
-    },
+    }) => bulkUpsertPriceListItems(params.price_list_id, params.items),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['price-list-items', vars.price_list_id] });
       qc.invalidateQueries({ queryKey: ['all-price-list-items'] });
@@ -211,14 +185,8 @@ export function useBulkUpdatePriceList() {
 export function useDeletePriceOverride() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { price_list_id: string; item_carta_id: string }) => {
-      const { error } = await supabase
-        .from('price_list_items' as any)
-        .delete()
-        .eq('price_list_id', params.price_list_id)
-        .eq('item_carta_id', params.item_carta_id);
-      if (error) throw error;
-    },
+    mutationFn: (params: { price_list_id: string; item_carta_id: string }) =>
+      deletePriceOverrideService(params.price_list_id, params.item_carta_id),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['price-list-items', vars.price_list_id] });
       qc.invalidateQueries({ queryKey: ['all-price-list-items'] });
@@ -233,41 +201,25 @@ export function useUnifyPrices() {
       let sourceItems: Array<{ id: string; precio_base: number }>;
 
       if (params.source === 'default') {
-        const { data, error } = await supabase
-          .from('items_carta')
-          .select('id, precio_base')
-          .eq('activo', true);
-        if (error) throw error;
-        sourceItems = data || [];
+        const data = await fetchActiveItemsPrices();
+        sourceItems = data as Array<{ id: string; precio_base: number }>;
       } else {
-        const { data, error } = await supabase
-          .from('price_list_items' as any)
-          .select('item_carta_id, precio')
-          .eq('price_list_id', params.source);
-        if (error) throw error;
-        sourceItems = ((data || []) as any[]).map((d) => ({
-          id: d.item_carta_id,
-          precio_base: d.precio,
+        const data = await fetchPriceListItemsService(params.source);
+        sourceItems = (data as Array<Record<string, unknown>>).map((d) => ({
+          id: d.item_carta_id as string,
+          precio_base: d.precio as number,
         }));
       }
 
-      const { data: targetLists } = await supabase
-        .from('price_lists' as any)
-        .select('id, channel')
-        .in('channel', params.targetChannels);
+      const targetLists = await fetchPriceListsByChannels(params.targetChannels);
 
-      for (const list of (targetLists || []) as unknown as PriceList[]) {
-        const rows = sourceItems.map((s) => ({
-          price_list_id: list.id,
+      for (const list of targetLists as unknown as PriceList[]) {
+        const items = sourceItems.map((s) => ({
           item_carta_id: s.id,
           precio: s.precio_base,
-          updated_at: new Date().toISOString(),
         }));
-        if (rows.length) {
-          const { error } = await supabase
-            .from('price_list_items' as any)
-            .upsert(rows, { onConflict: 'price_list_id,item_carta_id' });
-          if (error) throw error;
+        if (items.length) {
+          await bulkUpsertPriceListItems(list.id, items);
         }
       }
     },
@@ -292,8 +244,7 @@ export function useInitializePriceLists() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data: existing } = await supabase.from('price_lists' as any).select('channel');
-      const existingChannels = new Set(((existing || []) as any[]).map((e) => e.channel));
+      const existingChannels = await fetchExistingPriceListChannels();
 
       const toCreate = CHANNELS.filter((c) => !existingChannels.has(c.value));
       if (toCreate.length === 0) return;
@@ -306,8 +257,7 @@ export function useInitializePriceLists() {
         pricing_value: 0,
       }));
 
-      const { error } = await supabase.from('price_lists' as any).insert(rows);
-      if (error) throw error;
+      await insertPriceLists(rows);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['price-lists'] });

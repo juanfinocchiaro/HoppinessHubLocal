@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAllClosureConfig, toggleClosureConfigItem, addClosureConfigItem, deleteClosureConfigItem } from '@/services/adminService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,26 +40,15 @@ function ClosureConfigPageContent() {
   const { data: configItems, isLoading } = useQuery({
     queryKey: ['brand-closure-config-all'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('brand_closure_config')
-        .select('*')
-        .order('orden');
-
-      if (error) throw error;
-      return (data || []) as ClosureConfigItem[];
+      const data = await fetchAllClosureConfig();
+      return data as ClosureConfigItem[];
     },
   });
 
   // Toggle active status
   const toggleMutation = useMutation({
-    mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
-      const { error } = await supabase
-        .from('brand_closure_config')
-        .update({ activo, updated_at: new Date().toISOString() })
-        .eq('id', id);
-
-      if (error) throw error;
-    },
+    mutationFn: ({ id, activo }: { id: string; activo: boolean }) =>
+      toggleClosureConfigItem(id, activo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand-closure-config'] });
       toast.success('Configuración actualizada');
@@ -88,7 +77,7 @@ function ClosureConfigPageContent() {
         configItems?.filter((i) => i.tipo === tipo).reduce((max, i) => Math.max(max, i.orden), 0) ||
         0;
 
-      const { error } = await supabase.from('brand_closure_config').insert({
+      await addClosureConfigItem({
         tipo,
         clave,
         etiqueta,
@@ -96,8 +85,6 @@ function ClosureConfigPageContent() {
         orden: maxOrden + 1,
         activo: true,
       });
-
-      if (error) throw error;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['brand-closure-config'] });
@@ -111,11 +98,7 @@ function ClosureConfigPageContent() {
 
   // Delete item
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('brand_closure_config').delete().eq('id', id);
-
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteClosureConfigItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand-closure-config'] });
       toast.success('Elemento eliminado');
@@ -138,7 +121,7 @@ function ClosureConfigPageContent() {
       tipo: 'tipo_hamburguesa',
       titulo: 'Tipos Específicos',
       descripcion:
-        'Hamburguesas individuales dentro de categorías (Veggies → Not American, Ultrasmash → Ultra Cheese)',
+        'Hamburguesas individuales dentro de categorías (Veggies â†’ Not American, Ultrasmash â†’ Ultra Cheese)',
       items: configItems?.filter((i) => i.tipo === 'tipo_hamburguesa') || [],
     },
     {

@@ -1,0 +1,941 @@
+/**
+ * POS Service — All database operations for the Point of Sale system.
+ */
+import { supabase } from './supabaseClient';
+import { normalizePhone } from '@/lib/normalizePhone';
+import type { OrderConfig } from '@/types/pos';
+
+// ─── Orders ───
+
+export async function fetchOrders(branchId: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('*')
+    .eq('branch_id', branchId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function generateOrderNumber(branchId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('generar_numero_pedido', {
+    p_branch_id: branchId,
+  });
+  if (error) throw error;
+  return (data as number) ?? 1;
+}
+
+export async function insertPedido(payload: Record<string, unknown>) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .insert(payload as never)
+    .select('id, numero_pedido')
+    .single();
+  if (error) throw error;
+  if (!data) throw new Error('No se creó el pedido');
+  return data;
+}
+
+export async function insertPedidoItems(items: Array<Record<string, unknown>>) {
+  const { error } = await supabase.from('pedido_items').insert(items as never);
+  if (error) throw error;
+}
+
+export async function insertPedidoPagos(pagos: Array<Record<string, unknown>>) {
+  const { error } = await supabase.from('pedido_pagos').insert(pagos as never);
+  if (error) throw error;
+}
+
+export async function saveClienteAddress(userId: string, direccion: string) {
+  await supabase.from('cliente_direcciones').insert({
+    user_id: userId,
+    etiqueta: 'Otro',
+    direccion: direccion.trim(),
+    ciudad: 'Córdoba',
+    es_principal: false,
+  } as never);
+}
+
+export async function findOpenCashShift(branchId: string) {
+  const { data: registers } = await supabase
+    .from('cash_registers')
+    .select('id')
+    .eq('branch_id', branchId)
+    .eq('register_type', 'ventas')
+    .eq('is_active', true);
+
+  const registerIds = (registers || []).map((r) => r.id);
+  if (registerIds.length === 0) return null;
+
+  const { data } = await supabase
+    .from('cash_register_shifts')
+    .select('id')
+    .eq('branch_id', branchId)
+    .eq('status', 'open')
+    .in('cash_register_id', registerIds)
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+export async function insertCashMovement(movement: Record<string, unknown>) {
+  const { error } = await supabase.from('cash_register_movements').insert(movement);
+  return { error };
+}
+
+// ─── Payments ───
+
+export async function fetchPayments(pedidoId: string) {
+  const { data } = await supabase
+    .from('pedido_pagos')
+    .select('*')
+    .eq('pedido_id', pedidoId);
+  return data ?? [];
+}
+
+// ─── Stock ───
+
+export async function fetchStockData(branchId: string) {
+  const [insumosResult, stockResult, movimientosResult] = await Promise.all([
+    supabase
+      .from('insumos')
+      .select(
+        'id, nombre, unidad_base, categoria_id, costo_por_unidad_base, categorias_insumo:categorias_insumo!insumos_categoria_id_fkey(nombre)',
+      )
+      .is('deleted_at', null)
+      .neq('activo', false)
+      .order('nombre'),
+    supabase.from('stock_actual').select('*').eq('branch_id', branchId),
+    supabase
+      .from('stock_movimientos')
+      .select('insumo_id, created_at, tipo, motivo')
+      .eq('branch_id', branchId)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  if (insumosResult.error) throw insumosResult.error;
+  if (stockResult.error) throw stockResult.error;
+  if (movimientosResult.error) throw movimientosResult.error;
+
+  return {
+    insumos: insumosResult.data ?? [],
+    stockActual: stockResult.data ?? [],
+    movimientos: movimientosResult.data ?? [],
+  };
+}
+
+export async function fetchInsumoUnit(insumoId: string) {
+  const { data } = await supabase
+    .from('insumos')
+    .select('unidad_base')
+    .eq('id', insumoId)
+    .single();
+  return data?.unidad_base ?? 'un';
+}
+
+export async function upsertStockActual(
+  branchId: string,
+  insumoId: string,
+  cantidad: number,
+  unidad: string,
+) {
+  const { error } = await supabase
+    .from('stock_actual')
+    .upsert(
+      { branch_id: branchId, insumo_id: insumoId, cantidad, unidad },
+      { onConflict: 'branch_id,insumo_id' },
+    );
+  if (error) throw error;
+}
+
+export async function insertStockMovimiento(movement: Record<string, unknown>) {
+  await supabase.from('stock_movimientos').insert(movement);
+}
+
+export async function fetchStockActualItem(branchId: string, insumoId: string) {
+  const { data } = await supabase
+    .from('stock_actual')
+    .select('cantidad')
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId)
+    .maybeSingle();
+  return data;
+}
+
+export async function getAuthUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+// ─── Operator Verification ───
+
+export async function insertOperatorSessionLog(data: {
+  branch_id: string;
+  current_user_id: string;
+  previous_user_id: string | null;
+  action_type: string;
+  triggered_by: string;
+}) {
+  await supabase.from('operator_session_logs').insert(data);
+}
+
+export async function callValidateSupervisorPin(branchId: string, pin: string) {
+  return supabase.rpc('validate_supervisor_pin', {
+    _branch_id: branchId,
+    _pin: pin,
+  });
+}
+
+export async function fetchUserRolesForVerification(userId: string) {
+  const { data } = await supabase
+    .from('user_roles_v2')
+    .select('brand_role, local_role')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .limit(1);
+  return data;
+}
+
+export async function fetchProfileFullName(userId: string) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', userId)
+    .single();
+  return data;
+}
+
+export async function signInWithPassword(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+// ─── Order Items ───
+
+export async function fetchOrderItems(pedidoId: string) {
+  const { data } = await supabase.from('pedido_items').select('*').eq('pedido_id', pedidoId);
+  return data ?? [];
+}
+
+// ─── Order Heatmap ───
+
+export async function fetchDeliveredOrders(branchId: string, fromDate: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('created_at, total')
+    .eq('branch_id', branchId)
+    .eq('estado', 'entregado')
+    .gte('created_at', fromDate);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Closure Data ───
+
+export async function fetchClosureOrders(
+  branchId: string,
+  fecha: string,
+  turno: string,
+) {
+  let query = supabase
+    .from('pedidos')
+    .select('*, pedido_items(*), pedido_pagos(*)')
+    .eq('branch_id', branchId)
+    .in('estado', ['entregado', 'completado', 'listo'])
+    .gte('created_at', `${fecha}T00:00:00`)
+    .lt('created_at', `${fecha}T23:59:59`);
+
+  if (turno === 'noche') {
+    query = query.gte('created_at', `${fecha}T18:00:00`);
+  } else if (turno === 'mediodia') {
+    query = query.lt('created_at', `${fecha}T18:00:00`);
+  }
+
+  const { data } = await query;
+  return data ?? [];
+}
+
+// ─── Point Reconciliation ───
+
+export async function fetchReconciliationPayments(
+  branchId: string,
+  desde: string | null,
+  hasta: string | null,
+) {
+  let query = supabase
+    .from('pedido_pagos')
+    .select('metodo, monto, conciliado, mp_payment_id, pedidos!inner(branch_id)')
+    .eq('pedidos.branch_id', branchId);
+
+  if (desde) query = query.gte('created_at', desde);
+  if (hasta) query = query.lte('created_at', hasta);
+
+  const { data, error } = await (query as any);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Kitchen ───
+
+export async function fetchKitchenOrders(branchId: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select(
+      'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, pedido_items(id, nombre, cantidad, notas, estacion, estado, pedido_item_modificadores(id, descripcion, tipo, precio_extra))',
+    )
+    .eq('branch_id', branchId)
+    .in('estado', ['pendiente', 'confirmado', 'en_preparacion', 'listo'])
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export function subscribeToPedidosChanges(branchId: string, callback: () => void) {
+  return supabase
+    .channel(`kitchen-${branchId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'pedidos', filter: `branch_id=eq.${branchId}` },
+      callback,
+    )
+    .subscribe();
+}
+
+export function removeSupabaseChannel(channel: ReturnType<typeof supabase.channel>) {
+  supabase.removeChannel(channel);
+}
+
+// ─── Order History ───
+
+export async function fetchOrderHistory(branchId: string, fromDate: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select(
+      'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, pedido_items(id, nombre, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), pedido_pagos(id, metodo, monto), facturas_emitidas(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
+    )
+    .eq('branch_id', branchId)
+    .gte('created_at', fromDate)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Register ───
+
+export async function fetchOpenRegister(branchId: string) {
+  const { data } = await supabase
+    .from('turnos_caja')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('estado', 'abierto')
+    .maybeSingle();
+  return data;
+}
+
+// ─── Frequent Items ───
+
+export async function fetchFrequentItemSales(branchId: string, since: string) {
+  const { data, error } = await supabase
+    .from('pedido_items')
+    .select(
+      `
+      item_carta_id,
+      cantidad,
+      pedidos!inner(branch_id, created_at)
+    `,
+    )
+    .eq('pedidos.branch_id', branchId)
+    .gte('pedidos.created_at', since);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Delivery ───
+
+export async function fetchActiveCadetes(branchId: string) {
+  const { data } = await supabase
+    .from('cadetes')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('activo', true);
+  return data ?? [];
+}
+
+// ─── Stock Cierre ───
+
+export async function fetchStockMovimientosPeriod(
+  branchId: string,
+  start: string,
+  end: string,
+) {
+  const { data } = await supabase
+    .from('stock_movimientos')
+    .select('insumo_id, tipo, cantidad, created_at')
+    .eq('branch_id', branchId)
+    .gte('created_at', start)
+    .lt('created_at', end);
+  return data ?? [];
+}
+
+export async function fetchCierreAnterior(branchId: string, periodo: string) {
+  const { data } = await supabase
+    .from('stock_cierre_mensual')
+    .select('insumo_id, stock_cierre_fisico')
+    .eq('branch_id', branchId)
+    .eq('periodo', periodo);
+  return data ?? [];
+}
+
+export async function fetchStockActualWithNames(branchId: string) {
+  const { data } = await supabase
+    .from('stock_actual')
+    .select('insumo_id, cantidad, unidad, insumos(nombre)')
+    .eq('branch_id', branchId);
+  return data ?? [];
+}
+
+export async function fetchInsumosById(ids: string[]) {
+  const { data } = await supabase
+    .from('insumos')
+    .select('id, nombre, unidad_base')
+    .in('id', ids);
+  return data ?? [];
+}
+
+export async function fetchPrevCierreForInsumo(
+  branchId: string,
+  insumoId: string,
+  periodo: string,
+) {
+  const { data } = await supabase
+    .from('stock_cierre_mensual')
+    .select('stock_cierre_fisico')
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId)
+    .eq('periodo', periodo)
+    .maybeSingle();
+  return data;
+}
+
+export async function fetchStockMovimientosForInsumo(
+  branchId: string,
+  insumoId: string,
+  from: string,
+  to: string,
+) {
+  const { data } = await supabase
+    .from('stock_movimientos')
+    .select('tipo, cantidad')
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId)
+    .gte('created_at', from)
+    .lt('created_at', to);
+  return data ?? [];
+}
+
+export async function upsertCierreMensual(record: Record<string, unknown>) {
+  const { error } = await supabase
+    .from('stock_cierre_mensual')
+    .upsert(record, { onConflict: 'branch_id,insumo_id,periodo' });
+  if (error) throw error;
+}
+
+export async function fetchStockActualRow(branchId: string, insumoId: string) {
+  const { data } = await supabase
+    .from('stock_actual')
+    .select('cantidad, unidad')
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId)
+    .maybeSingle();
+  return data;
+}
+
+export async function fetchInsumoCostInfo(insumoId: string) {
+  const { data } = await supabase
+    .from('insumos')
+    .select('categoria_pl, costo_por_unidad_base, nombre')
+    .eq('id', insumoId)
+    .single();
+  return data;
+}
+
+export async function insertConsumoManual(record: Record<string, unknown>) {
+  await supabase.from('consumos_manuales').insert(record);
+}
+
+// ─── Stock Movimientos History ───
+
+export async function fetchStockMovimientosHistory(
+  branchId: string,
+  insumoId: string,
+  limit = 10,
+) {
+  const { data, error } = await supabase
+    .from('stock_movimientos')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Stock Conteos ───
+
+export async function insertStockConteo(record: Record<string, unknown>) {
+  const { data, error } = await supabase
+    .from('stock_conteos')
+    .insert(record)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteStockConteoItems(conteoId: string) {
+  await supabase.from('stock_conteo_items').delete().eq('conteo_id', conteoId);
+}
+
+export async function insertStockConteoItems(items: Array<Record<string, unknown>>) {
+  const { error } = await supabase.from('stock_conteo_items').insert(items);
+  if (error) throw error;
+}
+
+export async function updateStockConteo(conteoId: string, record: Record<string, unknown>) {
+  await supabase.from('stock_conteos').update(record).eq('id', conteoId);
+}
+
+// ─── Stock Actual Updates ───
+
+export async function updateStockActualFields(
+  branchId: string,
+  insumoId: string,
+  fields: Record<string, unknown>,
+) {
+  const { error } = await supabase
+    .from('stock_actual')
+    .update(fields)
+    .eq('branch_id', branchId)
+    .eq('insumo_id', insumoId);
+  if (error) throw error;
+}
+
+export async function insertStockActualRecord(record: Record<string, unknown>) {
+  const { error } = await supabase.from('stock_actual').insert(record);
+  if (error) throw error;
+}
+
+// ─── Branch Info ───
+
+export async function fetchBranchName(branchId: string) {
+  const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
+  return data;
+}
+
+// ─── Google Maps ───
+
+export async function fetchGoogleMapsApiKey() {
+  const { data, error } = await supabase.functions.invoke('google-maps-key');
+  if (error) return null;
+  return (data?.apiKey as string) ?? null;
+}
+
+// ─── Profile Lookup ───
+
+export async function lookupProfileByPhone(phoneVariants: string[]) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, full_name, phone')
+    .in('phone', phoneVariants)
+    .limit(1)
+    .maybeSingle();
+  return data ?? null;
+}
+
+// ─── Hamburguesas Count (shift) ───
+
+export async function fetchMenuCategoriesByName(pattern: string) {
+  const { data } = await supabase
+    .from('menu_categorias')
+    .select('id')
+    .ilike('nombre', pattern);
+  return data ?? [];
+}
+
+export async function fetchShiftPedidoIds(branchId: string, since: string) {
+  const { data } = await supabase
+    .from('pedidos')
+    .select('id')
+    .eq('branch_id', branchId)
+    .gte('created_at', since)
+    .not('estado', 'eq', 'cancelado');
+  return (data ?? []).map((p) => p.id);
+}
+
+export async function fetchItemQuantitiesByCategories(
+  categoryIds: string[],
+  pedidoIds: string[],
+) {
+  const { data } = await supabase
+    .from('pedido_items')
+    .select('cantidad')
+    .in('categoria_carta_id', categoryIds)
+    .in('pedido_id', pedidoIds);
+  return data ?? [];
+}
+
+// ─── Pedido Estado ───
+
+export async function updatePedidoEstado(
+  pedidoId: string,
+  estado: string,
+  extra?: Record<string, unknown>,
+) {
+  const updateData: Record<string, unknown> = { estado, ...extra };
+  if (estado === 'en_preparacion') updateData.tiempo_inicio_prep = new Date().toISOString();
+  if (estado === 'listo') updateData.tiempo_listo = new Date().toISOString();
+  if (estado === 'en_camino') updateData.tiempo_en_camino = new Date().toISOString();
+  const { error } = await supabase.from('pedidos').update(updateData).eq('id', pedidoId);
+  if (error) throw error;
+}
+
+// ─── Cash Register Expenses ───
+
+export async function fetchShiftExpenses(shiftId: string) {
+  const { data, error } = await supabase
+    .from('cash_register_movements')
+    .select('*')
+    .eq('shift_id', shiftId)
+    .eq('type', 'expense')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateExpenseApproval(
+  id: string,
+  estado: 'aprobado' | 'rechazado',
+) {
+  const { error } = await supabase
+    .from('cash_register_movements')
+    .update({ estado_aprobacion: estado } as never)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ─── Webapp Orders ───
+
+const WEBAPP_SELECT = `
+  id, numero_pedido, tipo_servicio, cliente_nombre,
+  cliente_telefono, cliente_direccion, cliente_user_id, canal_venta, total, estado,
+  created_at, webapp_tracking_code,
+  pedido_items(id, nombre, cantidad, precio_unitario, subtotal)
+`;
+
+export async function fetchWebappPendingOrders(branchId: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select(WEBAPP_SELECT)
+    .eq('branch_id', branchId)
+    .eq('origen', 'webapp')
+    .in('estado', ['pendiente'])
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchWebappActiveOrders(
+  branchId: string,
+  activeStates: string[],
+) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select(WEBAPP_SELECT)
+    .eq('branch_id', branchId)
+    .eq('origen', 'webapp')
+    .in('estado', activeStates)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchWebappRecentOrders(branchId: string, since: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('id, numero_pedido, tipo_servicio, total, estado, created_at, cliente_nombre')
+    .eq('branch_id', branchId)
+    .eq('origen', 'webapp')
+    .in('estado', ['entregado', 'cancelado'])
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export function subscribeToWebappOrders(branchId: string, callback: () => void) {
+  return supabase
+    .channel(`webapp-orders-${branchId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'pedidos',
+        filter: `branch_id=eq.${branchId}`,
+      },
+      callback,
+    )
+    .subscribe();
+}
+
+export async function acceptWebappOrder(orderId: string) {
+  const { error } = await supabase
+    .from('pedidos')
+    .update({ estado: 'confirmado', tiempo_confirmado: new Date().toISOString() } as never)
+    .eq('id', orderId);
+  if (error) throw error;
+}
+
+export async function rejectWebappOrder(orderId: string) {
+  const { error } = await supabase
+    .from('pedidos')
+    .update({ estado: 'cancelado' })
+    .eq('id', orderId);
+  if (error) throw error;
+}
+
+// ─── Item Extras / Removibles Prefetch ───
+
+export async function fetchItemExtraAssignments(itemId: string) {
+  const { data: asignaciones } = await supabase
+    .from('item_extra_asignaciones')
+    .select('extra_id')
+    .eq('item_carta_id', itemId);
+  if (asignaciones && asignaciones.length > 0) {
+    const extraIds = asignaciones.map((a) => a.extra_id);
+    const { data: extras } = await supabase
+      .from('items_carta')
+      .select('id, nombre, precio_base, activo')
+      .in('id', extraIds)
+      .eq('activo', true)
+      .is('deleted_at', null);
+    return (extras || []).map((e, i) => ({
+      id: e.id,
+      item_carta_id: itemId,
+      preparacion_id: null,
+      insumo_id: null,
+      orden: i,
+      preparaciones: {
+        id: e.id,
+        nombre: e.nombre,
+        costo_calculado: 0,
+        precio_extra: e.precio_base,
+        puede_ser_extra: true,
+      },
+      insumos: null,
+    }));
+  }
+  const { data } = await supabase
+    .from('item_carta_extras')
+    .select(
+      '*, preparaciones(id, nombre, costo_calculado, precio_extra, puede_ser_extra), insumos(id, nombre, costo_por_unidad_base, precio_extra, puede_ser_extra)',
+    )
+    .eq('item_carta_id', itemId)
+    .order('orden');
+  return data ?? [];
+}
+
+export async function fetchItemRemovibles(itemId: string) {
+  const { data } = await supabase
+    .from('item_removibles')
+    .select('*, insumos(id, nombre), preparaciones(id, nombre)')
+    .eq('item_carta_id', itemId)
+    .eq('activo', true);
+  return data ?? [];
+}
+
+// ─── User Roles (for expense approval check) ───
+
+export async function fetchUserActiveRoles(userId: string) {
+  const { data } = await supabase
+    .from('user_roles_v2')
+    .select('brand_role, local_role')
+    .eq('user_id', userId)
+    .eq('is_active', true);
+  return data ?? [];
+}
+
+// ─── Payment Edit ───
+
+export async function deletePedidoPagos(pedidoId: string) {
+  const { error } = await supabase
+    .from('pedido_pagos')
+    .delete()
+    .eq('pedido_id', pedidoId);
+  if (error) throw error;
+}
+
+export async function insertPaymentEditAudit(record: Record<string, unknown>) {
+  const from = supabase.from as unknown as (name: string) => ReturnType<typeof supabase.from>;
+  const { error } = await from('pedido_payment_edits').insert(record);
+  if (error) throw error;
+}
+
+export async function findOpenCashShiftForBranch(branchId: string) {
+  const { data } = await supabase
+    .from('cash_register_shifts')
+    .select('id')
+    .eq('branch_id', branchId)
+    .eq('status', 'open')
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+// ─── Point Smart ───
+
+export async function invokeMpPointPayment(body: Record<string, unknown>) {
+  return supabase.functions.invoke('mp-point-payment', { body });
+}
+
+export function subscribeToPedidoPagos(
+  pedidoId: string,
+  callback: (payload: Record<string, unknown>) => void,
+) {
+  return supabase
+    .channel(`point-payment-${pedidoId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'pedido_pagos',
+        filter: `pedido_id=eq.${pedidoId}`,
+      },
+      (payload) => callback(payload.new as Record<string, unknown>),
+    )
+    .subscribe();
+}
+
+// ─── Shift Analysis ───
+
+export async function fetchBranchShifts(branchId: string) {
+  const { data, error } = await supabase
+    .from('branch_shifts')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('is_active', true)
+    .order('sort_order');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchShiftAnalysisOrders(branchId: string, since: string) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('id, total, created_at, estado')
+    .eq('branch_id', branchId)
+    .gte('created_at', since)
+    .neq('estado', 'cancelado');
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Order Chat ───
+
+export async function fetchOrderChatMessages(pedidoId: string) {
+  const { data, error } = await supabase
+    .from('webapp_pedido_mensajes')
+    .select('id, sender_type, sender_nombre, mensaje, leido, created_at')
+    .eq('pedido_id', pedidoId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function insertOrderChatMessage(message: Record<string, unknown>) {
+  const { error } = await supabase
+    .from('webapp_pedido_mensajes')
+    .insert(message as never);
+  if (error) throw error;
+}
+
+export async function markChatMessagesRead(pedidoId: string) {
+  await supabase
+    .from('webapp_pedido_mensajes')
+    .update({ leido: true } as never)
+    .eq('pedido_id', pedidoId)
+    .eq('sender_type', 'cliente')
+    .eq('leido', false);
+}
+
+export function subscribeToChatMessages(pedidoId: string, callback: () => void) {
+  return supabase
+    .channel(`pos-chat-${pedidoId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'webapp_pedido_mensajes',
+        filter: `pedido_id=eq.${pedidoId}`,
+      },
+      callback,
+    )
+    .subscribe();
+}
+
+// ─── Menu Categorias (for printing) ───
+
+export async function fetchMenuCategoriasPrint() {
+  const { data } = await supabase
+    .from('menu_categorias')
+    .select('id, nombre, tipo_impresion')
+    .eq('activo', true);
+  return (data ?? []) as { id: string; nombre: string; tipo_impresion: string }[];
+}
+
+// ─── Cancel Pedido ───
+
+export async function cancelPedido(pedidoId: string) {
+  await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', pedidoId);
+}
+
+// ─── Delivery Page ───
+
+export async function fetchDeliveryPedidos(branchId: string) {
+  const { data } = await supabase
+    .from('pedidos')
+    .select('*, pedido_items(nombre, cantidad)')
+    .eq('branch_id', branchId)
+    .eq('tipo', 'delivery')
+    .in('estado', ['listo', 'en_camino'])
+    .order('created_at', { ascending: true });
+  return data ?? [];
+}
+
+export async function fetchValeCategoryIds(): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('menu_categorias')
+    .select('id, tipo_impresion')
+    .eq('activo', true);
+  return new Set(
+    ((data ?? []) as { id: string; tipo_impresion: string }[])
+      .filter((c) => c.tipo_impresion === 'vale')
+      .map((c) => c.id),
+  );
+}
+
+export async function assignCadeteToPedido(pedidoId: string, cadeteId: string) {
+  const { error } = await supabase
+    .from('pedidos')
+    .update({
+      cadete_id: cadeteId,
+      estado: 'en_camino',
+      tiempo_en_camino: new Date().toISOString(),
+    } as never)
+    .eq('id', pedidoId);
+  if (error) throw error;
+}

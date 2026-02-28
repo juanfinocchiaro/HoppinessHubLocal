@@ -1,0 +1,330 @@
+import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
+
+// ── Promociones ─────────────────────────────────────────────────────
+
+export async function fetchPromociones() {
+  const { data, error } = await fromUntyped('promociones')
+    .select('*')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchActivePromociones() {
+  const { data, error } = await fromUntyped('promociones')
+    .select('*')
+    .eq('activa', true)
+    .is('deleted_at', null);
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchPromocionItemsWithCarta(promoId: string) {
+  const { data, error } = await fromUntyped('promocion_items')
+    .select('*, items_carta!inner(nombre, imagen_url, precio_base)')
+    .eq('promocion_id', promoId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchPromoItemsByPromoIds(promoIds: string[]) {
+  const { data, error } = await fromUntyped('promocion_items')
+    .select('*, items_carta!inner(nombre, imagen_url, precio_base)')
+    .in('promocion_id', promoIds);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchPreconfigExtras(promoItemIds: string[]) {
+  const { data, error } = await fromUntyped('promocion_item_extras')
+    .select('promocion_item_id, extra_item_carta_id, cantidad')
+    .in('promocion_item_id', promoItemIds);
+  if (error) throw error;
+  return (data || []) as Array<Record<string, unknown>>;
+}
+
+export async function fetchItemsCartaPriceInfo(ids: string[]) {
+  const { data, error } = await supabase
+    .from('items_carta')
+    .select('id, nombre, precio_base')
+    .in('id', ids);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createPromocion(
+  payload: Record<string, unknown>,
+  userId?: string,
+) {
+  const { data, error } = await fromUntyped('promociones')
+    .insert({ ...payload, created_by: userId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updatePromocion(id: string, payload: Record<string, unknown>) {
+  const { error } = await fromUntyped('promociones')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deletePromocionItems(promoId: string) {
+  await fromUntyped('promocion_items').delete().eq('promocion_id', promoId);
+}
+
+export async function insertPromocionItems(
+  promoId: string,
+  items: { item_carta_id: string; precio_promo: number }[],
+) {
+  const { data, error } = await fromUntyped('promocion_items')
+    .insert(
+      items.map((i) => ({
+        item_carta_id: i.item_carta_id,
+        precio_promo: i.precio_promo,
+        promocion_id: promoId,
+      })),
+    )
+    .select('id, item_carta_id');
+  if (error) throw error;
+  return (data || []) as Array<{ id: string; item_carta_id: string }>;
+}
+
+export async function insertPreconfigExtras(
+  rows: { promocion_item_id: string; extra_item_carta_id: string; cantidad: number }[],
+) {
+  if (rows.length === 0) return;
+  const { error } = await fromUntyped('promocion_item_extras').insert(rows);
+  if (error) throw error;
+}
+
+export async function togglePromocionActive(id: string, activa: boolean) {
+  const { error } = await fromUntyped('promociones')
+    .update({ activa, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function softDeletePromocion(id: string) {
+  const { error } = await fromUntyped('promociones')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ── Códigos Descuento ───────────────────────────────────────────────
+
+export async function fetchCodigosDescuento() {
+  const { data, error } = await fromUntyped('codigos_descuento')
+    .select('*')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function findCodigoDescuento(codigo: string) {
+  const { data, error } = await fromUntyped('codigos_descuento')
+    .select('*')
+    .ilike('codigo', codigo.trim())
+    .eq('activo', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function countCodigoUsageByUser(codigoId: string, userId: string) {
+  const { count } = await fromUntyped('codigos_descuento_usos')
+    .select('id', { count: 'exact', head: true })
+    .eq('codigo_id', codigoId)
+    .eq('user_id', userId);
+  return count ?? 0;
+}
+
+export async function registerCodeUsage(params: {
+  codigoId: string;
+  userId?: string;
+  pedidoId?: string;
+  montoDescontado: number;
+}) {
+  await supabase.from('codigos_descuento_usos').insert({
+    codigo_id: params.codigoId,
+    user_id: params.userId || null,
+    pedido_id: params.pedidoId || null,
+    monto_descontado: params.montoDescontado,
+  } as Record<string, unknown>);
+
+  const { data } = await supabase
+    .from('codigos_descuento')
+    .select('usos_actuales')
+    .eq('id', params.codigoId)
+    .single();
+  if (data) {
+    await supabase
+      .from('codigos_descuento')
+      .update({
+        usos_actuales: ((data as Record<string, unknown>).usos_actuales as number) + 1,
+      } as Record<string, unknown>)
+      .eq('id', params.codigoId);
+  }
+}
+
+export async function createCodigoDescuento(
+  payload: Record<string, unknown>,
+  userId?: string,
+) {
+  const { data, error } = await fromUntyped('codigos_descuento')
+    .insert({ ...payload, created_by: userId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCodigoDescuento(
+  id: string,
+  payload: Record<string, unknown>,
+) {
+  const { error } = await fromUntyped('codigos_descuento')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function softDeleteCodigoDescuento(id: string) {
+  const { error } = await fromUntyped('codigos_descuento')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ── Channel Pricing ─────────────────────────────────────────────────
+
+export async function fetchPriceLists() {
+  const { data, error } = await fromUntyped('price_lists').select('*').order('channel');
+  if (error) throw error;
+  return (data || []) as unknown[];
+}
+
+export async function fetchPriceListItems(priceListId: string) {
+  const { data, error } = await fromUntyped('price_list_items')
+    .select('*')
+    .eq('price_list_id', priceListId);
+  if (error) throw error;
+  return (data || []) as unknown[];
+}
+
+export async function fetchAllPriceListItems(priceListIds: string[]) {
+  if (priceListIds.length === 0) return [];
+  const { data, error } = await fromUntyped('price_list_items')
+    .select('*')
+    .in('price_list_id', priceListIds);
+  if (error) throw error;
+  return (data || []) as unknown[];
+}
+
+export async function fetchItemsCartaForPricing() {
+  const { data, error } = await supabase
+    .from('items_carta')
+    .select(
+      'id, nombre, orden, precio_base, activo, categoria_carta_id, menu_categorias(id, nombre, orden)',
+    )
+    .eq('activo', true)
+    .order('orden');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updatePriceListConfig(params: {
+  id: string;
+  pricing_mode: string;
+  pricing_value: number;
+  mirror_channel?: string | null;
+}) {
+  const { error } = await fromUntyped('price_lists')
+    .update({
+      pricing_mode: params.pricing_mode,
+      pricing_value: params.pricing_value,
+      mirror_channel: params.mirror_channel ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', params.id);
+  if (error) throw error;
+}
+
+export async function bulkUpsertPriceListItems(
+  price_list_id: string,
+  items: Array<{ item_carta_id: string; precio: number }>,
+) {
+  const rows = items.map((i) => ({
+    price_list_id,
+    item_carta_id: i.item_carta_id,
+    precio: i.precio,
+    updated_at: new Date().toISOString(),
+  }));
+  const { error } = await fromUntyped('price_list_items').upsert(rows, {
+    onConflict: 'price_list_id,item_carta_id',
+  });
+  if (error) throw error;
+}
+
+export async function deletePriceOverride(price_list_id: string, item_carta_id: string) {
+  const { error } = await fromUntyped('price_list_items')
+    .delete()
+    .eq('price_list_id', price_list_id)
+    .eq('item_carta_id', item_carta_id);
+  if (error) throw error;
+}
+
+export async function fetchActiveItemsPrices() {
+  const { data, error } = await supabase
+    .from('items_carta')
+    .select('id, precio_base')
+    .eq('activo', true);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchPriceListsByChannels(channels: string[]) {
+  const { data } = await fromUntyped('price_lists')
+    .select('id, channel')
+    .in('channel', channels);
+  return (data || []) as unknown[];
+}
+
+export async function fetchExistingPriceListChannels() {
+  const { data } = await fromUntyped('price_lists').select('channel');
+  return new Set(
+    ((data || []) as Array<Record<string, unknown>>).map((e) => e.channel as string),
+  );
+}
+
+export async function insertPriceLists(rows: Record<string, unknown>[]) {
+  if (rows.length === 0) return;
+  const { error } = await fromUntyped('price_lists').insert(rows);
+  if (error) throw error;
+}
+
+// ── Promo Discount Data ─────────────────────────────────────────────
+
+export async function fetchPromoDiscountItems(
+  branchId: string,
+  startDate: string,
+  endDate: string,
+) {
+  const { data, error } = await supabase
+    .from('pedido_items')
+    .select(
+      'precio_unitario, precio_referencia, cantidad, subtotal, pedido_id, pedidos!inner(branch_id, created_at)',
+    )
+    .gte('pedidos.created_at', startDate)
+    .lt('pedidos.created_at', endDate)
+    .eq('pedidos.branch_id', branchId);
+  if (error) throw error;
+  return data || [];
+}

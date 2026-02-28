@@ -28,7 +28,7 @@ import { useProveedores, useProveedorMutations } from '@/hooks/useProveedores';
 import { ProveedorFormModal } from '@/components/finanzas/ProveedorFormModal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/states';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchSaldosProveedores } from '@/services/proveedoresService';
 import { useAuth } from '@/hooks/useAuth';
 import { useCondicionesByBranch } from '@/hooks/useProveedorCondiciones';
 import { CondicionesLocalModal } from '@/components/finanzas/CondicionesLocalModal';
@@ -38,13 +38,9 @@ function useSaldosProveedores(branchId: string) {
   return useQuery({
     queryKey: ['saldos-proveedores', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cuenta_corriente_proveedores')
-        .select('proveedor_id, total_pendiente, monto_vencido, facturas_pendientes')
-        .eq('branch_id', branchId);
-      if (error) throw error;
+      const data = await fetchSaldosProveedores(branchId);
       const map: Record<string, { pendiente: number; vencido: number; facturas: number }> = {};
-      data?.forEach((r: any) => {
+      data.forEach((r: any) => {
         map[r.proveedor_id] = {
           pendiente: Number(r.total_pendiente ?? 0),
           vencido: Number(r.monto_vencido ?? 0),

@@ -18,8 +18,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Users, CheckCircle, Upload, FileText } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { insertContactMessage, uploadCV } from '@/services/contactService';
+import { fetchPublicBranchIdAndName } from '@/services/publicBranchService';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
 interface EmpleoModalProps {
   open: boolean;
@@ -47,13 +49,12 @@ export function EmpleoModal({ open, onOpenChange }: EmpleoModalProps) {
   });
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      const { data } = await supabase.from('branches_public').select('id, name').order('name');
-
-      if (data) setBranches(data);
+    const loadBranches = async () => {
+      const data = await fetchPublicBranchIdAndName();
+      setBranches(data);
     };
 
-    if (open) fetchBranches();
+    if (open) loadBranches();
   }, [open]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,24 +93,14 @@ export function EmpleoModal({ open, onOpenChange }: EmpleoModalProps) {
     setLoading(true);
 
     try {
-      // Upload CV to storage
-      const fileExt = cvFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${formData.email.replace('@', '_at_')}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('cv-uploads')
-        .upload(fileName, cvFile);
-
-      if (uploadError) {
+      let cvUrl = '';
+      try {
+        cvUrl = await uploadCV(cvFile, formData.email);
+      } catch (uploadError) {
         if (import.meta.env.DEV) console.error('Upload error:', uploadError);
-        // If bucket doesn't exist, still save the application
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage.from('cv-uploads').getPublicUrl(fileName);
-
-      // Save job application to contact_messages (reusing existing table)
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await insertContactMessage({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -117,7 +108,7 @@ export function EmpleoModal({ open, onOpenChange }: EmpleoModalProps) {
         message: formData.motivation || 'Sin mensaje adicional',
         employment_branch_id: formData.branchId,
         employment_position: formData.position,
-        employment_cv_link: urlData?.publicUrl || fileName,
+        employment_cv_link: cvUrl || '',
         employment_motivation: formData.motivation,
       });
 
@@ -126,8 +117,7 @@ export function EmpleoModal({ open, onOpenChange }: EmpleoModalProps) {
       setSuccess(true);
       toast.success('¡Postulación enviada! Te contactaremos pronto.');
     } catch (err) {
-      if (import.meta.env.DEV) console.error(err);
-      toast.error('Error al enviar. Intentá de nuevo.');
+      handleError(err, { userMessage: 'Error al enviar', context: 'EmpleoModal.handleSubmit' });
     } finally {
       setLoading(false);
     }

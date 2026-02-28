@@ -11,6 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/formatters';
 
 interface AlertInfo {
   posnet: boolean;
@@ -36,12 +37,7 @@ export function ClosureSummary({
   totalFacturado,
   alertas,
 }: ClosureSummaryProps) {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   const tieneAlertas =
     alertas && (alertas.posnet || alertas.apps || alertas.caja || alertas.facturacion);

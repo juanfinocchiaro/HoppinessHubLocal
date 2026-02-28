@@ -63,7 +63,7 @@ export function OperatorVerificationDialog({
         onConfirm(newOperator.userId);
         onOpenChange(false);
       }
-    } catch (err) {
+    } catch {
       setError('Error al cambiar operador');
     } finally {
       setIsLoading(false);

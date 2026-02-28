@@ -1,101 +1,57 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchWebappConfig,
+  fetchWebappMenuItems,
+  fetchWebappItemOptionalGroups,
+  fetchWebappItemExtras,
+  fetchWebappItemRemovables,
+} from '@/services/menuService';
 import type { WebappConfig, WebappMenuItem } from '@/types/webapp';
 
 export function useWebappConfig(branchSlug: string | undefined) {
   return useQuery({
     queryKey: ['webapp-config', branchSlug],
     queryFn: async () => {
-      const { data: branch, error: branchErr } = await supabase
-        .from('branches')
-        .select(
-          'id, name, address, city, slug, opening_time, closing_time, public_hours, latitude, longitude, google_place_id',
-        )
-        .eq('slug', branchSlug!)
-        .eq('is_active', true)
-        .single();
-      if (branchErr) throw branchErr;
-
-      const { data: config, error: configErr } = await supabase
-        .from('webapp_config' as any)
-        .select('*, webapp_activa')
-        .eq('branch_id', branch.id)
-        .single();
-      if (configErr) throw configErr;
-
+      const { branch, config } = await fetchWebappConfig(branchSlug!);
       return { branch, config: config as unknown as WebappConfig };
     },
     enabled: !!branchSlug,
   });
 }
 
-// ── PARTE 6A: Filtrado por disponibilidad de local ──────────
+// ── PARTE 6A: Filtrado por disponibilidad de local ──────────────
 export function useWebappMenuItems(branchId: string | undefined) {
   return useQuery({
     queryKey: ['webapp-menu-items', branchId],
     queryFn: async () => {
-      // 1. Get hidden category IDs (visible_en_carta = false)
-      const { data: hiddenCats } = await supabase
-        .from('menu_categorias' as any)
-        .select('id')
-        .eq('visible_en_carta', false);
-
-      const hiddenCatIds = (hiddenCats || []).map((c: any) => c.id);
-
-      // 2. Query active webapp items (brand-level visibility)
-      let query = supabase
-        .from('items_carta')
-        .select(
-          `
-          id, nombre, nombre_corto, descripcion, imagen_url,
-          precio_base, precio_promo, promo_etiqueta,
-          categoria_carta_id, orden, disponible_delivery,
-          disponible_webapp, tipo,
-          menu_categorias:categoria_carta_id(id, nombre, orden)
-        `,
-        )
-        .eq('activo', true)
-        .is('deleted_at', null)
-        .eq('disponible_webapp', true)
-        .order('orden');
-
-      // Exclude items from hidden categories
-      if (hiddenCatIds.length > 0) {
-        query = query.not('categoria_carta_id', 'in', `(${hiddenCatIds.join(',')})`);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // 3. Get branch-level availability overrides for online
-      const { data: availability, error: avErr } = await supabase
-        .from('branch_item_availability' as any)
-        .select('item_carta_id, available, available_webapp, out_of_stock')
-        .eq('branch_id', branchId!);
-      if (avErr) throw avErr;
+      const { items, availability } = await fetchWebappMenuItems(branchId!);
 
       const availabilityMap = new Map(
-        (availability || []).map((row: any) => [row.item_carta_id, row]),
+        (availability as Array<Record<string, unknown>>).map((row: Record<string, unknown>) => [
+          row.item_carta_id,
+          row,
+        ]),
       );
 
-      const visibleItems = (data || []).filter((item: any) => {
+      const visibleItems = items.filter((item: Record<string, unknown>) => {
         const row = availabilityMap.get(item.id);
-        // Missing row means "no local override yet" -> keep visible by default
         if (!row) return true;
         return !!row.available && !!row.available_webapp && !row.out_of_stock;
       });
 
-      return visibleItems.map((item: any) => ({
+      return visibleItems.map((item: Record<string, unknown>) => ({
         ...item,
-        categoria_nombre: item.menu_categorias?.nombre ?? null,
-        categoria_orden: item.menu_categorias?.orden ?? 999,
+        categoria_nombre:
+          (item.menu_categorias as Record<string, unknown> | null)?.nombre ?? null,
+        categoria_orden:
+          (item.menu_categorias as Record<string, unknown> | null)?.orden ?? 999,
       })) as WebappMenuItem[];
     },
     enabled: !!branchId,
   });
 }
 
-// ── Grupos opcionales (bebidas en combos, etc.) ──────────
+// ── Grupos opcionales (bebidas en combos, etc.) ──────────────────
 export interface OptionalGroupOption {
   id: string;
   nombre: string;
@@ -114,36 +70,23 @@ export function useWebappItemOptionalGroups(itemId: string | undefined) {
   return useQuery({
     queryKey: ['webapp-item-optional-groups', itemId],
     queryFn: async () => {
-      // 1. Get groups for this item
-      const { data: groups, error: gErr } = await supabase
-        .from('item_carta_grupo_opcional' as any)
-        .select('id, nombre, es_obligatorio, max_selecciones, orden')
-        .eq('item_carta_id', itemId!)
-        .order('orden');
-      if (gErr) throw gErr;
-      if (!groups || groups.length === 0) return [];
+      const { groups, options } = await fetchWebappItemOptionalGroups(itemId!);
+      if (groups.length === 0) return [];
 
-      // 2. Get options for all groups
-      const groupIds = (groups as any[]).map((g: any) => g.id);
-      const { data: options, error: oErr } = await supabase
-        .from('item_carta_grupo_opcional_items' as any)
-        .select(
-          'id, grupo_id, insumo_id, preparacion_id, costo_unitario, insumos(id, nombre), preparaciones(id, nombre)',
-        )
-        .in('grupo_id', groupIds);
-      if (oErr) throw oErr;
-
-      return (groups as any[]).map((g: any) => ({
+      return groups.map((g: Record<string, unknown>) => ({
         id: g.id,
         nombre: g.nombre,
         es_obligatorio: g.es_obligatorio ?? false,
         max_selecciones: g.max_selecciones,
-        opciones: ((options || []) as any[])
-          .filter((o: any) => o.grupo_id === g.id)
-          .map((o: any) => ({
+        opciones: (options as Array<Record<string, unknown>>)
+          .filter((o: Record<string, unknown>) => o.grupo_id === g.id)
+          .map((o: Record<string, unknown>) => ({
             id: o.id,
-            nombre: o.insumos?.nombre || o.preparaciones?.nombre || 'Opción',
-            precio_extra: o.costo_unitario ?? 0,
+            nombre:
+              (o.insumos as Record<string, unknown> | null)?.nombre ||
+              (o.preparaciones as Record<string, unknown> | null)?.nombre ||
+              'Opción',
+            precio_extra: (o.costo_unitario as number) ?? 0,
           })),
       })) as OptionalGroup[];
     },
@@ -156,29 +99,12 @@ export function useWebappItemExtras(itemId: string | undefined) {
   return useQuery({
     queryKey: ['webapp-item-extras', itemId],
     queryFn: async () => {
-      // Get extra assignments from correct table
-      const { data: asignaciones, error: errAsig } = await supabase
-        .from('item_extra_asignaciones' as any)
-        .select('extra_id')
-        .eq('item_carta_id', itemId!);
-      if (errAsig) throw errAsig;
+      const extras = await fetchWebappItemExtras(itemId!);
 
-      const extraIds = (asignaciones || []).map((a: any) => a.extra_id);
-      if (extraIds.length === 0) return [];
-
-      // Get the actual items_carta (tipo='extra') with real sale prices
-      const { data: extras, error } = await supabase
-        .from('items_carta')
-        .select('id, nombre, precio_base, imagen_url')
-        .in('id', extraIds)
-        .eq('activo', true)
-        .is('deleted_at', null);
-      if (error) throw error;
-
-      return (extras || []).map((e: any) => ({
+      return extras.map((e: Record<string, unknown>) => ({
         id: e.id,
         nombre: e.nombre,
-        precio: e.precio_base, // Precio REAL de venta
+        precio: e.precio_base,
         imagen_url: e.imagen_url,
       }));
     },
@@ -186,22 +112,19 @@ export function useWebappItemExtras(itemId: string | undefined) {
   });
 }
 
-// ── PARTE 5A: Removibles desde item_removibles ──────────────
+// ── PARTE 5A: Removibles desde item_removibles ──────────────────
 export function useWebappItemRemovables(itemId: string | undefined) {
   return useQuery({
     queryKey: ['webapp-item-removables', itemId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('item_removibles' as any)
-        .select(
-          'id, nombre_display, activo, insumo_id, preparacion_id, insumos(id, nombre), preparaciones(id, nombre)',
-        )
-        .eq('item_carta_id', itemId!)
-        .eq('activo', true);
-      if (error) throw error;
-      return (data ?? []).map((r: any) => ({
+      const data = await fetchWebappItemRemovables(itemId!);
+      return (data as Array<Record<string, unknown>>).map((r: Record<string, unknown>) => ({
         ...r,
-        nombre: r.nombre_display || r.insumos?.nombre || r.preparaciones?.nombre || 'Ingrediente',
+        nombre:
+          (r.nombre_display as string) ||
+          (r.insumos as Record<string, unknown> | null)?.nombre ||
+          (r.preparaciones as Record<string, unknown> | null)?.nombre ||
+          'Ingrediente',
       }));
     },
     enabled: !!itemId,

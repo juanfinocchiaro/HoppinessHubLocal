@@ -5,7 +5,7 @@
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMyWarnings, acknowledgeWarning } from '@/services/warningsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,59 +53,13 @@ export default function MyWarningsCard() {
     queryKey: ['my-warnings', userId],
     queryFn: async () => {
       if (!userId) return [];
-
-      const { data, error } = await supabase
-        .from('warnings')
-        .select(
-          `
-          id,
-          warning_type,
-          description,
-          warning_date,
-          acknowledged_at,
-          signed_document_url,
-          issued_by
-        `,
-        )
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('warning_date', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      // Fetch issuer names
-      const issuerIds = [...new Set(data?.map((w) => w.issued_by).filter(Boolean))];
-      let issuerMap: Record<string, string> = {};
-
-      if (issuerIds.length > 0) {
-        const { data: issuers } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', issuerIds);
-
-        issuers?.forEach((i) => {
-          if (i.id) issuerMap[i.id] = i.full_name || '';
-        });
-      }
-
-      return (data || []).map((w) => ({
-        ...w,
-        issuer: w.issued_by ? { full_name: issuerMap[w.issued_by] || 'Desconocido' } : undefined,
-      })) as Warning[];
+      return fetchMyWarnings(userId) as Promise<Warning[]>;
     },
     enabled: !!userId,
   });
 
   const acknowledgeMutation = useMutation({
-    mutationFn: async (warningId: string) => {
-      const { error } = await supabase
-        .from('warnings')
-        .update({ acknowledged_at: new Date().toISOString() })
-        .eq('id', warningId);
-
-      if (error) throw error;
-    },
+    mutationFn: (warningId: string) => acknowledgeWarning(warningId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-warnings'] });
       toast.success('Apercibimiento marcado como visto');

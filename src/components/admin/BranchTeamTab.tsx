@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchTeam, searchUsersByEmail, updateBranchMemberRole, updateBranchMemberPosition, addBranchMember, removeBranchMember } from '@/services/adminService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,37 +91,8 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
   const { data: team = [], isLoading } = useQuery({
     queryKey: ['branch-team', branchId],
     queryFn: async () => {
-      const { data: teamRoles, error: teamError } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role, default_position')
-        .eq('branch_id', branchId)
-        .eq('is_active', true);
-
-      if (teamError) throw teamError;
-      if (!teamRoles?.length) return [];
-
-      const userIds = teamRoles.map((t) => t.user_id);
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .in('id', userIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-      return teamRoles.map((t) => ({
-        user_id: t.user_id,
-        local_role: t.local_role,
-        default_position: t.default_position as WorkPositionType | null,
-        profile: profileMap.get(t.user_id)
-          ? {
-              id: profileMap.get(t.user_id)!.id,
-              full_name: profileMap.get(t.user_id)!.full_name,
-              email: profileMap.get(t.user_id)!.email,
-              avatar_url: profileMap.get(t.user_id)!.avatar_url,
-            }
-          : null,
-      })) as TeamMember[];
+      const members = await fetchBranchTeam(branchId);
+      return members as TeamMember[];
     },
     enabled: !!branchId,
   });
@@ -138,32 +109,17 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
     queryKey: ['search-users-for-branch', searchEmail, branchId],
     queryFn: async () => {
       if (searchEmail.length < 3) return [];
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .ilike('email', `%${searchEmail}%`)
-        .limit(5);
-
-      if (error) throw error;
-
+      const data = await searchUsersByEmail(searchEmail);
       const existingUserIds = new Set(team.map((t) => t.user_id));
-      return (data || []).filter((u) => !existingUserIds.has(u.id));
+      return data.filter((u) => !existingUserIds.has(u.id));
     },
     enabled: searchEmail.length >= 3,
   });
 
   // Mutations
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: LocalRole }) => {
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ local_role: newRole, updated_at: new Date().toISOString() })
-        .eq('user_id', userId)
-        .eq('branch_id', branchId);
-
-      if (error) throw error;
-    },
+    mutationFn: ({ userId, newRole }: { userId: string; newRole: LocalRole }) =>
+      updateBranchMemberRole(userId, branchId, newRole),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-team', branchId] });
       toast.success('Rol actualizado');
@@ -177,15 +133,8 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
   });
 
   const updatePositionMutation = useMutation({
-    mutationFn: async ({ userId, position }: { userId: string; position: string | null }) => {
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ default_position: position as any, updated_at: new Date().toISOString() })
-        .eq('user_id', userId)
-        .eq('branch_id', branchId);
-
-      if (error) throw error;
-    },
+    mutationFn: ({ userId, position }: { userId: string; position: string | null }) =>
+      updateBranchMemberPosition(userId, branchId, position),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-team', branchId] });
       toast.success('Posición actualizada');
@@ -198,7 +147,7 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       userId,
       role,
       position,
@@ -206,17 +155,7 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
       userId: string;
       role: LocalRole;
       position: string | null;
-    }) => {
-      const { error } = await supabase.from('user_branch_roles').insert({
-        user_id: userId,
-        branch_id: branchId,
-        local_role: role,
-        default_position: position as any,
-        is_active: true,
-      } as any);
-
-      if (error) throw error;
-    },
+    }) => addBranchMember(userId, branchId, role, position),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-team', branchId] });
       toast.success('Miembro agregado al equipo');
@@ -238,15 +177,7 @@ export default function BranchTeamTab({ branchId, branchName }: BranchTeamTabPro
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ is_active: false })
-        .eq('user_id', userId)
-        .eq('branch_id', branchId);
-
-      if (error) throw error;
-    },
+    mutationFn: (userId: string) => removeBranchMember(userId, branchId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-team', branchId] });
       toast.success('Miembro dado de baja');

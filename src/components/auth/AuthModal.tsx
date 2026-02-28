@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGooglePopupAuth } from '@/hooks/useGooglePopupAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { linkGuestOrders } from '@/services/userOnboardingService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,7 +34,7 @@ export function AuthModal() {
   // Also trigger link-guest-orders to retroactively link orders made as guest.
   useEffect(() => {
     if (user && isOpen) {
-      supabase.functions.invoke('link-guest-orders', {}).catch(() => {});
+      linkGuestOrders().catch(() => {});
       resetForm();
       closeAuthModal();
       onSuccess?.();

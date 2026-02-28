@@ -16,6 +16,7 @@ import { ChevronDown, CreditCard, HelpCircle, CheckCircle2, AlertTriangle } from
 import { cn } from '@/lib/utils';
 import type { VentasLocalData, VentasAppsData, ComparacionPosnet } from '@/types/shiftClosure';
 import { calcularDiferenciaPosnet, calcularDesgloseTarjetas } from '@/types/shiftClosure';
+import { formatCurrency } from '@/lib/formatters';
 
 interface PosnetComparisonSectionProps {
   ventasLocal: VentasLocalData;
@@ -31,12 +32,7 @@ export function PosnetComparisonSection({
   const comparacion = calcularDiferenciaPosnet(ventasLocal, ventasApps);
   const desglose = calcularDesgloseTarjetas(ventasLocal);
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   const handleChange = (value: number) => {
     onPosnetChange({ total_posnet: value });

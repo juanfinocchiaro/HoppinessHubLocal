@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { signUpWithInvitation } from '@/services/authService';
+import { updateStaffProfile } from '@/services/profileService';
+import {
+  acceptInvitation,
+  syncLegacyRole,
+  uploadStaffDocument,
+  upsertBranchRole,
+} from '@/services/staffService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,10 +83,8 @@ export default function RegistroStaff() {
       }
 
       try {
-        // Use secure RPC function instead of direct table query
-        const { data, error: fetchError } = await supabase.rpc('validate_invitation_token', {
-          _token: token,
-        });
+        const { validateInvitationToken } = await import('@/services/staffService');
+        const { data, error: fetchError } = await validateInvitationToken(token);
 
         if (fetchError || !data || data.length === 0) {
           setError('Invitación no encontrada o inválida');
@@ -104,7 +109,7 @@ export default function RegistroStaff() {
         }
 
         setInvitation(invitationData);
-      } catch (err) {
+      } catch {
         setError('Error al verificar la invitación');
       } finally {
         setLoading(false);
@@ -123,20 +128,7 @@ export default function RegistroStaff() {
   };
 
   const uploadFile = async (file: File, userId: string, type: 'front' | 'back') => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/dni-${type}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('staff-documents')
-      .upload(fileName, file, { upsert: true });
-
-    if (uploadError) throw uploadError;
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('staff-documents').getPublicUrl(fileName);
-
-    return publicUrl;
+    return uploadStaffDocument(file, userId, type);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,18 +160,12 @@ export default function RegistroStaff() {
     setSubmitting(true);
 
     try {
-      // 1. Create auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: invitation.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: formData.full_name,
-            invitation_token: token,
-          },
-        },
-      });
+      const { data: authData, error: signUpError } = await signUpWithInvitation(
+        invitation.email,
+        formData.password,
+        formData.full_name,
+        token!,
+      );
 
       if (signUpError) {
         if (signUpError.message.includes('already registered')) {
@@ -208,32 +194,27 @@ export default function RegistroStaff() {
         // Continue anyway, files can be uploaded later
       }
 
-      // 3. Update profile with all data
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          phone: formData.phone,
-          dni: formData.dni,
-          address: formData.address,
-          birth_date: formData.birth_date || null,
-          cuit: formData.cuit,
-          cbu: formData.cbu,
-          emergency_contact_name: formData.emergency_contact_name,
-          emergency_contact_phone: formData.emergency_contact_phone,
-          dni_front_url: dniFrontUrl,
-          dni_back_url: dniBackUrl,
-          accepted_terms_at: new Date().toISOString(),
-          invitation_token: token,
-        })
-        .eq('id', userId); // profiles.id = user_id after migration
+      const { error: profileError } = await updateStaffProfile(userId, {
+        full_name: formData.full_name,
+        phone: formData.phone,
+        dni: formData.dni,
+        address: formData.address,
+        birth_date: formData.birth_date || null,
+        cuit: formData.cuit,
+        cbu: formData.cbu,
+        emergency_contact_name: formData.emergency_contact_name,
+        emergency_contact_phone: formData.emergency_contact_phone,
+        dni_front_url: dniFrontUrl,
+        dni_back_url: dniBackUrl,
+        accepted_terms_at: new Date().toISOString(),
+        invitation_token: token,
+      });
 
       if (profileError) {
         devWarn('Profile update error:', profileError);
       }
 
-      // 4. Assign role using user_roles_v2 (V2 system)
-      // Map old role names to new local_role values
+      // 4. Assign role
       const localRoleMap: Record<
         string,
         'encargado' | 'cajero' | 'empleado' | 'contador_local' | 'franquiciado'
@@ -246,47 +227,13 @@ export default function RegistroStaff() {
 
       const localRole = localRoleMap[invitation.role] || 'empleado';
 
-      // Check if role exists, then update or insert
-      const { data: existingRole } = await supabase
-        .from('user_roles_v2')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const { error: branchRoleError } = await upsertBranchRole(userId, invitation.branch_id, localRole);
+      if (branchRoleError) devWarn('Branch role error:', branchRoleError);
 
-      let roleError;
-      if (existingRole) {
-        const { error } = await supabase
-          .from('user_roles_v2')
-          .update({
-            local_role: localRole,
-            branch_ids: [invitation.branch_id],
-            is_active: true,
-          })
-          .eq('user_id', userId);
-        roleError = error;
-      } else {
-        const { error } = await supabase.from('user_roles_v2').insert({
-          user_id: userId,
-          local_role: localRole,
-          branch_ids: [invitation.branch_id],
-          is_active: true,
-        });
-        roleError = error;
-      }
+      const { error: legacyError } = await syncLegacyRole(userId, invitation.branch_id, localRole);
+      if (legacyError) devWarn('Legacy role error:', legacyError);
 
-      if (roleError) {
-        devWarn('Role assignment error:', roleError);
-      }
-
-      // 5. Mark invitation as accepted
-      await supabase
-        .from('staff_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_by: userId,
-        })
-        .eq('id', invitation.id);
+      await acceptInvitation(invitation.id, userId);
 
       toast.success('¡Registro completado! Revisá tu email para confirmar la cuenta.');
       navigate('/ingresar?registered=true');

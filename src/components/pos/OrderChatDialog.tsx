@@ -14,8 +14,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchOrderChatMessages,
+  insertOrderChatMessage,
+  markChatMessagesRead,
+  subscribeToChatMessages,
+  removeSupabaseChannel,
+  getAuthUser,
+} from '@/services/posService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatTime } from '@/lib/formatters';
 
 interface ChatMessage {
   id: string;
@@ -34,10 +42,6 @@ interface OrderChatDialogProps {
   clienteNombre: string | null;
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-}
-
 export function OrderChatDialog({
   pedidoId,
   branchId,
@@ -54,13 +58,8 @@ export function OrderChatDialog({
   const { data: messages = [] } = useQuery({
     queryKey: ['order-chat', pedidoId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webapp_pedido_mensajes')
-        .select('id, sender_type, sender_nombre, mensaje, leido, created_at')
-        .eq('pedido_id', pedidoId)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as ChatMessage[];
+      const data = await fetchOrderChatMessages(pedidoId);
+      return data as ChatMessage[];
     },
     enabled: !!pedidoId,
     refetchInterval: open ? 10000 : 30000,
@@ -71,15 +70,15 @@ export function OrderChatDialog({
   // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async (text: string) => {
-      const { error } = await supabase.from('webapp_pedido_mensajes').insert({
+      const user = await getAuthUser();
+      await insertOrderChatMessage({
         pedido_id: pedidoId,
         branch_id: branchId,
         sender_type: 'local',
-        sender_id: (await supabase.auth.getUser()).data.user?.id,
+        sender_id: user?.id,
         sender_nombre: branchName,
         mensaje: text.trim(),
-      } as any);
-      if (error) throw error;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-chat', pedidoId] });
@@ -90,36 +89,18 @@ export function OrderChatDialog({
   // Mark as read when opening
   useEffect(() => {
     if (!open || unreadCount === 0) return;
-    supabase
-      .from('webapp_pedido_mensajes')
-      .update({ leido: true } as any)
-      .eq('pedido_id', pedidoId)
-      .eq('sender_type', 'cliente')
-      .eq('leido', false)
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['order-chat', pedidoId] });
-      });
+    markChatMessagesRead(pedidoId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['order-chat', pedidoId] });
+    });
   }, [open, unreadCount, pedidoId, queryClient]);
 
   // Realtime
   useEffect(() => {
-    const channel = supabase
-      .channel(`pos-chat-${pedidoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webapp_pedido_mensajes',
-          filter: `pedido_id=eq.${pedidoId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['order-chat', pedidoId] });
-        },
-      )
-      .subscribe();
+    const channel = subscribeToChatMessages(pedidoId, () => {
+      queryClient.invalidateQueries({ queryKey: ['order-chat', pedidoId] });
+    });
     return () => {
-      supabase.removeChannel(channel);
+      removeSupabaseChannel(channel);
     };
   }, [pedidoId, queryClient]);
 

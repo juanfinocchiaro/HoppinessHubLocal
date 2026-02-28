@@ -23,6 +23,7 @@ import { useFichaTecnica, useFichaTecnicaMutations } from '@/hooks/useMenu';
 import { useInsumos } from '@/hooks/useInsumos';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/states';
+import { formatCurrency } from '@/lib/formatters';
 
 interface Props {
   open: boolean;
@@ -38,12 +39,7 @@ const UNIDADES = [
   { value: 'un', label: 'Unidades' },
 ];
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 2,
-  }).format(value);
+
 
 function calcSubtotal(cantidad: number, costoUnit: number, unidad: string) {
   if (!cantidad || !costoUnit) return 0;

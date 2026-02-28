@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, CheckCircle, Rocket } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { insertContactMessage } from '@/services/contactService';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
 export function FranchiseFormSection() {
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,7 @@ export function FranchiseFormSection() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await insertContactMessage({
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -67,8 +68,7 @@ export function FranchiseFormSection() {
       setSuccess(true);
       toast.success('¡Gracias por tu interés! Te contactaremos en menos de 24hs.');
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error submitting franchise form:', err);
-      toast.error('Error al enviar. Intentá de nuevo.');
+      handleError(err, { userMessage: 'Error al enviar', context: 'FranchiseFormSection.handleSubmit' });
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export function FranchiseFormSection() {
     <section id="formulario-franquicia" className="py-20 px-4 bg-primary">
       <div className="container mx-auto max-w-2xl">
         <div className="text-center text-white mb-10">
-          <h2 className="text-4xl font-black mb-4 font-brand">¿QUERÉS TU PROPIA FRANQUICIA?</h2>
+          <h2 className="text-4xl font-black mb-4 font-brand">¿QUERÃ‰S TU PROPIA FRANQUICIA?</h2>
           <p className="text-xl text-white/90">
             Completá el formulario y un asesor se comunicará en menos de 24hs.
           </p>

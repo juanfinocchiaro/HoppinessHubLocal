@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchWhatsAppTemplates,
+  updateWhatsAppTemplate,
+} from '@/services/whatsappService';
 
 export interface WhatsAppTemplate {
   id: string;
@@ -18,22 +21,14 @@ export function useWhatsAppTemplates() {
   const query = useQuery({
     queryKey: ['whatsapp-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_templates')
-        .select('*')
-        .order('subject_type');
-      if (error) throw error;
+      const data = await fetchWhatsAppTemplates();
       return data as WhatsAppTemplate[];
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, template_text }: { id: string; template_text: string }) => {
-      const { error } = await supabase
-        .from('whatsapp_templates')
-        .update({ template_text, updated_by: (await supabase.auth.getUser()).data.user?.id })
-        .eq('id', id);
-      if (error) throw error;
+      await updateWhatsAppTemplate(id, template_text);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-templates'] });

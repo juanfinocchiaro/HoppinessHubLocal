@@ -50,12 +50,8 @@ export interface Warning {
   created_at: string;
 }
 
-export interface NoteEntry {
-  date: string;
-  note: string;
-  by: string;
-  by_name?: string;
-}
+export type { NoteEntry } from '@/types/notes';
+import type { NoteEntry } from '@/types/notes';
 
 export const LOCAL_ROLE_LABELS: Record<string, string> = {
   franquiciado: 'Franquiciado',

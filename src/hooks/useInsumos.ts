@@ -1,8 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import type { InsumoFormData, CategoriaInsumoFormData } from '@/types/financial';
+import {
+  fetchCategoriasInsumo,
+  createCategoriaInsumo,
+  updateCategoriaInsumo,
+  softDeleteCategoriaInsumo,
+  fetchInsumos as fetchInsumosSvc,
+  createInsumo,
+  updateInsumo,
+  softDeleteInsumo,
+} from '@/services/menuService';
 
 // ===== CATEGORÍAS =====
 export function useCategoriasInsumo() {
@@ -10,15 +19,7 @@ export function useCategoriasInsumo() {
 
   return useQuery({
     queryKey: ['categorias-insumo'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categorias_insumo')
-        .select('*')
-        .is('deleted_at', null)
-        .order('orden', { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchCategoriasInsumo,
     enabled: !!user,
   });
 }
@@ -27,15 +28,7 @@ export function useCategoriaInsumoMutations() {
   const qc = useQueryClient();
 
   const create = useMutation({
-    mutationFn: async (data: CategoriaInsumoFormData) => {
-      const { data: result, error } = await supabase
-        .from('categorias_insumo')
-        .insert(data)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: (data: CategoriaInsumoFormData) => createCategoriaInsumo(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['categorias-insumo'] });
       toast.success('Categoría creada');
@@ -44,10 +37,8 @@ export function useCategoriaInsumoMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CategoriaInsumoFormData> }) => {
-      const { error } = await supabase.from('categorias_insumo').update(data).eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, data }: { id: string; data: Partial<CategoriaInsumoFormData> }) =>
+      updateCategoriaInsumo(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['categorias-insumo'] });
       toast.success('Categoría actualizada');
@@ -56,13 +47,7 @@ export function useCategoriaInsumoMutations() {
   });
 
   const softDelete = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('categorias_insumo')
-        .update({ deleted_at: new Date().toISOString(), activo: false })
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => softDeleteCategoriaInsumo(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['categorias-insumo'] });
       toast.success('Categoría eliminada');
@@ -79,18 +64,7 @@ export function useInsumos() {
 
   return useQuery({
     queryKey: ['insumos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('insumos')
-        .select(
-          '*, categorias_insumo(nombre, tipo), rdo_categories!insumos_rdo_category_code_fkey(code, name), proveedor_obligatorio:proveedores!insumos_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:proveedores!insumos_proveedor_sugerido_id_fkey(id, razon_social)',
-        )
-        .is('deleted_at', null)
-        .neq('activo', false)
-        .order('nombre');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchInsumosSvc,
     enabled: !!user,
   });
 }
@@ -99,11 +73,7 @@ export function useInsumoMutations() {
   const qc = useQueryClient();
 
   const create = useMutation({
-    mutationFn: async (data: InsumoFormData) => {
-      const { data: result, error } = await supabase.from('insumos').insert(data).select().single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: (data: InsumoFormData) => createInsumo(data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
       const label =
@@ -118,11 +88,8 @@ export function useInsumoMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsumoFormData> }) => {
-      const { error } = await supabase.from('insumos').update(data).eq('id', id);
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, data }: { id: string; data: Partial<InsumoFormData> }) =>
+      updateInsumo(id, data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
       const tipo = variables.data.tipo_item;
@@ -134,13 +101,7 @@ export function useInsumoMutations() {
   });
 
   const softDelete = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('insumos')
-        .update({ deleted_at: new Date().toISOString(), activo: false })
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => softDeleteInsumo(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
       toast.success('Insumo eliminado');

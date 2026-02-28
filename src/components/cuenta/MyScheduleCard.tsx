@@ -10,7 +10,7 @@
  */
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMySchedules } from '@/services/schedulesService';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,16 +90,7 @@ export default function MyScheduleCard() {
       const startDate = format(startOfMonth(new Date(currentYear, currentMonth - 1)), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(currentYear, currentMonth - 1)), 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('id, schedule_date, start_time, end_time, is_day_off, work_position')
-        .eq('user_id', userId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate)
-        .order('schedule_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ScheduleEntry[];
+      return fetchMySchedules(userId, startDate, endDate) as Promise<ScheduleEntry[]>;
     },
     enabled: !!userId,
     staleTime: 10 * 1000, // Reduced stale time for fresher data
@@ -316,7 +307,7 @@ export default function MyScheduleCard() {
                     <span className={`font-medium ${hasWork ? 'text-primary' : ''}`}>
                       {format(day, 'd')}
                     </span>
-                    {hasWork && <span className="text-[9px] text-muted-foreground">✓</span>}
+                    {hasWork && <span className="text-[9px] text-muted-foreground">âœ“</span>}
                     {isDayOff && <span className="text-[9px]">F</span>}
                   </div>
                 );
@@ -383,7 +374,7 @@ export default function MyScheduleCard() {
                     }
                   >
                     <span>{format(day, 'd')}</span>
-                    {hasWork && <span className="text-[8px]">✓</span>}
+                    {hasWork && <span className="text-[8px]">âœ“</span>}
                     {isDayOff && <span className="text-[8px]">F</span>}
                   </div>
                 );

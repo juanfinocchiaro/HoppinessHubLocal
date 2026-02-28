@@ -5,7 +5,11 @@ import { useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchDeliveryPedidos,
+  fetchActiveCadetes,
+  assignCadeteToPedido,
+} from '@/services/posService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,43 +21,19 @@ export default function DeliveryPage() {
 
   const { data: pedidos, isLoading } = useQuery({
     queryKey: ['pos-delivery', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('pedidos')
-        .select('*, pedido_items(nombre, cantidad)')
-        .eq('branch_id', branchId!)
-        .eq('tipo', 'delivery')
-        .in('estado', ['listo', 'en_camino'])
-        .order('created_at', { ascending: true });
-      return data ?? [];
-    },
+    queryFn: () => fetchDeliveryPedidos(branchId!),
     enabled: !!branchId,
   });
 
   const { data: cadetes } = useQuery({
     queryKey: ['pos-cadetes', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('cadetes')
-        .select('*')
-        .eq('branch_id', branchId!)
-        .eq('activo', true);
-      return data ?? [];
-    },
+    queryFn: () => fetchActiveCadetes(branchId!),
     enabled: !!branchId,
   });
 
   const asignarCadete = useMutation({
     mutationFn: async ({ pedidoId, cadeteId }: { pedidoId: string; cadeteId: string }) => {
-      const { error } = await supabase
-        .from('pedidos')
-        .update({
-          cadete_id: cadeteId,
-          estado: 'en_camino',
-          tiempo_en_camino: new Date().toISOString(),
-        } as any)
-        .eq('id', pedidoId);
-      if (error) throw error;
+      await assignCadeteToPedido(pedidoId, cadeteId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pos-delivery', branchId] });
@@ -91,7 +71,7 @@ export default function DeliveryPage() {
                   <ul className="text-sm mb-3">
                     {(p.pedido_items ?? []).map((it: any, i: number) => (
                       <li key={i}>
-                        {it.cantidad}× {it.nombre}
+                        {it.cantidad}Ã— {it.nombre}
                       </li>
                     ))}
                   </ul>

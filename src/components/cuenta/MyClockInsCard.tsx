@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMyClockEntries } from '@/services/hrService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, Timer, LogIn, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Calendar, Timer, LogIn, LogOut, ChevronDown, ChevronUp, UserCog } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +16,9 @@ interface ClockEntry {
   entry_type: 'clock_in' | 'clock_out';
   created_at: string;
   branch_id: string;
-  branch?: { name: string };
+  is_manual?: boolean;
+  branches?: { name: string } | null;
+  schedule_id?: string | null;
 }
 
 interface ShiftPair {
@@ -25,41 +27,63 @@ interface ShiftPair {
   clockOut: ClockEntry | null;
 }
 
-/** Pair clock_in/clock_out entries into shifts, handling overnight spans */
 function pairShifts(entries: ClockEntry[]): ShiftPair[] {
   const sorted = [...entries].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
+  const hasScheduleIds = sorted.some((e) => e.schedule_id);
+
+  if (hasScheduleIds) {
+    const bySchedule = new Map<string, ClockEntry[]>();
+    const unlinked: ClockEntry[] = [];
+    for (const e of sorted) {
+      if (e.schedule_id) {
+        const list = bySchedule.get(e.schedule_id) ?? [];
+        list.push(e);
+        bySchedule.set(e.schedule_id, list);
+      } else {
+        unlinked.push(e);
+      }
+    }
+
+    const shifts: ShiftPair[] = [];
+    for (const [, group] of bySchedule) {
+      const clockIn = group.find((e) => e.entry_type === 'clock_in') ?? null;
+      const clockOut = group.find((e) => e.entry_type === 'clock_out') ?? null;
+      const ref = clockIn ?? clockOut;
+      if (ref) shifts.push({ date: new Date(ref.created_at), clockIn, clockOut });
+    }
+    shifts.push(...legacyPair(unlinked));
+    shifts.sort((a, b) => b.date.getTime() - a.date.getTime());
+    return shifts;
+  }
+
+  return legacyPair(sorted).reverse();
+}
+
+function legacyPair(sorted: ClockEntry[]): ShiftPair[] {
   const shifts: ShiftPair[] = [];
   let pendingIn: ClockEntry | null = null;
-
   for (const entry of sorted) {
     if (entry.entry_type === 'clock_in') {
-      // If there was a previous unpaired clock_in, register it as incomplete
       if (pendingIn) {
         shifts.push({ date: new Date(pendingIn.created_at), clockIn: pendingIn, clockOut: null });
       }
       pendingIn = entry;
     } else if (entry.entry_type === 'clock_out') {
       if (pendingIn) {
-        // Pair with the pending clock_in (even if different calendar day)
         shifts.push({ date: new Date(pendingIn.created_at), clockIn: pendingIn, clockOut: entry });
         pendingIn = null;
       } else {
-        // Orphan clock_out (no matching clock_in)
         shifts.push({ date: new Date(entry.created_at), clockIn: null, clockOut: entry });
       }
     }
   }
-
-  // Still clocked in
   if (pendingIn) {
     shifts.push({ date: new Date(pendingIn.created_at), clockIn: pendingIn, clockOut: null });
   }
-
-  // Most recent first
-  return shifts.reverse();
+  return shifts;
 }
 
 export default function MyClockInsCard() {
@@ -79,17 +103,7 @@ export default function MyClockInsCard() {
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
 
-      const { data, error } = await supabase
-        .from('clock_entries')
-        .select('id, entry_type, created_at, branch_id, branches:branch_id(name)')
-        .eq('user_id', userId)
-        .gte('created_at', monthStart.toISOString())
-        .lte('created_at', monthEnd.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      return data as ClockEntry[];
+      return fetchMyClockEntries(userId, monthStart.toISOString(), monthEnd.toISOString()) as Promise<ClockEntry[]>;
     },
     enabled: !!userId && isOperationalEmployee,
   });
@@ -203,6 +217,12 @@ export default function MyClockInsCard() {
                           <Badge variant="outline" className="text-xs animate-pulse">
                             En curso
                           </Badge>
+                        )}
+                        {(shift.clockIn?.is_manual || shift.clockOut?.is_manual) && (
+                          <span className="flex items-center gap-0.5 text-amber-600 text-[10px]">
+                            <UserCog className="w-3 h-3" />
+                            Ajustado
+                          </span>
                         )}
                       </div>
                     </div>

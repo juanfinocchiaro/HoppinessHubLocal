@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchProveedorFacturas,
+  fetchProveedorPagos,
+  fetchSaldoProveedor,
+  fetchMovimientosProveedorData,
+} from '@/services/proveedoresService';
 import { useAuth } from './useAuth';
 
 export interface MovimientoCuenta {
@@ -44,7 +49,7 @@ export interface ResumenCuenta {
   todas_vencidas: boolean;
 }
 
-/** Parse YYYY-MM-DD as local date to avoid UTC→local shift */
+/** Parse YYYY-MM-DD as local date to avoid UTCâ†’local shift */
 function parseLocalDate(dateStr: string) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -56,23 +61,8 @@ export function useResumenProveedor(branchId?: string, proveedorId?: string) {
   return useQuery({
     queryKey: ['resumen-proveedor', branchId, proveedorId],
     queryFn: async () => {
-      // Get all invoices
-      const { data: facturas, error: fErr } = await supabase
-        .from('facturas_proveedores')
-        .select('id, total, saldo_pendiente, estado_pago, fecha_vencimiento')
-        .eq('branch_id', branchId!)
-        .eq('proveedor_id', proveedorId!)
-        .is('deleted_at', null);
-      if (fErr) throw fErr;
-
-      // Get all payments
-      const { data: pagos, error: pErr } = await supabase
-        .from('pagos_proveedores')
-        .select('id, monto, verificado')
-        .eq('branch_id', branchId!)
-        .eq('proveedor_id', proveedorId!)
-        .is('deleted_at', null);
-      if (pErr) throw pErr;
+      const facturas = await fetchProveedorFacturas(branchId!, proveedorId!);
+      const pagos = await fetchProveedorPagos(branchId!, proveedorId!);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -153,16 +143,7 @@ export function useSaldoProveedor(branchId?: string, proveedorId?: string) {
 
   return useQuery({
     queryKey: ['saldo-proveedor', branchId, proveedorId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cuenta_corriente_proveedores')
-        .select('*')
-        .eq('proveedor_id', proveedorId!)
-        .eq('branch_id', branchId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSaldoProveedor(branchId!, proveedorId!),
     enabled: !!user && !!branchId && !!proveedorId,
   });
 }
@@ -173,27 +154,7 @@ export function useMovimientosProveedor(branchId?: string, proveedorId?: string)
   return useQuery({
     queryKey: ['movimientos-proveedor', branchId, proveedorId],
     queryFn: async () => {
-      // Get facturas
-      const { data: facturas, error: fErr } = await supabase
-        .from('facturas_proveedores')
-        .select(
-          'id, factura_fecha, factura_tipo, factura_numero, total, saldo_pendiente, estado_pago, fecha_vencimiento, items_factura(id)',
-        )
-        .eq('branch_id', branchId!)
-        .eq('proveedor_id', proveedorId!)
-        .is('deleted_at', null)
-        .order('factura_fecha', { ascending: true });
-      if (fErr) throw fErr;
-
-      // Get pagos (both invoice-linked and account-level)
-      const { data: pagos, error: pErr } = await supabase
-        .from('pagos_proveedores')
-        .select('id, fecha_pago, monto, medio_pago, referencia, factura_id, verificado')
-        .eq('branch_id', branchId!)
-        .eq('proveedor_id', proveedorId!)
-        .is('deleted_at', null)
-        .order('fecha_pago', { ascending: true });
-      if (pErr) throw pErr;
+      const { facturas, pagos } = await fetchMovimientosProveedorData(branchId!, proveedorId!);
 
       // Merge and sort chronologically, compute running balance
       const movimientos: MovimientoCuenta[] = [];

@@ -18,12 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, parse } from 'date-fns';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 export default function BranchComparisonPage() {
   const { branchRoles } = usePermissionsWithImpersonation();
@@ -115,7 +110,7 @@ export default function BranchComparisonPage() {
               <Card>
                 <CardContent className="pt-4 pb-3 text-center">
                   <p className="text-xs text-muted-foreground uppercase">Venta total</p>
-                  <p className="text-xl font-bold">{fmt(totalNetwork.vendido)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(totalNetwork.vendido)}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -129,13 +124,13 @@ export default function BranchComparisonPage() {
               <Card>
                 <CardContent className="pt-4 pb-3 text-center">
                   <p className="text-xs text-muted-foreground uppercase">Efectivo</p>
-                  <p className="text-xl font-bold">{fmt(totalNetwork.efectivo)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(totalNetwork.efectivo)}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 pb-3 text-center">
                   <p className="text-xs text-muted-foreground uppercase">Digital</p>
-                  <p className="text-xl font-bold">{fmt(totalNetwork.digital)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(totalNetwork.digital)}</p>
                 </CardContent>
               </Card>
             </div>
@@ -168,13 +163,13 @@ export default function BranchComparisonPage() {
                       return (
                         <TableRow key={s.branch.id}>
                           <TableCell className="font-medium">{s.branch.name}</TableCell>
-                          <TableCell className="text-right">{fmt(s.totals.vendido)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(s.totals.vendido)}</TableCell>
                           <TableCell className="text-right">
                             {s.totals.hamburguesas.toLocaleString('es-AR')}
                           </TableCell>
-                          <TableCell className="text-right">{fmt(s.totals.efectivo)}</TableCell>
-                          <TableCell className="text-right">{fmt(s.totals.digital)}</TableCell>
-                          <TableCell className="text-right">{fmt(ticket)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(s.totals.efectivo)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(s.totals.digital)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(ticket)}</TableCell>
                           <TableCell className="text-center">
                             {s.totals.alertas > 0 ? (
                               <Badge variant="destructive">{s.totals.alertas}</Badge>

@@ -4,8 +4,12 @@
  * Uses special_days table with branch_id = NULL for global holidays
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import {
+  fetchHolidays,
+  createHoliday,
+  deleteHoliday,
+  createHolidaysBulk,
+} from '@/services/hrService';
 import { toast } from 'sonner';
 import { format, endOfMonth } from 'date-fns';
 
@@ -33,17 +37,7 @@ export function useHolidays(month: number, year: number) {
     queryFn: async () => {
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date(year, month - 1, 1)), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('special_days')
-        .select('*')
-        .is('branch_id', null) // Global holidays only
-        .gte('day_date', startDate)
-        .lte('day_date', endDate)
-        .order('day_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as Holiday[];
+      return (await fetchHolidays(startDate, endDate)) as Holiday[];
     },
     staleTime: 60 * 1000,
   });
@@ -59,16 +53,7 @@ export function useHolidaysRange(startDate: Date, endDate: Date) {
   return useQuery({
     queryKey: ['holidays-range', start, end],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('special_days')
-        .select('*')
-        .is('branch_id', null)
-        .gte('day_date', start)
-        .lte('day_date', end)
-        .order('day_date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as Holiday[];
+      return (await fetchHolidays(start, end)) as Holiday[];
     },
     staleTime: 60 * 1000,
   });
@@ -79,26 +64,10 @@ export function useHolidaysRange(startDate: Date, endDate: Date) {
  */
 export function useCreateHoliday() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (input: CreateHolidayInput) => {
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('special_days')
-        .insert({
-          branch_id: null, // Global
-          day_date: input.day_date,
-          day_type: input.day_type || 'holiday',
-          description: input.description,
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Holiday;
+      return (await createHoliday(input)) as Holiday;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
@@ -116,15 +85,7 @@ export function useDeleteHoliday() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (holidayId: string) => {
-      const { error } = await supabase
-        .from('special_days')
-        .delete()
-        .eq('id', holidayId)
-        .is('branch_id', null); // Safety: only delete global holidays
-
-      if (error) throw error;
-    },
+    mutationFn: async (holidayId: string) => deleteHoliday(holidayId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
       queryClient.invalidateQueries({ queryKey: ['holidays-range'] });
@@ -139,41 +100,10 @@ export function useDeleteHoliday() {
  */
 export function useCreateHolidaysBulk() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (holidays: CreateHolidayInput[]) => {
-      if (!user) throw new Error('Not authenticated');
-
-      // First, get existing global holidays to avoid duplicates
-      const dates = holidays.map((h) => h.day_date);
-      const { data: existing } = await supabase
-        .from('special_days')
-        .select('day_date')
-        .is('branch_id', null)
-        .in('day_date', dates);
-
-      const existingDates = new Set(existing?.map((e) => e.day_date) || []);
-
-      // Filter out holidays that already exist
-      const newHolidays = holidays.filter((h) => !existingDates.has(h.day_date));
-
-      if (newHolidays.length === 0) {
-        return []; // All holidays already exist
-      }
-
-      const records = newHolidays.map((h) => ({
-        branch_id: null,
-        day_date: h.day_date,
-        day_type: h.day_type || 'holiday',
-        description: h.description,
-        created_by: user.id,
-      }));
-
-      const { data, error } = await supabase.from('special_days').insert(records).select();
-
-      if (error) throw error;
-      return data as Holiday[];
+      return (await createHolidaysBulk(holidays)) as Holiday[];
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });

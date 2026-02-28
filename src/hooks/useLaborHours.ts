@@ -1,7 +1,7 @@
 /**
  * useLaborHours Hook
  *
- * Calcula horas trabajadas según CCT 329/00 – Servicios Rápidos
+ * Calcula horas trabajadas según CCT 329/00 â€“ Servicios Rápidos
  * y art. 201 LCT, con las siguientes reglas de negocio:
  *
  * CONSTANTES (hardcodeadas por convenio):
@@ -10,10 +10,10 @@
  *   - Recargo hora extra: +50 % (siempre, tanto hábil como franco/feriado)
  *
  * REGLAS DE CÁLCULO:
- *   1) Horas en FRANCO TRABAJADO → SIEMPRE son extras (+50 %), sin importar
+ *   1) Horas en FRANCO TRABAJADO â†’ SIEMPRE son extras (+50 %), sin importar
  *      si el empleado llegó o no a las 190 hs mensuales.
- *   2) Horas en FERIADO trabajado → SIEMPRE son extras (+50 %), misma lógica.
- *   3) Horas en DÍA HÁBIL → solo se consideran extras si el total de horas
+ *   2) Horas en FERIADO trabajado â†’ SIEMPRE son extras (+50 %), misma lógica.
+ *   3) Horas en DÍA HÁBIL â†’ solo se consideran extras si el total de horas
  *      hábiles del mes supera las 190 hs. El excedente son extras (+50 %).
  *   4) Alerta diaria: si un día supera 9 hs, se marca como alerta informativa.
  *   5) Presentismo: "SI" si faltas injustificadas del mes == 0.
@@ -25,7 +25,13 @@
  *   - totalExtras = hsExtrasFrancoFeriado + hsExtrasDiaHabil
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchClockEntries,
+  fetchSpecialDays,
+  fetchBranchSchedules,
+  fetchAbsences,
+  fetchLaborUsersData,
+} from '@/services/hrService';
 import {
   startOfMonth,
   endOfMonth,
@@ -40,6 +46,8 @@ export interface ClockEntryRaw {
   entry_type: 'clock_in' | 'clock_out';
   created_at: string;
   branch_id: string;
+  schedule_id?: string | null;
+  work_date?: string | null;
 }
 
 export interface DayEntry {
@@ -70,9 +78,9 @@ export interface EmployeeLaborSummary {
   feriadosHs: number; // Horas trabajadas en feriados
   hsFrancoFeriado: number; // Horas en feriados + francos trabajados
 
-  // Extras (CCT 329/00 – recargo siempre +50 %)
+  // Extras (CCT 329/00 â€“ recargo siempre +50 %)
   hsHabiles: number; // Horas en días hábiles (sin francos ni feriados)
-  hsExtrasDiaHabil: number; // max(0, hsHabiles - 190) → extras por exceder límite mensual
+  hsExtrasDiaHabil: number; // max(0, hsHabiles - 190) â†’ extras por exceder límite mensual
   hsExtrasFrancoFeriado: number; // = hsFrancoFeriado (siempre extras)
   totalExtras: number; // hsExtrasDiaHabil + hsExtrasFrancoFeriado
 
@@ -104,8 +112,8 @@ const HORAS_MENSUALES_LIMITE = 190;
 const HORAS_DIARIAS_LIMITE = 9;
 
 /**
- * Empareja las entradas de fichaje (clock_in con clock_out)
- * Los turnos que cruzan medianoche se asignan al día de entrada
+ * Groups clock entries by schedule_id when available, with sequential
+ * fallback for legacy data without schedule_id.
  */
 function pairClockEntries(
   entries: ClockEntryRaw[],
@@ -116,13 +124,67 @@ function pairClockEntries(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
+  const hasScheduleIds = sorted.some((e) => e.schedule_id);
+
+  if (hasScheduleIds) {
+    const bySchedule = new Map<string, ClockEntryRaw[]>();
+    const unlinked: ClockEntryRaw[] = [];
+
+    for (const e of sorted) {
+      if (e.schedule_id) {
+        const list = bySchedule.get(e.schedule_id) ?? [];
+        list.push(e);
+        bySchedule.set(e.schedule_id, list);
+      } else {
+        unlinked.push(e);
+      }
+    }
+
+    const paired: DayEntry[] = [];
+
+    for (const [, group] of bySchedule) {
+      const clockIn = group.find((e) => e.entry_type === 'clock_in');
+      const clockOut = group.find((e) => e.entry_type === 'clock_out');
+
+      if (clockIn) {
+        const checkInTime = new Date(clockIn.created_at);
+        const date = clockIn.work_date ?? format(checkInTime, 'yyyy-MM-dd');
+        const minutes = clockOut
+          ? differenceInMinutes(new Date(clockOut.created_at), checkInTime)
+          : 0;
+
+        paired.push({
+          date,
+          checkIn: clockIn.created_at,
+          checkOut: clockOut?.created_at ?? null,
+          minutesWorked: Math.max(0, minutes),
+          hoursDecimal: Math.max(0, minutes) / 60,
+          isHoliday: holidays.has(date),
+          isDayOff: scheduledDaysOff.has(date),
+        });
+      }
+    }
+
+    // Pair remaining unlinked entries sequentially
+    paired.push(...legacyPairEntries(unlinked, holidays, scheduledDaysOff));
+    return paired;
+  }
+
+  return legacyPairEntries(sorted, holidays, scheduledDaysOff);
+}
+
+function legacyPairEntries(
+  sorted: ClockEntryRaw[],
+  holidays: Set<string>,
+  scheduledDaysOff: Set<string>,
+): DayEntry[] {
   const paired: DayEntry[] = [];
   let pendingClockIn: ClockEntryRaw | null = null;
 
   for (const entry of sorted) {
     if (entry.entry_type === 'clock_in') {
       if (pendingClockIn) {
-        const date = format(new Date(pendingClockIn.created_at), 'yyyy-MM-dd');
+        const date = pendingClockIn.work_date ?? format(new Date(pendingClockIn.created_at), 'yyyy-MM-dd');
         paired.push({
           date,
           checkIn: pendingClockIn.created_at,
@@ -139,8 +201,7 @@ function pairClockEntries(
         const checkInTime = new Date(pendingClockIn.created_at);
         const checkOutTime = new Date(entry.created_at);
         const minutes = differenceInMinutes(checkOutTime, checkInTime);
-        const date = format(checkInTime, 'yyyy-MM-dd');
-
+        const date = pendingClockIn.work_date ?? format(checkInTime, 'yyyy-MM-dd');
         paired.push({
           date,
           checkIn: pendingClockIn.created_at,
@@ -156,7 +217,7 @@ function pairClockEntries(
   }
 
   if (pendingClockIn) {
-    const date = format(new Date(pendingClockIn.created_at), 'yyyy-MM-dd');
+    const date = pendingClockIn.work_date ?? format(new Date(pendingClockIn.created_at), 'yyyy-MM-dd');
     paired.push({
       date,
       checkIn: pendingClockIn.created_at,
@@ -187,16 +248,9 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
   const { data: rawEntries = [], isLoading: loadingEntries } = useQuery({
     queryKey: ['labor-clock-entries', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clock_entries')
-        .select('id, user_id, entry_type, created_at, branch_id')
-        .eq('branch_id', branchId)
-        .gte('created_at', monthStart.toISOString())
-        .lte('created_at', monthEnd.toISOString())
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ClockEntryRaw[];
+      const startDate = format(monthStart, 'yyyy-MM-dd');
+      const endDate = format(monthEnd, 'yyyy-MM-dd');
+      return (await fetchClockEntries(branchId, startDate, endDate)) as unknown as ClockEntryRaw[];
     },
     enabled: !!branchId,
     staleTime: 60 * 1000,
@@ -206,15 +260,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
   const { data: holidays = [], isLoading: loadingHolidays } = useQuery({
     queryKey: ['labor-holidays', year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('special_days')
-        .select('day_date')
-        .is('branch_id', null)
-        .gte('day_date', startStr)
-        .lte('day_date', endStr);
-
-      if (error) throw error;
-      return (data || []).map((h) => h.day_date);
+      return fetchSpecialDays(startStr, endStr);
     },
     staleTime: 60 * 1000,
   });
@@ -223,15 +269,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
   const { data: schedules = [], isLoading: loadingSchedules } = useQuery({
     queryKey: ['labor-schedules', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('user_id, schedule_date, is_day_off')
-        .eq('branch_id', branchId)
-        .gte('schedule_date', startStr)
-        .lte('schedule_date', endStr);
-
-      if (error) throw error;
-      return data || [];
+      return fetchBranchSchedules(branchId, startStr, endStr);
     },
     enabled: !!branchId,
     staleTime: 60 * 1000,
@@ -241,16 +279,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
   const { data: absences = [], isLoading: loadingAbsences } = useQuery({
     queryKey: ['labor-absences', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .select('user_id, request_date, request_type, status')
-        .eq('branch_id', branchId)
-        .gte('request_date', startStr)
-        .lte('request_date', endStr)
-        .in('request_type', ['absence', 'sick_leave', 'justified_absence', 'unjustified_absence']);
-
-      if (error) return []; // Puede no existir el tipo
-      return data || [];
+      return fetchAbsences(branchId, startStr, endStr);
     },
     enabled: !!branchId,
     staleTime: 60 * 1000,
@@ -263,43 +292,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
     queryKey: ['labor-users', branchId, userIds.join(',')],
     queryFn: async () => {
       if (userIds.length === 0) return [];
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds)
-        .eq('is_active', true);
-
-      if (rolesError) throw rolesError;
-
-      // Obtener datos de empleado
-      const { data: employeeData, error: _empError } = await supabase
-        .from('employee_data')
-        .select('user_id, cuil, hire_date, registered_hours')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds);
-
-      return (profiles || []).map((p) => {
-        const role = roles?.find((r) => r.user_id === p.id);
-        const empData = employeeData?.find((e) => e.user_id === p.id);
-        return {
-          user_id: p.id,
-          full_name: p.full_name,
-          avatar_url: p.avatar_url,
-          local_role: (role?.local_role as LocalRole) || null,
-          cuil: empData?.cuil || null,
-          hire_date: empData?.hire_date || null,
-          registered_hours: empData?.registered_hours ?? null,
-        };
-      });
+      return fetchLaborUsersData(branchId, userIds);
     },
     enabled: userIds.length > 0,
     staleTime: 60 * 1000,
@@ -352,7 +345,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
       }));
 
     // Extras mensuales según CCT 329/00 + reglas de negocio:
-    // Franco/feriado trabajado → SIEMPRE extra (+50 %)
+    // Franco/feriado trabajado â†’ SIEMPRE extra (+50 %)
     const hsExtrasFrancoFeriado = hsFrancoFeriado;
     // Horas hábiles = total - francos/feriados
     const hsHabiles = Math.max(0, hsTrabajadasMes - hsFrancoFeriado);

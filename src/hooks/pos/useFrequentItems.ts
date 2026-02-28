@@ -2,7 +2,7 @@
  * useFrequentItems - Top products sold at a branch (last 30 days)
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchFrequentItemSales } from '@/services/posService';
 
 export function useFrequentItems(branchId: string | undefined, limit = 8) {
   return useQuery({
@@ -13,20 +13,8 @@ export function useFrequentItems(branchId: string | undefined, limit = 8) {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Get top item_carta_ids by quantity sold
-      const { data, error } = await supabase
-        .from('pedido_items')
-        .select(
-          `
-          item_carta_id,
-          cantidad,
-          pedidos!inner(branch_id, created_at)
-        `,
-        )
-        .eq('pedidos.branch_id', branchId!)
-        .gte('pedidos.created_at', thirtyDaysAgo.toISOString());
+      const data = await fetchFrequentItemSales(branchId!, thirtyDaysAgo.toISOString());
 
-      if (error) throw error;
       if (!data || data.length === 0) return [];
 
       // Aggregate quantities per item

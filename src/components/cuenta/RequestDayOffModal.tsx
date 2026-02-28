@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { createScheduleRequest } from '@/services/schedulesService';
+import { uploadStaffEvidence } from '@/services/profileService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { toast } from 'sonner';
@@ -71,18 +72,12 @@ export default function RequestDayOffModal({ branchId, trigger }: RequestDayOffM
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `absence-evidence/${fileName}`;
 
-    const { error } = await supabase.storage.from('staff-documents').upload(filePath, file);
-
-    if (error) {
+    try {
+      return await uploadStaffEvidence(filePath, file);
+    } catch (error) {
       if (import.meta.env.DEV) console.error('Error uploading evidence:', error);
       return null;
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('staff-documents').getPublicUrl(filePath);
-
-    return publicUrl;
   };
 
   const createRequest = useMutation({
@@ -99,7 +94,7 @@ export default function RequestDayOffModal({ branchId, trigger }: RequestDayOffM
         setUploading(false);
       }
 
-      const { error } = await supabase.from('schedule_requests').insert({
+      await createScheduleRequest({
         user_id: userId,
         branch_id: targetBranchId,
         request_type: requestType,
@@ -109,8 +104,6 @@ export default function RequestDayOffModal({ branchId, trigger }: RequestDayOffM
         evidence_url: evidenceUrl,
         absence_type: requestType === 'absence_justification' ? absenceType : null,
       });
-
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Solicitud enviada correctamente');

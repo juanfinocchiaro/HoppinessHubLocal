@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { savePushSubscription } from '@/services/notificationsService';
 
 type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported';
 
@@ -47,15 +47,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
       const subJson = subscription.toJSON();
 
-      const { error } = await supabase.from('push_subscriptions' as any).upsert(
-        {
-          user_id: user.id,
-          endpoint: subJson.endpoint,
-          keys: subJson.keys,
-        },
-        { onConflict: 'user_id,endpoint' },
-      );
-      if (error) throw error;
+      await savePushSubscription(user.id, {
+        endpoint: subJson.endpoint,
+        keys: subJson.keys as Record<string, string>,
+      });
     },
   });
 

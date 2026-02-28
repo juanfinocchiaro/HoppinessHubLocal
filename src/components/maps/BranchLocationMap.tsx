@@ -5,6 +5,7 @@ import { RefreshCw, MapPin, Navigation } from 'lucide-react';
 import { devWarn } from '@/lib/errorHandler';
 import { toast } from 'sonner';
 import logoHoppiness from '@/assets/logo-hoppiness.png';
+import { getSession } from '@/services/authService';
 
 const libraries: 'places'[] = ['places'];
 
@@ -196,10 +197,9 @@ export default function BranchLocationMap(props: BranchLocationMapProps) {
       setError(false);
 
       try {
-        const { supabase } = await import('@/integrations/supabase/client');
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await getSession();
 
         if (!session) {
           devWarn('No authenticated session for Google Maps API');

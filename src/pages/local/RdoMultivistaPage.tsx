@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { exportToExcel } from '@/lib/exportExcel';
+import { formatCurrency } from '@/lib/formatters';
 
 const CANALES_DEFAULT = [
   { id: 'mostrador', label: 'Mostrador' },
@@ -37,13 +38,7 @@ const MEDIOS_DEFAULT = [
   { id: 'transferencia', label: 'Transferencia' },
 ];
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+).format(value || 0);
 }
 
 function formatPercent(value: number): string {

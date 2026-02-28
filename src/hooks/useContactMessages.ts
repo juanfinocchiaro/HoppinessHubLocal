@@ -1,15 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchContactMessages,
+  markContactMessageAsRead,
+  archiveContactMessage,
+  fetchUnreadMessagesCount,
+  fetchMessageCounts as fetchMessageCountsService,
+  type MessageType,
+} from '@/services/contactService';
 import { toast } from 'sonner';
 
-export type MessageType =
-  | 'all'
-  | 'franquicia'
-  | 'empleo'
-  | 'proveedor'
-  | 'pedidos'
-  | 'consulta'
-  | 'otro';
+export type { MessageType };
 
 export interface ContactMessage {
   id: string;
@@ -51,35 +51,11 @@ export function useContactMessages(options: UseContactMessagesOptions = {}) {
 
   const messagesQuery = useQuery({
     queryKey: ['contact-messages', typeFilter, showOnlyUnread],
-    queryFn: async () => {
-      let query = supabase
-        .from('contact_messages')
-        .select('*')
-        .neq('status', 'archived')
-        .order('created_at', { ascending: false });
-
-      if (typeFilter !== 'all') {
-        query = query.eq('subject', typeFilter);
-      }
-
-      if (showOnlyUnread) {
-        query = query.is('read_at', null);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as ContactMessage[];
-    },
+    queryFn: () => fetchContactMessages(typeFilter, showOnlyUnread) as Promise<ContactMessage[]>,
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: async (messageId: string) => {
-      const { error } = await supabase
-        .from('contact_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', messageId);
-      if (error) throw error;
-    },
+    mutationFn: (messageId: string) => markContactMessageAsRead(messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact-messages'] });
       queryClient.invalidateQueries({ queryKey: ['unread-messages-count'] });
@@ -88,13 +64,7 @@ export function useContactMessages(options: UseContactMessagesOptions = {}) {
   });
 
   const archiveMutation = useMutation({
-    mutationFn: async (messageId: string) => {
-      const { error } = await supabase
-        .from('contact_messages')
-        .update({ status: 'archived' })
-        .eq('id', messageId);
-      if (error) throw error;
-    },
+    mutationFn: (messageId: string) => archiveContactMessage(messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact-messages'] });
       queryClient.invalidateQueries({ queryKey: ['unread-messages-count'] });
@@ -117,16 +87,8 @@ export function useContactMessages(options: UseContactMessagesOptions = {}) {
 export function useUnreadMessagesCount() {
   return useQuery({
     queryKey: ['unread-messages-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('contact_messages')
-        .select('*', { count: 'exact', head: true })
-        .is('read_at', null)
-        .neq('status', 'archived');
-      if (error) throw error;
-      return count ?? 0;
-    },
-    refetchInterval: 60000, // Refrescar cada minuto
+    queryFn: () => fetchUnreadMessagesCount(),
+    refetchInterval: 60000,
   });
 }
 
@@ -134,12 +96,7 @@ export function useMessageCounts() {
   return useQuery({
     queryKey: ['contact-messages-counts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contact_messages')
-        .select('subject')
-        .neq('status', 'archived');
-
-      if (error) throw error;
+      const data = await fetchMessageCountsService();
 
       const counts = {
         all: data?.length ?? 0,

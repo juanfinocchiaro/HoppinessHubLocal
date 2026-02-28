@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { lovable } from '@/integrations/lovable';
-import { supabase } from '@/integrations/supabase/client';
+import { getSession } from '@/services/authService';
 
 /**
  * Hook that opens Google OAuth in a popup window instead of redirecting.
@@ -32,7 +32,7 @@ export function useGooglePopupAuth(onSuccess?: () => void) {
 
         if (event.data.success) {
           // Refresh the session in the main window
-          supabase.auth.getSession().then(() => {
+          getSession().then(() => {
             onSuccess?.();
           });
         }

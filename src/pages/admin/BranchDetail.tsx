@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchBySlug, updateBranch } from '@/services/adminService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,51 +45,39 @@ export default function BranchDetail() {
     refetch,
   } = useQuery({
     queryKey: ['branch-detail', slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchBranchBySlug(slug!),
     enabled: !!slug,
   });
 
   const handleArchive = async () => {
     if (!branch) return;
     setArchiving(true);
-    const { error } = await supabase
-      .from('branches')
-      .update({ public_status: 'archived', is_active: false } as any)
-      .eq('id', branch.id);
-    setArchiving(false);
-    if (error) {
-      toast.error('Error al archivar la sucursal');
-    } else {
+    try {
+      await updateBranch(branch.id, { public_status: 'archived', is_active: false });
       toast.success('Sucursal archivada');
       refetch();
       qc.invalidateQueries({ queryKey: ['branches'] });
+    } catch {
+      toast.error('Error al archivar la sucursal');
+    } finally {
+      setArchiving(false);
     }
   };
 
   const handleRestore = async () => {
     if (!branch) return;
     setArchiving(true);
-    const { error } = await supabase
-      .from('branches')
-      .update({ public_status: 'hidden', is_active: true } as any)
-      .eq('id', branch.id);
-    setArchiving(false);
-    if (error) {
-      toast.error('Error al restaurar la sucursal');
-    } else {
+    try {
+      await updateBranch(branch.id, { public_status: 'hidden', is_active: true });
       toast.success(
         'Sucursal restaurada (estado: Oculto). Cambiá el estado a Activo cuando esté lista.',
       );
       refetch();
       qc.invalidateQueries({ queryKey: ['branches'] });
+    } catch {
+      toast.error('Error al restaurar la sucursal');
+    } finally {
+      setArchiving(false);
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMyScheduleRequests } from '@/services/schedulesService';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,16 +44,7 @@ export default function MyRequestsCard() {
     queryKey: ['my-schedule-requests', userId],
     queryFn: async () => {
       if (!userId) return [];
-
-      const { data, error } = await supabase
-        .from('schedule_requests')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      return data as ScheduleRequest[];
+      return (await fetchMyScheduleRequests(userId)) as ScheduleRequest[];
     },
     enabled: !!userId,
   });

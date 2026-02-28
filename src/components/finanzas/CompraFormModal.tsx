@@ -36,7 +36,9 @@ import {
 } from '@/types/compra';
 import { UNIDAD_OPTIONS } from '@/types/financial';
 import { FormSection } from '@/components/ui/forms-pro';
-import type { ItemFacturaFormData } from '@/types/compra';
+import { formatCurrencyWithDecimals } from '@/lib/formatters';
+import type { ItemFormState } from '@/components/finanzas/compraTypes';
+import { emptyItem, recalcIva } from '@/utils/invoiceCalculations';
 
 type ModalidadCompra = 'sin_comprobante' | 'factura_simple' | 'factura_detallada';
 
@@ -44,44 +46,6 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   branchId: string;
-}
-
-interface ItemFormState extends ItemFacturaFormData {
-  tipo_item: 'insumo' | 'servicio';
-  concepto_servicio_id?: string;
-}
-
-const emptyItem = (): ItemFormState => ({
-  tipo_item: 'insumo',
-  insumo_id: '',
-  cantidad: 0,
-  unidad: 'kg',
-  precio_unitario: 0,
-  subtotal: 0,
-  afecta_costo_base: true,
-  alicuota_iva: 21,
-  iva_monto: 0,
-  precio_unitario_bruto: 0,
-  precio_bruto: 0,
-  descuento_porcentaje: 0,
-  descuento_monto: 0,
-  precio_neto: 0,
-});
-
-/** Recalculate IVA fields based on neto + alicuota */
-function recalcIva(item: ItemFormState): ItemFormState {
-  const neto = Number(item.precio_unitario) || 0;
-  const alicuota = item.alicuota_iva != null ? Number(item.alicuota_iva) : 0;
-  const ivaMonto = neto * (alicuota / 100);
-  const bruto = neto + ivaMonto;
-  const qty = item.tipo_item === 'servicio' ? 1 : Number(item.cantidad) || 0;
-  return {
-    ...item,
-    iva_monto: Math.round(ivaMonto * 100) / 100,
-    precio_unitario_bruto: Math.round(bruto * 100) / 100,
-    subtotal: Math.round(neto * qty * 100) / 100,
-    precio_neto: neto,
-  };
 }
 
 const MODALIDAD_OPTIONS: {
@@ -396,7 +360,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
 
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
-  const fmt = (n: number) => n.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+  const fmt = formatCurrencyWithDecimals;
 
   // ─── Item Row Renderer (shared across modes) ───
   const renderItemRow = (item: ItemFormState, idx: number) => {

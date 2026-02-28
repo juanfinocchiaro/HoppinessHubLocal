@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Mail, Loader2, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { resetPasswordForEmail } from '@/services/authService';
 import { toast } from 'sonner';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
@@ -25,9 +25,7 @@ export default function OlvidePassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { error } = await resetPasswordForEmail(email);
 
       if (error) {
         toast.error('Error al enviar el email: ' + error.message);
@@ -35,7 +33,7 @@ export default function OlvidePassword() {
         setSent(true);
         toast.success('Email enviado correctamente');
       }
-    } catch (err) {
+    } catch {
       toast.error('Error inesperado');
     } finally {
       setLoading(false);

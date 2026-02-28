@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Store, CheckCircle, ArrowRight } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { insertContactMessage } from '@/services/contactService';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
 interface FranquiciasModalProps {
   open: boolean;
@@ -50,7 +51,7 @@ export function FranquiciasModal({ open, onOpenChange }: FranquiciasModalProps) 
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await insertContactMessage({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -66,8 +67,7 @@ export function FranquiciasModal({ open, onOpenChange }: FranquiciasModalProps) 
       setSuccess(true);
       toast.success('¡Gracias por tu interés! Te contactaremos pronto.');
     } catch (err) {
-      if (import.meta.env.DEV) console.error(err);
-      toast.error('Error al enviar. Intentá de nuevo.');
+      handleError(err, { userMessage: 'Error al enviar', context: 'FranquiciasModal.handleSubmit' });
     } finally {
       setLoading(false);
     }
@@ -120,9 +120,9 @@ export function FranquiciasModal({ open, onOpenChange }: FranquiciasModalProps) 
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
               <p className="font-medium mb-2">¿Por qué Hoppiness?</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Marca consolidada con 5+ sucursales</li>
-                <li>• Sistema de gestión integral incluido</li>
-                <li>• Acompañamiento continuo</li>
+                <li>â€¢ Marca consolidada con 5+ sucursales</li>
+                <li>â€¢ Sistema de gestión integral incluido</li>
+                <li>â€¢ Acompañamiento continuo</li>
               </ul>
             </div>
 

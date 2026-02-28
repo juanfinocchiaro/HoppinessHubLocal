@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchPeriodos,
+  createPeriodo,
+  cerrarPeriodo,
+  reabrirPeriodo,
+} from '@/services/financialService';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
@@ -8,15 +13,7 @@ export function usePeriodos(branchId: string) {
 
   return useQuery({
     queryKey: ['periodos', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('periodos')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('periodo', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchPeriodos(branchId),
     enabled: !!user && !!branchId,
   });
 }
@@ -27,13 +24,7 @@ export function usePeriodoMutations() {
 
   const create = useMutation({
     mutationFn: async ({ branchId, periodo }: { branchId: string; periodo: string }) => {
-      const { data, error } = await supabase
-        .from('periodos')
-        .insert({ branch_id: branchId, periodo, estado: 'abierto' })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return createPeriodo(branchId, periodo);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['periodos'] });
@@ -44,16 +35,7 @@ export function usePeriodoMutations() {
 
   const cerrar = useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo?: string }) => {
-      const { error } = await supabase
-        .from('periodos')
-        .update({
-          estado: 'cerrado',
-          fecha_cierre: new Date().toISOString(),
-          cerrado_por: user?.id,
-          motivo_cierre: motivo || null,
-        })
-        .eq('id', id);
-      if (error) throw error;
+      return cerrarPeriodo(id, user?.id, motivo);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['periodos'] });
@@ -64,16 +46,7 @@ export function usePeriodoMutations() {
 
   const reabrir = useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
-      const { error } = await supabase
-        .from('periodos')
-        .update({
-          estado: 'abierto',
-          fecha_reapertura: new Date().toISOString(),
-          reabierto_por: user?.id,
-          motivo_reapertura: motivo,
-        })
-        .eq('id', id);
-      if (error) throw error;
+      return reabrirPeriodo(id, user?.id, motivo);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['periodos'] });

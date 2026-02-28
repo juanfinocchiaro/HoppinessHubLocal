@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getSession } from '@/services/authService';
+import {
+  findBranchRole,
+  findProfileByEmail,
+  reactivateBranchMember,
+  sendStaffInvitation,
+} from '@/services/staffService';
 import {
   Dialog,
   DialogContent,
@@ -107,11 +113,7 @@ export function InviteStaffDialog({
     setSearchStatus('searching');
 
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
+      const { data: profile, error } = await findProfileByEmail(email);
 
       if (error) {
         handleError(error, {
@@ -132,12 +134,7 @@ export function InviteStaffDialog({
       setFoundUser(profile);
 
       // Check if user already has a role in this branch
-      const { data: existingRole } = await supabase
-        .from('user_branch_roles')
-        .select('id, local_role, is_active')
-        .eq('user_id', profile.id)
-        .eq('branch_id', branchId)
-        .maybeSingle();
+      const { data: existingRole } = await findBranchRole(profile.id, branchId);
 
       if (existingRole) {
         if (existingRole.is_active) {
@@ -179,11 +176,7 @@ export function InviteStaffDialog({
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ is_active: true, local_role: role, updated_at: new Date().toISOString() })
-        .eq('user_id', foundUser.id)
-        .eq('branch_id', branchId);
+      const { error } = await reactivateBranchMember(foundUser.id, branchId, role);
 
       if (error) throw error;
 
@@ -221,18 +214,16 @@ export function InviteStaffDialog({
     try {
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await getSession();
 
       if (!session) {
         throw new Error('No hay sesión activa');
       }
 
-      const response = await supabase.functions.invoke('send-staff-invitation', {
-        body: {
-          email: email.toLowerCase().trim(),
-          role,
-          branch_id: branchId,
-        },
+      const response = await sendStaffInvitation({
+        email: email.toLowerCase().trim(),
+        role,
+        branch_id: branchId,
       });
 
       if (response.error) {

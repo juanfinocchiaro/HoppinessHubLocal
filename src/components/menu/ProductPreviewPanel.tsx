@@ -1,17 +1,15 @@
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  uploadProductImage,
+  updateItemCartaImageUrl,
+  fetchExtraAssignmentsWithJoin,
+} from '@/services/menuService';
 import { useItemRemovibles } from '@/hooks/useItemRemovibles';
 import { useGruposOpcionales } from '@/hooks/useGruposOpcionales';
 import { AlertTriangle, Camera, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(v);
+import { formatCurrency } from '@/lib/formatters';
 
 interface Props {
   item: {
@@ -28,17 +26,9 @@ export function ProductPreviewPanel({ item }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Extras assigned to this item
   const { data: asignaciones } = useQuery({
     queryKey: ['item-extra-asignaciones', item.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('item_extra_asignaciones' as any)
-        .select('*, extra:extra_id(id, nombre, precio_base, activo)')
-        .eq('item_carta_id', item.id);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryFn: () => fetchExtraAssignmentsWithJoin(item.id),
   });
 
   // Removibles
@@ -63,7 +53,7 @@ export function ProductPreviewPanel({ item }: Props) {
   // Alerts
   const alerts: string[] = [];
   if (extrasSinPrecio.length > 0)
-    alerts.push(`${extrasSinPrecio.length} extras sin precio — configurar en Control de Costos`);
+    alerts.push(`${extrasSinPrecio.length} extras sin precio â€” configurar en Control de Costos`);
   if (!item.imagen_url) alerts.push('Sin foto');
   if (!item.descripcion) alerts.push('Sin descripción');
 
@@ -80,20 +70,8 @@ export function ProductPreviewPanel({ item }: Props) {
     }
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `items/${item.id}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('product-images')
-        .upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
-      // Add cache buster
-      const url = `${urlData.publicUrl}?t=${Date.now()}`;
-      const { error: dbErr } = await supabase
-        .from('items_carta')
-        .update({ imagen_url: url } as any)
-        .eq('id', item.id);
-      if (dbErr) throw dbErr;
+      const url = await uploadProductImage(item.id, file);
+      await updateItemCartaImageUrl(item.id, url);
       qc.invalidateQueries({ queryKey: ['items-carta'] });
       toast.success('Foto actualizada');
     } catch (e: any) {
@@ -157,7 +135,7 @@ export function ProductPreviewPanel({ item }: Props) {
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-start justify-between gap-4">
             <h3 className="font-semibold text-base">{item.nombre}</h3>
-            <span className="font-mono font-bold text-base shrink-0">{fmt(item.precio_base)}</span>
+            <span className="font-mono font-bold text-base shrink-0">{formatCurrency(item.precio_base)}</span>
           </div>
           {item.descripcion ? (
             <p className="text-sm text-muted-foreground leading-relaxed">{item.descripcion}</p>
@@ -186,10 +164,10 @@ export function ProductPreviewPanel({ item }: Props) {
                   </div>
                   {e.precio > 0 ? (
                     <span className="text-xs font-mono text-muted-foreground">
-                      +{fmt(e.precio)}
+                      +{formatCurrency(e.precio)}
                     </span>
                   ) : (
-                    <span className="text-xs text-yellow-600">⚠ Sin precio</span>
+                    <span className="text-xs text-yellow-600">âš  Sin precio</span>
                   )}
                 </div>
               ))}
@@ -229,7 +207,7 @@ export function ProductPreviewPanel({ item }: Props) {
                       <span>{nombre}</span>
                     </div>
                     <span className="text-xs font-mono text-muted-foreground">
-                      {delta > 0 ? `+${fmt(delta)}` : '+$0'}
+                      {delta > 0 ? `+${formatCurrency(delta)}` : '+$0'}
                     </span>
                   </div>
                 );

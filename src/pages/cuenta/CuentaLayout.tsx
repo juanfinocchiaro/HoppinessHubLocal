@@ -78,6 +78,7 @@ export default function CuentaLayout() {
       <ImpersonationSelector
         open={showImpersonationSelector}
         onOpenChange={setShowImpersonationSelector}
+        mode="cuenta"
       />
     </>
   );

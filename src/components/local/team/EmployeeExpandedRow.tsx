@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchProfileClockPin,
+  updateEmployeeNotes,
+  deactivateBranchRole,
+} from '@/services/staffService';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,23 +69,13 @@ export function EmployeeExpandedRow({
   const [showClockInsModal, setShowClockInsModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Check if user has clock PIN configured (profiles.id = user_id after migration)
   const { data: profileData } = useQuery({
     queryKey: ['profile-clock-pin', member.user_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('clock_pin')
-        .eq('id', member.user_id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchProfileClockPin(member.user_id),
   });
 
   const hasClockPin = !!profileData?.clock_pin;
 
-  // Add note mutation
   const addNoteMutation = useMutation({
     mutationFn: async (note: string) => {
       const newNoteEntry = {
@@ -93,20 +87,7 @@ export function EmployeeExpandedRow({
       const currentNotes = (employeeData?.internal_notes || []) as NoteEntry[];
       const updatedNotes = [...currentNotes, newNoteEntry];
 
-      if (employeeData?.id) {
-        const { error } = await supabase
-          .from('employee_data')
-          .update({ internal_notes: updatedNotes })
-          .eq('id', employeeData.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('employee_data').insert({
-          user_id: member.user_id,
-          branch_id: branchId,
-          internal_notes: updatedNotes,
-        });
-        if (error) throw error;
-      }
+      await updateEmployeeNotes(employeeData?.id, member.user_id, branchId, updatedNotes);
     },
     onSuccess: () => {
       toast.success('Nota agregada');
@@ -116,15 +97,8 @@ export function EmployeeExpandedRow({
     onError: () => toast.error('Error al agregar nota'),
   });
 
-  // Deactivate mutation - now uses user_branch_roles
   const deactivateMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from('user_branch_roles')
-        .update({ is_active: false })
-        .eq('id', member.role_id);
-      if (error) throw error;
-    },
+    mutationFn: () => deactivateBranchRole(member.role_id),
     onSuccess: () => {
       toast.success('Empleado desactivado');
       onMemberUpdated();

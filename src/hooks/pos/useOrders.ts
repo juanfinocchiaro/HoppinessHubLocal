@@ -2,10 +2,20 @@
  * useOrders - CRUD de pedidos
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { normalizePhone } from '@/lib/normalizePhone';
 import type { OrderConfig } from '@/types/pos';
+import {
+  fetchOrders,
+  generateOrderNumber,
+  getAuthUser,
+  insertPedido,
+  insertPedidoItems,
+  insertPedidoPagos,
+  saveClienteAddress,
+  findOpenCashShift,
+  insertCashMovement,
+} from '@/services/posService';
+import { normalizePhone } from '@/lib/normalizePhone';
 
 export interface PedidoItemInput {
   item_carta_id: string;
@@ -20,7 +30,6 @@ export interface PedidoItemInput {
   promo_descuento?: number;
 }
 
-/** Una línea de pago (pago dividido) */
 export interface PaymentLineInput {
   method: string;
   amount: number;
@@ -31,36 +40,22 @@ export interface CreatePedidoParams {
   items: PedidoItemInput[];
   tipo?: 'mostrador' | 'delivery' | 'webapp';
   descuento?: number;
-  /** Pago único (ignorado si se usa payments) */
   metodoPago?: string;
   montoRecibido?: number;
-  /** Pago dividido (Fase 4). Si se envía, suma debe ser total + propina */
   payments?: PaymentLineInput[];
-  /** Propina opcional (Fase 4) */
   propina?: number;
-  /** Configuración de canal, tipo servicio y cliente (Fase 1) */
   orderConfig?: OrderConfig;
-  /** Override estado inicial (e.g. 'pendiente_pago' for Point Smart payments) */
   estadoInicial?: 'pendiente' | 'pendiente_pago';
 }
 
 export function useOrders(branchId: string) {
   return useQuery({
     queryKey: ['pos-orders', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => fetchOrders(branchId),
     enabled: !!branchId,
   });
 }
 
-/** Determina tipo de pedido para DB según orderConfig */
 function resolveTipo(orderConfig?: OrderConfig): 'mostrador' | 'delivery' | 'webapp' {
   if (!orderConfig) return 'mostrador';
   if (orderConfig.canalVenta === 'apps') return 'webapp';
@@ -73,16 +68,10 @@ export function useCreatePedido(branchId: string) {
 
   return useMutation({
     mutationFn: async (params: CreatePedidoParams) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getAuthUser();
       if (!user) throw new Error('No autenticado');
 
-      const { data: numero, error: errNum } = await supabase.rpc('generar_numero_pedido', {
-        p_branch_id: branchId,
-      });
-      if (errNum) throw errNum;
-      const numeroPedido = (numero as number) ?? 1;
+      const numeroPedido = await generateOrderNumber(branchId);
 
       const subtotal = params.items.reduce((s, i) => s + i.subtotal, 0);
       const promoDesc = params.items.reduce((s, i) => s + (i.promo_descuento ?? 0) * i.cantidad, 0);
@@ -131,7 +120,6 @@ export function useCreatePedido(branchId: string) {
           insertPayload.cliente_telefono = normalized || cfg.clienteTelefono;
         }
         if (cfg.clienteDireccion) insertPayload.cliente_direccion = cfg.clienteDireccion;
-        // Vincular pedido al usuario identificado por teléfono
         if (cfg.clienteUserId) insertPayload.cliente_user_id = cfg.clienteUserId;
         insertPayload.canal_venta = cfg.canalVenta;
         insertPayload.tipo_servicio = cfg.tipoServicio;
@@ -141,30 +129,10 @@ export function useCreatePedido(branchId: string) {
         }
       }
 
-      const { data: pedido, error: errPedido } = await supabase
-        .from('pedidos')
-        .insert(insertPayload as any)
-        .select('id, numero_pedido')
-        .single();
+      const pedido = await insertPedido(insertPayload);
 
-      if (errPedido) throw errPedido;
-      if (!pedido) throw new Error('No se creó el pedido');
-
-      // Si el pedido es delivery con cliente identificado, guardar la dirección en su perfil
       if (cfg?.tipoServicio === 'delivery' && cfg.clienteUserId && cfg.clienteDireccion?.trim()) {
-        supabase
-          .from('cliente_direcciones')
-          .insert({
-            user_id: cfg.clienteUserId,
-            etiqueta: 'Otro',
-            direccion: cfg.clienteDireccion.trim(),
-            ciudad: 'Córdoba',
-            es_principal: false,
-          } as any)
-          .then(
-            () => {},
-            () => {},
-          );
+        saveClienteAddress(cfg.clienteUserId, cfg.clienteDireccion).catch(() => {});
       }
 
       const itemRows = params.items.map((it) => ({
@@ -179,12 +147,9 @@ export function useCreatePedido(branchId: string) {
         precio_referencia: it.precio_referencia ?? null,
         categoria_carta_id: it.categoria_carta_id ?? null,
       }));
-      const { error: errItems } = await supabase.from('pedido_items').insert(itemRows as any);
-      if (errItems) throw errItems;
+      await insertPedidoItems(itemRows);
 
-      // Apps orders: payment handled by platform, no manual payment needed
       const isAppsOrder = cfg?.canalVenta === 'apps';
-      // pendiente_pago orders skip payment insertion (webhook handles it)
       const isPendientePago = params.estadoInicial === 'pendiente_pago';
       const useSplit = params.payments && params.payments.length > 0;
       if (!isPendientePago && !isAppsOrder && !useSplit && !params.metodoPago) {
@@ -195,13 +160,7 @@ export function useCreatePedido(branchId: string) {
           ? []
           : useSplit
             ? params.payments!
-            : [
-                {
-                  method: params.metodoPago!,
-                  amount: totalToPay,
-                  montoRecibido: params.montoRecibido ?? totalToPay,
-                },
-              ];
+            : [{ method: params.metodoPago!, amount: totalToPay, montoRecibido: params.montoRecibido ?? totalToPay }];
 
       if (paymentRows.length > 0) {
         const pagoRows = paymentRows.map((row) => {
@@ -215,38 +174,14 @@ export function useCreatePedido(branchId: string) {
             created_by: user.id,
           };
         });
-        const { error: errPago } = await supabase.from('pedido_pagos').insert(pagoRows);
-        if (errPago) throw errPago;
+        await insertPedidoPagos(pagoRows);
       }
 
-      // Fase 3: registrar en caja cada pago en efectivo (solo en Caja de Ventas)
-      // Primero buscar la caja de ventas, luego el turno abierto de esa caja
-      const { data: ventasRegisters } = await supabase
-        .from('cash_registers')
-        .select('id')
-        .eq('branch_id', branchId)
-        .eq('register_type', 'ventas')
-        .eq('is_active', true);
-
-      const ventasRegisterIds = (ventasRegisters || []).map((r) => r.id);
-
-      let openShift: { id: string } | null = null;
-      if (ventasRegisterIds.length > 0) {
-        const { data: shiftData } = await supabase
-          .from('cash_register_shifts')
-          .select('id')
-          .eq('branch_id', branchId)
-          .eq('status', 'open')
-          .in('cash_register_id', ventasRegisterIds)
-          .limit(1)
-          .maybeSingle();
-        openShift = shiftData;
-      }
-
+      const openShift = await findOpenCashShift(branchId);
       for (const row of paymentRows) {
         const isCash = String(row.method).toLowerCase() === 'efectivo';
         if (isCash && row.amount > 0 && openShift) {
-          const { error: errMov } = await supabase.from('cash_register_movements').insert({
+          const { error: errMov } = await insertCashMovement({
             shift_id: openShift.id,
             branch_id: branchId,
             type: 'income',

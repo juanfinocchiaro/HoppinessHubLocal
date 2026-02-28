@@ -21,12 +21,7 @@ interface Props {
   onConfirm: () => Promise<void>;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 export function CancelOrderDialog({ open, onOpenChange, order, onConfirm }: Props) {
   const [loading, setLoading] = useState(false);
@@ -54,7 +49,7 @@ export function CancelOrderDialog({ open, onOpenChange, order, onConfirm }: Prop
             <div className="space-y-3">
               <p>
                 Estás por anular el pedido <strong>#{order.numero_pedido}</strong> por un total de{' '}
-                <strong>{fmt(order.total)}</strong>.
+                <strong>{formatCurrency(order.total)}</strong>.
               </p>
 
               {hasInvoice && factura && (

@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchOwnCoachings } from '@/services/coachingService';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { useAcknowledgeCoaching } from '@/hooks/useCoachings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,36 +63,9 @@ export function MyOwnCoachingTab({ branchId }: MyOwnCoachingTabProps) {
 
   const acknowledgeMutation = useAcknowledgeCoaching();
 
-  // Obtener coachings propios
   const { data: coachings, isLoading } = useQuery({
     queryKey: ['my-own-coachings', userId, branchId],
-    queryFn: async (): Promise<MyCoaching[]> => {
-      if (!userId) return [];
-
-      const { data, error } = await supabase
-        .from('coachings')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .order('coaching_year', { ascending: false })
-        .order('coaching_month', { ascending: false });
-
-      if (error) throw error;
-
-      // Obtener evaluadores
-      const evaluatorIds = [...new Set(data.map((c) => c.evaluated_by))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', evaluatorIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) ?? []);
-
-      return data.map((c) => ({
-        ...c,
-        evaluator: profileMap.get(c.evaluated_by) || null,
-      }));
-    },
+    queryFn: (): Promise<MyCoaching[]> => fetchOwnCoachings(userId!, branchId),
     enabled: !!userId && !!branchId,
   });
 

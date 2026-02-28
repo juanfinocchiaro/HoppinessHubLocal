@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchReconciliationPayments } from '@/services/posService';
 
 export interface ReconciliationSummary {
   totalConciliado: number;
@@ -21,16 +21,7 @@ export function usePointReconciliation(
   return useQuery({
     queryKey: ['point-reconciliation', branchId, desde, hasta],
     queryFn: async () => {
-      let query = supabase
-        .from('pedido_pagos')
-        .select('metodo, monto, conciliado, mp_payment_id, pedidos!inner(branch_id)')
-        .eq('pedidos.branch_id', branchId!);
-
-      if (desde) query = query.gte('created_at', desde);
-      if (hasta) query = query.lte('created_at', hasta);
-
-      const { data, error } = await (query as any);
-      if (error) throw error;
+      const data = await fetchReconciliationPayments(branchId!, desde, hasta);
 
       const summary: ReconciliationSummary = {
         totalConciliado: 0,
@@ -40,7 +31,7 @@ export function usePointReconciliation(
         byMetodo: {},
       };
 
-      for (const pago of data ?? []) {
+      for (const pago of data) {
         const metodo = pago.metodo as string;
         const monto = Number(pago.monto);
         const isConciliado = pago.conciliado === true;

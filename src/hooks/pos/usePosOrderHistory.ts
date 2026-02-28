@@ -3,7 +3,7 @@
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchOrderHistory } from '@/services/posService';
 import { subDays, startOfDay, format } from 'date-fns';
 
 export type OrderFilterCanalVenta = 'todos' | 'mostrador' | 'apps';
@@ -98,16 +98,8 @@ export function usePosOrderHistory(
     queryKey: ['pos-order-history', branchId, daysBack],
     queryFn: async () => {
       if (!branchId) return [];
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(
-          'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, pedido_items(id, nombre, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), pedido_pagos(id, metodo, monto), facturas_emitidas(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
-        )
-        .eq('branch_id', branchId)
-        .gte('created_at', fromDate)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as PosOrder[];
+      const data = await fetchOrderHistory(branchId, fromDate);
+      return data as PosOrder[];
     },
     enabled: !!branchId,
   });

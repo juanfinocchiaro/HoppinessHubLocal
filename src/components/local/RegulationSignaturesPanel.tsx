@@ -1,6 +1,16 @@
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchLatestRegulation,
+  fetchBranchNameById,
+  fetchBranchTeamRolesForRegulation,
+  fetchProfilesByIds,
+  fetchEmployeeDataByBranchAndUsers,
+  fetchRegulationSignatures,
+  uploadRegulationSignatureFile,
+  insertRegulationSignature,
+  getRegulationDocumentUrl,
+} from '@/services/profileService';
 import { useAuth } from '@/hooks/useAuth';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -61,29 +71,13 @@ export default function RegulationSignaturesPanel({ branchId }: RegulationSignat
   // Fetch latest regulation
   const { data: latestRegulation } = useQuery({
     queryKey: ['latest-regulation'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('regulations')
-        .select('*')
-        .eq('is_active', true)
-        .order('version', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: fetchLatestRegulation,
   });
 
   // Fetch branch name
   const { data: branch } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('name')
-        .eq('id', branchId)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchBranchNameById(branchId),
   });
 
   // Fetch team members with their signature status
@@ -92,43 +86,20 @@ export default function RegulationSignaturesPanel({ branchId }: RegulationSignat
     queryFn: async () => {
       if (!latestRegulation) return [];
 
-      // Get team members for this branch (excluding franchisees) from user_branch_roles
-      const { data: roles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .neq('local_role', 'franquiciado')
-        .neq('local_role', 'contador_local');
-
-      if (!roles?.length) return [];
+      const roles = await fetchBranchTeamRolesForRegulation(branchId);
+      if (!roles.length) return [];
 
       const userIds = roles.map((r) => r.user_id);
 
-      // Get profiles (profiles.id = user_id after migration)
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds);
+      const [profiles, employeeData, signatures] = await Promise.all([
+        fetchProfilesByIds(userIds),
+        fetchEmployeeDataByBranchAndUsers(branchId, userIds),
+        fetchRegulationSignatures(latestRegulation.id, userIds),
+      ]);
 
-      // Get employee data for DNI
-      const { data: employeeData } = await supabase
-        .from('employee_data')
-        .select('user_id, dni')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds);
-
-      // Get signatures for latest regulation
-      const { data: signatures } = await supabase
-        .from('regulation_signatures')
-        .select('*')
-        .eq('regulation_id', latestRegulation.id)
-        .in('user_id', userIds);
-
-      // Merge data
-      const signaturesMap = new Map(signatures?.map((s) => [s.user_id, s]));
-      const profilesMap = new Map(profiles?.map((p) => [p.id, p]));
-      const employeeDataMap = new Map(employeeData?.map((e) => [e.user_id, e]));
+      const signaturesMap = new Map(signatures.map((s) => [s.user_id, s]));
+      const profilesMap = new Map(profiles.map((p) => [p.id, p]));
+      const employeeDataMap = new Map(employeeData.map((e) => [e.user_id, e]));
 
       return roles.map((role) => ({
         user_id: role.user_id,
@@ -146,28 +117,18 @@ export default function RegulationSignaturesPanel({ branchId }: RegulationSignat
 
     setUploading(true);
     try {
-      // Upload file
       const filePath = `${uploadingFor.user_id}/${latestRegulation.version}_${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from('regulation-signatures')
-        .upload(filePath, selectedFile);
+      await uploadRegulationSignatureFile(filePath, selectedFile);
 
-      if (uploadError) throw uploadError;
-
-      // Create signature record
-      const { error: insertError } = await supabase.from('regulation_signatures').insert([
-        {
-          user_id: uploadingFor.user_id,
-          regulation_id: latestRegulation.id,
-          regulation_version: latestRegulation.version,
-          signed_document_url: filePath,
-          signed_at: new Date().toISOString(),
-          uploaded_by: user.id,
-          branch_id: branchId,
-        },
-      ]);
-
-      if (insertError) throw insertError;
+      await insertRegulationSignature({
+        user_id: uploadingFor.user_id,
+        regulation_id: latestRegulation.id,
+        regulation_version: latestRegulation.version,
+        signed_document_url: filePath,
+        signed_at: new Date().toISOString(),
+        uploaded_by: user.id,
+        branch_id: branchId,
+      });
 
       toast.success(`Firma de ${uploadingFor.full_name} registrada correctamente`);
       queryClient.invalidateQueries({ queryKey: ['team-regulation-signatures'] });
@@ -287,9 +248,7 @@ export default function RegulationSignaturesPanel({ branchId }: RegulationSignat
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const url = supabase.storage
-                      .from('regulations')
-                      .getPublicUrl(latestRegulation.document_url).data.publicUrl;
+                    const url = getRegulationDocumentUrl(latestRegulation.document_url);
                     window.open(url, '_blank');
                   }}
                 >

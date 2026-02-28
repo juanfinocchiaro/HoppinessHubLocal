@@ -1,20 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchCoachingStats,
+  checkHasCoachingThisMonth,
+  fetchMyPendingCoachings,
+  fetchEmployeeScoreHistory,
+} from '@/services/coachingService';
+import type { CoachingStats } from '@/services/coachingService';
 
-interface CoachingStats {
-  totalEmployees: number;
-  coachingsThisMonth: number;
-  pendingCoachings: number;
-  pendingAcknowledgments: number;
-  completionRate: number;
-  averageScore: number | null;
-  employeesWithoutCoaching: string[];
-  // Stats para encargados (solo visible para supervisores)
-  totalManagers: number;
-  managersWithCoaching: number;
-  pendingManagerCoachings: number;
-  managersWithoutCoaching: string[];
-}
+export type { CoachingStats };
 
 /**
  * Hook para obtener estadísticas de coachings de una sucursal
@@ -25,110 +18,10 @@ export function useCoachingStats(branchId: string | null) {
 
   return useQuery({
     queryKey: ['coaching-stats', branchId, currentMonth, currentYear],
-    queryFn: async (): Promise<CoachingStats> => {
-      if (!branchId) {
-        return {
-          totalEmployees: 0,
-          coachingsThisMonth: 0,
-          pendingCoachings: 0,
-          pendingAcknowledgments: 0,
-          completionRate: 0,
-          averageScore: null,
-          employeesWithoutCoaching: [],
-          totalManagers: 0,
-          managersWithCoaching: 0,
-          pendingManagerCoachings: 0,
-          managersWithoutCoaching: [],
-        };
-      }
-
-      // 1. Obtener empleados activos del local (solo empleados y cajeros)
-      const { data: employeeRoles, error: rolesError } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .in('local_role', ['empleado', 'cajero', 'encargado']);
-
-      if (rolesError) throw rolesError;
-
-      // Separar empleados/cajeros de encargados
-      const employeeIds =
-        employeeRoles?.filter((r) => r.local_role !== 'encargado').map((r) => r.user_id) ?? [];
-      const managerIds =
-        employeeRoles?.filter((r) => r.local_role === 'encargado').map((r) => r.user_id) ?? [];
-      const totalEmployees = employeeIds.length;
-      const totalManagers = managerIds.length;
-
-      if (totalEmployees === 0 && totalManagers === 0) {
-        return {
-          totalEmployees: 0,
-          coachingsThisMonth: 0,
-          pendingCoachings: 0,
-          pendingAcknowledgments: 0,
-          completionRate: 0,
-          averageScore: null,
-          employeesWithoutCoaching: [],
-          totalManagers: 0,
-          managersWithCoaching: 0,
-          pendingManagerCoachings: 0,
-          managersWithoutCoaching: [],
-        };
-      }
-
-      // 2. Obtener coachings de este mes
-      const { data: coachings, error: coachingsError } = await supabase
-        .from('coachings')
-        .select('user_id, overall_score, acknowledged_at')
-        .eq('branch_id', branchId)
-        .eq('coaching_month', currentMonth)
-        .eq('coaching_year', currentYear);
-
-      if (coachingsError) throw coachingsError;
-
-      // Separar coachings de empleados/cajeros vs encargados
-      const employeeCoachings = coachings?.filter((c) => employeeIds.includes(c.user_id)) ?? [];
-      const managerCoachings = coachings?.filter((c) => managerIds.includes(c.user_id)) ?? [];
-
-      const coachingsThisMonth = employeeCoachings.length;
-      const employeesWithCoaching = new Set(employeeCoachings.map((c) => c.user_id));
-      const employeesWithoutCoaching = employeeIds.filter((id) => !employeesWithCoaching.has(id));
-      const pendingCoachings = employeesWithoutCoaching.length;
-      const pendingAcknowledgments = employeeCoachings.filter((c) => !c.acknowledged_at).length;
-
-      // Stats de managers
-      const managersWithCoaching = managerCoachings.length;
-      const managersWithCoachingSet = new Set(managerCoachings.map((c) => c.user_id));
-      const managersWithoutCoaching = managerIds.filter((id) => !managersWithCoachingSet.has(id));
-      const pendingManagerCoachings = managersWithoutCoaching.length;
-
-      // Calcular promedio de scores (solo empleados/cajeros)
-      const scoresWithValues = employeeCoachings.filter((c) => c.overall_score !== null);
-      const averageScore =
-        scoresWithValues.length > 0
-          ? scoresWithValues.reduce((sum, c) => sum + (c.overall_score || 0), 0) /
-            scoresWithValues.length
-          : null;
-
-      const completionRate =
-        totalEmployees > 0 ? Math.round((coachingsThisMonth / totalEmployees) * 100) : 0;
-
-      return {
-        totalEmployees,
-        coachingsThisMonth,
-        pendingCoachings,
-        pendingAcknowledgments,
-        completionRate,
-        averageScore: averageScore ? Number(averageScore.toFixed(2)) : null,
-        employeesWithoutCoaching,
-        totalManagers,
-        managersWithCoaching,
-        pendingManagerCoachings,
-        managersWithoutCoaching,
-      };
-    },
+    queryFn: (): Promise<CoachingStats> =>
+      fetchCoachingStats(branchId!, currentMonth, currentYear),
     enabled: !!branchId,
-    refetchInterval: 1000 * 60 * 5, // Refrescar cada 5 minutos
+    refetchInterval: 1000 * 60 * 5,
   });
 }
 
@@ -141,20 +34,8 @@ export function useHasCoachingThisMonth(userId: string | null, branchId: string 
 
   return useQuery({
     queryKey: ['has-coaching-this-month', userId, branchId, currentMonth, currentYear],
-    queryFn: async (): Promise<boolean> => {
-      if (!userId || !branchId) return false;
-
-      const { count, error } = await supabase
-        .from('coachings')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .eq('coaching_month', currentMonth)
-        .eq('coaching_year', currentYear);
-
-      if (error) throw error;
-      return (count ?? 0) > 0;
-    },
+    queryFn: (): Promise<boolean> =>
+      checkHasCoachingThisMonth(userId!, branchId!, currentMonth, currentYear),
     enabled: !!userId && !!branchId,
   });
 }
@@ -165,30 +46,7 @@ export function useHasCoachingThisMonth(userId: string | null, branchId: string 
 export function useMyPendingCoachings() {
   return useQuery({
     queryKey: ['my-pending-coachings'],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) return [];
-
-      const { data, error } = await supabase
-        .from('coachings')
-        .select(
-          `
-          id,
-          coaching_date,
-          coaching_month,
-          coaching_year,
-          overall_score,
-          strengths,
-          areas_to_improve
-        `,
-        )
-        .eq('user_id', session.session.user.id)
-        .is('acknowledged_at', null)
-        .order('coaching_date', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchMyPendingCoachings(),
   });
 }
 
@@ -202,22 +60,7 @@ export function useEmployeeScoreHistory(
 ) {
   return useQuery({
     queryKey: ['employee-score-history', userId, branchId, months],
-    queryFn: async () => {
-      if (!userId || !branchId) return [];
-
-      const { data, error } = await supabase
-        .from('coachings')
-        .select('coaching_month, coaching_year, overall_score, station_score, general_score')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .not('overall_score', 'is', null)
-        .order('coaching_year', { ascending: false })
-        .order('coaching_month', { ascending: false })
-        .limit(months);
-
-      if (error) throw error;
-      return data.reverse(); // Orden cronológico para gráficos
-    },
+    queryFn: () => fetchEmployeeScoreHistory(userId!, branchId!, months),
     enabled: !!userId && !!branchId,
   });
 }

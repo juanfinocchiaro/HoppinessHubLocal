@@ -1,7 +1,7 @@
 /**
  * Types for schedule multi-selection system
  */
-import type { ScheduleValue } from '../ScheduleCellPopover';
+import type { ScheduleValue } from '@/types/schedule';
 
 export interface CellKey {
   userId: string;

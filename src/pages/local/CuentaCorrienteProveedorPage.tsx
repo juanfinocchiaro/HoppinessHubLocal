@@ -40,6 +40,7 @@ import { ProveedorFormModal } from '@/components/finanzas/ProveedorFormModal';
 import { ProveedorDocumentos } from '@/components/finanzas/ProveedorDocumentos';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/states';
+import { formatCurrency } from '@/lib/formatters';
 
 const MONTHS_SHORT = [
   'Ene',
@@ -66,9 +67,6 @@ function parseLocalDate(dateStr: string) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
-
-const fmt = (n: number) =>
-  Number(n).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 export default function CuentaCorrienteProveedorPage() {
   const { branchId, proveedorId } = useParams<{ branchId: string; proveedorId: string }>();
@@ -157,8 +155,8 @@ export default function CuentaCorrienteProveedorPage() {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Tenés {resumen.facturas_vencidas} factura(s) vencida(s) por ${' '}
-            {fmt(resumen.monto_vencido)}
+            Tenés {resumen.facturas_vencidas} factura(s) vencida(s) por{' '}
+            {formatCurrency(resumen.monto_vencido)}
           </AlertDescription>
         </Alert>
       )}
@@ -190,7 +188,7 @@ export default function CuentaCorrienteProveedorPage() {
                 <div
                   className={`text-2xl font-bold font-mono ${resumen.saldo_actual < 0 ? 'text-green-600' : resumen.saldo_actual === 0 ? 'text-green-600' : ''}`}
                 >
-                  $ {fmt(Math.abs(resumen.saldo_actual))}
+                  {formatCurrency(Math.abs(resumen.saldo_actual))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {resumen.saldo_actual > 0
@@ -213,7 +211,7 @@ export default function CuentaCorrienteProveedorPage() {
                 <div
                   className={`text-lg font-semibold font-mono ${resumen.monto_vencido > 0 ? 'text-destructive' : ''}`}
                 >
-                  $ {fmt(resumen.monto_vencido)}
+                  {formatCurrency(resumen.monto_vencido)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {resumen.facturas_vencidas > 0
@@ -232,7 +230,7 @@ export default function CuentaCorrienteProveedorPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-semibold font-mono">
-                  $ {fmt(resumen.monto_por_vencer)}
+                  {formatCurrency(resumen.monto_por_vencer)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {resumen.todas_vencidas
@@ -255,7 +253,7 @@ export default function CuentaCorrienteProveedorPage() {
                 <div
                   className={`text-lg font-semibold font-mono ${resumen.pagos_pendientes_verif > 0 ? 'text-amber-600' : ''}`}
                 >
-                  $ {fmt(resumen.total_pagado_pendiente_verif)}
+                  {formatCurrency(resumen.total_pagado_pendiente_verif)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {resumen.pagos_pendientes_verif > 0
@@ -428,9 +426,9 @@ export default function CuentaCorrienteProveedorPage() {
                       {/* Importe (signed) */}
                       <TableCell className="text-right font-mono text-sm">
                         {isFactura ? (
-                          <span className="text-destructive">+$ {fmt(mov.monto)}</span>
+                          <span className="text-destructive">+{formatCurrency(mov.monto)}</span>
                         ) : (
-                          <span className="text-green-600">-$ {fmt(mov.monto)}</span>
+                          <span className="text-green-600">-{formatCurrency(mov.monto)}</span>
                         )}
                       </TableCell>
 
@@ -438,10 +436,10 @@ export default function CuentaCorrienteProveedorPage() {
                       <TableCell className="text-right font-mono text-sm font-semibold">
                         {mov.saldo_acumulado < 0 ? (
                           <span className="text-green-600">
-                            -$ {fmt(Math.abs(mov.saldo_acumulado))}
+                            -{formatCurrency(Math.abs(mov.saldo_acumulado))}
                           </span>
                         ) : (
-                          <span>$ {fmt(mov.saldo_acumulado)}</span>
+                          <span>{formatCurrency(mov.saldo_acumulado)}</span>
                         )}
                       </TableCell>
 

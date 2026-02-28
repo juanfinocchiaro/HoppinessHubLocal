@@ -1,20 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchItemRemovibles,
+  upsertRemovible,
+  deleteRemovibleByInsumo,
+  deleteRemovibleByPreparacion,
+  updateRemovibleNombreDisplay,
+} from '@/services/menuService';
 
 export function useItemRemovibles(itemId: string | undefined) {
   return useQuery({
     queryKey: ['item-removibles', itemId],
-    queryFn: async () => {
-      if (!itemId) return [];
-      const { data, error } = await supabase
-        .from('item_removibles' as any)
-        .select('*, insumos(id, nombre), preparaciones(id, nombre)')
-        .eq('item_carta_id', itemId)
-        .eq('activo', true);
-      if (error) throw error;
-      return data as any[];
-    },
+    queryFn: () => (itemId ? fetchItemRemovibles(itemId) : []),
     enabled: !!itemId,
   });
 }
@@ -35,37 +32,14 @@ export function useItemRemoviblesMutations() {
       nombre_display?: string;
     }) => {
       if (activo) {
-        // Check if record already exists (avoid upsert with partial indexes)
-        const { data: existing } = await supabase
-          .from('item_removibles' as any)
-          .select('id')
-          .eq('item_carta_id', item_carta_id)
-          .eq('insumo_id', insumo_id)
-          .maybeSingle();
-        if (existing) {
-          const { error } = await supabase
-            .from('item_removibles' as any)
-            .update({ activo: true, nombre_display: nombre_display || null })
-            .eq('id', (existing as any).id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from('item_removibles' as any)
-            .insert({
-              item_carta_id,
-              insumo_id,
-              preparacion_id: null,
-              activo: true,
-              nombre_display: nombre_display || null,
-            });
-          if (error) throw error;
-        }
+        await upsertRemovible({
+          item_carta_id,
+          insumo_id,
+          preparacion_id: null,
+          nombre_display: nombre_display || null,
+        });
       } else {
-        await supabase
-          .from('item_removibles' as any)
-          .delete()
-          .eq('item_carta_id', item_carta_id)
-          .eq('insumo_id', insumo_id);
+        await deleteRemovibleByInsumo(item_carta_id, insumo_id);
       }
     },
     onSuccess: (_, vars) => {
@@ -87,36 +61,14 @@ export function useItemRemoviblesMutations() {
       nombre_display?: string;
     }) => {
       if (activo) {
-        const { data: existing } = await supabase
-          .from('item_removibles' as any)
-          .select('id')
-          .eq('item_carta_id', item_carta_id)
-          .eq('preparacion_id', preparacion_id)
-          .maybeSingle();
-        if (existing) {
-          const { error } = await supabase
-            .from('item_removibles' as any)
-            .update({ activo: true, nombre_display: nombre_display || null })
-            .eq('id', (existing as any).id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from('item_removibles' as any)
-            .insert({
-              item_carta_id,
-              preparacion_id,
-              insumo_id: null,
-              activo: true,
-              nombre_display: nombre_display || null,
-            });
-          if (error) throw error;
-        }
+        await upsertRemovible({
+          item_carta_id,
+          insumo_id: null,
+          preparacion_id,
+          nombre_display: nombre_display || null,
+        });
       } else {
-        await supabase
-          .from('item_removibles' as any)
-          .delete()
-          .eq('item_carta_id', item_carta_id)
-          .eq('preparacion_id', preparacion_id);
+        await deleteRemovibleByPreparacion(item_carta_id, preparacion_id);
       }
     },
     onSuccess: (_, vars) => {
@@ -125,14 +77,9 @@ export function useItemRemoviblesMutations() {
     onError: (e: Error) => toast.error(`Error: ${e.message}`),
   });
 
-  const updateNombreDisplay = useMutation({
-    mutationFn: async ({ id, nombre_display }: { id: string; nombre_display: string }) => {
-      const { error } = await supabase
-        .from('item_removibles' as any)
-        .update({ nombre_display })
-        .eq('id', id);
-      if (error) throw error;
-    },
+  const updateNombreDisplayMut = useMutation({
+    mutationFn: ({ id, nombre_display }: { id: string; nombre_display: string }) =>
+      updateRemovibleNombreDisplay(id, nombre_display),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['item-removibles'] });
     },
@@ -142,5 +89,5 @@ export function useItemRemoviblesMutations() {
   // Keep backward compat
   const toggle = toggleInsumo;
 
-  return { toggle, toggleInsumo, togglePreparacion, updateNombreDisplay };
+  return { toggle, toggleInsumo, togglePreparacion, updateNombreDisplay: updateNombreDisplayMut };
 }

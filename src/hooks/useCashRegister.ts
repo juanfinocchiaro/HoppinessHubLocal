@@ -2,7 +2,17 @@
  * useCashRegister - Cajas, turnos y movimientos (Fase 2)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchCashRegisters,
+  fetchOpenShiftsForRegisters,
+  fetchCashMovements,
+  fetchCashMovementsByShiftIds,
+  insertCashShift,
+  closeCashShift,
+  insertCashMovement,
+  insertExpenseMovement,
+  transferBetweenRegisters,
+} from '@/services/rdoService';
 import { toast } from 'sonner';
 
 export type RegisterType = 'ventas' | 'alivio' | 'fuerte';
@@ -104,13 +114,7 @@ export function useCashRegisters(branchId: string | undefined) {
     queryKey: cashRegisterKeys.registers(branchId ?? ''),
     queryFn: async () => {
       if (!branchId) return { active: [], all: [] };
-      const { data, error } = await supabase
-        .from('cash_registers')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('display_order');
-      if (error) throw error;
-      const all = (data || []) as CashRegister[];
+      const all = await fetchCashRegisters(branchId);
       const active = all.filter((r) => r.is_active);
       return { active, all };
     },
@@ -125,18 +129,7 @@ export function useCashShifts(branchId: string | undefined, registerIds: string[
     queryFn: async () => {
       if (!branchId || registerIds.length === 0)
         return {} as Record<string, CashRegisterShift | null>;
-      const shiftsMap: Record<string, CashRegisterShift | null> = {};
-      for (const registerId of registerIds) {
-        const { data } = await supabase
-          .from('cash_register_shifts')
-          .select('*')
-          .eq('cash_register_id', registerId)
-          .eq('status', 'open')
-          .limit(1)
-          .maybeSingle();
-        shiftsMap[registerId] = data as CashRegisterShift | null;
-      }
-      return shiftsMap;
+      return fetchOpenShiftsForRegisters(registerIds);
     },
     enabled: !!branchId && registerIds.length > 0,
     staleTime: 10000,
@@ -148,13 +141,7 @@ export function useCashMovements(shiftId: string | undefined) {
     queryKey: cashRegisterKeys.movements(shiftId ?? ''),
     queryFn: async () => {
       if (!shiftId) return [];
-      const { data, error } = await supabase
-        .from('cash_register_movements')
-        .select('*')
-        .eq('shift_id', shiftId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []) as CashRegisterMovement[];
+      return fetchCashMovements(shiftId);
     },
     enabled: !!shiftId,
     staleTime: 5000,
@@ -172,16 +159,11 @@ export function useAllCashMovements(
     queryKey: [...cashRegisterKeys.all, 'all-movements', branchId, shiftIds.join(',')],
     queryFn: async () => {
       if (shiftIds.length === 0) return {} as Record<string, CashRegisterMovement[]>;
-      const { data, error } = await supabase
-        .from('cash_register_movements')
-        .select('*')
-        .in('shift_id', shiftIds)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const allMovements = await fetchCashMovementsByShiftIds(shiftIds);
       const movementsMap: Record<string, CashRegisterMovement[]> = {};
       for (const [registerId, shift] of Object.entries(shifts)) {
         movementsMap[registerId] = shift
-          ? ((data || []).filter((m) => m.shift_id === shift.id) as CashRegisterMovement[])
+          ? allMovements.filter((m) => m.shift_id === shift.id)
           : [];
       }
       return movementsMap;
@@ -202,21 +184,7 @@ export function useOpenShift(branchId: string) {
       registerId: string;
       userId: string;
       openingAmount: number;
-    }) => {
-      const { data, error } = await supabase
-        .from('cash_register_shifts')
-        .insert({
-          cash_register_id: registerId,
-          branch_id: branchId,
-          opened_by: userId,
-          opening_amount: openingAmount,
-          status: 'open',
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    }) => insertCashShift({ registerId, branchId, userId, openingAmount }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.shifts(branchId) });
       toast.success('Caja abierta');
@@ -247,21 +215,7 @@ export function useCloseShift(branchId: string) {
       closingAmount: number;
       expectedAmount: number;
       notes?: string;
-    }) => {
-      const { error } = await supabase
-        .from('cash_register_shifts')
-        .update({
-          closed_by: userId,
-          closed_at: new Date().toISOString(),
-          closing_amount: closingAmount,
-          expected_amount: expectedAmount,
-          difference: closingAmount - expectedAmount,
-          notes: notes || null,
-          status: 'closed',
-        })
-        .eq('id', shiftId);
-      if (error) throw error;
-    },
+    }) => closeCashShift({ shiftId, userId, closingAmount, expectedAmount, notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.shifts(branchId) });
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
@@ -290,24 +244,17 @@ export function useAddMovement(branchId: string) {
       paymentMethod: string;
       userId: string;
       orderId?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('cash_register_movements')
-        .insert({
-          shift_id: shiftId,
-          branch_id: branchId,
-          type,
-          payment_method: paymentMethod,
-          amount,
-          concept,
-          recorded_by: userId,
-          order_id: orderId || null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as CashRegisterMovement;
-    },
+    }) =>
+      insertCashMovement({
+        shiftId,
+        branchId,
+        type,
+        paymentMethod,
+        amount,
+        concept,
+        userId,
+        orderId,
+      }),
     onSuccess: (_, v) => {
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.movements(v.shiftId) });
       queryClient.invalidateQueries({ queryKey: [...cashRegisterKeys.all, 'all-movements'] });
@@ -340,27 +287,19 @@ export function useAddExpenseMovement(branchId: string) {
       rdoCategoryCode?: string;
       observaciones?: string;
       estadoAprobacion?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('cash_register_movements')
-        .insert({
-          shift_id: shiftId,
-          branch_id: branchId,
-          type: 'expense',
-          payment_method: paymentMethod,
-          amount,
-          concept,
-          recorded_by: userId,
-          categoria_gasto: categoriaGasto || null,
-          rdo_category_code: rdoCategoryCode || null,
-          observaciones: observaciones || null,
-          estado_aprobacion: estadoAprobacion || 'aprobado',
-        } as any)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as CashRegisterMovement;
-    },
+    }) =>
+      insertExpenseMovement({
+        shiftId,
+        branchId,
+        amount,
+        concept,
+        paymentMethod,
+        userId,
+        categoriaGasto,
+        rdoCategoryCode,
+        observaciones,
+        estadoAprobacion,
+      }),
     onSuccess: (_, v) => {
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.movements(v.shiftId) });
       queryClient.invalidateQueries({ queryKey: [...cashRegisterKeys.all, 'all-movements'] });
@@ -402,18 +341,15 @@ export function useTransferBetweenRegisters(branchId: string) {
       amount: number;
       concept: string;
       userId: string;
-    }) => {
-      const { data, error } = await (supabase.rpc as any)('transfer_between_registers', {
-        p_source_shift_id: sourceShiftId,
-        p_dest_shift_id: destShiftId,
-        p_amount: amount,
-        p_concept: concept,
-        p_user_id: userId,
-        p_branch_id: branchId,
-      });
-      if (error) throw error;
-      return data as unknown as { transfer_id: string; withdrawal: any; deposit: any };
-    },
+    }) =>
+      transferBetweenRegisters({
+        sourceShiftId,
+        destShiftId,
+        amount,
+        concept,
+        userId,
+        branchId,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashRegisterKeys.all });
     },

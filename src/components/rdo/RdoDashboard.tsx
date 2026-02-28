@@ -28,14 +28,9 @@ import { getCurrentPeriodo } from '@/types/compra';
 import { RDO_SECTIONS } from '@/types/rdo';
 import type { RdoReportLine } from '@/types/rdo';
 import { useRdoUnifiedReport } from '@/hooks/useRdoUnifiedReport';
+import { formatCurrency } from '@/lib/formatters';
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value || 0);
+).format(value || 0);
 }
 
 function RdoLine({

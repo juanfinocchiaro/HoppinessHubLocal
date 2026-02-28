@@ -23,7 +23,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchName,
+  fetchWebappPendingOrders,
+  fetchWebappActiveOrders,
+  fetchWebappRecentOrders,
+  subscribeToWebappOrders,
+  removeSupabaseChannel,
+  acceptWebappOrder,
+  rejectWebappOrder,
+  updatePedidoEstado,
+} from '@/services/posService';
 import { toast } from 'sonner';
 import { OrderChatDialog } from './OrderChatDialog';
 import { usePrintConfig } from '@/hooks/usePrintConfig';
@@ -51,12 +61,7 @@ const SERVICIO_LABELS: Record<string, string> = {
   comer_aca: 'Comer acá',
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 interface WebappOrder {
   id: string;
@@ -113,23 +118,13 @@ const ESTADO_BADGE: Record<string, { label: string; className: string }> = {
   en_camino: { label: 'En camino', className: 'bg-primary/15 text-primary border-primary/30' },
 };
 
-const WEBAPP_SELECT = `
-  id, numero_pedido, tipo_servicio, cliente_nombre,
-  cliente_telefono, cliente_direccion, cliente_user_id, canal_venta, total, estado,
-  created_at, webapp_tracking_code,
-  pedido_items(id, nombre, cantidad, precio_unitario, subtotal)
-`;
-
 export function WebappOrdersPanel({ branchId }: { branchId: string }) {
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: branchData } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
-      return data;
-    },
+    queryFn: () => fetchBranchName(branchId),
     enabled: !!branchId,
     staleTime: Infinity,
   });
@@ -144,15 +139,8 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
   const { data: newOrders, isLoading: loadingNew } = useQuery({
     queryKey: ['webapp-pending-orders', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(WEBAPP_SELECT)
-        .eq('branch_id', branchId)
-        .eq('origen', 'webapp')
-        .in('estado', ['pendiente'])
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data || []) as unknown as WebappOrder[];
+      const data = await fetchWebappPendingOrders(branchId);
+      return data as unknown as WebappOrder[];
     },
     refetchInterval: 5000,
   });
@@ -161,15 +149,8 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
   const { data: activeOrders, isLoading: loadingActive } = useQuery({
     queryKey: ['webapp-active-orders', branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(WEBAPP_SELECT)
-        .eq('branch_id', branchId)
-        .eq('origen', 'webapp')
-        .in('estado', ACTIVE_STATES)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data || []) as unknown as WebappOrder[];
+      const data = await fetchWebappActiveOrders(branchId, ACTIVE_STATES);
+      return data as unknown as WebappOrder[];
     },
     refetchInterval: 15000,
   });
@@ -179,17 +160,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
     queryKey: ['webapp-recent-orders', branchId],
     queryFn: async () => {
       const since = new Date(Date.now() - 3600000).toISOString();
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('id, numero_pedido, tipo_servicio, total, estado, created_at, cliente_nombre')
-        .eq('branch_id', branchId)
-        .eq('origen', 'webapp')
-        .in('estado', ['entregado', 'cancelado'])
-        .gte('created_at', since)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return data || [];
+      return fetchWebappRecentOrders(branchId, since);
     },
     refetchInterval: 30000,
   });
@@ -197,28 +168,16 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
   // ─── Realtime ───
   useEffect(() => {
     if (!branchId) return;
-    const channel = supabase
-      .channel(`webapp-orders-${branchId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pedidos',
-          filter: `branch_id=eq.${branchId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['webapp-pending-orders', branchId] });
-          queryClient.invalidateQueries({ queryKey: ['webapp-active-orders', branchId] });
-          queryClient.invalidateQueries({ queryKey: ['webapp-recent-orders', branchId] });
-          queryClient.invalidateQueries({
-            queryKey: [...WEBAPP_PENDING_COUNT_QUERY_KEY, branchId],
-          });
-        },
-      )
-      .subscribe();
+    const channel = subscribeToWebappOrders(branchId, () => {
+      queryClient.invalidateQueries({ queryKey: ['webapp-pending-orders', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['webapp-active-orders', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['webapp-recent-orders', branchId] });
+      queryClient.invalidateQueries({
+        queryKey: [...WEBAPP_PENDING_COUNT_QUERY_KEY, branchId],
+      });
+    });
     return () => {
-      supabase.removeChannel(channel);
+      removeSupabaseChannel(channel);
     };
   }, [branchId, queryClient]);
 
@@ -233,11 +192,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
 
   const acceptOrder = useMutation({
     mutationFn: async (orderId: string) => {
-      const { error } = await supabase
-        .from('pedidos')
-        .update({ estado: 'confirmado', tiempo_confirmado: new Date().toISOString() } as any)
-        .eq('id', orderId);
-      if (error) throw error;
+      await acceptWebappOrder(orderId);
     },
     onSuccess: (_, orderId) => {
       invalidateAll();
@@ -255,11 +210,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
 
   const rejectOrder = useMutation({
     mutationFn: async (orderId: string) => {
-      const { error } = await supabase
-        .from('pedidos')
-        .update({ estado: 'cancelado' })
-        .eq('id', orderId);
-      if (error) throw error;
+      await rejectWebappOrder(orderId);
     },
     onSuccess: (_, orderId) => {
       invalidateAll();
@@ -277,18 +228,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
 
   const advanceOrder = useMutation({
     mutationFn: async ({ orderId, estado }: { orderId: string; estado: string }) => {
-      const updateData: Record<string, unknown> = { estado };
-      if (estado === 'en_preparacion') updateData.tiempo_inicio_prep = new Date().toISOString();
-      if (
-        estado === 'listo' ||
-        estado === 'listo_retiro' ||
-        estado === 'listo_mesa' ||
-        estado === 'listo_envio'
-      )
-        updateData.tiempo_listo = new Date().toISOString();
-      if (estado === 'en_camino') updateData.tiempo_en_camino = new Date().toISOString();
-      const { error } = await supabase.from('pedidos').update(updateData).eq('id', orderId);
-      if (error) throw error;
+      await updatePedidoEstado(orderId, estado);
     },
     onSuccess: async (_, { orderId, estado }) => {
       invalidateAll();
@@ -393,7 +333,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
               {minutesAgo}m
             </span>
           </div>
-          <span className="font-bold text-sm">{fmt(order.total)}</span>
+          <span className="font-bold text-sm">{formatCurrency(order.total)}</span>
         </div>
 
         {order.cliente_nombre && <p className="text-sm">{order.cliente_nombre}</p>}
@@ -537,7 +477,7 @@ export function WebappOrdersPanel({ branchId }: { branchId: string }) {
                     #{o.numero_pedido} {o.cliente_nombre || ''}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span>{fmt(o.total)}</span>
+                    <span>{formatCurrency(o.total)}</span>
                     <Badge
                       variant={o.estado === 'cancelado' ? 'destructive' : 'secondary'}
                       className="text-[10px]"

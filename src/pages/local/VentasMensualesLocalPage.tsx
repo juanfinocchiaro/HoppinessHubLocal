@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchInfo } from '@/services/rdoService';
 import { PageHeader } from '@/components/ui/page-header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -40,15 +40,7 @@ export default function VentasMensualesLocalPage() {
 
   const { data: branch } = useQuery({
     queryKey: ['branch', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('id', branchId!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchBranchInfo(branchId!),
     enabled: !!branchId,
   });
 
@@ -75,7 +67,7 @@ export default function VentasMensualesLocalPage() {
         title="Ventas Mensuales"
         subtitle={
           branch
-            ? `Venta total y efectivo por período — ${branch.name}`
+            ? `Venta total y efectivo por período â€” ${branch.name}`
             : 'Venta total y efectivo por período'
         }
       />
@@ -95,7 +87,7 @@ export default function VentasMensualesLocalPage() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
               <DollarSign className="w-4 h-4" />
-              Ventas POS — {currentPeriodo} (tiempo real)
+              Ventas POS â€” {currentPeriodo} (tiempo real)
             </div>
             {loadingPos ? (
               <Skeleton className="h-16 w-full" />

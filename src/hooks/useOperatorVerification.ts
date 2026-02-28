@@ -3,9 +3,15 @@
  */
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import {
+  insertOperatorSessionLog,
+  callValidateSupervisorPin,
+  fetchUserRolesForVerification,
+  fetchProfileFullName,
+  signInWithPassword,
+} from '@/services/posService';
 
 export interface OperatorInfo {
   userId: string;
@@ -20,9 +26,8 @@ export function useOperatorVerification(branchId: string | undefined) {
   const logConfirmIdentity = useMutation({
     mutationFn: async (triggeredBy: string) => {
       if (!branchId || !user) return;
-      // Log opcional - si existe la tabla operator_session_logs
       try {
-        await supabase.from('operator_session_logs').insert({
+        await insertOperatorSessionLog({
           branch_id: branchId,
           current_user_id: user.id,
           previous_user_id: null,
@@ -30,7 +35,6 @@ export function useOperatorVerification(branchId: string | undefined) {
           triggered_by: triggeredBy,
         });
       } catch (e) {
-        // Tabla puede no existir, ignorar
         console.debug('operator_session_logs no disponible');
       }
     },
@@ -48,7 +52,7 @@ export function useOperatorVerification(branchId: string | undefined) {
     }) => {
       if (!branchId) return;
       try {
-        await supabase.from('operator_session_logs').insert({
+        await insertOperatorSessionLog({
           branch_id: branchId,
           previous_user_id: previousUserId,
           current_user_id: newUserId,
@@ -66,10 +70,7 @@ export function useOperatorVerification(branchId: string | undefined) {
       if (!branchId) return null;
 
       try {
-        const { data, error } = await supabase.rpc('validate_supervisor_pin', {
-          _branch_id: branchId,
-          _pin: pin,
-        });
+        const { data, error } = await callValidateSupervisorPin(branchId, pin);
 
         if (error) {
           if (import.meta.env.DEV) console.error('Error validating PIN:', error);
@@ -85,27 +86,16 @@ export function useOperatorVerification(branchId: string | undefined) {
           };
         }
       } catch (e) {
-        // Función puede no existir, usar verificación alternativa
         console.debug('validate_supervisor_pin no disponible, usando verificación alternativa');
-        // Verificar si el usuario actual tiene rol de supervisor
         if (!user) return null;
-        const { data: roles } = await supabase
-          .from('user_roles_v2')
-          .select('brand_role, local_role')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .limit(1);
+        const roles = await fetchUserRolesForVerification(user.id);
         const matchedRole = roles?.[0]?.brand_role || roles?.[0]?.local_role;
         if (
           roles &&
           roles.length > 0 &&
           ['encargado', 'franquiciado', 'superadmin', 'coordinador'].includes(matchedRole || '')
         ) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single();
+          const profile = await fetchProfileFullName(user.id);
           return {
             userId: user.id,
             fullName: profile?.full_name || user.email || 'Usuario',
@@ -123,10 +113,7 @@ export function useOperatorVerification(branchId: string | undefined) {
     async (email: string, password: string, triggeredBy: string): Promise<OperatorInfo | null> => {
       const previousUserId = user?.id;
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await signInWithPassword(email, password);
 
       if (error) {
         toast.error('Credenciales incorrectas');
@@ -134,11 +121,7 @@ export function useOperatorVerification(branchId: string | undefined) {
       }
 
       if (data.user && previousUserId) {
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', data.user.id)
-          .single();
+        const newProfile = await fetchProfileFullName(data.user.id);
 
         try {
           await logOperatorChange.mutateAsync({

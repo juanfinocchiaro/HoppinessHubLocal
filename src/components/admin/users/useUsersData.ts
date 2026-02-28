@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchesIdName, fetchAllProfiles, fetchAllBrandRoles, fetchAllBranchRoles } from '@/services/adminService';
 import type { UserWithStats, Branch, BranchRoleInfo } from './types';
 import type { BrandRole, LocalRole } from '@/hooks/usePermissions';
 import type { WorkPositionType } from '@/types/workPosition';
@@ -10,12 +10,8 @@ export function useUsersData() {
   const { data: branches = [] } = useQuery({
     queryKey: ['branches-list'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      return (data || []) as Branch[];
+      const data = await fetchBranchesIdName();
+      return data as Branch[];
     },
     staleTime: 60 * 1000,
   });
@@ -28,30 +24,15 @@ export function useUsersData() {
   } = useQuery({
     queryKey: ['admin-users-consolidated', branches],
     queryFn: async () => {
-      // 1. Fetch all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone, created_at')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-      if (!profiles?.length) return [];
+      const profiles = await fetchAllProfiles();
+      if (!profiles.length) return [];
 
       const profileIds = profiles.map((p) => p.id).filter(Boolean);
 
-      // 2. Fetch brand roles from user_roles_v2 (only brand_role)
-      const { data: brandRoles } = await supabase
-        .from('user_roles_v2')
-        .select('id, user_id, brand_role')
-        .eq('is_active', true)
-        .in('user_id', profileIds);
-
-      // 3. Fetch local roles from user_branch_roles (NEW: única fuente de verdad)
-      const { data: branchRoles } = await supabase
-        .from('user_branch_roles')
-        .select('id, user_id, branch_id, local_role, default_position, clock_pin, is_active')
-        .eq('is_active', true)
-        .in('user_id', profileIds);
+      const [brandRoles, branchRoles] = await Promise.all([
+        fetchAllBrandRoles(profileIds),
+        fetchAllBranchRoles(profileIds),
+      ]);
 
       // Build maps
       const brandRolesMap = new Map(brandRoles?.map((r) => [r.user_id, r]));

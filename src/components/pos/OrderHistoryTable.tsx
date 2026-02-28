@@ -73,12 +73,7 @@ const SERVICIO_LABELS: Record<string, string> = {
   delivery: 'Delivery',
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 function paymentSummary(pagos: PosOrder['pedido_pagos']) {
   if (!pagos || pagos.length === 0) return '-';
@@ -265,7 +260,7 @@ export function OrderHistoryTable({
                       </TableCell>
                     )}
                     <TableCell className="text-right font-medium tabular-nums">
-                      {fmt(order.total)}
+                      {formatCurrency(order.total)}
                     </TableCell>
                     {!isMobile && (
                       <TableCell className="text-sm">
@@ -419,19 +414,19 @@ function OrderDetail({
                 <span>
                   {item.nombre} x{item.cantidad}
                 </span>
-                <span className="tabular-nums">{fmt(item.subtotal)}</span>
+                <span className="tabular-nums">{formatCurrency(item.subtotal)}</span>
               </li>
             ))}
           </ul>
           {order.descuento && order.descuento > 0 && (
             <div className="flex justify-between mt-1 text-destructive">
               <span>Descuento</span>
-              <span>-{fmt(order.descuento)}</span>
+              <span>-{formatCurrency(order.descuento)}</span>
             </div>
           )}
           <div className="flex justify-between mt-1 font-medium border-t pt-1">
             <span>Total</span>
-            <span>{fmt(order.total)}</span>
+            <span>{formatCurrency(order.total)}</span>
           </div>
         </div>
 
@@ -450,7 +445,7 @@ function OrderDetail({
             {order.pedido_pagos?.map((pago) => (
               <li key={pago.id} className="flex justify-between">
                 <span>{METODO_LABELS[pago.metodo] || pago.metodo}</span>
-                <span className="tabular-nums">{fmt(pago.monto)}</span>
+                <span className="tabular-nums">{formatCurrency(pago.monto)}</span>
               </li>
             ))}
           </ul>
@@ -470,7 +465,7 @@ function OrderDetail({
               {activeInvoice.cae && (
                 <p className="text-muted-foreground text-xs">CAE: {activeInvoice.cae}</p>
               )}
-              <p className="font-medium">{fmt(activeInvoice.total)}</p>
+              <p className="font-medium">{formatCurrency(activeInvoice.total)}</p>
             </div>
           )}
 

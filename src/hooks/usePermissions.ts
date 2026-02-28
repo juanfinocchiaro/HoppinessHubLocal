@@ -18,9 +18,13 @@
  * - empleado: Solo Mi Cuenta
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Tables } from '@/integrations/supabase/types';
+import {
+  fetchUserBrandRole,
+  fetchUserBranchRoles,
+  fetchAccessibleBranches,
+} from '@/services/permissionsService';
 
 type Branch = Tables<'branches'>;
 
@@ -270,16 +274,7 @@ export function usePermissions(currentBranchId?: string): PermissionsV2 {
     queryKey: ['user-brand-role', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('user_roles_v2')
-        .select('id, user_id, brand_role, is_active')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as UserBrandRole | null;
+      return fetchUserBrandRole(user.id) as Promise<UserBrandRole | null>;
     },
     enabled: !!user?.id,
     staleTime: 30 * 1000,
@@ -296,44 +291,10 @@ export function usePermissions(currentBranchId?: string): PermissionsV2 {
     queryFn: async (): Promise<UserBranchRole[]> => {
       if (!user?.id) return [];
 
-      // Use SECURITY DEFINER function to avoid RLS recursion issues
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_branches', {
-        _user_id: user.id,
-      });
-
-      if (!rpcError && rpcData && rpcData.length > 0) {
-        return (rpcData as { branch_id: string; local_role: string }[]).map((r) => ({
-          branch_id: r.branch_id,
-          local_role: r.local_role as LocalRole,
-        }));
-      }
-
-      // Fallback to direct table query
-      const { data: ubrData, error: ubrError } = await supabase
-        .from('user_branch_roles')
-        .select('branch_id, local_role')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-
-      if (!ubrError && ubrData && ubrData.length > 0) {
-        return ubrData as UserBranchRole[];
-      }
-
-      // Last resort fallback: user_roles_v2 (legacy)
-      const { data: urv2, error: urv2Error } = await supabase
-        .from('user_roles_v2')
-        .select('branch_ids, local_role')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .not('branch_ids', 'is', null)
-        .not('local_role', 'is', null)
-        .maybeSingle();
-
-      if (urv2Error || !urv2?.branch_ids?.length || !urv2.local_role) return [];
-
-      return urv2.branch_ids.map((branch_id: string) => ({
-        branch_id,
-        local_role: urv2.local_role as LocalRole,
+      const roles = await fetchUserBranchRoles(user.id);
+      return roles.map((r) => ({
+        branch_id: r.branch_id,
+        local_role: r.local_role as LocalRole,
       }));
     },
     enabled: !!user?.id,
@@ -353,29 +314,7 @@ export function usePermissions(currentBranchId?: string): PermissionsV2 {
     queryKey: ['accessible-branches-v2', user?.id, branchIdsKey, brandRoleData?.brand_role],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      // Superadmin ve todas las sucursales
-      if (brandRoleData?.brand_role === 'superadmin') {
-        const { data } = await supabase
-          .from('branches')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-        return data || [];
-      }
-
-      // Otros ven solo las que tienen asignadas via user_branch_roles
-      if (branchIdsFromRoles.length > 0) {
-        const { data } = await supabase
-          .from('branches')
-          .select('*')
-          .in('id', branchIdsFromRoles)
-          .eq('is_active', true)
-          .order('name');
-        return data || [];
-      }
-
-      return [];
+      return fetchAccessibleBranches(brandRoleData?.brand_role ?? null, branchIdsFromRoles);
     },
     // Solo ejecutar cuando ya cargaron los roles (evita bucle infinito)
     enabled: !!user?.id && rolesLoaded,

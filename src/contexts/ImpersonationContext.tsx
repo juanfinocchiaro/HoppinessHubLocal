@@ -5,7 +5,11 @@
  * SIN afectar operaciones reales de base de datos (RLS sigue usando auth.uid() real).
  */
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  checkIsSuperadmin,
+  fetchUserProfile,
+  fetchImpersonationData,
+} from '@/services/permissionsService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Tables } from '@/integrations/supabase/types';
 import type { BrandRole, LocalRole, UserBranchRole } from '@/hooks/usePermissions';
@@ -65,25 +69,17 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
-  // Check if current user is superadmin
   useEffect(() => {
-    const checkSuperadmin = async () => {
+    const doCheck = async () => {
       if (!user?.id) {
         setIsSuperadmin(false);
         return;
       }
-
-      const { data } = await supabase
-        .from('user_roles_v2')
-        .select('brand_role')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      setIsSuperadmin(data?.brand_role === 'superadmin');
+      const result = await checkIsSuperadmin(user.id);
+      setIsSuperadmin(result);
     };
 
-    checkSuperadmin();
+    doCheck();
   }, [user?.id]);
 
   // Validate restored impersonation once we know if the current user is superadmin
@@ -112,64 +108,25 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
 
       setLoading(true);
       try {
-        // Fetch profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, avatar_url')
-          .eq('id', userId)
-          .single();
+        const profile = await fetchUserProfile(userId);
+        if (!profile) throw new Error('Usuario no encontrado');
 
-        if (profileError || !profile) throw new Error('Usuario no encontrado');
+        const { brandRole, branchRoles: rawBranchRoles, branches } =
+          await fetchImpersonationData(userId);
 
-        // Fetch brand role
-        const { data: brandRoleData } = await supabase
-          .from('user_roles_v2')
-          .select('brand_role')
-          .eq('user_id', userId)
-          .eq('is_active', true)
-          .maybeSingle();
-
-        // Fetch branch roles
-        const { data: branchRolesData } = await supabase
-          .from('user_branch_roles')
-          .select('branch_id, local_role')
-          .eq('user_id', userId)
-          .eq('is_active', true);
-
-        const branchRoles: UserBranchRole[] = (branchRolesData || []).map((r) => ({
+        const branchRoles: UserBranchRole[] = rawBranchRoles.map((r) => ({
           branch_id: r.branch_id,
           local_role: r.local_role as LocalRole,
         }));
-
-        // Fetch accessible branches
-        let branches: Branch[] = [];
-
-        if (brandRoleData?.brand_role === 'superadmin') {
-          const { data } = await supabase
-            .from('branches')
-            .select('*')
-            .eq('is_active', true)
-            .order('name');
-          branches = data || [];
-        } else if (branchRoles.length > 0) {
-          const branchIds = branchRoles.map((r) => r.branch_id);
-          const { data } = await supabase
-            .from('branches')
-            .select('*')
-            .in('id', branchIds)
-            .eq('is_active', true)
-            .order('name');
-          branches = data || [];
-        }
 
         const impersonatedUser: ImpersonatedUser = {
           id: profile.id,
           full_name: profile.full_name,
           email: profile.email,
           avatar_url: profile.avatar_url,
-          brandRole: (brandRoleData?.brand_role as BrandRole) || null,
+          brandRole: (brandRole as BrandRole) || null,
           branchRoles,
-          accessibleBranches: branches,
+          accessibleBranches: branches as Branch[],
         };
 
         setTargetUser(impersonatedUser);

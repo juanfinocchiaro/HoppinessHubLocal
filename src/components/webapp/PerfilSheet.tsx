@@ -5,7 +5,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchProfile, updateProfile } from '@/services/profileService';
+import { updateUserPassword } from '@/services/authService';
+import { linkGuestOrders } from '@/services/userOnboardingService';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,11 +46,7 @@ export function PerfilSheet({ open, onOpenChange }: Props) {
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile-sheet', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, phone, avatar_url, birth_date')
-        .eq('id', user!.id)
-        .maybeSingle();
+      const { data, error } = await fetchProfile(user!.id);
       if (error) throw error;
       return data;
     },
@@ -64,25 +62,21 @@ export function PerfilSheet({ open, onOpenChange }: Props) {
     }
   }, [profile]);
 
-  const updateProfile = useMutation({
+  const updateProfileMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName,
-          phone,
-          birth_date: birthDate ? format(birthDate, 'yyyy-MM-dd') : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user!.id);
+      const { error } = await updateProfile(user!.id, {
+        full_name: fullName,
+        phone,
+        birth_date: birthDate ? format(birthDate, 'yyyy-MM-dd') : null,
+        updated_at: new Date().toISOString(),
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile-sheet'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      // Retroactively link guest orders that share this phone number
       if (phone) {
-        supabase.functions.invoke('link-guest-orders', {}).catch(() => {});
+        linkGuestOrders().catch(() => {});
       }
       toast.success('Perfil actualizado');
       onOpenChange(false);
@@ -92,7 +86,7 @@ export function PerfilSheet({ open, onOpenChange }: Props) {
 
   const changePassword = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await updateUserPassword(newPassword);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -223,10 +217,10 @@ export function PerfilSheet({ open, onOpenChange }: Props) {
 
             <Button
               className="w-full"
-              onClick={() => updateProfile.mutate()}
-              disabled={updateProfile.isPending}
+              onClick={() => updateProfileMutation.mutate()}
+              disabled={updateProfileMutation.isPending}
             >
-              {updateProfile.isPending ? (
+              {updateProfileMutation.isPending ? (
                 <span className="mr-2 inline-flex">
                   <DotsLoader />
                 </span>

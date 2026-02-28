@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchMySalaryAdvancesForCard } from '@/services/hrService';
 import { useRequestAdvance } from '@/hooks/useSalaryAdvances';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import { DollarSign, TrendingDown, Plus, Clock } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatCurrency } from '@/lib/formatters';
 
 interface SalaryAdvance {
   id: string;
@@ -53,19 +54,12 @@ export default function MySalaryAdvancesCard() {
     queryKey: ['my-salary-advances-v2', userId],
     queryFn: async () => {
       if (!userId) return [];
-
-      const { data, error } = await supabase
-        .from('salary_advances')
-        .select('id, amount, status, payment_method, reason, paid_at, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        if (import.meta.env.DEV) console.warn('Could not fetch salary advances:', error.message);
+      try {
+        return (await fetchMySalaryAdvancesForCard(userId)) as SalaryAdvance[];
+      } catch (error) {
+        if (import.meta.env.DEV) console.warn('Could not fetch salary advances:', error);
         return [];
       }
-      return data as SalaryAdvance[];
     },
     enabled: !!userId,
   });
@@ -86,12 +80,7 @@ export default function MySalaryAdvancesCard() {
     .filter((a) => a.status !== 'cancelled' && a.status !== 'pending')
     .reduce((acc, a) => acc + Number(a.amount), 0);
 
-  const formatCurrency = (n: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(n);
+  
 
   const getStatusBadge = (status: string) => {
     switch (status) {

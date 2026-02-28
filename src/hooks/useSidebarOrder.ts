@@ -3,7 +3,7 @@
  * Superadmins can reorder; all users see the same order.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchSidebarOrder, upsertSidebarOrder } from '@/services/configService';
 import { toast } from 'sonner';
 
 const DEFAULT_ORDER = ['locales', 'menu-eng', 'gestion-red', 'modelo-op', 'finanzas', 'admin'];
@@ -13,14 +13,7 @@ export function useSidebarOrder() {
 
   const { data: orderMap, isLoading } = useQuery({
     queryKey: ['sidebar-section-order'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('brand_sidebar_order')
-        .select('section_id, sort_order')
-        .order('sort_order');
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: fetchSidebarOrder,
     staleTime: 60_000,
   });
 
@@ -28,7 +21,6 @@ export function useSidebarOrder() {
 
   const reorder = useMutation({
     mutationFn: async (newOrder: string[]) => {
-      // Upsert all sections with new sort_order
       const rows = newOrder.map((id, idx) => ({
         section_id: id,
         sort_order: idx + 1,
@@ -36,10 +28,7 @@ export function useSidebarOrder() {
       }));
 
       for (const row of rows) {
-        const { error } = await supabase
-          .from('brand_sidebar_order')
-          .upsert(row, { onConflict: 'section_id' });
-        if (error) throw error;
+        await upsertSidebarOrder(row);
       }
     },
     onSuccess: () => {

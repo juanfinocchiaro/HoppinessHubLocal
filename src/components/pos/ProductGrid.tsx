@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useItemsCarta } from '@/hooks/useItemsCarta';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchItemExtraAssignments, fetchItemRemovibles } from '@/services/posService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -41,47 +41,8 @@ interface SelectableItem extends MenuItemWithCategory {
   _promoNombre?: string;
 }
 
-export interface CartItemExtra {
-  id: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-}
-
-export interface CartItemRemovible {
-  id: string;
-  nombre: string;
-}
-
-export interface CartItemOpcional {
-  grupoId: string;
-  grupoNombre: string;
-  itemId: string;
-  nombre: string;
-}
-
-export interface CartItem {
-  item_carta_id: string;
-  nombre: string;
-  cantidad: number;
-  precio_unitario: number;
-  subtotal: number;
-  notas?: string;
-  extras?: CartItemExtra[];
-  removibles?: CartItemRemovible[];
-  opcionales?: CartItemOpcional[];
-  precio_referencia?: number;
-  categoria_carta_id?: string | null;
-  createdAt?: number;
-  /** Promo aplicada (si corresponde) */
-  promo_id?: string;
-  /** Restricción de pago de la promo aplicada */
-  promo_restriccion_pago?: 'cualquiera' | 'solo_efectivo' | 'solo_digital';
-  /** Descuento unitario automático por promoción */
-  promo_descuento?: number;
-  /** Nombre de la promoción aplicada */
-  promo_nombre?: string;
-}
+export type { CartItem, CartItemExtra, CartItemRemovible, CartItemOpcional } from '@/types/pos';
+import type { CartItem } from '@/types/pos';
 
 interface ProductGridProps {
   onAddItem: (item: CartItem) => void;
@@ -282,57 +243,13 @@ export function ProductGrid({
 
       queryClient.prefetchQuery({
         queryKey: ['item-carta-extras', itemId],
-        queryFn: async () => {
-          const { data: asignaciones } = await supabase
-            .from('item_extra_asignaciones')
-            .select('extra_id')
-            .eq('item_carta_id', itemId);
-          if (asignaciones && asignaciones.length > 0) {
-            const extraIds = asignaciones.map((a) => a.extra_id);
-            const { data: extras } = await supabase
-              .from('items_carta')
-              .select('id, nombre, precio_base, activo')
-              .in('id', extraIds)
-              .eq('activo', true)
-              .is('deleted_at', null);
-            return (extras || []).map((e, i) => ({
-              id: e.id,
-              item_carta_id: itemId,
-              preparacion_id: null,
-              insumo_id: null,
-              orden: i,
-              preparaciones: {
-                id: e.id,
-                nombre: e.nombre,
-                costo_calculado: 0,
-                precio_extra: e.precio_base,
-                puede_ser_extra: true,
-              },
-              insumos: null,
-            }));
-          }
-          const { data } = await supabase
-            .from('item_carta_extras')
-            .select(
-              '*, preparaciones(id, nombre, costo_calculado, precio_extra, puede_ser_extra), insumos(id, nombre, costo_por_unidad_base, precio_extra, puede_ser_extra)',
-            )
-            .eq('item_carta_id', itemId)
-            .order('orden');
-          return data ?? [];
-        },
+        queryFn: () => fetchItemExtraAssignments(itemId),
         staleTime: 5 * 60 * 1000,
       });
 
       queryClient.prefetchQuery({
         queryKey: ['item-removibles', itemId],
-        queryFn: async () => {
-          const { data } = await supabase
-            .from('item_removibles')
-            .select('*, insumos(id, nombre), preparaciones(id, nombre)')
-            .eq('item_carta_id', itemId)
-            .eq('activo', true);
-          return data ?? [];
-        },
+        queryFn: () => fetchItemRemovibles(itemId),
         staleTime: 5 * 60 * 1000,
       });
     },

@@ -98,7 +98,7 @@ export function SupervisorPinDialog({
         setPin(['', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-    } catch (err) {
+    } catch {
       setError('Error al validar PIN');
     } finally {
       setIsValidating(false);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranches, fetchVentasMensualesMarca } from '@/services/adminService';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   Table,
@@ -58,29 +58,13 @@ export default function VentasMensualesMarcaPage() {
 
   const { data: branches, isLoading: loadingBranches } = useQuery({
     queryKey: ['branches-all'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchActiveBranches,
     enabled: !!user,
   });
 
   const { data: ventas, isLoading: loadingVentas } = useQuery({
     queryKey: ['ventas-mensuales-marca', periodo],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ventas_mensuales_local')
-        .select('*')
-        .eq('periodo', periodo)
-        .is('deleted_at', null);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchVentasMensualesMarca(periodo),
     enabled: !!user && !!periodo,
   });
 

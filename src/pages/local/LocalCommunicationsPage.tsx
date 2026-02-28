@@ -41,7 +41,13 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchForComms,
+  fetchBranchTeamForComms,
+  fetchLocalCommunications,
+  createLocalCommunication,
+  deleteLocalCommunication,
+} from '@/services/communicationsService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
@@ -82,56 +88,19 @@ export default function LocalCommunicationsPage() {
 
   const { data: branch } = useQuery({
     queryKey: ['branch', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('id', branchId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchBranchForComms(branchId!),
     enabled: !!branchId,
   });
 
-  // Fetch team members
   const { data: teamMembers } = useQuery({
     queryKey: ['branch-team-for-comms', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', branchId!)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const userIds = data?.map((r) => r.user_id) || [];
-      if (userIds.length === 0) return [];
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      return (profiles || []).map((p) => ({ user_id: p.id, full_name: p.full_name }));
-    },
+    queryFn: () => fetchBranchTeamForComms(branchId!),
     enabled: !!branchId,
   });
 
   const { data: communications, isLoading } = useQuery({
     queryKey: ['local-communications', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*, communication_reads(user_id)')
-        .eq('source_type', 'local')
-        .eq('source_branch_id', branchId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchLocalCommunications(branchId!),
     enabled: !!branchId,
     staleTime: 30000,
   });
@@ -140,27 +109,14 @@ export default function LocalCommunicationsPage() {
     mutationFn: async () => {
       if (!user || !branchId) throw new Error('No autenticado');
 
-      const insertData: any = {
+      await createLocalCommunication({
         title: formData.title,
         body: formData.body,
         type: formData.type,
-        tag: 'operativo',
-        source_type: 'local',
-        source_branch_id: branchId,
-        created_by: user.id,
-        is_published: true,
-        published_at: new Date().toISOString(),
-      };
-
-      // If specific users selected, add target info
-      if (targetType === 'selected' && selectedUsers.length > 0) {
-        // Store target_roles as the selected user IDs for filtering
-        // Note: This is a workaround using the existing schema
-        insertData.target_roles = selectedUsers;
-      }
-
-      const { error } = await supabase.from('communications').insert(insertData);
-      if (error) throw error;
+        branchId,
+        createdBy: user.id,
+        targetRoles: targetType === 'selected' && selectedUsers.length > 0 ? selectedUsers : undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['local-communications', branchId] });
@@ -174,10 +130,7 @@ export default function LocalCommunicationsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('communications').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteLocalCommunication(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['local-communications', branchId] });
       toast.success('Comunicado eliminado');

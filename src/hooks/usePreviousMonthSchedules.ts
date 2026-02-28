@@ -7,7 +7,7 @@
  * - Returns changes as pending (not saved automatically)
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchSchedulesByDateRange } from '@/services/schedulesService';
 import {
   format,
   subMonths,
@@ -15,7 +15,7 @@ import {
   getDay,
   subDays,
 } from 'date-fns';
-import type { ScheduleValue } from '@/components/hr/ScheduleCellPopover';
+import type { ScheduleValue } from '@/types/schedule';
 interface SchedulePatternEntry {
   userId: string;
   dayOfWeek: number; // 0 = Sunday, 1 = Monday, etc.
@@ -70,15 +70,7 @@ export function usePreviousMonthPattern(branchId: string | undefined, month: num
       const startDate = format(weekMonday, 'yyyy-MM-dd');
       const endDate = format(lastSunday, 'yyyy-MM-dd');
 
-      // Fetch schedules for that week
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('*')
-        .eq('branch_id', branchId)
-        .gte('schedule_date', startDate)
-        .lte('schedule_date', endDate);
-
-      if (error) throw error;
+      const data = await fetchSchedulesByDateRange(branchId, startDate, endDate);
 
       // Build pattern map: userId -> dayOfWeek -> schedule
       const patterns: SchedulePatternEntry[] = [];

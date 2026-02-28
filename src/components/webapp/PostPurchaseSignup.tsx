@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { linkGuestOrders } from '@/services/userOnboardingService';
 import { useGooglePopupAuth } from '@/hooks/useGooglePopupAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,11 +22,7 @@ export function PostPurchaseSignup({ trackingCode }: Props) {
   // When user logs in (e.g. after Google OAuth redirect), link guest orders
   useEffect(() => {
     if (!user || !trackingCode) return;
-    supabase.functions
-      .invoke('link-guest-orders', {
-        body: { tracking_code: trackingCode },
-      })
-      .catch(() => {});
+    linkGuestOrders({ tracking_code: trackingCode }).catch(() => {});
   }, [user, trackingCode]);
 
   // Don't show if already logged in or dismissed

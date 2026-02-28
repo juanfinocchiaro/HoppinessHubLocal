@@ -11,15 +11,12 @@ import {
   useWebappItemOptionalGroups,
 } from '@/hooks/useWebappMenu';
 import type { WebappMenuItem, CartItem, CartItemModifier } from '@/types/webapp';
+import { formatPrice } from '@/lib/formatters';
 
 interface Props {
   item: WebappMenuItem | null;
   onClose: () => void;
   onAdd: (item: Omit<CartItem, 'cartId'>) => void;
-}
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
 }
 
 function useIsDesktop() {
@@ -57,7 +54,7 @@ function ProductDetailContent({
     const map = new Map<string, number>();
     if (item.is_promo_article && item.promo_included_modifiers && extrasList) {
       for (const inc of item.promo_included_modifiers) {
-        const match = (extrasList as any[]).find((e: any) => e.nombre === inc.nombre);
+        const match = (extrasList as Array<Record<string, unknown>>).find((e: any) => e.nombre === inc.nombre);
         if (match) map.set(match.id, inc.cantidad);
       }
     }
@@ -82,7 +79,7 @@ function ProductDetailContent({
     let total = 0;
     for (const [id, qty] of Object.entries(extraQty)) {
       if (qty <= 0) continue;
-      const extra = (extrasList as any[] | undefined)?.find((e: any) => e.id === id);
+      const extra = (extrasList as Array<Record<string, unknown>> | undefined)?.find((e: any) => e.id === id);
       if (!extra) continue;
       const free = freeQtyMap.get(id) ?? 0;
       total += extra.precio * Math.max(0, qty - free);
@@ -144,7 +141,7 @@ function ProductDetailContent({
     const chargedExtras: CartItemModifier[] = [];
     for (const [id, qty] of Object.entries(extraQty)) {
       if (qty <= 0) continue;
-      const extra = (extrasList as any[] | undefined)?.find((e: any) => e.id === id);
+      const extra = (extrasList as Array<Record<string, unknown>> | undefined)?.find((e: any) => e.id === id);
       if (!extra) continue;
       const free = freeQtyMap.get(id) ?? 0;
       const chargeableQty = Math.max(0, qty - free);
@@ -309,7 +306,7 @@ function ProductDetailContent({
           <div>
             <h3 className="text-sm font-bold text-foreground mb-2">Extras</h3>
             <div className="space-y-1.5">
-              {(extrasList as any[]).map((extra: any) => {
+              {(extrasList as Array<Record<string, unknown>>).map((extra: any) => {
                 const qty = extraQty[extra.id] ?? 0;
                 const freeQty = freeQtyMap.get(extra.id) ?? 0;
                 const chargeableQty = Math.max(0, qty - freeQty);
@@ -411,7 +408,7 @@ function ProductDetailContent({
             {Object.entries(extraQty)
               .filter(([, q]) => q > 0)
               .map(([id, qty]) => {
-                const extra = (extrasList as any[] | undefined)?.find((e: any) => e.id === id);
+                const extra = (extrasList as Array<Record<string, unknown>> | undefined)?.find((e: any) => e.id === id);
                 if (!extra) return null;
                 const free = freeQtyMap.get(id) ?? 0;
                 const chargeable = Math.max(0, qty - free);

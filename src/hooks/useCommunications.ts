@@ -1,53 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-
-interface Communication {
-  id: string;
-  title: string;
-  body: string;
-  type: 'info' | 'warning' | 'urgent' | 'celebration';
-  target_branch_ids: string[] | null;
-  target_roles: string[] | null;
-  is_published: boolean;
-  published_at: string;
-  expires_at: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string | null;
-}
-
-interface CommunicationWithRead extends Communication {
-  is_read: boolean;
-}
+import {
+  confirmCommunication,
+  createCommunication,
+  deleteCommunication,
+  listCommunications,
+  listUserCommunications,
+  markCommunicationAsRead,
+} from '@/services/communicationsService';
+import type {
+  Communication,
+  CommunicationWithRead,
+  CommunicationWithSource,
+} from '@/types/communications';
 
 export function useCommunications() {
   return useQuery({
     queryKey: ['communications'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      return (data || []) as Communication[];
-    },
+    queryFn: () => listCommunications(100),
     staleTime: 60000,
   });
-}
-
-export interface CommunicationWithSource extends CommunicationWithRead {
-  source_type: 'brand' | 'local';
-  source_branch_id: string | null;
-  tag: string | null;
-  custom_label: string | null;
-  branch_name?: string;
-  requires_confirmation?: boolean;
-  is_confirmed?: boolean;
 }
 
 export function useUserCommunications() {
@@ -57,73 +31,7 @@ export function useUserCommunications() {
     queryKey: ['user-communications', userId],
     queryFn: async () => {
       if (!userId) return { brand: [], local: [] };
-
-      // Get user's branch IDs and local roles from user_branch_roles
-      const { data: userBranches, error: branchError } = await supabase
-        .from('user_branch_roles')
-        .select('branch_id, local_role')
-        .eq('user_id', userId)
-        .eq('is_active', true);
-
-      if (branchError) {
-        if (import.meta.env.DEV) console.error('Error fetching user branches:', branchError);
-        throw branchError;
-      }
-
-      const userBranchIds = new Set(userBranches?.map((b) => b.branch_id) || []);
-      const userLocalRoles = new Set<string>(
-        userBranches?.map((b) => b.local_role).filter(Boolean) || [],
-      );
-
-      // Get all published communications (RLS handles basic filtering)
-      const { data: comms, error: commsError } = await supabase
-        .from('communications')
-        .select('*, branches:source_branch_id(name)')
-        .eq('is_published', true)
-        .or('expires_at.is.null,expires_at.gt.now()')
-        .order('published_at', { ascending: false })
-        .limit(100);
-
-      if (commsError) throw commsError;
-
-      // Get user's reads with confirmation status
-      const { data: reads, error: readsError } = await supabase
-        .from('communication_reads')
-        .select('communication_id, confirmed_at')
-        .eq('user_id', userId);
-
-      if (readsError) throw readsError;
-
-      const readMap = new Map(reads?.map((r) => [r.communication_id, r]) || []);
-
-      const allComms = (comms || []).map((c) => {
-        const readRecord = readMap.get(c.id);
-        return {
-          ...c,
-          is_read: !!readRecord,
-          is_confirmed: !!readRecord?.confirmed_at,
-          branch_name: (c.branches as any)?.name || null,
-        };
-      }) as CommunicationWithSource[];
-
-      // Separate by source - filter brand communications by target_roles
-      const brand = allComms.filter((c) => {
-        if (c.source_type !== 'brand') return false;
-
-        // If no target_roles specified, it's for everyone
-        if (!c.target_roles || c.target_roles.length === 0) return true;
-
-        // Check if user has at least one of the target roles
-        return c.target_roles.some((role) => userLocalRoles.has(role));
-      });
-
-      // Filter local communications: only show those from user's branches
-      const local = allComms.filter(
-        (c) =>
-          c.source_type === 'local' && c.source_branch_id && userBranchIds.has(c.source_branch_id),
-      );
-
-      return { brand, local };
+      return listUserCommunications(userId);
     },
     enabled: !!userId,
     staleTime: 30000,
@@ -145,16 +53,7 @@ export function useMarkAsRead() {
   return useMutation({
     mutationFn: async (communicationId: string) => {
       if (!userId) throw new Error('Not authenticated');
-
-      const { error } = await supabase.from('communication_reads').insert({
-        communication_id: communicationId,
-        user_id: userId,
-      });
-
-      // Ignore unique constraint violation (already read)
-      if (error && !error.message.includes('duplicate')) {
-        throw error;
-      }
+      await markCommunicationAsRead(userId, communicationId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-communications'] });
@@ -170,14 +69,7 @@ export function useConfirmCommunication() {
   return useMutation({
     mutationFn: async (communicationId: string) => {
       if (!userId) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('communication_reads')
-        .update({ confirmed_at: new Date().toISOString() })
-        .eq('communication_id', communicationId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await confirmCommunication(userId, communicationId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-communications'] });
@@ -200,13 +92,7 @@ export function useCreateCommunication() {
       expires_at?: string;
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
-
-      const { error } = await supabase.from('communications').insert({
-        ...data,
-        created_by: user.id,
-      });
-
-      if (error) throw error;
+      await createCommunication(user.id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });
@@ -220,11 +106,7 @@ export function useDeleteCommunication() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('communications').delete().eq('id', id);
-
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => deleteCommunication(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });
       toast.success('Comunicado eliminado');

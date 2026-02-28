@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchCentralTeamMembers, removeCentralTeamMember, inviteCentralTeamMember } from '@/services/adminService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,53 +46,14 @@ export default function CentralTeam() {
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['central-team-v2'],
     queryFn: async () => {
-      // 1. Get users with brand roles
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles_v2')
-        .select('id, user_id, brand_role, created_at')
-        .not('brand_role', 'is', null)
-        .eq('is_active', true)
-        .order('created_at');
-
-      if (rolesError) throw rolesError;
-      if (!roles || roles.length === 0) return [];
-
-      // 2. Get profiles for those users (profiles.id = user_id after migration)
-      const userIds = roles.map((r) => r.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // 3. Merge data (profiles.id = user_id)
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-      return roles.map((role) => {
-        const profile = profileMap.get(role.user_id);
-        return {
-          id: role.id,
-          user_id: role.user_id,
-          email: profile?.email || '',
-          full_name: profile?.full_name || null,
-          brand_role: role.brand_role as BrandRole,
-          created_at: role.created_at,
-        };
-      }) as CentralTeamMember[];
+      const members = await fetchCentralTeamMembers();
+      return members as CentralTeamMember[];
     },
     staleTime: 30 * 1000, // Cache 30s
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      // Clear brand_role (keep local_role if any)
-      const { error } = await supabase
-        .from('user_roles_v2')
-        .update({ brand_role: null })
-        .eq('user_id', userId);
-      if (error) throw error;
-    },
+    mutationFn: (userId: string) => removeCentralTeamMember(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['central-team-v2'] });
       queryClient.invalidateQueries({ queryKey: ['user-role-v2'] });
@@ -104,46 +65,8 @@ export default function CentralTeam() {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: BrandRole }) => {
-      // First find user by email (profiles.id = user_id after migration)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('Usuario no encontrado. Debe registrarse primero.');
-      }
-
-      const userId = profile.id; // profiles.id IS the user_id
-
-      // Check if user already has a role record
-      const { data: existing } = await supabase
-        .from('user_roles_v2')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('user_roles_v2')
-          .update({ brand_role: role })
-          .eq('user_id', userId);
-        if (error) throw error;
-      } else {
-        // Insert new record
-        const { error } = await supabase.from('user_roles_v2').insert({
-          user_id: userId,
-          brand_role: role,
-          local_role: null,
-          branch_ids: [],
-          is_active: true,
-        });
-        if (error) throw error;
-      }
-    },
+    mutationFn: ({ email, role }: { email: string; role: BrandRole }) =>
+      inviteCentralTeamMember(email, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['central-team-v2'] });
       setInviteEmail('');

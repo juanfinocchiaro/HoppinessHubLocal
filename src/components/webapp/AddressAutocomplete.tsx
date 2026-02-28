@@ -4,12 +4,8 @@ import { Label } from '@/components/ui/label';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export interface AddressResult {
-  formatted_address: string;
-  lat: number;
-  lng: number;
-  neighborhood_name?: string;
-}
+export type { AddressResult } from '@/types/webapp';
+import type { AddressResult } from '@/types/webapp';
 
 interface AddressAutocompleteProps {
   apiKey: string | null;

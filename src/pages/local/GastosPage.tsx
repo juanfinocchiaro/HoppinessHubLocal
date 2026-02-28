@@ -1,5 +1,5 @@
 /**
- * GastosPage — Módulo de Gastos completo
+ * GastosPage â€” Módulo de Gastos completo
  *
  * Registro de gastos tanto desde caja (efectivo) como transferencias bancarias.
  * Categorización alineada al RDO para alimentar automáticamente el resultado económico.
@@ -51,7 +51,7 @@ import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/ui/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchGastos, softDeleteGasto, saveGasto } from '@/services/rdoService';
 import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/exportExcel';
@@ -127,16 +127,12 @@ export default function GastosPage() {
   const { data: gastos, isLoading } = useQuery({
     queryKey: ['gastos', branchId, periodo],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gastos')
-        .select('*')
-        .eq('branch_id', branchId!)
-        .gte('fecha', format(periodoStart, 'yyyy-MM-dd'))
-        .lte('fecha', format(periodoEnd, 'yyyy-MM-dd'))
-        .is('deleted_at', null)
-        .order('fecha', { ascending: false });
-      if (error) throw error;
-      return (data || []) as unknown as Gasto[];
+      const data = await fetchGastos(
+        branchId!,
+        format(periodoStart, 'yyyy-MM-dd'),
+        format(periodoEnd, 'yyyy-MM-dd'),
+      );
+      return data as unknown as Gasto[];
     },
     enabled: !!branchId,
   });
@@ -170,13 +166,7 @@ export default function GastosPage() {
   }, [filteredGastos]);
 
   const deleteGasto = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('gastos')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => softDeleteGasto(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['gastos', branchId] });
       toast.success('Gasto eliminado');
@@ -477,13 +467,7 @@ function GastoFormModal({
         estado: 'pagado',
       };
 
-      if (editing) {
-        const { error } = await supabase.from('gastos').update(payload).eq('id', editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('gastos').insert(payload);
-        if (error) throw error;
-      }
+      await saveGasto(payload, editing?.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['gastos', branchId] });

@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBrandRoleUserIds, fetchBranchRoleUserIds, fetchSuperadminUserIds, fetchOperationalStaffUserIds, fetchProfilesForImpersonation, fetchBrandRolesForUsers, fetchBranchRolesForUsers } from '@/services/adminService';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import {
   Dialog,
@@ -24,8 +24,9 @@ import { Badge } from '@/components/ui/badge';
 import { Search, User, Loader2, Eye } from 'lucide-react';
 import { LOCAL_ROLE_LABELS, BRAND_ROLE_LABELS } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
-type ImpersonationMode = 'brand' | 'local';
+type ImpersonationMode = 'brand' | 'local' | 'cuenta';
 
 interface ImpersonationSelectorProps {
   open: boolean;
@@ -64,82 +65,44 @@ export default function ImpersonationSelector({
     queryFn: async () => {
       if (mode === 'local' && !branchId) return [];
 
-      // STEP 1: Get user IDs based on mode
       let eligibleUserIds: string[] = [];
 
-      if (mode === 'brand') {
-        // Get users with brand roles
-        const { data: brandUsers } = await supabase
-          .from('user_roles_v2')
-          .select('user_id')
-          .not('brand_role', 'is', null)
-          .eq('is_active', true);
-
-        eligibleUserIds = brandUsers?.map((u) => u.user_id) || [];
+      if (mode === 'cuenta') {
+        eligibleUserIds = await fetchOperationalStaffUserIds();
+      } else if (mode === 'brand') {
+        eligibleUserIds = await fetchBrandRoleUserIds();
       } else {
-        // Get users with access to this specific branch
-        const { data: branchUsers } = await supabase
-          .from('user_branch_roles')
-          .select('user_id')
-          .eq('branch_id', branchId!)
-          .eq('is_active', true);
-
-        // Also include superadmins (they have access to all branches)
-        const { data: superadmins } = await supabase
-          .from('user_roles_v2')
-          .select('user_id')
-          .eq('brand_role', 'superadmin')
-          .eq('is_active', true);
-
-        const branchUserIds = branchUsers?.map((u) => u.user_id) || [];
-        const superadminIds = superadmins?.map((u) => u.user_id) || [];
+        const [branchUserIds, superadminIds] = await Promise.all([
+          fetchBranchRoleUserIds(branchId!),
+          fetchSuperadminUserIds(),
+        ]);
         eligibleUserIds = [...new Set([...branchUserIds, ...superadminIds])];
       }
 
       if (eligibleUserIds.length === 0) return [];
 
-      // STEP 2: Fetch profiles for eligible users
-      let query = supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .eq('is_active', true)
-        .in('id', eligibleUserIds)
-        .order('full_name')
-        .limit(50);
+      const profiles = await fetchProfilesForImpersonation({
+        userIds: eligibleUserIds,
+        search: search.trim() || undefined,
+      });
 
-      if (search.trim()) {
-        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-      }
-
-      const { data: profiles, error } = await query;
-      if (error) throw error;
-      if (!profiles || profiles.length === 0) return [];
+      if (profiles.length === 0) return [];
 
       const userIds = profiles.map((p) => p.id);
+      const [brandRoles, branchRoles] = await Promise.all([
+        fetchBrandRolesForUsers(userIds),
+        fetchBranchRolesForUsers(userIds),
+      ]);
 
-      // STEP 3: Fetch roles for display
-      const { data: brandRoles } = await supabase
-        .from('user_roles_v2')
-        .select('user_id, brand_role')
-        .in('user_id', userIds)
-        .eq('is_active', true);
-
-      const { data: branchRoles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role, branch_id, branches!inner(name)')
-        .in('user_id', userIds)
-        .eq('is_active', true);
-
-      // Combine data
       const usersWithRoles: UserWithRoles[] = profiles.map((profile) => {
-        const brandRole = brandRoles?.find((r) => r.user_id === profile.id);
+        const brandRole = brandRoles.find((r) => r.user_id === profile.id);
         const localRoles =
-          branchRoles
-            ?.filter((r) => r.user_id === profile.id)
+          (branchRoles as Array<Record<string, unknown>>)
+            .filter((r) => r.user_id === profile.id)
             .map((r) => ({
-              role: r.local_role,
+              role: r.local_role as string,
               branch_name: (r.branches as { name: string })?.name || 'Desconocido',
-              branch_id: r.branch_id,
+              branch_id: r.branch_id as string,
             })) || [];
 
         return {
@@ -167,7 +130,7 @@ export default function ImpersonationSelector({
       setSearch('');
       setSelectedUserId(null);
     } catch (error) {
-      toast.error('Error al activar modo vista previa');
+      handleError(error, { userMessage: 'Error al activar modo vista previa', context: 'ImpersonationSelector' });
       setSelectedUserId(null);
     }
   };
@@ -219,13 +182,15 @@ export default function ImpersonationSelector({
   };
 
   const getTitle = () => {
-    if (mode === 'local' && branchName) {
-      return `Ver como usuario de ${branchName}`;
-    }
+    if (mode === 'cuenta') return 'Ver como empleado';
+    if (mode === 'local' && branchName) return `Ver como usuario de ${branchName}`;
     return 'Ver como usuario de Mi Marca';
   };
 
   const getDescription = () => {
+    if (mode === 'cuenta') {
+      return 'Seleccioná un empleado, cajero o encargado para ver Mi Trabajo desde su perspectiva.';
+    }
     if (mode === 'local') {
       return `Seleccioná un usuario con acceso a este local para ver la aplicación desde su perspectiva.`;
     }

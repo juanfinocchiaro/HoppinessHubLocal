@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAuditLogs, fetchAuditLogTables } from '@/services/adminService';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   Table,
@@ -49,31 +49,18 @@ export default function AuditLogPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', page, debouncedSearch, tableFilter],
-    queryFn: async () => {
-      let q = supabase
-        .from('audit_logs')
-        .select('*, profiles:user_id(full_name, email)', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-      if (tableFilter) q = q.eq('table_name', tableFilter);
-      if (debouncedSearch)
-        q = q.or(`table_name.ilike.%${debouncedSearch}%,action.ilike.%${debouncedSearch}%`);
-
-      const { data: logs, error, count } = await q;
-      if (error) throw error;
-      return { logs: logs || [], total: count || 0 };
-    },
+    queryFn: () =>
+      fetchAuditLogs({
+        page,
+        pageSize: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        tableFilter: tableFilter || undefined,
+      }),
   });
 
   const { data: tables } = useQuery({
     queryKey: ['audit-log-tables'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('audit_logs').select('table_name').limit(500);
-      if (error) throw error;
-      const unique = [...new Set((data || []).map((d) => d.table_name))].sort();
-      return unique;
-    },
+    queryFn: fetchAuditLogTables,
     staleTime: 5 * 60 * 1000,
   });
 

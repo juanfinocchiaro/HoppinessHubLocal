@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchPublicBranches } from '@/services/publicBranchService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -108,17 +108,7 @@ function getGoogleMapsUrl(branch: BranchPublic) {
 export function LocationsSection() {
   const { data: branches, isLoading } = useQuery({
     queryKey: ['public-branches-landing'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branches_public')
-        .select(
-          'id, name, address, city, opening_time, closing_time, public_status, public_hours, latitude, longitude',
-        )
-        .order('name');
-
-      if (error) throw error;
-      return (data || []) as unknown as BranchPublic[];
-    },
+    queryFn: async () => fetchPublicBranches() as Promise<unknown> as Promise<BranchPublic[]>,
     staleTime: 5 * 60 * 1000,
   });
 

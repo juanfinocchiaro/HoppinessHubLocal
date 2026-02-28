@@ -40,11 +40,11 @@ import {
   useDeliveryPricingConfig,
 } from '@/hooks/useDeliveryConfig';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchForDelivery } from '@/services/adminService';
 import { RequireBrandPermission } from '@/components/guards';
 import { SpinnerLoader } from '@/components/ui/loaders';
 
-/* ─── Block Popover ─────────────────────────────────────── */
+/* â”€â”€â”€ Block Popover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function BlockPopover({
   neighborhoodId,
@@ -105,7 +105,7 @@ function BlockPopover({
   );
 }
 
-/* ─── Neighborhood Row ──────────────────────────────────── */
+/* â”€â”€â”€ Neighborhood Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function NeighborhoodRow({
   n,
@@ -128,7 +128,7 @@ function NeighborhoodRow({
       ) : (
         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
       )}
-      <span className="text-sm font-medium truncate flex-1">{hood?.name ?? '—'}</span>
+      <span className="text-sm font-medium truncate flex-1">{hood?.name ?? 'â€”'}</span>
       {n.distance_km != null && (
         <span className="text-xs text-muted-foreground tabular-nums shrink-0">
           {n.distance_km} km
@@ -161,7 +161,7 @@ function NeighborhoodRow({
   );
 }
 
-/* ─── Delivery Hours Editor ─────────────────────────────── */
+/* â”€â”€â”€ Delivery Hours Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 type TimeWindow = { opens: string; closes: string };
 type DeliveryHours = Record<string, TimeWindow[]>;
@@ -233,7 +233,7 @@ function DeliveryHoursEditor({
         <CardDescription>
           {hasCustomHours
             ? 'Franjas horarias configuradas. Delivery solo disponible en estos horarios.'
-            : 'Sin configurar — delivery usa el horario general del local.'}
+            : 'Sin configurar â€” delivery usa el horario general del local.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -318,20 +318,13 @@ function DeliveryHoursEditor({
   );
 }
 
-/* ─── Main Content ──────────────────────────────────────── */
+/* â”€â”€â”€ Main Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function BranchDeliveryDetailContent() {
   const { branchId } = useParams<{ branchId: string }>();
   const { data: branch, isLoading: branchLoading } = useQuery({
     queryKey: ['branch-detail-delivery', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name, slug, latitude, longitude')
-        .eq('id', branchId!)
-        .single();
-      return data;
-    },
+    queryFn: () => fetchBranchForDelivery(branchId!),
     enabled: !!branchId,
   });
 
@@ -452,7 +445,7 @@ function BranchDeliveryDetailContent() {
           </Button>
         </Link>
         <PageHeader
-          title={`${branch.name} — Delivery`}
+          title={`${branch.name} â€” Delivery`}
           subtitle={`Radio: ${currentRadius} km · ${enabledNeighborhoods.length} habilitados · ${blockedNeighborhoods.length} bloqueados`}
           icon={<MapPin className="w-6 h-6" />}
         />

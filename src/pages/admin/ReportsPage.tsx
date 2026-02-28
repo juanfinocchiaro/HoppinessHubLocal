@@ -22,16 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Clock, DollarSign, Download } from 'lucide-react';
 import { useBrandClosuresSummary } from '@/hooks/useShiftClosures';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchGastosSummary, fetchClockEntriesSummary } from '@/services/adminService';
 import { startOfMonth, endOfMonth, format, parse } from 'date-fns';
 import { exportToExcel } from '@/lib/exportExcel';
-
-const fmtCurrency = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n);
+import { formatCurrency } from '@/lib/formatters';
 
 const fmtNum = (n: number) => n.toLocaleString('es-AR');
 
@@ -46,16 +40,9 @@ export default function ReportsPage() {
   const { data: gastosData, isLoading: loadingGastos } = useQuery({
     queryKey: ['brand-gastos-summary', month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gastos')
-        .select('branch_id, monto')
-        .eq('periodo', month)
-        .is('deleted_at', null)
-        .neq('estado', 'pendiente_aprobacion');
-      if (error) throw error;
-
+      const data = await fetchGastosSummary(month);
       const byBranch: Record<string, number> = {};
-      (data || []).forEach((g) => {
+      data.forEach((g) => {
         byBranch[g.branch_id] = (byBranch[g.branch_id] || 0) + Number(g.monto || 0);
       });
       return byBranch;
@@ -68,15 +55,9 @@ export default function ReportsPage() {
       const startStr = format(from, 'yyyy-MM-dd');
       const endStr = format(to, 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
-        .from('clock_entries')
-        .select('branch_id, entry_type, created_at')
-        .gte('created_at', `${startStr}T00:00:00`)
-        .lte('created_at', `${endStr}T23:59:59`);
-      if (error) throw error;
-
+      const data = await fetchClockEntriesSummary(startStr, endStr);
       const clockIns: Record<string, number> = {};
-      (data || []).forEach((e) => {
+      data.forEach((e) => {
         if (e.entry_type === 'clock_in') {
           clockIns[e.branch_id] = (clockIns[e.branch_id] || 0) + 1;
         }
@@ -226,7 +207,7 @@ export default function ReportsPage() {
               Venta total
             </div>
             <p className="text-xl font-bold mt-1">
-              {isLoading ? <Skeleton className="h-7 w-24" /> : fmtCurrency(totals.vendido)}
+              {isLoading ? <Skeleton className="h-7 w-24" /> : formatCurrency(totals.vendido)}
             </p>
           </CardContent>
         </Card>
@@ -237,7 +218,7 @@ export default function ReportsPage() {
               Gastos total
             </div>
             <p className="text-xl font-bold mt-1">
-              {isLoading ? <Skeleton className="h-7 w-24" /> : fmtCurrency(totals.gastos)}
+              {isLoading ? <Skeleton className="h-7 w-24" /> : formatCurrency(totals.gastos)}
             </p>
           </CardContent>
         </Card>
@@ -248,7 +229,7 @@ export default function ReportsPage() {
               Margen bruto
             </div>
             <p className="text-xl font-bold mt-1">
-              {isLoading ? <Skeleton className="h-7 w-24" /> : fmtCurrency(totals.margin)}
+              {isLoading ? <Skeleton className="h-7 w-24" /> : formatCurrency(totals.margin)}
             </p>
           </CardContent>
         </Card>
@@ -307,10 +288,10 @@ export default function ReportsPage() {
                       {rows.map((r) => (
                         <TableRow key={r.branchId}>
                           <TableCell className="font-medium">{r.branch}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.vendido)}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.gastos)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.vendido)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.gastos)}</TableCell>
                           <TableCell className="text-right font-medium">
-                            {fmtCurrency(r.margin)}
+                            {formatCurrency(r.margin)}
                           </TableCell>
                           <TableCell className="text-right">
                             <Badge
@@ -331,10 +312,10 @@ export default function ReportsPage() {
                         <TableRow className="font-bold bg-muted/50">
                           <TableCell>TOTAL</TableCell>
                           <TableCell className="text-right">
-                            {fmtCurrency(totals.vendido)}
+                            {formatCurrency(totals.vendido)}
                           </TableCell>
-                          <TableCell className="text-right">{fmtCurrency(totals.gastos)}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(totals.margin)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(totals.gastos)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(totals.margin)}</TableCell>
                           <TableCell className="text-right">
                             {totals.vendido > 0
                               ? `${((totals.margin / totals.vendido) * 100).toFixed(1)}%`
@@ -385,12 +366,12 @@ export default function ReportsPage() {
                       {rows.map((r) => (
                         <TableRow key={r.branchId}>
                           <TableCell className="font-medium">{r.branch}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.vendido)}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.efectivo)}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.digital)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.vendido)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.efectivo)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.digital)}</TableCell>
                           <TableCell className="text-right">{fmtNum(r.hamburguesas)}</TableCell>
                           <TableCell className="text-right">
-                            {fmtCurrency(r.ticketPromedio)}
+                            {formatCurrency(r.ticketPromedio)}
                           </TableCell>
                           <TableCell className="text-center">
                             {r.alertas > 0 ? (
@@ -441,7 +422,7 @@ export default function ReportsPage() {
                         <TableRow key={r.branchId}>
                           <TableCell className="font-medium">{r.branch}</TableCell>
                           <TableCell className="text-right">{fmtNum(r.clockIns)}</TableCell>
-                          <TableCell className="text-right">{fmtCurrency(r.vendido)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.vendido)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

@@ -6,7 +6,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
+import { subscribeToChatMessages, unsubscribeChannel } from '@/services/webappOrderService';
+import { formatTime } from '@/lib/formatters';
 
 interface ChatMessage {
   id: string;
@@ -23,10 +24,6 @@ interface OrderChatProps {
   branchName: string;
   clienteNombre: string;
   chatActive: boolean;
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 }
 
 export function OrderChat({
@@ -64,34 +61,25 @@ export function OrderChat({
     fetchMessages();
   }, [fetchMessages]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!pedidoId) return;
-    const channel = supabase
-      .channel(`chat-${pedidoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webapp_pedido_mensajes',
-          filter: `pedido_id=eq.${pedidoId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as ChatMessage;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-          if (newMsg.sender_type === 'local' && !open) {
-            setUnread((prev) => prev + 1);
-          }
-        },
-      )
-      .subscribe();
+    const channel = subscribeToChatMessages(
+      pedidoId,
+      `chat-${pedidoId}`,
+      (payload) => {
+        const newMsg = payload.new as ChatMessage;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
+        if (newMsg.sender_type === 'local' && !open) {
+          setUnread((prev) => prev + 1);
+        }
+      },
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [pedidoId, open]);
 

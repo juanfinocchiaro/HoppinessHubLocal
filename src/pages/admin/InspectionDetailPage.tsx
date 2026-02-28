@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, Check, X, AlertTriangle, Users } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchManagers, fetchBranchStaffMembers } from '@/services/adminService';
 import {
   Select,
   SelectContent,
@@ -69,56 +69,14 @@ export default function InspectionDetailPage() {
   // Fetch encargados for this branch (only encargado role)
   const { data: branchManagers } = useQuery({
     queryKey: ['branch-managers', inspection?.branch_id],
-    queryFn: async () => {
-      if (!inspection?.branch_id) return [];
-
-      // Query user_branch_roles for encargado only
-      const { data: roles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', inspection.branch_id)
-        .eq('is_active', true)
-        .eq('local_role', 'encargado');
-
-      if (!roles?.length) return [];
-
-      const userIds = [...new Set(roles.map((r) => r.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      return profiles || [];
-    },
+    queryFn: () => fetchBranchManagers(inspection!.branch_id),
     enabled: !!inspection?.branch_id,
   });
 
   // Fetch team members for action items (excluding franquiciados - they are owners, not staff)
   const { data: teamMembers } = useQuery({
     queryKey: ['team-members-for-actions', inspection?.branch_id],
-    queryFn: async () => {
-      if (!inspection?.branch_id) return [];
-
-      // Get roles excluding franquiciado (owners are not operational staff)
-      const { data: roles } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', inspection.branch_id)
-        .eq('is_active', true)
-        .neq('local_role', 'franquiciado');
-
-      if (!roles?.length) return [];
-
-      const userIds = [...new Set(roles.map((r) => r.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      return profiles || [];
-    },
+    queryFn: () => fetchBranchStaffMembers(inspection!.branch_id),
     enabled: !!inspection?.branch_id,
   });
 

@@ -17,7 +17,7 @@ import { Building2, Phone, Landmark } from 'lucide-react';
 import { LoadingButton } from '@/components/ui/loading-button';
 import { useProveedorMutations } from '@/hooks/useProveedores';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranches } from '@/services/publicBranchService';
 import type { Proveedor, ProveedorFormData } from '@/types/financial';
 
 interface Props {
@@ -51,14 +51,7 @@ export function ProveedorFormModal({
 
   const { data: branches } = useQuery({
     queryKey: ['branches-select'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      return data || [];
-    },
+    queryFn: fetchActiveBranches,
     enabled: open && form.ambito === 'local',
   });
 

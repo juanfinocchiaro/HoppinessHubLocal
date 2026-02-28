@@ -4,7 +4,12 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  listAddresses,
+  saveAddress,
+  deleteAddress,
+  type ClienteAddress,
+} from '@/services/addressService';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,15 +25,7 @@ import { MapPin, Plus, Pencil, Trash2, Star, ArrowLeft } from 'lucide-react';
 import { SpinnerLoader, DotsLoader } from '@/components/ui/loaders';
 import { toast } from 'sonner';
 
-interface Direccion {
-  id: string;
-  etiqueta: string;
-  direccion: string;
-  piso: string | null;
-  referencia: string | null;
-  ciudad: string | null;
-  es_principal: boolean;
-}
+type Direccion = ClienteAddress;
 
 const ETIQUETAS = ['Casa', 'Trabajo', 'Otro'];
 
@@ -52,38 +49,23 @@ export function DireccionesSheet({ open, onOpenChange }: Props) {
 
   const { data: addresses = [], isLoading } = useQuery({
     queryKey: ['my-addresses-sheet', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cliente_direcciones')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('es_principal', { ascending: false });
-      if (error) throw error;
-      return (data || []) as Direccion[];
-    },
+    queryFn: () => listAddresses(user!.id),
     enabled: !!user && open,
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
-        user_id: user!.id,
-        etiqueta,
-        direccion: direccion.trim(),
-        piso: piso.trim() || null,
-        referencia: referencia.trim() || null,
-        ciudad: ciudad.trim() || 'Córdoba',
-      };
-      if (editId) {
-        const { error } = await supabase
-          .from('cliente_direcciones')
-          .update(payload)
-          .eq('id', editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('cliente_direcciones').insert(payload);
-        if (error) throw error;
-      }
+      await saveAddress(
+        user!.id,
+        {
+          etiqueta,
+          direccion: direccion.trim(),
+          piso: piso.trim() || null,
+          referencia: referencia.trim() || null,
+          ciudad: ciudad.trim() || 'Córdoba',
+        },
+        editId,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-addresses-sheet'] });
@@ -95,10 +77,7 @@ export function DireccionesSheet({ open, onOpenChange }: Props) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('cliente_direcciones').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteAddress(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-addresses-sheet'] });
       qc.invalidateQueries({ queryKey: ['my-addresses'] });

@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchTeamData,
+  fetchEmployeeData as fetchEmployeeDataService,
+  fetchEmployeeWarnings,
+} from '@/services/staffService';
 import type { TeamMember, EmployeeData, Warning, NoteEntry } from './types';
 import type { LocalRole } from '@/hooks/usePermissions';
 
@@ -21,69 +25,18 @@ export function useTeamData(branchId: string | undefined, options?: UseTeamDataO
     queryFn: async () => {
       if (!branchId) return [];
 
-      // 1. Get users with local roles for this branch from user_branch_roles
-      let query = supabase
-        .from('user_branch_roles')
-        .select('id, user_id, local_role, default_position, is_active, created_at')
-        .eq('branch_id', branchId)
-        .eq('is_active', true);
+      const { roles, profiles, employeeData, clockEntries, warnings } =
+        await fetchBranchTeamData(branchId, excludeOwners);
 
-      // Exclude franchise owners for HR operations (schedules, clock-ins, advances, etc.)
-      if (excludeOwners) {
-        query = query.neq('local_role', 'franquiciado');
-      }
+      if (!roles.length) return [];
 
-      const { data: roles, error: rolesError } = await query;
+      const profilesMap = new Map(profiles.map((p: any) => [p.id, p]));
+      const employeeDataMap = new Map(employeeData.map((e: any) => [e.user_id, e]));
 
-      if (rolesError) throw rolesError;
-      if (!roles?.length) return [];
-
-      const userIds = roles.map((r) => r.user_id);
-
-      // 2. Get profiles (profiles.id = user_id after migration)
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone')
-        .in('id', userIds);
-
-      // 3. Get employee data for hours target
-      const { data: employeeData } = await supabase
-        .from('employee_data')
-        .select('user_id, monthly_hours_target')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds);
-
-      // 4. Get clock entries for this month (new system)
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data: clockEntries } = await supabase
-        .from('clock_entries')
-        .select('user_id, entry_type, created_at')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds)
-        .gte('created_at', startOfMonth.toISOString())
-        .order('created_at', { ascending: true });
-
-      // 5. Get active warnings count
-      const { data: warnings } = await supabase
-        .from('warnings')
-        .select('user_id')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .in('user_id', userIds);
-
-      // Build aggregates
-      const profilesMap = new Map(profiles?.map((p) => [p.id, p]));
-      const employeeDataMap = new Map(employeeData?.map((e) => [e.user_id, e]));
-
-      // Calculate hours per user from clock_entries (clock_in/clock_out pairs)
       const hoursMap = new Map<string, number>();
       const userEntriesMap = new Map<string, Array<{ type: string; time: Date }>>();
 
-      // Group entries by user
-      clockEntries?.forEach((e) => {
+      clockEntries.forEach((e: any) => {
         const existing = userEntriesMap.get(e.user_id) || [];
         existing.push({ type: e.entry_type, time: new Date(e.created_at) });
         userEntriesMap.set(e.user_id, existing);
@@ -108,15 +61,13 @@ export function useTeamData(branchId: string | undefined, options?: UseTeamDataO
         hoursMap.set(userId, totalHours);
       });
 
-      // Get last clock in and check if working
       const lastClockInMap = new Map<string, { time: string; isWorking: boolean }>();
-      const sortedEntries = [...(clockEntries || [])].sort(
+      const sortedEntries = [...clockEntries].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
 
-      // For each user, check their most recent entry
       const processedUsers = new Set<string>();
-      sortedEntries.forEach((e) => {
+      sortedEntries.forEach((e: any) => {
         if (!processedUsers.has(e.user_id)) {
           processedUsers.add(e.user_id);
           lastClockInMap.set(e.user_id, {
@@ -126,13 +77,11 @@ export function useTeamData(branchId: string | undefined, options?: UseTeamDataO
         }
       });
 
-      // Count warnings
       const warningsMap = new Map<string, number>();
-      warnings?.forEach((w) => {
+      warnings.forEach((w: any) => {
         warningsMap.set(w.user_id, (warningsMap.get(w.user_id) || 0) + 1);
       });
 
-      // Merge data
       return roles
         .map((role) => {
           const profile = profilesMap.get(role.user_id);
@@ -166,19 +115,12 @@ export function useTeamData(branchId: string | undefined, options?: UseTeamDataO
 }
 
 export function useEmployeeDetails(userId: string | undefined, branchId: string | undefined) {
-  // Fetch employee data
   const { data: employeeData } = useQuery({
     queryKey: ['employee-data', userId, branchId],
     queryFn: async () => {
       if (!userId || !branchId) return null;
 
-      const { data } = await supabase
-        .from('employee_data')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .maybeSingle();
-
+      const data = await fetchEmployeeDataService(userId, branchId);
       if (!data) return null;
       return {
         ...data,
@@ -189,22 +131,11 @@ export function useEmployeeDetails(userId: string | undefined, branchId: string 
     staleTime: 30 * 1000,
   });
 
-  // Fetch warnings
   const { data: warnings = [] } = useQuery({
     queryKey: ['employee-warnings', userId, branchId],
     queryFn: async () => {
       if (!userId || !branchId) return [];
-
-      const { data } = await supabase
-        .from('warnings')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .order('warning_date', { ascending: false })
-        .limit(5);
-
-      return (data || []) as Warning[];
+      return (await fetchEmployeeWarnings(userId, branchId)) as Warning[];
     },
     enabled: !!userId && !!branchId,
     staleTime: 30 * 1000,

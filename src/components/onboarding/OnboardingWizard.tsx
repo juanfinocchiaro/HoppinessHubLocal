@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchOnboardingStatus, completeOnboarding } from '@/services/userOnboardingService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import {
@@ -118,29 +118,13 @@ export function OnboardingWizard() {
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['onboarding-status', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('onboarding_completed_at')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchOnboardingStatus(user!.id),
     enabled: !!user?.id,
     staleTime: Infinity,
   });
 
   const completeMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) return;
-      const { error } = await supabase
-        .from('profiles')
-        .update({ onboarding_completed_at: new Date().toISOString() })
-        .eq('id', user.id);
-      if (error) throw error;
-    },
+    mutationFn: () => completeOnboarding(user!.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
     },

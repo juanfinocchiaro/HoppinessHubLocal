@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranchNames } from '@/services/adminService';
 import { useManagersCoachingList } from '@/hooks/useManagersCoachingList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,14 +45,7 @@ function CoachingManagersPageContent() {
   // Obtener lista de sucursales para el filtro
   const { data: branches } = useQuery({
     queryKey: ['branches-list'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      return data || [];
-    },
+    queryFn: fetchActiveBranchNames,
   });
 
   // Obtener lista de encargados

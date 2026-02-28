@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Check, Eye, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { fetchCommunicationReaders } from '@/services/communicationsService';
 
 interface ReadersModalProps {
   open: boolean;
@@ -14,16 +14,6 @@ interface ReadersModalProps {
   communicationId: string | null;
   communicationTitle: string;
   requiresConfirmation?: boolean;
-}
-
-interface Reader {
-  user_id: string;
-  read_at: string | null;
-  confirmed_at: string | null;
-  profile: {
-    full_name: string;
-    avatar_url: string | null;
-  } | null;
 }
 
 export default function ReadersModal({
@@ -37,37 +27,7 @@ export default function ReadersModal({
     queryKey: ['communication-readers', communicationId],
     queryFn: async () => {
       if (!communicationId) return { readers: [], totalTargeted: 0 };
-
-      // Get reads for this communication
-      const { data: reads, error } = await supabase
-        .from('communication_reads')
-        .select('user_id, read_at, confirmed_at')
-        .eq('communication_id', communicationId);
-
-      if (error) throw error;
-
-      if (!reads?.length) return { readers: [], totalTargeted: 0 };
-
-      // Get profiles (profiles.id = user_id after migration)
-      const userIds = reads.map((r) => r.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-      const readers = reads.map((r) => ({
-        ...r,
-        profile: profileMap.get(r.user_id) || null,
-      })) as Reader[];
-
-      return {
-        readers: readers.sort(
-          (a, b) => new Date(b.read_at || 0).getTime() - new Date(a.read_at || 0).getTime(),
-        ),
-        totalTargeted: readers.length, // Could be enhanced to show total targeted
-      };
+      return fetchCommunicationReaders(communicationId);
     },
     enabled: open && !!communicationId,
   });

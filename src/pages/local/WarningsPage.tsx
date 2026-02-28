@@ -7,7 +7,12 @@ import { useState, useRef } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchTeamMembersBasic,
+  fetchBranchWarnings,
+  createWarningRecord,
+  uploadWarningSignature,
+} from '@/services/warningsService';
 import { useAuth } from '@/hooks/useAuth';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { Card, CardContent } from '@/components/ui/card';
@@ -126,89 +131,28 @@ export default function WarningsPage() {
   // Fetch team members using user_branch_roles + profiles
   const { data: teamMembers } = useQuery({
     queryKey: ['branch-team-members', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', branchId!)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const userIds = data?.map((r) => r.user_id) || [];
-      if (userIds.length === 0) return [];
-
-      // profiles.id = user_id after migration
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-        .order('full_name');
-
-      if (profilesError) throw profilesError;
-      // Map to maintain user_id field for compatibility
-      return (profiles || []).map((p) => ({ user_id: p.id, full_name: p.full_name }));
-    },
+    queryFn: () => fetchBranchTeamMembersBasic(branchId!),
     enabled: !!branchId,
   });
 
   // Fetch warnings
   const { data: warnings, isLoading } = useQuery({
     queryKey: ['branch-warnings', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warnings')
-        .select('*')
-        .eq('branch_id', branchId!)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Get user names for all warnings
-      const userIds = [
-        ...new Set([
-          ...(data?.map((w) => w.user_id).filter(Boolean) || []),
-          ...(data?.map((w) => w.issued_by).filter(Boolean) || []),
-        ]),
-      ];
-
-      let profileMap: Record<string, string> = {};
-      if (userIds.length > 0) {
-        // profiles.id = user_id after migration
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', userIds);
-
-        profiles?.forEach((p) => {
-          if (p.id) profileMap[p.id] = p.full_name || 'Sin nombre';
-        });
-      }
-
-      return (data || []).map((w) => ({
-        ...w,
-        employee_name: w.user_id ? profileMap[w.user_id] : 'N/A',
-        issuer_name: w.issued_by ? profileMap[w.issued_by] : 'Sistema',
-      })) as Warning[];
-    },
+    queryFn: () => fetchBranchWarnings(branchId!) as Promise<Warning[]>,
     enabled: !!branchId,
   });
 
   // Create warning mutation
   const createWarning = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('warnings').insert({
-        user_id: selectedUser,
-        branch_id: branchId!,
-        warning_type: warningType,
+    mutationFn: () =>
+      createWarningRecord({
+        userId: selectedUser,
+        branchId: branchId!,
+        warningType,
         description,
-        warning_date: incidentDate,
-        issued_by: user?.id,
-        is_active: true,
-      });
-
-      if (error) throw error;
-    },
+        warningDate: incidentDate,
+        issuedBy: user?.id!,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-warnings'] });
       toast.success('Apercibimiento registrado');
@@ -226,24 +170,7 @@ export default function WarningsPage() {
     mutationFn: async ({ warningId, file }: { warningId: string; file: File }) => {
       const warning = warnings?.find((w) => w.id === warningId);
       if (!warning) throw new Error('Apercibimiento no encontrado');
-
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${warning.user_id}/${warningId}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('warning-signatures')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('warning-signatures').getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('warnings')
-        .update({ signed_document_url: urlData.publicUrl })
-        .eq('id', warningId);
-
-      if (updateError) throw updateError;
+      await uploadWarningSignature(warningId, warning.user_id, file);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-warnings'] });

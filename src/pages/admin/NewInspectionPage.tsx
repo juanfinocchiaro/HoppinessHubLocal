@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, MapPin, ClipboardList, Play } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveBranches } from '@/services/adminService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -31,14 +31,7 @@ export default function NewInspectionPage() {
   // Fetch branches
   const { data: branches, isLoading: loadingBranches } = useQuery({
     queryKey: ['branches-for-inspection'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('name');
-      return data || [];
-    },
+    queryFn: fetchActiveBranches,
   });
 
   const handleStart = async () => {

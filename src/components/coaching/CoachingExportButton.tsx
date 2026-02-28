@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CoachingExportButton - Botón para exportar datos de coaching
  * Mejora #6: Exportación y Reportes
  */
@@ -14,6 +14,7 @@ import { Download, FileText, Copy, Loader2 } from 'lucide-react';
 import { useCoachings } from '@/hooks/useCoachings';
 import { exportCoachingsToCSV, generateMonthlyReport, copyToClipboard } from '@/lib/coachingExport';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
 interface CoachingExportButtonProps {
   branchId: string;
@@ -45,7 +46,7 @@ export function CoachingExportButton({ branchId, branchName }: CoachingExportBut
       );
       toast.success('Archivo CSV descargado');
     } catch (error) {
-      toast.error('Error al exportar');
+      handleError(error, { userMessage: 'Error al exportar', context: 'CoachingExportButton' });
     } finally {
       setExporting(false);
     }

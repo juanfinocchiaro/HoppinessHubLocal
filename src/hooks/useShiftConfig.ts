@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getUnifiedShiftLabel } from '@/types/shift';
+import {
+  fetchBranchShiftConfig,
+  updateBranchShiftConfig as updateShiftConfigApi,
+  type BranchShiftConfig,
+} from '@/services/configService';
 
 export type ShiftType = 'morning' | 'midday' | 'night' | 'overnight';
 
@@ -31,21 +36,7 @@ export const ALL_SHIFTS: ShiftDefinition[] = [
 ];
 
 export function getShiftLabel(shift: string): string {
-  const found = ALL_SHIFTS.find((s) => s.value === shift);
-  if (found) return found.label;
-
-  // Legacy support
-  switch (shift) {
-    case 'afternoon':
-      return 'Tarde';
-    default:
-      return shift;
-  }
-}
-
-interface BranchShiftConfig {
-  shifts_morning_enabled: boolean;
-  shifts_overnight_enabled: boolean;
+  return getUnifiedShiftLabel(shift);
 }
 
 export function useBranchShiftConfig(branchId: string | undefined) {
@@ -53,18 +44,10 @@ export function useBranchShiftConfig(branchId: string | undefined) {
     queryKey: ['branch-shift-config', branchId],
     queryFn: async () => {
       if (!branchId) return null;
-
-      const { data, error } = await supabase
-        .from('branches')
-        .select('shifts_morning_enabled, shifts_overnight_enabled')
-        .eq('id', branchId)
-        .single();
-
-      if (error) throw error;
-      return data as BranchShiftConfig;
+      return fetchBranchShiftConfig(branchId);
     },
     enabled: !!branchId,
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 60000,
   });
 }
 
@@ -74,10 +57,7 @@ export function useUpdateBranchShiftConfig(branchId: string | undefined) {
   return useMutation({
     mutationFn: async (config: Partial<BranchShiftConfig>) => {
       if (!branchId) throw new Error('Branch ID required');
-
-      const { error } = await supabase.from('branches').update(config).eq('id', branchId);
-
-      if (error) throw error;
+      return updateShiftConfigApi(branchId, config);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-shift-config', branchId] });

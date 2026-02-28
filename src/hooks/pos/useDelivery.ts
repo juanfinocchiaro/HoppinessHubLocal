@@ -2,19 +2,12 @@
  * useDelivery - Cadetes y asignación
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchActiveCadetes } from '@/services/posService';
 
 export function useDelivery(branchId: string) {
   return useQuery({
     queryKey: ['pos-delivery', branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('cadetes')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('activo', true);
-      return data ?? [];
-    },
+    queryFn: () => fetchActiveCadetes(branchId),
     enabled: !!branchId,
   });
 }

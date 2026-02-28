@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import { SpinnerLoader } from '@/components/ui/loaders';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { subscribeToTrackingUpdates, unsubscribeChannel } from '@/services/webappOrderService';
 import { OrderChat } from './OrderChat';
+import { formatPrice, formatTime } from '@/lib/formatters';
 
 interface TrackingData {
   pedido: {
@@ -61,14 +62,6 @@ function getEstadoConfig(estado: string, tipo: string | null) {
   return map[estado] ?? map.pendiente;
 }
 
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-}
-
 interface Props {
   trackingCode: string;
   onNewOrder: () => void;
@@ -107,24 +100,15 @@ export function TrackingInlineView({ trackingCode, onNewOrder }: Props) {
     fetchTracking();
   }, [fetchTracking]);
 
-  // Realtime updates
   useEffect(() => {
     if (!trackingCode) return;
-    const channel = supabase
-      .channel(`tracking-inline-${trackingCode}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'pedidos',
-          filter: `webapp_tracking_code=eq.${trackingCode}`,
-        },
-        () => fetchTracking(),
-      )
-      .subscribe();
+    const channel = subscribeToTrackingUpdates(
+      trackingCode,
+      `tracking-inline-${trackingCode}`,
+      () => fetchTracking(),
+    );
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [trackingCode, fetchTracking]);
 

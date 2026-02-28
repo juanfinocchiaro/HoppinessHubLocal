@@ -31,7 +31,7 @@ import { EmptyState } from '@/components/ui/states/empty-state';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchName, updatePedidoEstado } from '@/services/posService';
 import { toast } from 'sonner';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -337,10 +337,7 @@ export default function KitchenPage() {
   const allPrinters = printersData ?? [];
   const { data: branchInfo } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId!).single();
-      return data;
-    },
+    queryFn: () => fetchBranchName(branchId!),
     enabled: !!branchId,
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -380,17 +377,9 @@ export default function KitchenPage() {
   }, []);
 
   // Mutations
-  const updatePedidoEstado = useMutation({
+  const updatePedidoEstadoMutation = useMutation({
     mutationFn: async ({ pedidoId, estado }: { pedidoId: string; estado: string }) => {
-      const updateData: Record<string, unknown> = { estado };
-      if (estado === 'en_preparacion') {
-        updateData.tiempo_inicio_prep = new Date().toISOString();
-      }
-      if (estado === 'listo') {
-        updateData.tiempo_listo = new Date().toISOString();
-      }
-      const { error } = await supabase.from('pedidos').update(updateData).eq('id', pedidoId);
-      if (error) throw error;
+      await updatePedidoEstado(pedidoId, estado);
     },
     onSuccess: async (_, { pedidoId, estado }) => {
       qc.invalidateQueries({ queryKey: ['pos-kitchen', branchId] });
@@ -452,9 +441,9 @@ export default function KitchenPage() {
 
   const handlePedidoAction = useCallback(
     (pedidoId: string, action: string) => {
-      updatePedidoEstado.mutate({ pedidoId, estado: action });
+      updatePedidoEstadoMutation.mutate({ pedidoId, estado: action });
     },
-    [updatePedidoEstado],
+    [updatePedidoEstadoMutation],
   );
 
   // Tick every 30s so that listo auto-expire and urgency borders update

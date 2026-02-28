@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Handshake, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { insertContactMessage } from '@/services/contactService';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorHandler';
 
 interface ProveedoresModalProps {
   open: boolean;
@@ -51,7 +52,7 @@ export function ProveedoresModal({ open, onOpenChange }: ProveedoresModalProps) 
 
     try {
       // Save to contact_messages table (reusing existing infrastructure)
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await insertContactMessage({
         name: `${formData.companyName} - ${formData.contactName}`,
         email: formData.email,
         phone: formData.phone,
@@ -73,8 +74,7 @@ ${formData.message || 'Sin mensaje adicional'}
       setSuccess(true);
       toast.success('¡Gracias por contactarnos! Evaluaremos tu propuesta.');
     } catch (err) {
-      if (import.meta.env.DEV) console.error(err);
-      toast.error('Error al enviar. Intentá de nuevo.');
+      handleError(err, { userMessage: 'Error al enviar', context: 'ProveedoresModal.handleSubmit' });
     } finally {
       setLoading(false);
     }

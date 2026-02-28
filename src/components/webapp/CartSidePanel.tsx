@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { CheckoutInlineView } from './CheckoutInlineView';
 import { TrackingInlineView } from './TrackingInlineView';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchOrderStatuses } from '@/services/webappOrderService';
 import type { useWebappCart } from '@/hooks/useWebappCart';
 import type { WebappMenuItem } from '@/types/webapp';
+import { formatPrice } from '@/lib/formatters';
 
-const TERMINAL_STATES = ['entregado', 'cancelado'];
+import { ORDER_TERMINAL_STATES } from '@/lib/constants';
+const TERMINAL_STATES = ORDER_TERMINAL_STATES;
 
 /** Simple fade+slide transition wrapper */
 function StepTransition({ children, stepKey }: { children: React.ReactNode; stepKey: string }) {
@@ -48,10 +50,6 @@ interface Props {
   trackingTrigger?: number;
 }
 
-function formatPrice(n: number) {
-  return `$${n.toLocaleString('es-AR')}`;
-}
-
 export function CartSidePanel({
   cart,
   costoEnvio,
@@ -73,14 +71,7 @@ export function CartSidePanel({
   // Poll active orders to remove terminal ones
   const { data: orderStatuses } = useQuery({
     queryKey: ['side-panel-order-statuses', activeOrders],
-    queryFn: async () => {
-      if (activeOrders.length === 0) return [];
-      const { data } = await supabase
-        .from('pedidos')
-        .select('webapp_tracking_code, estado, numero_pedido')
-        .in('webapp_tracking_code', activeOrders);
-      return data || [];
-    },
+    queryFn: () => fetchOrderStatuses(activeOrders),
     enabled: activeOrders.length > 0,
     refetchInterval: 15000,
     staleTime: 10000,

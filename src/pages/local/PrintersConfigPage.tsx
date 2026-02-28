@@ -2,8 +2,8 @@
  * PrintersConfigPage - Configuración de impresoras con detección automática de Print Bridge
  * y health check de conectividad por impresora.
  *
- * Estado 1: Sistema no detectado → muestra instalador
- * Estado 2: Sistema listo → CRUD de impresoras con health check en tiempo real
+ * Estado 1: Sistema no detectado â†’ muestra instalador
+ * Estado 2: Sistema listo â†’ CRUD de impresoras con health check en tiempo real
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
@@ -50,7 +50,7 @@ import { useBranchPrinters, type BranchPrinter } from '@/hooks/useBranchPrinters
 import { usePrinting } from '@/hooks/usePrinting';
 import { detectPrintBridge, testPrinterConnection, getNetworkFingerprint } from '@/lib/qz-print';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchNameOnly } from '@/services/configService';
 
 type SystemState = 'checking' | 'not_available' | 'ready';
 
@@ -73,7 +73,7 @@ const DEFAULT_PRINTER = {
 
 const BRIDGE_VERSION = '2026.02.21.0030';
 
-/* ─────────── Setup Screen (State 1) ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Setup Screen (State 1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function SetupScreen({
   state,
   onSkip,
@@ -123,7 +123,7 @@ function SetupScreen({
             {[
               'Descargá el instalador',
               'Abrí el archivo descargado (doble clic)',
-              'Esperá a que termine — esta pantalla se actualiza sola',
+              'Esperá a que termine â€” esta pantalla se actualiza sola',
             ].map((text, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
@@ -196,7 +196,7 @@ function SetupScreen({
   );
 }
 
-/* ─────────── Network Warning Banner ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Network Warning Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function NetworkWarningBanner({
   currentNetwork,
   printerNetwork,
@@ -222,7 +222,7 @@ function NetworkWarningBanner({
   );
 }
 
-/* ─────────── Printer Health Indicator ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Printer Health Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function HealthIndicator({ health }: { health: PrinterHealth }) {
   if (health.status === 'checking') {
     return (
@@ -255,7 +255,7 @@ function HealthIndicator({ health }: { health: PrinterHealth }) {
   return null;
 }
 
-/* ─────────── Printer Card ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Printer Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function PrinterCard({
   printer,
   health,
@@ -320,7 +320,7 @@ function PrinterCard({
   );
 }
 
-/* ─────────── Ready Screen (State 2) ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ready Screen (State 2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function ReadyScreen({
   branchId,
   printers,
@@ -680,17 +680,14 @@ function ReadyScreen({
   );
 }
 
-/* ─────────── Main Page ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function PrintersConfigPage() {
   const { branchId } = useParams<{ branchId: string }>();
   const { data: printers, isLoading, create, update, remove } = useBranchPrinters(branchId!);
   const { printTest: printTestFn } = usePrinting(branchId!);
   const { data: branchData } = useQuery({
     queryKey: ['branch-name-printers', branchId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId!).single();
-      return data;
-    },
+    queryFn: () => fetchBranchNameOnly(branchId!),
     enabled: !!branchId,
   });
   const printTest = useCallback(

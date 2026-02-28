@@ -6,7 +6,9 @@
 import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { usePermissionsWithImpersonation } from '@/hooks/usePermissionsWithImpersonation';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchFullProfile, fetchUserBranchRolesWithPins } from '@/services/profileService';
+import { fetchUrgentUnreadCommunications } from '@/services/communicationsService';
+import { fetchLastUserOrder, fetchBranchNameAndSlug } from '@/services/webappOrderService';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -36,32 +38,14 @@ export default function CuentaHome() {
   // Fetch profile data
   const { data: profile } = useQuery({
     queryKey: ['profile', effectiveUserId],
-    queryFn: async () => {
-      if (!effectiveUserId) return null;
-      const result = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', effectiveUserId)
-        .maybeSingle();
-      if (result.error) throw result.error;
-      return result.data;
-    },
+    queryFn: () => fetchFullProfile(effectiveUserId!),
     enabled: !!effectiveUserId,
   });
 
   // Fetch branch roles with PIN status
   const { data: branchPinData } = useQuery({
     queryKey: ['user-branch-roles-pins', effectiveUserId],
-    queryFn: async () => {
-      if (!effectiveUserId) return [];
-      const { data, error } = await supabase
-        .from('user_branch_roles')
-        .select('id, branch_id, local_role, clock_pin, branches!inner(id, name)')
-        .eq('user_id', effectiveUserId)
-        .eq('is_active', true);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchUserBranchRolesWithPins(effectiveUserId!),
     enabled: !!effectiveUserId,
   });
 
@@ -71,74 +55,28 @@ export default function CuentaHome() {
 
   const helpPageId = isOnlyFranquiciado ? 'cuenta-dashboard-franquiciado' : 'cuenta-dashboard';
 
-  // Fetch urgent unread communications
   const { data: urgentUnread = [] } = useQuery({
     queryKey: ['urgent-unread', effectiveUserId, branchRoles],
     queryFn: async () => {
       if (!effectiveUserId) return [];
-
       const userLocalRoles = new Set<string>(branchRoles.map((r) => r.local_role).filter(Boolean));
-
-      const { data: urgentComms, error: commsError } = await supabase
-        .from('communications')
-        .select('id, title, target_roles')
-        .eq('type', 'urgent')
-        .eq('is_published', true);
-
-      if (commsError) throw commsError;
-      if (!urgentComms?.length) return [];
-
-      const filteredComms = urgentComms.filter((c) => {
-        if (!c.target_roles || c.target_roles.length === 0) return true;
-        return c.target_roles.some((role: string) => userLocalRoles.has(role));
-      });
-
-      const { data: reads } = await supabase
-        .from('communication_reads')
-        .select('communication_id')
-        .eq('user_id', effectiveUserId);
-
-      const readIds = new Set(reads?.map((r) => r.communication_id) || []);
-
-      return filteredComms.filter((c) => !readIds.has(c.id));
+      return fetchUrgentUnreadCommunications(effectiveUserId, userLocalRoles);
     },
     enabled: !!effectiveUserId,
     staleTime: 60000,
   });
 
-  // Fetch last order for client section
+  // Fetch last order for client section (uses effectiveUserId for impersonation support)
   const { data: lastOrder } = useQuery({
-    queryKey: ['my-last-order', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select(
-          `
-          id, numero_pedido, estado, total, created_at, webapp_tracking_code, branch_id,
-          pedido_items(nombre, cantidad)
-        `,
-        )
-        .eq('cliente_user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
+    queryKey: ['my-last-order', effectiveUserId],
+    queryFn: () => fetchLastUserOrder(effectiveUserId!),
+    enabled: !!effectiveUserId,
   });
 
   // Fetch branch name + slug for last order
   const { data: lastOrderBranchData } = useQuery({
     queryKey: ['branch-name-slug', lastOrder?.branch_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select('name, slug')
-        .eq('id', lastOrder!.branch_id)
-        .single();
-      return data || { name: '', slug: null };
-    },
+    queryFn: () => fetchBranchNameAndSlug(lastOrder!.branch_id),
     enabled: !!lastOrder?.branch_id,
   });
   const lastOrderBranch = lastOrderBranchData?.name || '';

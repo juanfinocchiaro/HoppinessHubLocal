@@ -2,14 +2,15 @@
  * MisSolicitudesPage - Solicitudes de días libres del usuario
  */
 import MyRequestsCard from '@/components/cuenta/MyRequestsCard';
-import { PageHeader } from '@/components/ui/page-header';
+import { CuentaSectionPage } from '@/components/shared/CuentaSectionPage';
 
 export default function MisSolicitudesPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Mis Solicitudes" subtitle="Solicitudes de días libres y ausencias" />
-
+    <CuentaSectionPage
+      title="Mis Solicitudes"
+      subtitle="Solicitudes de días libres y ausencias"
+    >
       <MyRequestsCard />
-    </div>
+    </CuentaSectionPage>
   );
 }

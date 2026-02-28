@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { POSDialogContent } from './POSDialog';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  invokeMpPointPayment,
+  subscribeToPedidoPagos,
+  removeSupabaseChannel,
+} from '@/services/posService';
 import { Loader2, CheckCircle, XCircle, Smartphone, RefreshCw, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -60,14 +64,12 @@ export function PointPaymentModal({
       setCanForceCancel(false);
 
       try {
-        const { data, error } = await supabase.functions.invoke('mp-point-payment', {
-          body: {
-            branch_id: branchId,
-            pedido_id: pedidoId,
-            amount,
-            ticket_number: ticketNumber,
-            force_cancel_pending: forceCancel,
-          },
+        const { data, error } = await invokeMpPointPayment({
+          branch_id: branchId,
+          pedido_id: pedidoId,
+          amount,
+          ticket_number: ticketNumber,
+          force_cancel_pending: forceCancel,
         });
 
         if (error) {
@@ -120,30 +122,17 @@ export function PointPaymentModal({
   useEffect(() => {
     if (!open || !pedidoId || stage !== 'waiting') return;
 
-    const channel = supabase
-      .channel(`point-payment-${pedidoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'pedido_pagos',
-          filter: `pedido_id=eq.${pedidoId}`,
-        },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          if (row.conciliado === true && row.mp_payment_id) {
-            const payment: ConfirmedPayment = {
-              metodo: row.metodo as string,
-              monto: Number(row.monto),
-              mp_payment_id: String(row.mp_payment_id),
-            };
-            setConfirmedPayment(payment);
-            setStage('confirmed');
-          }
-        },
-      )
-      .subscribe();
+    const channel = subscribeToPedidoPagos(pedidoId, (row) => {
+      if (row.conciliado === true && row.mp_payment_id) {
+        const payment: ConfirmedPayment = {
+          metodo: row.metodo as string,
+          monto: Number(row.monto),
+          mp_payment_id: String(row.mp_payment_id),
+        };
+        setConfirmedPayment(payment);
+        setStage('confirmed');
+      }
+    });
 
     const timer = setTimeout(() => {
       if (stage === 'waiting') {
@@ -153,7 +142,7 @@ export function PointPaymentModal({
     }, TIMEOUT_MS);
 
     return () => {
-      supabase.removeChannel(channel);
+      removeSupabaseChannel(channel);
       clearTimeout(timer);
     };
   }, [open, pedidoId, stage]);
@@ -175,16 +164,12 @@ export function PointPaymentModal({
     // Cancel the order via API if we have the ID
     if (paymentIntentId) {
       try {
-        await supabase.functions
-          .invoke('mp-point-payment', {
-            body: {
-              branch_id: branchId,
-              pedido_id: pedidoId,
-              amount: 0,
-              cancel_order_id: paymentIntentId,
-            },
-          })
-          .catch(() => {});
+        await invokeMpPointPayment({
+          branch_id: branchId,
+          pedido_id: pedidoId,
+          amount: 0,
+          cancel_order_id: paymentIntentId,
+        }).catch(() => {});
       } catch {
         // Best-effort
       }

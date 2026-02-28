@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { updateBranch, upsertPosConfig } from '@/services/adminService';
+import { fetchPosConfig } from '@/services/configService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,18 +42,7 @@ export default function BranchEditPanel({ branch, onSaved, onCancel }: BranchEdi
 
   const { data: posConfig } = useQuery({
     queryKey: ['pos-config', branch.id],
-    queryFn: async () => {
-      try {
-        const { data } = await supabase
-          .from('pos_config')
-          .select('pos_enabled')
-          .eq('branch_id', branch.id)
-          .maybeSingle();
-        return data;
-      } catch {
-        return null;
-      }
-    },
+    queryFn: () => fetchPosConfig(branch.id),
   });
 
   const [posEnabled, setPosEnabled] = useState(posConfig?.pos_enabled ?? false);
@@ -104,40 +94,23 @@ export default function BranchEditPanel({ branch, onSaved, onCancel }: BranchEdi
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('branches')
-        .update({
-          name,
-          address,
-          city,
-          phone: phone || null,
-          email: email || null,
-          // Mantener is_active sincronizado (hidden = false, otros = true)
-          is_active: publicStatus !== 'hidden',
-          public_status: publicStatus,
-          public_hours: publicHours,
-          latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : null,
-          longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : null,
-          google_place_id: googlePlaceId.trim() || null,
-        } as any)
-        .eq('id', branch.id);
+      await updateBranch(branch.id, {
+        name,
+        address,
+        city,
+        phone: phone || null,
+        email: email || null,
+        is_active: publicStatus !== 'hidden',
+        public_status: publicStatus,
+        public_hours: publicHours,
+        latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : null,
+        longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : null,
+        google_place_id: googlePlaceId.trim() || null,
+      });
 
-      if (error) throw error;
-
-      // Actualizar pos_config (solo superadmin)
       if (isSuperadmin) {
         try {
-          const { error: posError } = await supabase
-            .from('pos_config')
-            .upsert(
-              {
-                branch_id: branch.id,
-                pos_enabled: posEnabled,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'branch_id' },
-            );
-          if (posError) throw posError;
+          await upsertPosConfig(branch.id, posEnabled);
         } catch (posErr: any) {
           const msg = posErr?.message || posErr?.error_description || String(posErr);
           const needsMigration = /does not exist|relation|relation "pos_config"/i.test(msg);

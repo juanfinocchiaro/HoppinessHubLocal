@@ -2,7 +2,7 @@
  * EmployeeScheduleModal - Modal para ver horarios de un empleado específico
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchEmployeeScheduleForBranch } from '@/services/schedulesService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,19 +33,13 @@ export function EmployeeScheduleModal({
 
   const { data: schedules, isLoading } = useQuery({
     queryKey: ['employee-schedules', userId, branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_schedules')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('branch_id', branchId)
-        .gte('schedule_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('schedule_date', format(monthEnd, 'yyyy-MM-dd'))
-        .order('schedule_date', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () =>
+      fetchEmployeeScheduleForBranch(
+        userId,
+        branchId,
+        format(monthStart, 'yyyy-MM-dd'),
+        format(monthEnd, 'yyyy-MM-dd'),
+      ),
     enabled: open,
   });
 

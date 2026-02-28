@@ -26,7 +26,10 @@ import { useEffectiveUser } from '@/hooks/useEffectiveUser';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { PageHelp } from '@/components/ui/PageHelp';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchNameForCoaching,
+  fetchCoachingTeamMembers,
+} from '@/services/coachingService';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Users,
@@ -43,7 +46,6 @@ import {
   Eye,
 } from 'lucide-react';
 import type { CertificationLevel } from '@/types/coaching';
-import { useQuery as useReactQuery } from '@tanstack/react-query';
 
 interface TeamMember {
   id: string;
@@ -68,54 +70,20 @@ export default function CoachingPage() {
   const [_expressModalOpen, _setExpressModalOpen] = useState(false);
   const [_expressEmployee, _setExpressEmployee] = useState<TeamMember | null>(null);
 
-  // Fetch branch name for export
-  const { data: branchData } = useReactQuery({
+  const { data: branchData } = useQuery({
     queryKey: ['branch-name', branchId],
-    queryFn: async () => {
-      if (!branchId) return null;
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
-      return data;
-    },
+    queryFn: () => fetchBranchNameForCoaching(branchId!),
     enabled: !!branchId,
   });
 
-  // Fetch empleados y cajeros (solo staff, sin encargados)
   const {
     data: teamMembers,
     isLoading: loadingTeam,
     refetch: refetchTeam,
   } = useQuery({
     queryKey: ['team-members-coaching', branchId, currentUserId],
-    queryFn: async (): Promise<TeamMember[]> => {
-      if (!branchId) return [];
-
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_branch_roles')
-        .select('user_id, local_role')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .in('local_role', ['empleado', 'cajero']);
-
-      if (rolesError) throw rolesError;
-
-      // Exclude current user from the list (can't evaluate yourself)
-      const userIds = roles?.map((r) => r.user_id).filter((id) => id !== currentUserId) ?? [];
-      if (userIds.length === 0) return [];
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      return (
-        profiles?.map((p) => ({
-          ...p,
-          local_role: roles.find((r) => r.user_id === p.id)?.local_role || 'empleado',
-        })) ?? []
-      );
-    },
+    queryFn: (): Promise<TeamMember[]> =>
+      fetchCoachingTeamMembers(branchId!, currentUserId),
     enabled: !!branchId,
   });
 

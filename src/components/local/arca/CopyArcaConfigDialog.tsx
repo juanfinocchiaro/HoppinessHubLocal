@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fromUntyped } from '@/lib/supabase-helpers';
+import { fetchBranchesByIds } from '@/services/configService';
 import {
   Dialog,
   DialogContent,
@@ -34,22 +35,18 @@ export function CopyArcaConfigDialog({
   const { data: configuredBranches, isLoading } = useQuery({
     queryKey: ['arca-configured-branches-fiscal', targetBranchId],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('afip_config' as any)
+      const { data, error } = await (fromUntyped('afip_config')
         .select('branch_id, cuit, razon_social, direccion_fiscal, inicio_actividades, punto_venta')
         .not('cuit', 'is', null)
         .neq('branch_id', targetBranchId) as any);
       if (error) throw error;
 
-      const branchIds = (data as any[]).map((d: any) => d.branch_id);
+      const branchIds = (data as Array<Record<string, unknown>>).map((d: any) => d.branch_id);
       if (!branchIds.length) return [];
 
-      const { data: branches } = await supabase
-        .from('branches')
-        .select('id, name')
-        .in('id', branchIds);
+      const branches = await fetchBranchesByIds(branchIds);
 
-      return (data as any[]).map((cfg: any) => ({
+      return (data as Array<Record<string, unknown>>).map((cfg: any) => ({
         ...cfg,
         branch_name: branches?.find((b) => b.id === cfg.branch_id)?.name || 'Sin nombre',
       }));
@@ -68,7 +65,7 @@ export function CopyArcaConfigDialog({
 
     setIsCopying(true);
     try {
-      // Only copy fiscal data — NOT certificates, private key, or punto_venta
+      // Only copy fiscal data â€” NOT certificates, private key, or punto_venta
       const payload = {
         branch_id: targetBranchId,
         cuit: source.cuit,
@@ -77,20 +74,18 @@ export function CopyArcaConfigDialog({
         inicio_actividades: source.inicio_actividades,
       };
 
-      const { data: existing } = await (supabase
-        .from('afip_config' as any)
+      const { data: existing } = await (fromUntyped('afip_config')
         .select('id')
         .eq('branch_id', targetBranchId)
         .maybeSingle() as any);
 
       if (existing) {
-        const { error } = await (supabase
-          .from('afip_config' as any)
+        const { error } = await (fromUntyped('afip_config')
           .update(payload)
           .eq('branch_id', targetBranchId) as any);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from('afip_config' as any).insert(payload) as any);
+        const { error } = await fromUntyped('afip_config').insert(payload);
         if (error) throw error;
       }
 

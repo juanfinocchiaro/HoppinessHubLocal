@@ -2,21 +2,15 @@
  * useBranchPrinters - CRUD for branch_printers table
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  fetchBranchPrinters,
+  createBranchPrinter,
+  updateBranchPrinter,
+  deleteBranchPrinter,
+} from '@/services/configService';
 
-export interface BranchPrinter {
-  id: string;
-  branch_id: string;
-  name: string;
-  connection_type: string;
-  ip_address: string | null;
-  port: number;
-  paper_width: number;
-  is_active: boolean;
-  configured_from_network: string | null;
-  created_at: string;
-}
+export type { BranchPrinter } from '@/services/configService';
 
 export function useBranchPrinters(branchId: string) {
   const qc = useQueryClient();
@@ -24,23 +18,12 @@ export function useBranchPrinters(branchId: string) {
 
   const query = useQuery({
     queryKey,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branch_printers')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('name');
-      if (error) throw error;
-      return data as BranchPrinter[];
-    },
+    queryFn: () => fetchBranchPrinters(branchId),
     enabled: !!branchId,
   });
 
   const create = useMutation({
-    mutationFn: async (printer: Omit<BranchPrinter, 'id' | 'created_at'>) => {
-      const { error } = await supabase.from('branch_printers').insert(printer);
-      if (error) throw error;
-    },
+    mutationFn: createBranchPrinter,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
       toast.success('Impresora creada');
@@ -49,10 +32,7 @@ export function useBranchPrinters(branchId: string) {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...data }: Partial<BranchPrinter> & { id: string }) => {
-      const { error } = await supabase.from('branch_printers').update(data).eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: updateBranchPrinter,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
       toast.success('Impresora actualizada');
@@ -61,10 +41,7 @@ export function useBranchPrinters(branchId: string) {
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('branch_printers').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: deleteBranchPrinter,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
       toast.success('Impresora eliminada');

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, Store, HelpCircle, CreditCard } from 'lucide-react';
 import type { VentasLocalData, VentasAppsData, ChannelPayments } from '@/types/shiftClosure';
 import { calcularTotalTarjetasNucleo } from '@/types/shiftClosure';
+import { formatCurrency } from '@/lib/formatters';
 
 interface LocalSalesSectionProps {
   data: VentasLocalData;
@@ -66,12 +67,7 @@ export function LocalSalesSection({
     return Math.max(0, val);
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(value);
+  
 
   return (
     <Collapsible defaultOpen>

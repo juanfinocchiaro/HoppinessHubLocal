@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchPedidoWithDetails, searchFacturasEmitidas } from '@/services/fiscalService';
 import type { Tables } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
@@ -19,7 +19,8 @@ import { toast } from 'sonner';
 import { usePrintConfig } from '@/hooks/usePrintConfig';
 import { useBranchPrinters, type BranchPrinter } from '@/hooks/useBranchPrinters';
 import type { TicketClienteData } from '@/lib/escpos';
-import { errMsg, fmtCurrency, type FiscalBranchData, type FacturaEmitidaWithPedido } from './shared';
+import { errMsg, fmtCurrency } from './shared';
+import type { FiscalBranchData, FacturaEmitidaWithPedido } from '@/types/fiscal';
 
 export function ReimprimirCard({
   branchId,
@@ -42,25 +43,8 @@ export function ReimprimirCard({
   const handleReprint = async (factura: FacturaEmitidaWithPedido) => {
     setPrinting2(factura.id);
     try {
-      const { data: pedido, error: pedidoErr } = await supabase
-        .from('pedidos')
-        .select('*')
-        .eq('id', factura.pedido_id!)
-        .single();
-      if (pedidoErr) throw pedidoErr;
-
-      const { data: items } = await supabase
-        .from('pedido_items')
-        .select('*')
-        .eq('pedido_id', factura.pedido_id!);
-
-      const { data: pagos } = await supabase
-        .from('pedido_pagos')
-        .select('*')
-        .eq('pedido_id', factura.pedido_id!)
-        .limit(1);
-
-      const pago = pagos?.[0];
+      const { pedido, items, pagos } = await fetchPedidoWithDetails(factura.pedido_id!);
+      const pago = pagos[0];
 
       const { generateTicketCliente, generateArcaQrBitmap } = await import('@/lib/escpos');
 
@@ -173,24 +157,11 @@ export function ReimprimirCard({
   const handleSearch = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('facturas_emitidas')
-        .select('*, pedidos!inner(numero_pedido, total, cliente_nombre)')
-        .eq('branch_id', branchId)
-        .order('created_at', { ascending: false });
-
-      if (searchMode === 'number') {
-        query = query.eq('numero_comprobante', parseInt(searchNumber));
-      } else if (searchMode === 'date') {
-        query = query
-          .gte('created_at', searchDate + 'T00:00:00')
-          .lte('created_at', searchDate + 'T23:59:59');
-      } else {
-        query = query.limit(10);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await searchFacturasEmitidas(branchId, {
+        mode: searchMode,
+        searchNumber,
+        searchDate,
+      });
       setResults((data as unknown as FacturaEmitidaWithPedido[]) || []);
     } catch (e: unknown) {
       toast.error(errMsg(e) || 'Error al buscar');
@@ -232,7 +203,7 @@ export function ReimprimirCard({
           >
             <TabsList className="w-full">
               <TabsTrigger value="recent" className="flex-1">
-                Últimos 10
+                Ãšltimos 10
               </TabsTrigger>
               <TabsTrigger value="number" className="flex-1">
                 Por número
@@ -294,7 +265,7 @@ export function ReimprimirCard({
                     {String(r.numero_comprobante).padStart(8, '0')}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm')} — Pedido #
+                    {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm')} â€” Pedido #
                     {r.pedidos?.numero_pedido}
                   </div>
                 </div>

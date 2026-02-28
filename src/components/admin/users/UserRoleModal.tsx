@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { updateBrandRole, insertBrandRole, deactivateBranchRole, updateBranchRoleById, insertBranchRole } from '@/services/adminService';
 import {
   Dialog,
   DialogContent,
@@ -116,52 +116,19 @@ export function UserRoleModal({
     mutationFn: async () => {
       const finalBrandRole = hasBrandAccess ? brandRole : null;
 
-      // 1. Update brand role in user_roles_v2
       if (user.brand_role_id) {
-        const { error } = await supabase
-          .from('user_roles_v2')
-          .update({ brand_role: finalBrandRole })
-          .eq('id', user.brand_role_id);
-        if (error) throw error;
+        await updateBrandRole(user.brand_role_id, finalBrandRole);
       } else if (finalBrandRole) {
-        // Create new brand role entry
-        const { error } = await supabase.from('user_roles_v2').insert({
-          user_id: user.user_id!,
-          brand_role: finalBrandRole,
-          is_active: true,
-        });
-        if (error) throw error;
+        await insertBrandRole(user.user_id!, finalBrandRole);
       }
 
-      // 2. Process branch roles
       for (const br of branchRoles) {
         if (br.toDelete && br.existing_id) {
-          // Delete
-          const { error } = await supabase
-            .from('user_branch_roles')
-            .update({ is_active: false })
-            .eq('id', br.existing_id);
-          if (error) throw error;
+          await deactivateBranchRole(br.existing_id);
         } else if (br.existing_id) {
-          // Update - use type assertion for dynamic positions
-          const { error } = await supabase
-            .from('user_branch_roles')
-            .update({
-              local_role: br.local_role,
-              default_position: br.default_position as any,
-            })
-            .eq('id', br.existing_id);
-          if (error) throw error;
+          await updateBranchRoleById(br.existing_id, br.local_role, br.default_position);
         } else if (!br.toDelete) {
-          // Insert new - use type assertion
-          const { error } = await supabase.from('user_branch_roles').insert({
-            user_id: user.user_id!,
-            branch_id: br.branch_id,
-            local_role: br.local_role,
-            default_position: br.default_position as any,
-            is_active: true,
-          } as any);
-          if (error) throw error;
+          await insertBranchRole(user.user_id!, br.branch_id, br.local_role, br.default_position);
         }
       }
     },

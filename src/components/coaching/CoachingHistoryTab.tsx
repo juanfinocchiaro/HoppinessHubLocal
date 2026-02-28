@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchEmployeesWithCoachingCounts } from '@/services/coachingService';
 import { EmployeeCoachingCard } from './EmployeeCoachingCard';
 import { CoachingDetailModal } from './CoachingDetailModal';
 import { Search, History, TrendingUp } from 'lucide-react';
@@ -24,63 +24,10 @@ export function CoachingHistoryTab({ branchId }: CoachingHistoryTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCoachingId, setSelectedCoachingId] = useState<string | null>(null);
 
-  // Obtener empleados con conteo de coachings
   const { data: employees, isLoading } = useQuery({
     queryKey: ['employees-with-coachings', branchId],
-    queryFn: async (): Promise<EmployeeWithCoachingCount[]> => {
-      // Obtener roles de empleados
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_branch_roles')
-        .select('user_id')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .in('local_role', ['empleado', 'cajero']);
-
-      if (rolesError) throw rolesError;
-
-      const userIds = roles?.map((r) => r.user_id) ?? [];
-      if (userIds.length === 0) return [];
-
-      // Obtener perfiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Obtener conteos y último score de coachings
-      const { data: coachings, error: coachingsError } = await supabase
-        .from('coachings')
-        .select('user_id, overall_score, coaching_year, coaching_month')
-        .eq('branch_id', branchId)
-        .in('user_id', userIds)
-        .order('coaching_year', { ascending: false })
-        .order('coaching_month', { ascending: false });
-
-      if (coachingsError) throw coachingsError;
-
-      // Agrupar por usuario
-      const userCoachings = new Map<string, { count: number; latestScore: number | null }>();
-      coachings?.forEach((c) => {
-        const existing = userCoachings.get(c.user_id);
-        if (!existing) {
-          userCoachings.set(c.user_id, { count: 1, latestScore: c.overall_score });
-        } else {
-          userCoachings.set(c.user_id, { ...existing, count: existing.count + 1 });
-        }
-      });
-
-      return (
-        profiles
-          ?.map((p) => ({
-            ...p,
-            coaching_count: userCoachings.get(p.id)?.count ?? 0,
-            latest_score: userCoachings.get(p.id)?.latestScore ?? null,
-          }))
-          .sort((a, b) => b.coaching_count - a.coaching_count) ?? []
-      );
-    },
+    queryFn: (): Promise<EmployeeWithCoachingCount[]> =>
+      fetchEmployeesWithCoachingCounts(branchId),
     enabled: !!branchId,
   });
 

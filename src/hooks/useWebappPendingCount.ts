@@ -1,5 +1,5 @@
 /**
- * useWebappPendingCount — Hook con Realtime para contar pedidos webapp pendientes.
+ * useWebappPendingCount â€” Hook con Realtime para contar pedidos webapp pendientes.
  *
  * Usa React Query + Supabase Realtime para estar sincronizado con WebappOrdersPanel.
  * Cuando se acepta/rechaza un pedido, invalidateAll() actualiza el conteo al instante.
@@ -7,25 +7,17 @@
  */
 import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchPendingWebappCount,
+  subscribeToPedidosChanges,
+  unsubscribeChannel,
+} from '@/services/webappOrderService';
 
 export const WEBAPP_PENDING_COUNT_QUERY_KEY = ['webapp-pending-count'] as const;
 
 interface UseWebappPendingCountOptions {
   branchId: string | undefined;
   enabled?: boolean;
-}
-
-async function fetchPendingCount(branchId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('pedidos')
-    .select('*', { count: 'exact', head: true })
-    .eq('branch_id', branchId)
-    .eq('origen', 'webapp')
-    .eq('estado', 'pendiente');
-
-  if (error) throw error;
-  return count ?? 0;
 }
 
 let audioCtx: AudioContext | null = null;
@@ -43,7 +35,7 @@ function playBeep() {
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.4);
   } catch {
-    // Audio not available — silently ignore
+    // Audio not available â€” silently ignore
   }
 }
 
@@ -53,7 +45,7 @@ export function useWebappPendingCount({ branchId, enabled = true }: UseWebappPen
 
   const { data: count = 0, isLoading } = useQuery({
     queryKey: [...WEBAPP_PENDING_COUNT_QUERY_KEY, branchId],
-    queryFn: () => fetchPendingCount(branchId!),
+    queryFn: () => fetchPendingWebappCount(branchId!),
     enabled: !!branchId && enabled,
   });
 
@@ -69,26 +61,18 @@ export function useWebappPendingCount({ branchId, enabled = true }: UseWebappPen
   // Realtime: invalidar en cambios de pedidos (INSERT/UPDATE) para mantener sincronía
   useEffect(() => {
     if (!branchId || !enabled) return;
-    const channel = supabase
-      .channel(`webapp-pending-${branchId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pedidos',
-          filter: `branch_id=eq.${branchId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({
-            queryKey: [...WEBAPP_PENDING_COUNT_QUERY_KEY, branchId],
-          });
-        },
-      )
-      .subscribe();
+    const channel = subscribeToPedidosChanges(
+      branchId,
+      `webapp-pending-${branchId}`,
+      () => {
+        queryClient.invalidateQueries({
+          queryKey: [...WEBAPP_PENDING_COUNT_QUERY_KEY, branchId],
+        });
+      },
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [branchId, enabled, queryClient]);
 

@@ -1,7 +1,7 @@
 /**
  * Pure utility functions, types, and constants for schedule selection.
  */
-import type { ScheduleValue } from '../ScheduleCellPopover';
+import type { ScheduleValue } from '@/types/schedule';
 import { cellKeyString } from './types';
 
 export const DEBUG = false;

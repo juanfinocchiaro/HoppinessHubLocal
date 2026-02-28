@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Minus, Plus, Trash2, CreditCard, ShoppingBag, MessageSquare, X } from 'lucide-react';
-import type { CartItem } from './ProductGrid';
+import type { CartItem } from '@/types/pos';
 
 interface OrderPanelProps {
   items: CartItem[];

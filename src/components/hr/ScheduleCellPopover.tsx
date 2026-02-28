@@ -34,18 +34,8 @@ import { Coffee, Check, Calendar, Clock, Trash2, Plus } from 'lucide-react';
 import { useWorkPositions } from '@/hooks/useWorkPositions';
 import type { WorkPositionType } from '@/types/workPosition';
 
-export interface ScheduleValue {
-  startTime: string | null;
-  endTime: string | null;
-  isDayOff: boolean;
-  isBirthdayOff?: boolean;
-  position: WorkPositionType | null;
-  breakStart?: string | null;
-  breakEnd?: string | null;
-  // Split shift support (second time range)
-  startTime2?: string | null;
-  endTime2?: string | null;
-}
+export type { ScheduleValue } from '@/types/schedule';
+import type { ScheduleValue } from '@/types/schedule';
 
 interface ScheduleCellPopoverProps {
   open: boolean;

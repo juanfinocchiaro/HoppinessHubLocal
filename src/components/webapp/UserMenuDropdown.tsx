@@ -33,13 +33,13 @@ export function UserMenuDropdown() {
   const location = useLocation();
   const { openAuthModal } = useAuthModal();
   const { openMisPedidos, openDirecciones, openPerfil } = useAccountSheets();
-  const { canAccessLocalPanel, canAccessBrandPanel, accessibleBranches } =
+  const { canAccessLocalPanel, canAccessBrandPanel, accessibleBranches, branchRoles } =
     usePermissionsWithImpersonation();
 
   const canAccessLocal = canAccessLocalPanel;
   const canAccessBrand = canAccessBrandPanel;
   const firstBranchId = accessibleBranches[0]?.id;
-  const showMiTrabajo = canAccessLocal || canAccessBrand;
+  const showMiTrabajo = canAccessLocal || canAccessBrand || branchRoles.length > 0;
 
   const path = location.pathname;
   const activeSection = path.startsWith('/pedir')

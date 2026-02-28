@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Trash2, Split, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/formatters';
 import type { MetodoPago } from '@/types/pos';
 
 export interface PaymentLine {
@@ -102,13 +103,6 @@ export function SplitPayment({ total, open, onOpenChange, onConfirm }: SplitPaym
     }
   };
 
-  const formatPrice = (n: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(n);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -118,7 +112,7 @@ export function SplitPayment({ total, open, onOpenChange, onConfirm }: SplitPaym
             Dividir pago
           </DialogTitle>
           <DialogDescription>
-            Total a cobrar: <strong>{formatPrice(total)}</strong>
+            Total a cobrar: <strong>{formatCurrency(total)}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -199,11 +193,11 @@ export function SplitPayment({ total, open, onOpenChange, onConfirm }: SplitPaym
         >
           <div className="flex justify-between text-sm">
             <span>Total a cobrar:</span>
-            <span className="font-medium">{formatPrice(total)}</span>
+            <span className="font-medium">{formatCurrency(total)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span>Total ingresado:</span>
-            <span className="font-medium">{formatPrice(totalPaid)}</span>
+            <span className="font-medium">{formatCurrency(totalPaid)}</span>
           </div>
           <div
             className={cn(
@@ -214,7 +208,7 @@ export function SplitPayment({ total, open, onOpenChange, onConfirm }: SplitPaym
             <span>{remaining > 0 ? 'Falta:' : remaining < 0 ? 'Vuelto:' : 'Correcto:'}</span>
             <span className="flex items-center gap-1">
               {isValid && <Check className="w-4 h-4" />}
-              {formatPrice(Math.abs(remaining))}
+              {formatCurrency(Math.abs(remaining))}
             </span>
           </div>
         </div>

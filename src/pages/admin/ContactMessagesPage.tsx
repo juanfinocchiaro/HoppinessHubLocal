@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchBranchesMap } from '@/services/adminService';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -286,15 +286,7 @@ function ContactMessagesPageContent() {
   // Fetch branches for resolving employment_branch_id
   const { data: branchesMap } = useQuery({
     queryKey: ['branches-map'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('branches').select('id, name');
-      if (error) throw error;
-      const map: Record<string, string> = {};
-      data?.forEach((b) => {
-        map[b.id] = b.name;
-      });
-      return map;
-    },
+    queryFn: fetchBranchesMap,
   });
 
   const handleExportCSV = () => {

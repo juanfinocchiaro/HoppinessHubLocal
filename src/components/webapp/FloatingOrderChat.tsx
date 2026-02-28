@@ -9,7 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { formatTime } from '@/lib/formatters';
+import {
+  fetchActiveOrderWithBranch,
+  fetchOrderByTrackingWithBranch,
+  subscribeToChatMessages,
+  unsubscribeChannel,
+} from '@/services/webappOrderService';
 
 interface ActiveOrder {
   id: string;
@@ -28,20 +34,8 @@ interface ChatMessage {
   created_at: string;
 }
 
-const ACTIVE_STATES = [
-  'pendiente',
-  'confirmado',
-  'en_preparacion',
-  'listo',
-  'listo_retiro',
-  'listo_mesa',
-  'listo_envio',
-  'en_camino',
-];
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-}
+import { ORDER_ACTIVE_STATES } from '@/lib/constants';
+const ACTIVE_STATES = ORDER_ACTIVE_STATES;
 
 export function FloatingOrderChat() {
   const { user } = useAuth();
@@ -59,27 +53,17 @@ export function FloatingOrderChat() {
     queryKey: ['floating-chat-active-order', user?.id],
     queryFn: async (): Promise<ActiveOrder | null> => {
       if (user) {
-        const { data } = await supabase
-          .from('pedidos')
-          .select(
-            'id, numero_pedido, estado, webapp_tracking_code, branch:branches!pedidos_branch_id_fkey(name)',
-          )
-          .eq('cliente_user_id', user.id)
-          .eq('origen', 'webapp')
-          .in('estado', ACTIVE_STATES)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const data = await fetchActiveOrderWithBranch(user.id);
         if (!data) return null;
+        const branch = data.branch as { name?: string } | null;
         return {
           id: data.id,
           numero_pedido: data.numero_pedido,
           estado: data.estado,
           webapp_tracking_code: data.webapp_tracking_code,
-          branch_name: (data.branch as any)?.name || '',
+          branch_name: branch?.name || '',
         };
       }
-      // Guest: check localStorage
       const code = localStorage.getItem('hoppiness_last_tracking');
       if (!code) return null;
       try {
@@ -89,22 +73,15 @@ export function FloatingOrderChat() {
         if (!res.ok) return null;
         const chatData = await res.json();
         if (!chatData?.pedido_id) return null;
-        // Fetch the order info
-        const { data: order } = await supabase
-          .from('pedidos')
-          .select(
-            'id, numero_pedido, estado, webapp_tracking_code, branch:branches!pedidos_branch_id_fkey(name)',
-          )
-          .eq('webapp_tracking_code', code)
-          .in('estado', ACTIVE_STATES)
-          .maybeSingle();
+        const order = await fetchOrderByTrackingWithBranch(code);
         if (!order) return null;
+        const branch = order.branch as { name?: string } | null;
         return {
           id: order.id,
           numero_pedido: order.numero_pedido,
           estado: order.estado,
           webapp_tracking_code: order.webapp_tracking_code,
-          branch_name: (order.branch as any)?.name || '',
+          branch_name: branch?.name || '',
         };
       } catch {
         return null;
@@ -137,30 +114,21 @@ export function FloatingOrderChat() {
     if (open && trackingCode) fetchMessages();
   }, [open, trackingCode, fetchMessages]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!activeOrder?.id) return;
-    const channel = supabase
-      .channel(`floating-chat-${activeOrder.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webapp_pedido_mensajes',
-          filter: `pedido_id=eq.${activeOrder.id}`,
-        },
-        (payload) => {
-          const msg = payload.new as ChatMessage;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
-        },
-      )
-      .subscribe();
+    const channel = subscribeToChatMessages(
+      activeOrder.id,
+      `floating-chat-${activeOrder.id}`,
+      (payload) => {
+        const msg = payload.new as ChatMessage;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+      },
+    );
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeChannel(channel);
     };
   }, [activeOrder?.id]);
 

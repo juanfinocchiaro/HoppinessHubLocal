@@ -7,15 +7,19 @@
  * 1. Empleado escanea QR estático del local
  * 2. Ingresa su PIN de 4 dígitos (auto-submit al completar)
  * 3. Sistema valida PIN y verifica reglamento pendiente
- * 4. Si hay reglamento pendiente > 5 días → bloquea
- * 5. Captura selfie (solo validación, no se almacena)
+ * 4. Si hay reglamento pendiente > 5 días â†’ bloquea
+ * 5. Captura selfie y la sube a storage al registrar el fichaje
  * 6. Elige ENTRADA o SALIDA manualmente
  * 7. Se registra el fichaje
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBranchForClock,
+  validateClockPin,
+  checkRegulationStatus as checkRegulationStatusService,
+} from '@/services/hrService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,14 +30,12 @@ import {
   Camera,
   CheckCircle2,
   Clock,
-  LogIn,
-  LogOut,
   AlertCircle,
   Loader2,
   AlertTriangle,
   FileWarning,
 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import logoHoppiness from '@/assets/logo-hoppiness-blue.png';
 import { SpinnerLoader } from '@/components/ui/loaders';
@@ -79,11 +81,7 @@ export default function FichajeEmpleado() {
   } = useQuery({
     queryKey: ['branch-by-code', branchCode],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_branch_for_clock', {
-        _clock_code: branchCode,
-      });
-
-      if (error) throw error;
+      const data = await fetchBranchForClock(branchCode!);
       if (!data || data.length === 0) return null;
       return data[0] as BranchData;
     },
@@ -136,32 +134,7 @@ export default function FichajeEmpleado() {
 
   const checkRegulationStatus = useCallback(async (userId: string): Promise<RegulationStatus> => {
     try {
-      const { data: regulations, error: regError } = await supabase
-        .from('regulations')
-        .select('id, version, created_at')
-        .order('version', { ascending: false })
-        .limit(1);
-
-      if (regError || !regulations || regulations.length === 0) {
-        return { hasPending: false, daysSinceUpload: 0, isBlocked: false };
-      }
-
-      const regulation = regulations[0];
-
-      const { data: signatures, error: sigError } = await supabase
-        .from('regulation_signatures')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('regulation_version', regulation.version);
-
-      if (!sigError && signatures && signatures.length > 0) {
-        return { hasPending: false, daysSinceUpload: 0, isBlocked: false };
-      }
-
-      const daysSinceUpload = differenceInDays(new Date(), new Date(regulation.created_at));
-      const isBlocked = daysSinceUpload > 5;
-
-      return { hasPending: true, daysSinceUpload, isBlocked };
+      return await checkRegulationStatusService(userId);
     } catch (error) {
       console.warn('Error checking regulation status:', error);
       return { hasPending: false, daysSinceUpload: 0, isBlocked: false };
@@ -170,12 +143,7 @@ export default function FichajeEmpleado() {
 
   const validatePinMutation = useMutation({
     mutationFn: async (pinValue: string) => {
-      const { data, error } = await supabase.rpc('validate_clock_pin_v2', {
-        _branch_code: branchCode,
-        _pin: pinValue,
-      });
-
-      if (error) throw error;
+      const data = await validateClockPin(branchCode!, pinValue);
       if (!data || data.length === 0) {
         throw new Error(
           'PIN incorrecto. Verificá que hayas configurado tu PIN para esta sucursal.',
@@ -205,8 +173,11 @@ export default function FichajeEmpleado() {
     },
   });
 
+  const [scheduleLabel, setScheduleLabel] = useState<string | null>(null);
+  const [shiftDurationMin, setShiftDurationMin] = useState<number | null>(null);
+
   const clockMutation = useMutation({
-    mutationFn: async ({ type }: { type: 'clock_in' | 'clock_out' }) => {
+    mutationFn: async () => {
       if (!validatedUser) throw new Error('Usuario no validado');
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -221,8 +192,8 @@ export default function FichajeEmpleado() {
         body: JSON.stringify({
           branch_code: branchCode,
           pin: pin,
-          entry_type: type,
           user_agent: navigator.userAgent,
+          photo_base64: capturedPhoto || undefined,
         }),
       });
 
@@ -232,10 +203,16 @@ export default function FichajeEmpleado() {
         throw new Error(data.error || 'Error al registrar fichaje');
       }
 
-      return type;
+      return data as {
+        entry_type: 'clock_in' | 'clock_out';
+        schedule_label: string | null;
+        shift_duration_min: number | null;
+      };
     },
-    onSuccess: (type) => {
-      setEntryType(type);
+    onSuccess: (data) => {
+      setEntryType(data.entry_type);
+      setScheduleLabel(data.schedule_label);
+      setShiftDurationMin(data.shift_duration_min);
       setStep('success');
     },
     onError: (error: Error) => {
@@ -257,12 +234,12 @@ export default function FichajeEmpleado() {
     startCamera();
   };
 
-  const handleClock = async (type: 'clock_in' | 'clock_out') => {
+  const handleClock = async () => {
     if (!capturedPhoto) {
       toast.error('Primero tomá una selfie');
       return;
     }
-    clockMutation.mutate({ type });
+    clockMutation.mutate();
   };
 
   if (loadingBranch) {
@@ -328,7 +305,7 @@ export default function FichajeEmpleado() {
                       validatePinMutation.mutate(value);
                     }
                   }}
-                  placeholder="••••"
+                  placeholder="â€¢â€¢â€¢â€¢"
                   className="text-center text-2xl tracking-widest"
                   autoFocus
                 />
@@ -440,36 +417,19 @@ export default function FichajeEmpleado() {
 
               <canvas ref={canvasRef} className="hidden" />
 
-              {/* Clock buttons */}
               {capturedPhoto && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="default"
-                    className="h-auto py-4 flex-col gap-2"
-                    onClick={() => handleClock('clock_in')}
-                    disabled={clockMutation.isPending}
-                  >
-                    {clockMutation.isPending ? (
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                    ) : (
-                      <LogIn className="w-6 h-6" />
-                    )}
-                    <span>Entrada</span>
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="h-auto py-4 flex-col gap-2"
-                    onClick={() => handleClock('clock_out')}
-                    disabled={clockMutation.isPending}
-                  >
-                    {clockMutation.isPending ? (
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                    ) : (
-                      <LogOut className="w-6 h-6" />
-                    )}
-                    <span>Salida</span>
-                  </Button>
-                </div>
+                <Button
+                  className="w-full h-auto py-4 text-lg"
+                  onClick={handleClock}
+                  disabled={clockMutation.isPending}
+                >
+                  {clockMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  ) : (
+                    <Clock className="w-5 h-5 mr-2" />
+                  )}
+                  Fichar
+                </Button>
               )}
 
               <p className="text-center text-xs text-muted-foreground">
@@ -488,7 +448,17 @@ export default function FichajeEmpleado() {
                 <p className="font-medium mt-2">
                   {entryType === 'clock_in' ? 'Entrada' : 'Salida'}: {format(new Date(), 'HH:mm')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                {scheduleLabel && (
+                  <p className="text-sm text-muted-foreground">
+                    Turno {scheduleLabel}
+                  </p>
+                )}
+                {shiftDurationMin != null && entryType === 'clock_out' && (
+                  <p className="text-sm text-muted-foreground">
+                    Trabajaste {Math.floor(shiftDurationMin / 60)}h {shiftDurationMin % 60}m
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
                   {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale: es })}
                 </p>
               </div>

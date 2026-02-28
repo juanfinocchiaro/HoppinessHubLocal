@@ -31,12 +31,7 @@ export interface UserWithStats {
   primaryLocalRole: LocalRole;
 }
 
-export interface NoteEntry {
-  date: string;
-  note: string;
-  by: string;
-  by_name?: string;
-}
+export type { NoteEntry } from '@/types/notes';
 
 export interface Branch {
   id: string;
