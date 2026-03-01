@@ -8,7 +8,7 @@ import { Pencil, Trash2, Stethoscope, Camera } from 'lucide-react';
 import { formatDuration } from './helpers';
 import { RosterExpandedRow } from './RosterExpandedRow';
 import { STATUS_LABEL, STATUS_COLOR, GROUP_BG, type WindowConfig, DEFAULT_WINDOW } from './constants';
-import type { ClockEntry, RosterRow, RosterRowStatus } from './types';
+import type { ClockEntry, RosterRow } from './types';
 
 interface Props {
   rows: RosterRow[];
@@ -83,7 +83,7 @@ export function RosterTable({
   rows,
   branchId,
   selectedDate,
-  isToday,
+  isToday: _isToday,
   canEdit,
   windowConfig = DEFAULT_WINDOW,
   onEditEntry,

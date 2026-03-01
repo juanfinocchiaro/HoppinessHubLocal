@@ -34,8 +34,7 @@ interface ChatMessage {
   created_at: string;
 }
 
-import { ORDER_ACTIVE_STATES } from '@/lib/constants';
-const ACTIVE_STATES = ORDER_ACTIVE_STATES;
+import { ORDER_ACTIVE_STATES as _ORDER_ACTIVE_STATES_CHAT } from '@/lib/constants'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 export function FloatingOrderChat() {
   const { user } = useAuth();

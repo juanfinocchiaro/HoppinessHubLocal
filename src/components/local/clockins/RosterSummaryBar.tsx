@@ -7,12 +7,14 @@ interface Props {
 }
 
 export function RosterSummaryBar({ rows, isToday }: Props) {
-  const working = rows.filter((r) => r.status === 'working').length;
-  const completed = rows.filter((r) => r.status === 'completed').length;
-  const late = rows.filter((r) => r.status === 'late').length;
-  const absent = rows.filter((r) => r.status === 'absent').length;
-  const pending = rows.filter((r) => r.status === 'pending').length;
-  const unclosed = rows.filter((r) => r.status === 'unclosed').length;
+  const statusCounts = rows.reduce((acc, r) => {
+    acc[r.status] = (acc[r.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const late = statusCounts['late'] || 0;
+  const absent = statusCounts['absent'] || 0;
+  const pending = statusCounts['pending'] || 0;
+  const unclosed = statusCounts['unclosed'] || 0;
   const off = rows.filter((r) => ['day_off', 'leave'].includes(r.status)).length;
 
   const scheduledShifts = rows.filter((r) => r.schedule && !r.schedule.is_day_off);

@@ -49,12 +49,12 @@ export function ModificadoresTab({ itemId }: Props) {
     );
   }, [deepGroups]);
 
-  const removibles: Modificador[] =
-    modificadores?.filter((m: Modificador) => m.tipo === 'removible') || [];
-  const extras: Modificador[] =
-    modificadores?.filter((m: Modificador) => m.tipo === 'extra') || [];
-  const sustituciones: Modificador[] =
-    modificadores?.filter((m: Modificador) => m.tipo === 'sustitucion') || [];
+  const removibles =
+    (modificadores as Modificador[] | undefined)?.filter((m) => m.tipo === 'removible') || [];
+  const extras =
+    (modificadores as Modificador[] | undefined)?.filter((m) => m.tipo === 'extra') || [];
+  const sustituciones =
+    (modificadores as Modificador[] | undefined)?.filter((m) => m.tipo === 'sustitucion') || [];
 
   if (isLoading) {
     return (

@@ -209,7 +209,7 @@ export async function createLocalCommunication(data: {
     insertData.target_roles = data.targetRoles;
   }
 
-  const { error } = await supabase.from('communications').insert(insertData);
+  const { error } = await supabase.from('communications').insert(insertData as any);
   if (error) throw error;
 }
 

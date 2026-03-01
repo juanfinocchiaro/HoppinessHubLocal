@@ -1,6 +1,6 @@
 import type { Tables } from '@/integrations/supabase/types';
 import type { usePreparacionMutations } from '@/hooks/usePreparaciones';
-import { formatCurrency } from '@/lib/formatters';
+export { formatCurrency } from '@/lib/formatters';
 
 export type Preparacion = Tables<'preparaciones'>;
 export type CategoriaPreparacion = Tables<'categorias_preparacion'>;

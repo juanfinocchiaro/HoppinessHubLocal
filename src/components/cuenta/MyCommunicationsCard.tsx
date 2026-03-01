@@ -21,8 +21,8 @@ import {
   useConfirmCommunication,
   getTypeLabel,
   getTypeColor,
-  type CommunicationWithSource,
 } from '@/hooks/useCommunications';
+import type { CommunicationWithSource } from '@/types/communications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { toast } from 'sonner';

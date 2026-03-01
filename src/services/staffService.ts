@@ -207,7 +207,7 @@ export async function upsertEmployeeData(
     const { error } = await supabase.from('employee_data').update(data).eq('id', existingId);
     if (error) throw error;
   } else {
-    const { error } = await supabase.from('employee_data').insert(data);
+    const { error } = await supabase.from('employee_data').insert(data as any);
     if (error) throw error;
   }
 }
@@ -239,15 +239,15 @@ export async function updateEmployeeNotes(
   if (employeeDataId) {
     const { error } = await supabase
       .from('employee_data')
-      .update({ internal_notes: notes })
+      .update({ internal_notes: notes as any })
       .eq('id', employeeDataId);
     if (error) throw error;
   } else {
     const { error } = await supabase.from('employee_data').insert({
       user_id: userId,
       branch_id: branchId,
-      internal_notes: notes,
-    });
+      internal_notes: notes as any,
+    } as any);
     if (error) throw error;
   }
 }

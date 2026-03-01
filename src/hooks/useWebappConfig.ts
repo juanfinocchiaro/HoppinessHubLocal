@@ -58,8 +58,8 @@ export function useBranchWebappAvailability(branchId: string | undefined) {
             categoriaOrden: item.menu_categorias?.orden ?? 999,
             productoOrden: item.orden ?? 999,
             marcaDisponibleWebapp: item.disponible_webapp !== false,
-            localDisponibleWebapp: av?.available_webapp ?? true,
-            outOfStock: av?.out_of_stock ?? false,
+            localDisponibleWebapp: (av as any)?.available_webapp ?? true,
+            outOfStock: (av as any)?.out_of_stock ?? false,
           } satisfies BranchWebappAvailabilityRow;
         })
         .sort((a, b) => {

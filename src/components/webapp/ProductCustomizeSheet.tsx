@@ -55,7 +55,7 @@ function ProductDetailContent({
     if (item.is_promo_article && item.promo_included_modifiers && extrasList) {
       for (const inc of item.promo_included_modifiers) {
         const match = (extrasList as Array<Record<string, unknown>>).find((e: any) => e.nombre === inc.nombre);
-        if (match) map.set(match.id, inc.cantidad);
+        if (match) map.set(match.id as string, inc.cantidad);
       }
     }
     return map;
@@ -82,7 +82,7 @@ function ProductDetailContent({
       const extra = (extrasList as Array<Record<string, unknown>> | undefined)?.find((e: any) => e.id === id);
       if (!extra) continue;
       const free = freeQtyMap.get(id) ?? 0;
-      total += extra.precio * Math.max(0, qty - free);
+      total += (extra.precio as number) * Math.max(0, qty - free);
     }
     return total + groupExtras.reduce((s, e) => s + e.precio, 0);
   }, [extraQty, extrasList, freeQtyMap, groupExtras]);
@@ -148,8 +148,8 @@ function ProductDetailContent({
       if (chargeableQty > 0) {
         chargedExtras.push({
           id,
-          nombre: extra.nombre,
-          precio: extra.precio,
+          nombre: extra.nombre as string,
+          precio: extra.precio as number,
           tipo: 'extra',
           cantidad: chargeableQty,
         });
@@ -417,9 +417,9 @@ function ProductDetailContent({
                   <div key={id} className="flex justify-between">
                     <span>
                       + {chargeable > 1 ? `${chargeable}× ` : ''}
-                      {extra.nombre}
+                      {extra.nombre as string}
                     </span>
-                    <span>{formatPrice(extra.precio * chargeable)}</span>
+                    <span>{formatPrice((extra.precio as number) * chargeable)}</span>
                   </div>
                 );
               })}

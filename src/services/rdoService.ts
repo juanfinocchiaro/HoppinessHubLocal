@@ -886,7 +886,7 @@ export async function saveGasto(payload: Record<string, unknown>, editingId?: st
     const { error } = await supabase.from('gastos').update(payload).eq('id', editingId);
     if (error) throw error;
   } else {
-    const { error } = await supabase.from('gastos').insert(payload);
+    const { error } = await supabase.from('gastos').insert(payload as any);
     if (error) throw error;
   }
 }

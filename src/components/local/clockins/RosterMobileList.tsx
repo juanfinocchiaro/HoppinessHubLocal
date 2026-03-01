@@ -22,7 +22,7 @@ export function RosterMobileList({
   rows,
   branchId,
   selectedDate,
-  isToday,
+  isToday: _isToday,
   canEdit,
   windowConfig = DEFAULT_WINDOW,
   onMarkLeave,

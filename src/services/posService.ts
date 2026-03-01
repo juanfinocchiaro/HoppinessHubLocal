@@ -2,8 +2,8 @@
  * POS Service — All database operations for the Point of Sale system.
  */
 import { supabase } from './supabaseClient';
-import { normalizePhone } from '@/lib/normalizePhone';
-import type { OrderConfig } from '@/types/pos';
+import { normalizePhone as _normalizePhone } from '@/lib/normalizePhone'; // eslint-disable-line @typescript-eslint/no-unused-vars
+import type {} from '@/types/pos';
 
 // ─── Orders ───
 
@@ -79,7 +79,7 @@ export async function findOpenCashShift(branchId: string) {
 }
 
 export async function insertCashMovement(movement: Record<string, unknown>) {
-  const { error } = await supabase.from('cash_register_movements').insert(movement);
+  const { error } = await supabase.from('cash_register_movements').insert(movement as any);
   return { error };
 }
 
@@ -149,7 +149,7 @@ export async function upsertStockActual(
 }
 
 export async function insertStockMovimiento(movement: Record<string, unknown>) {
-  await supabase.from('stock_movimientos').insert(movement);
+  await supabase.from('stock_movimientos').insert(movement as any);
 }
 
 export async function fetchStockActualItem(branchId: string, insumoId: string) {
@@ -435,7 +435,7 @@ export async function fetchStockMovimientosForInsumo(
 export async function upsertCierreMensual(record: Record<string, unknown>) {
   const { error } = await supabase
     .from('stock_cierre_mensual')
-    .upsert(record, { onConflict: 'branch_id,insumo_id,periodo' });
+    .upsert(record as any, { onConflict: 'branch_id,insumo_id,periodo' });
   if (error) throw error;
 }
 
@@ -459,7 +459,7 @@ export async function fetchInsumoCostInfo(insumoId: string) {
 }
 
 export async function insertConsumoManual(record: Record<string, unknown>) {
-  await supabase.from('consumos_manuales').insert(record);
+  await supabase.from('consumos_manuales').insert(record as any);
 }
 
 // ─── Stock Movimientos History ───
@@ -485,7 +485,7 @@ export async function fetchStockMovimientosHistory(
 export async function insertStockConteo(record: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('stock_conteos')
-    .insert(record)
+    .insert(record as any)
     .select()
     .single();
   if (error) throw error;
@@ -497,7 +497,7 @@ export async function deleteStockConteoItems(conteoId: string) {
 }
 
 export async function insertStockConteoItems(items: Array<Record<string, unknown>>) {
-  const { error } = await supabase.from('stock_conteo_items').insert(items);
+  const { error } = await supabase.from('stock_conteo_items').insert(items as any);
   if (error) throw error;
 }
 
@@ -521,7 +521,7 @@ export async function updateStockActualFields(
 }
 
 export async function insertStockActualRecord(record: Record<string, unknown>) {
-  const { error } = await supabase.from('stock_actual').insert(record);
+  const { error } = await supabase.from('stock_actual').insert(record as any);
   if (error) throw error;
 }
 

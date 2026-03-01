@@ -13,7 +13,6 @@ import {
 import type {
   Communication,
   CommunicationWithRead,
-  CommunicationWithSource,
 } from '@/types/communications';
 
 export function useCommunications() {

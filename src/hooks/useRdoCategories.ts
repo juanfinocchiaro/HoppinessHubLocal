@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchRdoCategories } from '@/services/rdoService';
 import { useAuth } from './useAuth';
-import type { RdoCategory } from '@/types/rdo';
+import type {} from '@/types/rdo'; // types used elsewhere
 
 export interface RdoCategoryFilters {
   itemType?: string;

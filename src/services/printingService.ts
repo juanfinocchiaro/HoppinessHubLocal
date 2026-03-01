@@ -10,7 +10,7 @@ export async function insertPrintJob(data: {
 }) {
   const { data: result, error } = await supabase
     .from('print_jobs')
-    .insert(data)
+    .insert(data as any)
     .select('id')
     .single();
   if (error) console.error('Failed to log print job:', error.message);
@@ -40,7 +40,7 @@ export async function logCompletedPrintJob(data: {
   status: string;
   error_message?: string;
 }) {
-  const { error } = await supabase.from('print_jobs').insert(data);
+  const { error } = await supabase.from('print_jobs').insert(data as any);
   if (error) console.error('Failed to log print job:', error.message);
 }
 

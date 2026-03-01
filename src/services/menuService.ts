@@ -711,7 +711,7 @@ export async function insertComposicionRow(row: {
   cantidad: number;
   orden: number;
 }) {
-  const { error } = await supabase.from('item_carta_composicion').insert(row as Record<string, unknown>);
+  const { error } = await supabase.from('item_carta_composicion').insert(row as any);
   if (error) throw error;
 }
 
@@ -1018,7 +1018,7 @@ export async function fetchCategoriasPreparacion() {
 export async function createCategoriaPreparacion(payload: { nombre: string; orden: number }) {
   const { data, error } = await supabase
     .from('categorias_preparacion')
-    .insert(payload as Record<string, unknown>)
+    .insert(payload as any)
     .select()
     .single();
   if (error) throw error;

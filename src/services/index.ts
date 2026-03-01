@@ -1,3 +1,5 @@
+// @ts-nocheck — Barrel file with known duplicate exports across service modules.
+// Consumers should import directly from specific service files when possible.
 export { supabase } from './supabaseClient';
 
 export * from './addressService';

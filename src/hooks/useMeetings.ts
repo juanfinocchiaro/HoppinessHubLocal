@@ -7,11 +7,9 @@ import { useAuth } from './useAuth';
 import { useEffectiveUser } from './useEffectiveUser';
 import { toast } from 'sonner';
 import type {
-  Meeting,
   MeetingConveneData,
   MeetingWizardData,
   MeetingStats,
-  TeamMember,
 } from '@/types/meeting';
 import {
   fetchBranchMeetings,

@@ -39,7 +39,7 @@ export default function Index() {
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 font-display tracking-tight leading-none">
               CULTO
               <br />
-              AL SABOR
+              AL SABOR!
             </h1>
             <p className="text-xl md:text-2xl text-white/90 mb-2 font-brand">
               La hamburguesa más premiada de Córdoba

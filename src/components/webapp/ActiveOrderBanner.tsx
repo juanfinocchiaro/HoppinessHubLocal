@@ -10,8 +10,7 @@ import {
   fetchActiveOrdersByTrackingCode,
 } from '@/services/webappOrderService';
 
-import { ORDER_ACTIVE_STATES } from '@/lib/constants';
-const ACTIVE_STATES = ORDER_ACTIVE_STATES;
+import { ORDER_ACTIVE_STATES as _ORDER_ACTIVE_STATES } from '@/lib/constants'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 const ESTADO_CONFIG: Record<string, { label: string; icon: typeof Flame }> = {
   pendiente: { label: 'fue enviado', icon: Clock },

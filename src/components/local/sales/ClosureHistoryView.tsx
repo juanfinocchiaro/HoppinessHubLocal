@@ -73,7 +73,7 @@ export function ClosureHistoryView({ branchId, branchName, daysBack, setDaysBack
           {closures && closures.length > 0 && (
             <Button variant="outline" size="sm" onClick={() =>
               exportToExcel(
-                closures.map((c: Record<string, unknown>) => ({ fecha: (c.closure_date as string) || '-', turno: getShiftLabel(c.shift_type as string), hamburguesas: (c.total_hamburguesas as number) || 0, vendido: (c.total_vendido as number) || 0, estado: (c.has_alerts as boolean) ? 'Con alertas' : 'OK' })),
+                closures.map((c) => ({ fecha: c.fecha || '-', turno: getShiftLabel(c.turno), hamburguesas: c.total_hamburguesas || 0, vendido: c.total_vendido || 0, estado: c.tiene_alerta_facturacion ? 'Con alertas' : 'OK' })),
                 { fecha: 'Fecha', turno: 'Turno', hamburguesas: 'Hamburguesas', vendido: 'Vendido', estado: 'Estado' },
                 { filename: 'ventas-historial' },
               )

@@ -28,7 +28,7 @@ export default function CuentaHome() {
   const effectiveUser = useEffectiveUser();
   const effectiveUserId = effectiveUser.id;
   const { branchRoles, brandRole, canAccessBrandPanel } = usePermissionsWithImpersonation();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const navigate = useNavigate();
 
   // Check access levels

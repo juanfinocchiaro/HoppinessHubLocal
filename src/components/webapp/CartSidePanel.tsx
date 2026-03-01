@@ -81,7 +81,7 @@ export function CartSidePanel({
   useEffect(() => {
     if (!orderStatuses || orderStatuses.length === 0) return;
     const terminalCodes = orderStatuses
-      .filter((o) => TERMINAL_STATES.includes(o.estado))
+      .filter((o) => TERMINAL_STATES.includes(o.estado as any))
       .map((o) => o.webapp_tracking_code)
       .filter(Boolean) as string[];
 

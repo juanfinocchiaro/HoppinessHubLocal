@@ -51,7 +51,7 @@ export async function deleteUserMonthSchedules(userId: string, startDate: string
 }
 
 export async function insertScheduleRecords(records: Record<string, unknown>[]) {
-  const { data, error } = await supabase.from('employee_schedules').insert(records).select();
+  const { data, error } = await supabase.from('employee_schedules').insert(records as any).select();
   if (error) throw error;
   return data;
 }
@@ -258,7 +258,7 @@ export async function fetchActiveBranchShifts() {
 export async function upsertShiftClosure(closureData: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('shift_closures')
-    .upsert(closureData, { onConflict: 'branch_id,fecha,turno' })
+    .upsert(closureData as any, { onConflict: 'branch_id,fecha,turno' })
     .select()
     .single();
   if (error) throw error;
@@ -474,7 +474,7 @@ export async function fetchMySchedules(userId: string, startDate: string, endDat
 // ── Batch Schedule Operations ────────────────────────────────────────
 
 export async function upsertSchedulesBatch(records: Record<string, unknown>[]) {
-  const { error } = await supabase.from('employee_schedules').upsert(records, {
+  const { error } = await supabase.from('employee_schedules').upsert(records as any, {
     onConflict: 'user_id,schedule_date',
     ignoreDuplicates: false,
   });

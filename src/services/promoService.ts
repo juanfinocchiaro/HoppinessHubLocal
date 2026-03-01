@@ -157,7 +157,7 @@ export async function registerCodeUsage(params: {
     user_id: params.userId || null,
     pedido_id: params.pedidoId || null,
     monto_descontado: params.montoDescontado,
-  } as Record<string, unknown>);
+  } as any);
 
   const { data } = await supabase
     .from('codigos_descuento')

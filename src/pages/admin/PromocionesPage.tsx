@@ -16,9 +16,9 @@ import { fetchPromoItemsWithExtras } from '@/services/adminService';
 
 import { PromosByDay } from '@/components/promociones/PromosByDay';
 import { PromoFormFields } from '@/components/promociones/PromoFormFields';
-import { EMPTY_FORM, ALL_CANALES } from '@/components/promociones/constants';
+import { EMPTY_FORM } from '@/components/promociones/constants';
 import { getDraftSignature, buildFormFromPromo } from '@/components/promociones/helpers';
-import type { PromoItemDraft, PromoItemExtraDraft, PromoEditDraft } from '@/components/promociones/types';
+import type { PromoItemDraft, PromoEditDraft } from '@/components/promociones/types';
 
 export default function PromocionesPage() {
   const { data: promos, isLoading } = usePromociones();

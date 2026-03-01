@@ -15,7 +15,8 @@ import {
   usePreparaciones,
 } from '@/hooks/usePreparaciones';
 import { useInsumos } from '@/hooks/useInsumos';
-import { formatCurrency, calcSubtotal } from './types';
+import { formatCurrency } from '@/lib/formatters';
+import { calcSubtotal } from './types';
 import type { IngredienteLine, PreparacionMutations } from './types';
 
 export function FichaTecnicaTab({

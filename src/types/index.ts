@@ -13,5 +13,5 @@ export * from './schedule';
 export * from './shift';
 export * from './shiftClosure';
 export * from './ventas';
-export * from './webapp';
+export { type CartItem as WebappCartItem } from './webapp';
 export * from './workPosition';

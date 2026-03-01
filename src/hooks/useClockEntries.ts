@@ -34,7 +34,7 @@ export function useClockEntries(
         user_name: profileMap.get(entry.user_id) || 'Usuario',
         isFromNextDay: false,
         schedule_id: entry.schedule_id ?? null,
-        resolved_type: entry.resolved_type ?? null,
+        resolved_type: (entry.resolved_type ?? null) as ClockEntry['resolved_type'],
         anomaly_type: entry.anomaly_type ?? null,
       }));
     },

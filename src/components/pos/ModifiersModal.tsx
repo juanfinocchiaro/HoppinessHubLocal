@@ -117,7 +117,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
 
   const parsedGroups = useMemo<ParsedGroup[]>(() => {
     if (!gruposOpcionales) return [];
-    return (gruposOpcionales as Array<Record<string, unknown>>).map((g: any) => ({
+    return (gruposOpcionales as unknown as Array<Record<string, unknown>>).map((g: any) => ({
       id: g.id,
       nombre: g.nombre,
       es_obligatorio: g.es_obligatorio ?? false,

@@ -9,7 +9,7 @@ export async function submitContactMessage(data: Record<string, unknown>) {
 }
 
 export async function insertContactMessage(data: Record<string, unknown>) {
-  return supabase.from('contact_messages').insert(data);
+  return supabase.from('contact_messages').insert(data as any);
 }
 
 export async function sendContactNotification(body: Record<string, unknown>) {

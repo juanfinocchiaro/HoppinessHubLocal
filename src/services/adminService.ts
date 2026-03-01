@@ -194,17 +194,17 @@ export async function inviteCentralTeamMember(email: string, role: string) {
   if (existing) {
     const { error } = await supabase
       .from('user_roles_v2')
-      .update({ brand_role: role })
+      .update({ brand_role: role as any })
       .eq('user_id', userId);
     if (error) throw error;
   } else {
     const { error } = await supabase.from('user_roles_v2').insert({
       user_id: userId,
-      brand_role: role,
+      brand_role: role as any,
       local_role: null,
       branch_ids: [],
       is_active: true,
-    });
+    } as any);
     if (error) throw error;
   }
 }
@@ -254,7 +254,7 @@ export async function updateBranchMemberRole(
 ) {
   const { error } = await supabase
     .from('user_branch_roles')
-    .update({ local_role: newRole, updated_at: new Date().toISOString() })
+    .update({ local_role: newRole as any, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .eq('branch_id', branchId);
   if (error) throw error;
@@ -450,7 +450,7 @@ export async function deactivateAllRegulations() {
 }
 
 export async function createRegulation(data: Record<string, unknown>) {
-  const { error } = await supabase.from('regulations').insert([data]);
+  const { error } = await supabase.from('regulations').insert([data] as any);
   if (error) throw error;
 }
 
@@ -543,7 +543,7 @@ export async function fetchBranchRolesForUsers(userIds: string[]) {
 export async function updateBrandRole(roleRecordId: string, brandRole: string | null) {
   const { error } = await supabase
     .from('user_roles_v2')
-    .update({ brand_role: brandRole })
+    .update({ brand_role: brandRole as any })
     .eq('id', roleRecordId);
   if (error) throw error;
 }
@@ -551,9 +551,9 @@ export async function updateBrandRole(roleRecordId: string, brandRole: string | 
 export async function insertBrandRole(userId: string, brandRole: string) {
   const { error } = await supabase.from('user_roles_v2').insert({
     user_id: userId,
-    brand_role: brandRole,
+    brand_role: brandRole as any,
     is_active: true,
-  });
+  } as any);
   if (error) throw error;
 }
 
@@ -572,7 +572,7 @@ export async function updateBranchRoleById(
 ) {
   const { error } = await supabase
     .from('user_branch_roles')
-    .update({ local_role: localRole, default_position: defaultPosition as any })
+    .update({ local_role: localRole as any, default_position: defaultPosition as any })
     .eq('id', roleRecordId);
   if (error) throw error;
 }
@@ -671,7 +671,7 @@ export async function fetchBrandCommunications() {
 }
 
 export async function createBrandCommunication(data: Record<string, unknown>) {
-  const { error } = await supabase.from('communications').insert(data);
+  const { error } = await supabase.from('communications').insert(data as any);
   if (error) throw error;
 }
 

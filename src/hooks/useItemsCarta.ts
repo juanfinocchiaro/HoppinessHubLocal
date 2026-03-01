@@ -29,7 +29,7 @@ export function useItemsCarta(branchId?: string) {
         return (data || []).filter((item: any) => {
           const row = availabilityMap.get(item.id);
           if (!row) return true;
-          return !!row.available && !!row.available_salon && !row.out_of_stock;
+          return !!(row as any).available && !!(row as any).available_salon && !(row as any).out_of_stock;
         });
       }
 
