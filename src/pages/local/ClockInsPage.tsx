@@ -53,6 +53,7 @@ import { useClockEntries, useDaySchedules, useDayRequests } from '@/hooks/useClo
 import { buildDayRoster } from '@/components/local/clockins/helpers';
 import { DEFAULT_WINDOW, type WindowConfig } from '@/components/local/clockins/constants';
 import { RosterSummaryBar } from '@/components/local/clockins/RosterSummaryBar';
+import { DaySummaryStats } from '@/components/local/clockins/DaySummaryStats';
 import { RosterTable } from '@/components/local/clockins/RosterTable';
 import { RosterMobileList } from '@/components/local/clockins/RosterMobileList';
 import { EditEntryDialog } from '@/components/local/clockins/EditEntryDialog';
@@ -328,6 +329,8 @@ export default function ClockInsPage() {
       )}
 
       <RosterSummaryBar rows={rows} isToday={isToday} />
+
+      <DaySummaryStats rows={rows} />
 
       <Card>
         <CardContent className="p-0">
