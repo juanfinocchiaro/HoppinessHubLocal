@@ -1,24 +1,34 @@
 
-# Refactorización UX Fichajes — Completada
 
-## Cambios realizados
+# Fix: Turnos cortados no se muestran en el calendario del empleado
+
+## Diagnóstico
+
+La DB ya tiene columnas `start_time_2` y `end_time_2` para turnos cortados, y el editor del encargado las guarda correctamente. Pero las vistas del empleado no las leen ni muestran:
+
+1. **`fetchMySchedules`** solo selecciona `start_time, end_time` — no incluye `start_time_2, end_time_2, break_start, break_end`
+2. **`MyScheduleCard.tsx`** y **`MiHorarioPage.tsx`** usan un tipo `ScheduleEntry` sin esos campos y renderizan solo un rango horario
+
+## Cambios
 
 | Archivo | Cambio |
 |---|---|
-| `types.ts` | Agregados `anomalyDetail` y `hasManualEntry` a `RosterRow` |
-| `helpers.ts` | Función `extractRowMeta()` propaga anomalías y fichajes manuales a cada fila |
-| `DayOverviewBar.tsx` | **Nuevo** — fusiona `RosterSummaryBar` + `DaySummaryStats` en un solo componente compacto |
-| `RosterSummaryBar.tsx` | Ya no se usa (reemplazado por DayOverviewBar) |
-| `DaySummaryStats.tsx` | Ya no se usa (reemplazado por DayOverviewBar) |
-| `RosterTable.tsx` | Menú contextual (⋮) siempre visible en vez de hover. Anomalías ⚠ y manual ✋ inline en estado |
-| `RosterMobileList.tsx` | Mismos cambios: menú contextual, indicadores inline |
-| `RosterExpandedRow.tsx` | Detalle del día primero con acciones directas. Historial mensual colapsable como secundario |
-| `ClockInsPage.tsx` | Eliminado banner de anomalías genérico. Usa DayOverviewBar |
+| `src/services/schedulesService.ts` L464 | Agregar `start_time_2, end_time_2` al select de `fetchMySchedules` |
+| `src/components/cuenta/MyScheduleCard.tsx` L48-55 | Agregar `start_time_2` y `end_time_2` al tipo `ScheduleEntry`. En todos los renders de horario, si hay `start_time_2`, mostrar `"12:00-17:00 / 20:00-02:00"` |
+| `src/pages/cuenta/MiHorarioPage.tsx` L47-54 | Mismo cambio de tipo. Actualizar `calculateDuration` para sumar ambos tramos. Actualizar renders en "Hoy", "Esta semana" y calendario mensual |
+| `src/pages/cuenta/MiHorarioPage.tsx` L135-154 | `totalHours` debe sumar también el segundo tramo |
 
-## Flujo del encargado (nuevo)
+## Formato visual
 
-1. Abre Fichajes → ve resumen compacto en una línea
-2. Filas con anomalías marcadas con ⚠, manuales con ✋
-3. Click en fila → ve detalle del día con sesiones y acciones directas
-4. Botón ⋮ siempre visible para corregir/eliminar/marcar licencia
-5. Historial mensual disponible como sección colapsable
+Donde hoy se muestra:
+```
+12:00 - 17:00
+```
+
+Se mostrará:
+```
+12:00-17:00 / 20:00-02:00
+```
+
+Y la duración sumará ambos tramos (ej: 5h + 6h = 11h).
+
