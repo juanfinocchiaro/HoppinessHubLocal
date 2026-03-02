@@ -14,14 +14,12 @@ import {
   ChevronRight,
   CalendarDays,
   Settings2,
-  AlertTriangle,
   Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,8 +50,7 @@ import { useClockMutations } from '@/hooks/useClockMutations';
 import { useClockEntries, useDaySchedules, useDayRequests } from '@/hooks/useClockEntries';
 import { buildDayRoster } from '@/components/local/clockins/helpers';
 import { DEFAULT_WINDOW, type WindowConfig } from '@/components/local/clockins/constants';
-import { RosterSummaryBar } from '@/components/local/clockins/RosterSummaryBar';
-import { DaySummaryStats } from '@/components/local/clockins/DaySummaryStats';
+import { DayOverviewBar } from '@/components/local/clockins/DayOverviewBar';
 import { RosterTable } from '@/components/local/clockins/RosterTable';
 import { RosterMobileList } from '@/components/local/clockins/RosterMobileList';
 import { EditEntryDialog } from '@/components/local/clockins/EditEntryDialog';
@@ -145,10 +142,7 @@ export default function ClockInsPage() {
     [entries, schedules, staff, requests, date, windowConfig],
   );
 
-  const anomalyCount = useMemo(
-    () => entries.filter((e) => e.anomaly_type && e.resolved_type === 'system_inferred').length,
-    [entries],
-  );
+
 
   const close = () => {
     setEditEntry(null);
@@ -315,22 +309,7 @@ export default function ClockInsPage() {
           </Button>
         )}
       </div>
-
-      {anomalyCount > 0 && canEdit && (
-        <Alert variant="destructive" className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800 dark:text-amber-300">
-            {anomalyCount} anomalía{anomalyCount > 1 ? 's' : ''} detectada{anomalyCount > 1 ? 's' : ''}
-          </AlertTitle>
-          <AlertDescription className="text-amber-700 dark:text-amber-400">
-            Hay fichajes cerrados automáticamente por el sistema. Revisá los turnos marcados y corregí si es necesario.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <RosterSummaryBar rows={rows} isToday={isToday} />
-
-      <DaySummaryStats rows={rows} />
+      <DayOverviewBar rows={rows} isToday={isToday} />
 
       <Card>
         <CardContent className="p-0">

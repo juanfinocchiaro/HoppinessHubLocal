@@ -248,6 +248,33 @@ function resolveRowStatus(
 
 // ── Label helpers ───────────────────────────────────────────────────
 
+const ANOMALY_LABELS: Record<string, string> = {
+  auto_close: 'Salida cerrada automáticamente por el sistema',
+  missing_exit: 'Falta registrar salida',
+  missing_entry: 'Falta registrar entrada',
+  duplicate: 'Fichaje duplicado',
+  out_of_window: 'Fichaje fuera de ventana',
+};
+
+function extractRowMeta(sessions: SessionPair[]): { anomalyDetail: string | null; hasManualEntry: boolean } {
+  let anomalyDetail: string | null = null;
+  let hasManualEntry = false;
+
+  for (const s of sessions) {
+    for (const e of [s.clockIn, s.clockOut]) {
+      if (!e) continue;
+      if (e.is_manual) hasManualEntry = true;
+      if (e.anomaly_type && !anomalyDetail) {
+        const label = ANOMALY_LABELS[e.anomaly_type] ?? `Anomalía: ${e.anomaly_type}`;
+        const time = format(new Date(e.created_at), 'HH:mm');
+        anomalyDetail = `${label} (${time})`;
+      }
+    }
+  }
+
+  return { anomalyDetail, hasManualEntry };
+}
+
 function shiftLabel(schedule: ScheduleInfo | null, request: DayRequest | null): string {
   if (request) {
     const labels: Record<string, string> = {
@@ -360,6 +387,7 @@ export function buildDayRoster(
             sessions: [session],
             request: null,
             schedule: null,
+            ...extractRowMeta([session]),
           });
         }
       }
@@ -395,6 +423,7 @@ export function buildDayRoster(
           sessions,
           request,
           schedule: sched,
+          ...extractRowMeta(sessions),
         });
         rowIdx++;
       }
@@ -430,6 +459,7 @@ export function buildDayRoster(
           sessions: allSessions,
           request,
           schedule: sched,
+          ...extractRowMeta(allSessions),
         });
         continue;
       }
@@ -498,6 +528,7 @@ export function buildDayRoster(
             sessions: [session],
             request: null,
             schedule: null,
+            ...extractRowMeta([session]),
           });
           rowIdx++;
         }
@@ -532,6 +563,7 @@ export function buildDayRoster(
           sessions: shiftSessions,
           request,
           schedule: sched,
+          ...extractRowMeta(shiftSessions),
         });
         rowIdx++;
       }

@@ -1,5 +1,16 @@
 import { useState, Fragment, useMemo } from 'react';
-import { Stethoscope, ChevronDown, Camera } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreVertical, Pencil, Trash2, Stethoscope, ChevronDown, Camera, AlertTriangle, Hand } from 'lucide-react';
 import { formatDuration } from './helpers';
 import { RosterExpandedRow } from './RosterExpandedRow';
 import { STATUS_LABEL, STATUS_COLOR, type WindowConfig, DEFAULT_WINDOW } from './constants';
@@ -60,6 +71,11 @@ export function RosterMobileList({
         const isExpanded = expandedUserId === group.userId;
         const mainRow = group.rows[0];
 
+        const allEntries = mainRow.sessions.flatMap((s) => [s.clockIn, s.clockOut].filter(Boolean)) as ClockEntry[];
+        const editableEntry = allEntries.length > 0 ? allEntries[allEntries.length - 1] : null;
+        const canLeave = (mainRow.status === 'absent' || mainRow.status === 'pending') && onMarkLeave && !mainRow.isSubRow;
+        const showMenu = canEdit && (editableEntry || canLeave);
+
         return (
           <Fragment key={group.userId}>
             <div
@@ -73,6 +89,26 @@ export function RosterMobileList({
                     <span className={`text-xs font-medium ${STATUS_COLOR[mainRow.status]}`}>
                       {STATUS_LABEL[mainRow.status]}
                     </span>
+                    {mainRow.anomalyDetail && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[250px]">
+                          <span className="text-xs">{mainRow.anomalyDetail}</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    {mainRow.hasManualEntry && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Hand className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <span className="text-xs">Fichaje manual</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
                     <span className="font-mono">{mainRow.shiftLabel}</span>
@@ -113,19 +149,38 @@ export function RosterMobileList({
                       </button>
                     );
                   })()}
-                  {canEdit &&
-                    (mainRow.status === 'absent' || mainRow.status === 'pending') &&
-                    onMarkLeave && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onMarkLeave(mainRow.userId, mainRow.userName);
-                        }}
-                        className="p-1 rounded text-purple-500"
-                      >
-                        <Stethoscope className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                  {showMenu && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1 rounded text-muted-foreground"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        {editableEntry && onEditEntry && (
+                          <DropdownMenuItem onClick={() => onEditEntry(editableEntry)}>
+                            <Pencil className="w-3.5 h-3.5 mr-2" />
+                            Corregir fichaje
+                          </DropdownMenuItem>
+                        )}
+                        {editableEntry && onDeleteEntry && (
+                          <DropdownMenuItem onClick={() => onDeleteEntry(editableEntry)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                            Eliminar fichaje
+                          </DropdownMenuItem>
+                        )}
+                        {canLeave && (
+                          <DropdownMenuItem onClick={() => onMarkLeave!(mainRow.userId, mainRow.userName)}>
+                            <Stethoscope className="w-3.5 h-3.5 mr-2" />
+                            Marcar licencia
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                   <ChevronDown
                     className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                   />
@@ -147,6 +202,12 @@ export function RosterMobileList({
                       <span className={`font-medium ${STATUS_COLOR[subRow.status]}`}>
                         {STATUS_LABEL[subRow.status]}
                       </span>
+                      {subRow.anomalyDetail && (
+                        <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      )}
+                      {subRow.hasManualEntry && (
+                        <Hand className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                      )}
                     </div>
                   </div>
                   {subRow.totalMinutes > 0 && (

@@ -62,4 +62,8 @@ export interface RosterRow {
   sessions: SessionPair[];
   request: DayRequest | null;
   schedule: ScheduleInfo | null;
+  /** Human-readable anomaly detail for inline display */
+  anomalyDetail?: string | null;
+  /** Whether any entry in this row was manually created */
+  hasManualEntry?: boolean;
 }
