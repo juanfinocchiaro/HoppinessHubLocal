@@ -52,6 +52,8 @@ interface ScheduleEntry {
   end_time: string;
   is_day_off: boolean;
   work_position: string | null;
+  start_time_2: string | null;
+  end_time_2: string | null;
 }
 
 const POSITION_ICONS: Record<
@@ -131,6 +133,14 @@ export default function MyScheduleCard() {
     if (!time || time === '00:00:00' || time === '00:00') return '';
     const [hours, minutes] = time.split(':');
     return `${hours}:${minutes}`;
+  };
+
+  const formatTimeRange = (s: ScheduleEntry): string => {
+    const t1 = `${formatTime(s.start_time)}-${formatTime(s.end_time)}`;
+    if (s.start_time_2 && s.end_time_2) {
+      return `${t1} / ${formatTime(s.start_time_2)}-${formatTime(s.end_time_2)}`;
+    }
+    return t1;
   };
 
   const getScheduleForDate = (date: Date): ScheduleEntry | null => {
@@ -259,10 +269,7 @@ export default function MyScheduleCard() {
                   <div className="mt-1 space-y-1">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-3 h-3" />
-                      <span>
-                        {formatTime(todaySchedule.start_time)} -{' '}
-                        {formatTime(todaySchedule.end_time)}
-                      </span>
+                      <span>{formatTimeRange(todaySchedule)}</span>
                     </div>
                     {todaySchedule.work_position && renderPosition(todaySchedule.work_position)}
                   </div>

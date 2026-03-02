@@ -461,7 +461,7 @@ export async function fetchEmployeeScheduleForBranch(
 export async function fetchMySchedules(userId: string, startDate: string, endDate: string) {
   const { data, error } = await supabase
     .from('employee_schedules')
-    .select('id, schedule_date, start_time, end_time, is_day_off, work_position')
+    .select('id, schedule_date, start_time, end_time, is_day_off, work_position, start_time_2, end_time_2')
     .eq('user_id', userId)
     .gte('schedule_date', startDate)
     .lte('schedule_date', endDate)

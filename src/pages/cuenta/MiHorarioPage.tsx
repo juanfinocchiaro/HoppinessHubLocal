@@ -51,6 +51,8 @@ interface ScheduleEntry {
   end_time: string;
   is_day_off: boolean;
   work_position: string | null;
+  start_time_2: string | null;
+  end_time_2: string | null;
 }
 
 const POSITION_CONFIG: Record<
@@ -132,22 +134,24 @@ export default function MiHorarioPage() {
   }, [currentMonth, currentYear]);
 
   // Calculate total scheduled hours
+  const calcMinutes = (start: string, end: string): number => {
+    if (!start || !end || start === '00:00:00') return 0;
+    const [sH, sM] = start.split(':').map(Number);
+    const [eH, eM] = end.split(':').map(Number);
+    let s = sH * 60 + sM;
+    let e = eH * 60 + eM;
+    if (e <= s) e += 24 * 60;
+    return e - s;
+  };
+
   const totalHours = useMemo(() => {
     let minutes = 0;
     schedules?.forEach((s) => {
       if (!s.is_day_off && s.start_time && s.end_time && s.start_time !== '00:00:00') {
-        const [startH, startM] = s.start_time.split(':').map(Number);
-        const [endH, endM] = s.end_time.split(':').map(Number);
-
-        let startMins = startH * 60 + startM;
-        let endMins = endH * 60 + endM;
-
-        // Handle overnight shifts
-        if (endMins <= startMins) {
-          endMins += 24 * 60;
+        minutes += calcMinutes(s.start_time, s.end_time);
+        if (s.start_time_2 && s.end_time_2) {
+          minutes += calcMinutes(s.start_time_2, s.end_time_2);
         }
-
-        minutes += endMins - startMins;
       }
     });
     return Math.round((minutes / 60) * 10) / 10;
@@ -183,21 +187,23 @@ export default function MiHorarioPage() {
     return schedulesByDate.get(dateStr) || null;
   };
 
-  const calculateDuration = (start: string, end: string): string => {
-    if (!start || !end || start === '00:00:00') return '';
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-
-    let startMins = startH * 60 + startM;
-    let endMins = endH * 60 + endM;
-
-    if (endMins <= startMins) endMins += 24 * 60;
-
-    const duration = endMins - startMins;
-    const hours = Math.floor(duration / 60);
-    const mins = duration % 60;
-
+  const calculateDuration = (s: ScheduleEntry): string => {
+    if (!s.start_time || s.start_time === '00:00:00') return '';
+    let total = calcMinutes(s.start_time, s.end_time);
+    if (s.start_time_2 && s.end_time_2) {
+      total += calcMinutes(s.start_time_2, s.end_time_2);
+    }
+    const hours = Math.floor(total / 60);
+    const mins = total % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  const formatTimeRange = (s: ScheduleEntry): string => {
+    const t1 = `${formatTime(s.start_time)}-${formatTime(s.end_time)}`;
+    if (s.start_time_2 && s.end_time_2) {
+      return `${t1} / ${formatTime(s.start_time_2)}-${formatTime(s.end_time_2)}`;
+    }
+    return t1;
   };
 
   const renderPosition = (position: string | null, size: 'sm' | 'md' = 'sm') => {
@@ -328,11 +334,10 @@ export default function MiHorarioPage() {
                       <div className="flex items-center gap-3 text-lg">
                         <Clock className="w-5 h-5 text-muted-foreground" />
                         <span className="font-semibold">
-                          {formatTime(todaySchedule.start_time)} -{' '}
-                          {formatTime(todaySchedule.end_time)}
+                          {formatTimeRange(todaySchedule)}
                         </span>
                         <span className="text-muted-foreground">
-                          ({calculateDuration(todaySchedule.start_time, todaySchedule.end_time)})
+                          ({calculateDuration(todaySchedule)})
                         </span>
                       </div>
                       {todaySchedule.work_position &&
@@ -391,7 +396,7 @@ export default function MiHorarioPage() {
                           {hasWork ? (
                             <div className="flex items-center gap-2">
                               <span className="font-medium">
-                                {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                                {formatTimeRange(schedule)}
                               </span>
                               {schedule.work_position && renderPosition(schedule.work_position)}
                             </div>
@@ -404,7 +409,7 @@ export default function MiHorarioPage() {
 
                         {hasWork && (
                           <span className="text-sm text-muted-foreground">
-                            {calculateDuration(schedule.start_time, schedule.end_time)}
+                            {calculateDuration(schedule)}
                           </span>
                         )}
                       </div>
@@ -465,7 +470,7 @@ export default function MiHorarioPage() {
                       {hasWork ? (
                         <div className="mt-1 space-y-0.5">
                           <p className="text-xs font-medium">
-                            {formatTime(schedule.start_time)}-{formatTime(schedule.end_time)}
+                            {formatTimeRange(schedule)}
                           </p>
                           {schedule.work_position && (
                             <p className="text-xs text-muted-foreground truncate">
