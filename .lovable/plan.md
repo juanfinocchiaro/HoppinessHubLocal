@@ -1,26 +1,22 @@
 
 
-# Fix: Turnos cortados aparecen como "No programado" en Fichajes
+# Fix: Datos cruzados y UX de multi-turno en Fichajes
 
-## Problema
+## Problema 1: Datos cruzados
+Cuando un empleado tiene dos horarios separados en el mismo día (ej: turno mañana + turno noche), los fichajes pueden caer fuera de la ventana temporal de su schedule vinculado y ser empujados a "No programado", mientras que el turno real queda vacío. Esto pasa en `groupEntriesBySchedule`: si un entry tiene `schedule_id` pero cae fuera de la ventana temporal, se envía a `unlinked` en vez de confiar en el `schedule_id` del backend.
 
-`fetchDaySchedulesForClock` solo selecciona `start_time, end_time` — no trae `start_time_2, end_time_2`. Como consecuencia, cuando un empleado tiene turno cortado (ej: 12:00-17:00 / 20:00-02:00), el sistema solo conoce el primer tramo. Si el fichaje cae en el segundo tramo, no matchea con ningún turno y lo marca como **"No programado"**.
+**Fix**: Si un entry tiene `schedule_id` y ese schedule existe en la lista del día, **confiar en el `schedule_id`** sin validar ventana temporal. La ventana temporal solo debe usarse como filtro para entries **sin** `schedule_id` o con schedule_id de otro día (overnight).
 
-## Cambios necesarios
+### Archivo: `src/components/local/clockins/helpers.ts`
+- En `groupEntriesBySchedule` (~L90-130): Eliminar la validación de ventana temporal cuando el entry tiene un `schedule_id` válido que pertenece a los schedules de hoy. Solo usar la ventana para filtrar entries cuyo `schedule_id` apunta a un schedule de otro día.
 
-### 1. `src/services/hrService.ts` L685
-Agregar `start_time_2, end_time_2` al select de `fetchDaySchedulesForClock`.
+## Problema 2: UX del sub-row (↳)
+La flechita `↳` debajo del nombre no comunica bien que el empleado tiene dos turnos.
 
-### 2. `src/components/local/clockins/types.ts` L25-30
-Agregar `start_time_2` y `end_time_2` opcionales a `ScheduleInfo`.
+**Fix**: Reemplazar la flecha por mostrar el nombre del empleado en ambas filas, pero con un borde izquierdo de color que agrupe visualmente las filas del mismo empleado. Además agregar un badge sutil `"2 turnos"` en la primera fila.
 
-### 3. `src/hooks/useClockEntries.ts` L56-61
-Propagar `start_time_2` y `end_time_2` al construir el `ScheduleInfo` en `useDaySchedules`.
-
-### 4. `src/components/local/clockins/helpers.ts`
-- **`shiftLabel`** (~L290): Si hay `start_time_2`, mostrar `"12:00-17:00 / 20:00-02:00"`.
-- **`groupEntriesBySchedule`** (~L103-115): Ampliar la ventana de validación para que entries en el segundo tramo también se vinculen al schedule.
-- **`scheduledDurationMinutes`** (~L63): Sumar ambos tramos.
-- **`resolveRowStatus`** (~L225): Usar `start_time` del primer tramo para tardanza, pero considerar que el turno puede tener dos ventanas válidas.
-- **`isInWindow`**: Verificar contra ambas ventanas (primer y segundo tramo) antes de enviar a `unlinked`.
+### Archivo: `src/components/local/clockins/RosterTable.tsx`
+- Sub-rows (~L237-281): En vez de `↳`, mostrar el nombre del empleado con menor opacidad o estilo más sutil.
+- Main row (~L196-197): Si `hasMultiple`, mostrar badge `"× 2"` o `"2 turnos"` al lado del nombre.
+- Agregar un `border-l-2 border-primary/30` a las filas del grupo cuando hay múltiples turnos.
 
