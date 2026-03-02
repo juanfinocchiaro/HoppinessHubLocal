@@ -1,22 +1,30 @@
 
 
-# Fix: Datos cruzados y UX de multi-turno en Fichajes
+# Fix: "No programado" incorrecto + nombre repetido en multi-turno
 
-## Problema 1: Datos cruzados
-Cuando un empleado tiene dos horarios separados en el mismo día (ej: turno mañana + turno noche), los fichajes pueden caer fuera de la ventana temporal de su schedule vinculado y ser empujados a "No programado", mientras que el turno real queda vacío. Esto pasa en `groupEntriesBySchedule`: si un entry tiene `schedule_id` pero cae fuera de la ventana temporal, se envía a `unlinked` en vez de confiar en el `schedule_id` del backend.
+## Problema 1: Entries sin `schedule_id` aparecen como "No programado"
 
-**Fix**: Si un entry tiene `schedule_id` y ese schedule existe en la lista del día, **confiar en el `schedule_id`** sin validar ventana temporal. La ventana temporal solo debe usarse como filtro para entries **sin** `schedule_id` o con schedule_id de otro día (overnight).
+Cuando un usuario tiene **algunos** entries con `schedule_id` y otros sin él (ej: fichajes viejos), el sistema entra en el "new path" (`hasScheduleIds = true`) pero los entries sin `schedule_id` caen a `unlinked` → "No programado", incluso si hay un schedule vacío que les corresponde por horario.
 
-### Archivo: `src/components/local/clockins/helpers.ts`
-- En `groupEntriesBySchedule` (~L90-130): Eliminar la validación de ventana temporal cuando el entry tiene un `schedule_id` válido que pertenece a los schedules de hoy. Solo usar la ventana para filtrar entries cuyo `schedule_id` apunta a un schedule de otro día.
+**Fix en `helpers.ts` (~L353-390)**: Después de separar `unlinked`, intentar asignarlos a schedules vacíos por proximidad temporal (como hace el legacy rescue). Solo crear fila "No programado" si no hay schedule sin entries que matchee.
 
-## Problema 2: UX del sub-row (↳)
-La flechita `↳` debajo del nombre no comunica bien que el empleado tiene dos turnos.
+Lógica:
+```
+Para cada session unlinked:
+  → buscar schedules que NO tengan entries en bySchedule
+  → si el clockIn cae en la ventana de ese schedule → asignarlo ahí
+  → solo si no matchea ninguno → crear "No programado"
+```
 
-**Fix**: Reemplazar la flecha por mostrar el nombre del empleado en ambas filas, pero con un borde izquierdo de color que agrupe visualmente las filas del mismo empleado. Además agregar un badge sutil `"2 turnos"` en la primera fila.
+## Problema 2: Nombre repetido en sub-rows
 
-### Archivo: `src/components/local/clockins/RosterTable.tsx`
-- Sub-rows (~L237-281): En vez de `↳`, mostrar el nombre del empleado con menor opacidad o estilo más sutil.
-- Main row (~L196-197): Si `hasMultiple`, mostrar badge `"× 2"` o `"2 turnos"` al lado del nombre.
-- Agregar un `border-l-2 border-primary/30` a las filas del grupo cuando hay múltiples turnos.
+**Fix en `RosterTable.tsx` (~L238)** y `RosterMobileList.tsx` (~L166)**: En sub-rows, no mostrar el nombre del empleado. Dejar la celda vacía (o con un dash sutil) para que el borde izquierdo y el badge "2 turnos" del main row sean suficientes para agrupar visualmente.
+
+### Archivos a modificar
+
+| Archivo | Cambio |
+|---|---|
+| `src/components/local/clockins/helpers.ts` L353-390 | Rescue de entries unlinked hacia schedules vacíos antes de crear filas "No programado" |
+| `src/components/local/clockins/RosterTable.tsx` L238 | Sub-row: celda de nombre vacía en vez de repetir nombre |
+| `src/components/local/clockins/RosterMobileList.tsx` L166 | Idem en mobile |
 
