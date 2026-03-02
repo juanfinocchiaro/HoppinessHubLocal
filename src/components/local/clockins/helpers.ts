@@ -73,6 +73,35 @@ export function scheduledDurationMinutes(schedule: ScheduleInfo | null): number 
   return total;
 }
 
+// ── Split schedule expansion ────────────────────────────────────────
+
+function expandSplitSchedules(schedules: ScheduleInfo[]): ScheduleInfo[] {
+  const result: ScheduleInfo[] = [];
+  for (const sched of schedules) {
+    if (sched.start_time_2 && sched.end_time_2) {
+      // Segment 1: original start/end
+      result.push({
+        ...sched,
+        start_time_2: null,
+        end_time_2: null,
+        _virtualSegment: 1,
+      });
+      // Segment 2: start_time_2/end_time_2 become primary
+      result.push({
+        ...sched,
+        start_time: sched.start_time_2,
+        end_time: sched.end_time_2,
+        start_time_2: null,
+        end_time_2: null,
+        _virtualSegment: 2,
+      });
+    } else {
+      result.push(sched);
+    }
+  }
+  return result;
+}
+
 // ── Session grouping by schedule_id ─────────────────────────────────
 
 function groupEntriesBySchedule(
@@ -80,15 +109,21 @@ function groupEntriesBySchedule(
   todaySchedules: ScheduleInfo[],
   _windowConfig: WindowConfig,
 ): {
-  bySchedule: Map<string, ClockEntry[]>;
+  bySchedule: Map<number, ClockEntry[]>;
   unlinked: ClockEntry[];
 } {
-  const scheduleById = new Map<string, ScheduleInfo>();
-  for (const s of todaySchedules) {
-    if (s.id) scheduleById.set(s.id, s);
+  // Build a map from schedule_id -> list of virtual schedule indices
+  const schedIdxByOrigId = new Map<string, number[]>();
+  for (let i = 0; i < todaySchedules.length; i++) {
+    const s = todaySchedules[i];
+    if (s.id) {
+      const list = schedIdxByOrigId.get(s.id) ?? [];
+      list.push(i);
+      schedIdxByOrigId.set(s.id, list);
+    }
   }
 
-  const bySchedule = new Map<string, ClockEntry[]>();
+  const bySchedule = new Map<number, ClockEntry[]>();
   const unlinked: ClockEntry[] = [];
 
   for (const e of entries) {
@@ -97,19 +132,43 @@ function groupEntriesBySchedule(
       continue;
     }
 
-    const sched = scheduleById.get(e.schedule_id);
-
-    if (!sched) {
+    const indices = schedIdxByOrigId.get(e.schedule_id);
+    if (!indices || indices.length === 0) {
       // schedule_id points to a schedule NOT in today's list (overnight from another day).
-      // Skip: these are already shown in their original day's view.
       continue;
     }
 
-    // Trust the schedule_id — it belongs to today's schedules, no window check needed.
-
-    const list = bySchedule.get(e.schedule_id) ?? [];
-    list.push(e);
-    bySchedule.set(e.schedule_id, list);
+    if (indices.length === 1) {
+      // Single schedule (or single segment) — direct assign
+      const list = bySchedule.get(indices[0]) ?? [];
+      list.push(e);
+      bySchedule.set(indices[0], list);
+    } else {
+      // Multiple virtual segments share same schedule_id — assign by time proximity
+      const entryMin = new Date(e.created_at).getHours() * 60 + new Date(e.created_at).getMinutes();
+      let bestIdx = indices[0];
+      let bestDist = Infinity;
+      for (const idx of indices) {
+        const sched = todaySchedules[idx];
+        if (!sched.start_time) continue;
+        const startMin = timeToMinutes(sched.start_time);
+        const endMin = sched.end_time ? timeToMinutes(sched.end_time) : startMin;
+        // Distance to the schedule's time window
+        const distToStart = Math.min(
+          circularForward(startMin, entryMin),
+          circularForward(entryMin, startMin),
+        );
+        const distToEnd = Math.min(
+          circularForward(endMin, entryMin),
+          circularForward(entryMin, endMin),
+        );
+        const dist = Math.min(distToStart, distToEnd);
+        if (dist < bestDist) { bestDist = dist; bestIdx = idx; }
+      }
+      const list = bySchedule.get(bestIdx) ?? [];
+      list.push(e);
+      bySchedule.set(bestIdx, list);
+    }
   }
 
   return { bySchedule, unlinked };
@@ -338,11 +397,8 @@ export function buildDayRoster(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     );
 
-    const workSchedules = schedules.filter((s) => !s.is_day_off);
-    const scheduleById = new Map<string, ScheduleInfo>();
-    for (const s of workSchedules) {
-      if (s.id) scheduleById.set(s.id, s);
-    }
+    // Expand split schedules into virtual segments before matching
+    const workSchedules = expandSplitSchedules(schedules.filter((s) => !s.is_day_off));
 
     const hasScheduleIds = sorted.some((e) => e.schedule_id);
 
@@ -374,7 +430,7 @@ export function buildDayRoster(
             const sched = workSchedules[i];
             if (!sched.start_time || !sched.end_time) continue;
             // Skip schedules that already have linked entries or were already rescued into
-            const hasLinked = sched.id && (bySchedule.get(sched.id) ?? []).length > 0;
+            const hasLinked = (bySchedule.get(i) ?? []).length > 0;
             if (hasLinked || rescuedToSchedule.has(i)) continue;
 
             const startMin = timeToMinutes(sched.start_time);
@@ -392,10 +448,9 @@ export function buildDayRoster(
 
           if (bestIdx >= 0) {
             // Rescue: attach this session's entries to the schedule
-            const sched = workSchedules[bestIdx];
             const entries = [session.clockIn, session.clockOut].filter(Boolean) as ClockEntry[];
-            const existing = (sched.id ? bySchedule.get(sched.id) : undefined) ?? [];
-            bySchedule.set(sched.id!, [...existing, ...entries]);
+            const existing = bySchedule.get(bestIdx) ?? [];
+            bySchedule.set(bestIdx, [...existing, ...entries]);
             rescuedToSchedule.add(bestIdx);
           } else {
             remainingUnlinked.push(session);
@@ -438,7 +493,7 @@ export function buildDayRoster(
       let rowIdx = unlinked.length > 0 ? 1 : 0;
       for (let i = 0; i < workSchedules.length; i++) {
         const sched = workSchedules[i];
-        const schedEntries = (sched.id ? bySchedule.get(sched.id) : undefined) ?? [];
+        const schedEntries = bySchedule.get(i) ?? [];
         const sessions = buildSessionsFromEntries(
           schedEntries.sort(
             (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),

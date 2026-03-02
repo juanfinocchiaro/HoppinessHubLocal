@@ -29,6 +29,8 @@ export interface ScheduleInfo {
   start_time_2?: string | null;
   end_time_2?: string | null;
   is_day_off: boolean;
+  /** Internal: marks which segment of a split schedule this virtual schedule represents */
+  _virtualSegment?: 1 | 2;
 }
 
 export interface DayRequest {
