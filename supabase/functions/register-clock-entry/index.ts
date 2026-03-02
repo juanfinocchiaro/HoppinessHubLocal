@@ -6,7 +6,6 @@ const corsHeaders = {
 }
 
 const MAX_SHIFT_HOURS = 14
-const STALE_THRESHOLD_HOURS = 6
 
 interface ClockEntryRequest {
   branch_code: string
@@ -32,6 +31,25 @@ function jsonRes(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+/** Convert a schedule time (HH:MM) on a given date to a UTC Date, treating the time as Argentina local */
+function argTimeToUtc(dateStr: string, timeStr: string): Date {
+  const [h, m] = timeStr.split(':').map(Number)
+  // Argentina is UTC-3, so UTC = local + 3h
+  const d = new Date(`${dateStr}T00:00:00Z`)
+  d.setUTCHours(h + 3, m, 0, 0)
+  return d
+}
+
+/** Get current Argentina time parts */
+function getArgNow(now: Date) {
+  const timeFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  })
+  const [h, m] = timeFmt.format(now).split(':').map(Number)
+  return { hours: h, minutes: m, totalMinutes: h * 60 + m }
 }
 
 Deno.serve(async (req) => {
@@ -105,37 +123,86 @@ Deno.serve(async (req) => {
     let resolvedType: 'scheduled' | 'unscheduled' | 'system_inferred' = 'unscheduled'
     let anomalyType: string | null = null
     let autoClosedId: string | null = null
+    let replacedAutoClose = false
 
     if (currentState === 'working' && ets) {
       const openSince = new Date(ets.last_updated)
       const elapsedHours = (now.getTime() - openSince.getTime()) / (1000 * 60 * 60)
-      const crossedMidnight =
-        openSince.toISOString().slice(0, 10) !== now.toISOString().slice(0, 10)
-      const isStale =
-        (crossedMidnight && elapsedHours > STALE_THRESHOLD_HOURS) ||
-        elapsedHours > MAX_SHIFT_HOURS
+
+      // --- IMPROVED STALE CHECK: use schedule end_time in Argentina timezone ---
+      let isStale = false
+
+      if (ets.open_schedule_id) {
+        const { data: sched } = await db
+          .from('employee_schedules')
+          .select('end_time, start_time, schedule_date')
+          .eq('id', ets.open_schedule_id)
+          .single()
+
+        if (sched?.end_time && sched?.schedule_date && sched?.start_time) {
+          const [sh] = sched.start_time.split(':').map(Number)
+          const [eh] = sched.end_time.split(':').map(Number)
+          const isOvernight = eh < sh || (eh === sh && sched.end_time < sched.start_time)
+
+          // Calculate end time in UTC, treating schedule times as Argentina local
+          const endDateStr = isOvernight
+            ? (() => {
+                const d = new Date(`${sched.schedule_date}T12:00:00Z`)
+                d.setUTCDate(d.getUTCDate() + 1)
+                return d.toISOString().slice(0, 10)
+              })()
+            : sched.schedule_date
+
+          const schedEndUtc = argTimeToUtc(endDateStr, sched.end_time)
+          const graceEndUtc = new Date(schedEndUtc.getTime() + afterMin * 60 * 1000)
+
+          if (now > graceEndUtc) {
+            // Past the grace window → stale
+            isStale = true
+          }
+          // else: within schedule window, NOT stale — employee just hasn't clocked out yet
+        } else {
+          // No valid schedule data — fallback to elapsed time
+          isStale = elapsedHours > MAX_SHIFT_HOURS
+        }
+      } else {
+        // No schedule — use elapsed time only
+        isStale = elapsedHours > MAX_SHIFT_HOURS
+      }
 
       if (isStale) {
-        // Auto-close the stale shift
-        let estimatedOut = new Date(openSince)
+        // Auto-close the stale shift with estimated out time in Argentina timezone
+        let estimatedOut: Date
+
         if (ets.open_schedule_id) {
           const { data: sched } = await db
             .from('employee_schedules')
-            .select('end_time, schedule_date')
+            .select('end_time, start_time, schedule_date')
             .eq('id', ets.open_schedule_id)
             .single()
-          if (sched?.end_time && sched?.schedule_date) {
-            const [h, m] = sched.end_time.split(':').map(Number)
-            estimatedOut = new Date(`${sched.schedule_date}T00:00:00`)
-            estimatedOut.setHours(h, m, 0, 0)
-            if (estimatedOut <= openSince) {
-              estimatedOut.setDate(estimatedOut.getDate() + 1)
-            }
+
+          if (sched?.end_time && sched?.schedule_date && sched?.start_time) {
+            const [sh] = sched.start_time.split(':').map(Number)
+            const [eh] = sched.end_time.split(':').map(Number)
+            const isOvernight = eh < sh || (eh === sh && sched.end_time < sched.start_time)
+
+            const endDateStr = isOvernight
+              ? (() => {
+                  const d = new Date(`${sched.schedule_date}T12:00:00Z`)
+                  d.setUTCDate(d.getUTCDate() + 1)
+                  return d.toISOString().slice(0, 10)
+                })()
+              : sched.schedule_date
+
+            estimatedOut = argTimeToUtc(endDateStr, sched.end_time)
+          } else {
+            estimatedOut = new Date(openSince)
+            estimatedOut.setUTCHours(estimatedOut.getUTCHours() + 8)
           }
         } else {
+          // No schedule: estimate 8h shift
           estimatedOut = new Date(openSince)
-          estimatedOut.setHours(23, 59, 0, 0)
-          if (estimatedOut <= openSince) estimatedOut.setDate(estimatedOut.getDate() + 1)
+          estimatedOut.setUTCHours(estimatedOut.getUTCHours() + 8)
         }
 
         // work_date for auto-close: inherit from open clock_in
@@ -170,6 +237,80 @@ Deno.serve(async (req) => {
       } else {
         resolvedEntryType = forceType ?? 'clock_out'
       }
+    } else if (currentState === 'off' && ets) {
+      // --- CHECK: Is this a late clock_out that should replace a recent auto-close? ---
+      // Look for a system_inferred clock_out in the last 3 hours for this user
+      const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString()
+      const { data: recentAutoClose } = await db
+        .from('clock_entries')
+        .select('id, schedule_id, work_date, created_at')
+        .eq('user_id', user.user_id)
+        .eq('branch_id', user.branch_id)
+        .eq('entry_type', 'clock_out')
+        .eq('resolved_type', 'system_inferred')
+        .gte('created_at', threeHoursAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (recentAutoClose?.schedule_id) {
+        // Check if we're still within afterMin of the schedule's end_time
+        const { data: sched } = await db
+          .from('employee_schedules')
+          .select('end_time, start_time, schedule_date')
+          .eq('id', recentAutoClose.schedule_id)
+          .single()
+
+        if (sched?.end_time && sched?.schedule_date && sched?.start_time) {
+          const [sh] = sched.start_time.split(':').map(Number)
+          const [eh] = sched.end_time.split(':').map(Number)
+          const isOvernight = eh < sh || (eh === sh && sched.end_time < sched.start_time)
+
+          const endDateStr = isOvernight
+            ? (() => {
+                const d = new Date(`${sched.schedule_date}T12:00:00Z`)
+                d.setUTCDate(d.getUTCDate() + 1)
+                return d.toISOString().slice(0, 10)
+              })()
+            : sched.schedule_date
+
+          const schedEndUtc = argTimeToUtc(endDateStr, sched.end_time)
+          const graceEndUtc = new Date(schedEndUtc.getTime() + afterMin * 60 * 1000)
+
+          if (now <= graceEndUtc) {
+            // Within grace window: DELETE the auto-close and register a real clock_out
+            await db.from('clock_entries').delete().eq('id', recentAutoClose.id)
+
+            // Find the original clock_in to restore state context
+            const { data: origClockIn } = await db
+              .from('clock_entries')
+              .select('id, created_at')
+              .eq('user_id', user.user_id)
+              .eq('branch_id', user.branch_id)
+              .eq('entry_type', 'clock_in')
+              .eq('schedule_id', recentAutoClose.schedule_id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            resolvedEntryType = 'clock_out'
+            scheduleId = recentAutoClose.schedule_id
+            resolvedType = 'scheduled'
+            replacedAutoClose = true
+
+            // We'll use the auto-close's work_date
+            // (handled below in work_date computation)
+
+            console.log(`Replaced auto-close ${recentAutoClose.id} with real clock_out for user ${user.user_id}`)
+          } else {
+            resolvedEntryType = forceType ?? 'clock_in'
+          }
+        } else {
+          resolvedEntryType = forceType ?? 'clock_in'
+        }
+      } else {
+        resolvedEntryType = forceType ?? 'clock_in'
+      }
     } else {
       resolvedEntryType = forceType ?? 'clock_in'
     }
@@ -179,14 +320,8 @@ Deno.serve(async (req) => {
       const todayStr = todayArgentina
       const argParts = todayArgentina.split('-').map(Number)
       const argLocal = new Date(argParts[0], argParts[1] - 1, argParts[2])
-      const nowMinutes = (() => {
-        const timeFmt = new Intl.DateTimeFormat('en-GB', {
-          timeZone: 'America/Argentina/Buenos_Aires',
-          hour: '2-digit', minute: '2-digit', hour12: false,
-        })
-        const [h, m] = timeFmt.format(now).split(':').map(Number)
-        return h * 60 + m
-      })()
+      const argNow = getArgNow(now)
+      const nowMinutes = argNow.totalMinutes
 
       // Search today's schedules
       const { data: todaySchedules } = await db
@@ -224,7 +359,6 @@ Deno.serve(async (req) => {
           const schedStartMin = sh * 60 + sm
 
           if (s.schedule_date === todayStr) {
-            // Today's schedule: accept if within [start - beforeMin, end + afterMin]
             const [eh, em] = s.end_time!.split(':').map(Number)
             const schedEndMin = eh * 60 + em
             const winStart = ((schedStartMin - beforeMin) % 1440 + 1440) % 1440
@@ -246,8 +380,7 @@ Deno.serve(async (req) => {
               }
             }
           } else {
-            // Yesterday's overnight schedule: only match if end < start (overnight)
-            // and current time is before end + afterMin
+            // Yesterday's overnight schedule
             const [eh, em] = s.end_time!.split(':').map(Number)
             const schedEndMin = eh * 60 + em
             if (schedEndMin < schedStartMin && nowMinutes <= schedEndMin + afterMin) {
@@ -268,7 +401,8 @@ Deno.serve(async (req) => {
       if (!scheduleId) {
         resolvedType = 'unscheduled'
       }
-    } else {
+    } else if (!replacedAutoClose) {
+      // For normal clock_out (not replacing auto-close)
       scheduleId = ets?.open_schedule_id ?? null
       resolvedType = scheduleId ? 'scheduled' : 'unscheduled'
     }
@@ -332,7 +466,6 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (recentDup) {
-      // Return existing entry instead of inserting duplicate
       let dupScheduleLabel: string | null = null
       if (scheduleId) {
         const { data: sched } = await db
@@ -403,16 +536,33 @@ Deno.serve(async (req) => {
 
     // --- Compute shift duration for clock_out ---
     let shiftDurationMin: number | null = null
-    if (resolvedEntryType === 'clock_out' && ets?.open_clock_in_id) {
-      const { data: openEntry } = await db
-        .from('clock_entries')
-        .select('created_at')
-        .eq('id', ets.open_clock_in_id)
-        .single()
-      if (openEntry) {
-        shiftDurationMin = Math.round(
-          (now.getTime() - new Date(openEntry.created_at).getTime()) / 60000,
-        )
+    if (resolvedEntryType === 'clock_out') {
+      // For replaced auto-close, find the original clock_in
+      const clockInId = replacedAutoClose
+        ? (await db
+            .from('clock_entries')
+            .select('id, created_at')
+            .eq('user_id', user.user_id)
+            .eq('branch_id', user.branch_id)
+            .eq('entry_type', 'clock_in')
+            .eq('schedule_id', scheduleId!)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          ).data?.id
+        : ets?.open_clock_in_id
+
+      if (clockInId) {
+        const { data: openEntry } = await db
+          .from('clock_entries')
+          .select('created_at')
+          .eq('id', clockInId)
+          .single()
+        if (openEntry) {
+          shiftDurationMin = Math.round(
+            (now.getTime() - new Date(openEntry.created_at).getTime()) / 60000,
+          )
+        }
       }
     }
 
@@ -441,6 +591,7 @@ Deno.serve(async (req) => {
       schedule_label: scheduleLabel,
       shift_duration_min: shiftDurationMin,
       auto_closed_stale: autoClosedId,
+      replaced_auto_close: replacedAutoClose,
     })
   } catch (error) {
     console.error('Unexpected error:', error)

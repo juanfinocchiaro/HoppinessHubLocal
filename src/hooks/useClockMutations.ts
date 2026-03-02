@@ -53,7 +53,7 @@ export function useClockMutations({ branchId, onSuccess }: UseClockMutationsOpti
   const editMutation = useMutation({
     mutationFn: (params: {
       entryId: string;
-      patch: { entry_type?: string; created_at?: string; reason: string };
+      patch: { entry_type?: string; created_at?: string; reason: string; work_date?: string; early_leave_authorized?: boolean };
       originalCreatedAt: string;
     }) =>
       updateClockEntry(

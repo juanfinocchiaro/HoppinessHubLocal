@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ interface AddManualEntryFormProps {
     entryType: 'clock_in' | 'clock_out';
     timestamp: string;
     reason: string;
+    earlyLeaveAuthorized?: boolean;
   }) => void;
   onCancel: () => void;
 }
@@ -43,12 +45,19 @@ export function AddManualEntryForm({
   const [date, setDate] = useState(format(now, 'yyyy-MM-dd'));
   const [time, setTime] = useState(format(now, 'HH:mm'));
   const [reason, setReason] = useState('');
+  const [earlyLeaveAuthorized, setEarlyLeaveAuthorized] = useState(false);
 
   const handleSubmit = () => {
     if (!userId) return;
     if (!reason.trim()) return;
     const timestamp = new Date(`${date}T${time}:00`).toISOString();
-    onSubmit({ userId, entryType, timestamp, reason: reason.trim() });
+    onSubmit({
+      userId,
+      entryType,
+      timestamp,
+      reason: reason.trim(),
+      earlyLeaveAuthorized: entryType === 'clock_out' ? earlyLeaveAuthorized : undefined,
+    });
   };
 
   return (
@@ -98,6 +107,19 @@ export function AddManualEntryForm({
           <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-9" />
         </div>
       </div>
+
+      {entryType === 'clock_out' && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="manual-early-leave"
+            checked={earlyLeaveAuthorized}
+            onCheckedChange={(c) => setEarlyLeaveAuthorized(!!c)}
+          />
+          <Label htmlFor="manual-early-leave" className="text-xs cursor-pointer">
+            Retiro anticipado autorizado (no afecta presentismo)
+          </Label>
+        </div>
+      )}
 
       <div>
         <Label className="text-xs">Motivo *</Label>

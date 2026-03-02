@@ -862,7 +862,7 @@ export async function createManualClockEntry(params: {
 
 export async function updateClockEntry(
   entryId: string,
-  patch: { entry_type?: string; created_at?: string; reason: string; schedule_id?: string | null },
+  patch: { entry_type?: string; created_at?: string; reason: string; schedule_id?: string | null; work_date?: string; early_leave_authorized?: boolean },
   managerId: string,
   originalCreatedAt: string,
 ) {
@@ -875,6 +875,8 @@ export async function updateClockEntry(
   if (patch.entry_type) updatePayload.entry_type = patch.entry_type;
   if (patch.created_at) updatePayload.created_at = patch.created_at;
   if (patch.schedule_id !== undefined) updatePayload.schedule_id = patch.schedule_id;
+  if (patch.work_date) updatePayload.work_date = patch.work_date;
+  if (patch.early_leave_authorized !== undefined) updatePayload.early_leave_authorized = patch.early_leave_authorized;
 
   const { error } = await supabase
     .from('clock_entries')

@@ -175,13 +175,14 @@ function lastExitTime(sessions: SessionPair[]): string | null {
 // ── Status resolution ───────────────────────────────────────────────
 
 // Default late threshold — overridden by labor_config.late_tolerance_total_min when available
-const LATE_THRESHOLD = 15;
+const DEFAULT_LATE_THRESHOLD = 15;
 
 function resolveRowStatus(
   sessions: SessionPair[],
   schedule: ScheduleInfo | null,
   dayDate: Date,
   request: DayRequest | null,
+  lateThreshold: number = DEFAULT_LATE_THRESHOLD,
 ): { status: RosterRowStatus; isLate: boolean; lateMinutes: number } {
   const hasSessions = sessions.length > 0;
   const lastSession = sessions[sessions.length - 1];
@@ -229,7 +230,7 @@ function resolveRowStatus(
         new Date(firstIn.created_at).getMinutes();
       const schedMin = timeToMinutes(schedule.start_time);
       const diff = circularForward(schedMin, actualMin);
-      if (diff > LATE_THRESHOLD && diff < 720) {
+      if (diff > lateThreshold && diff < 720) {
         isLate = true;
         lateMinutes = diff;
       }
@@ -274,6 +275,7 @@ export function buildDayRoster(
   requests: DayRequest[],
   dayDate: Date,
   _windowConfig: WindowConfig = DEFAULT_WINDOW,
+  lateThreshold: number = DEFAULT_LATE_THRESHOLD,
 ): RosterRow[] {
   const countOpen = getDayRelation(dayDate) === 'today';
 
@@ -372,7 +374,7 @@ export function buildDayRoster(
             (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
           ),
         );
-        const { status, isLate, lateMinutes } = resolveRowStatus(sessions, sched, dayDate, request);
+        const { status, isLate, lateMinutes } = resolveRowStatus(sessions, sched, dayDate, request, lateThreshold);
 
         const leaveWithoutClock = !!request && sessions.length === 0;
         rows.push({
@@ -410,6 +412,7 @@ export function buildDayRoster(
           sched,
           dayDate,
           request,
+          lateThreshold,
         );
         rows.push({
           rowKey: userId,
@@ -508,6 +511,7 @@ export function buildDayRoster(
           sched,
           dayDate,
           request,
+          lateThreshold,
         );
         const leaveWithoutClock = !!request && shiftSessions.length === 0;
         rows.push({
