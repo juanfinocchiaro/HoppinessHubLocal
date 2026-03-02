@@ -78,7 +78,7 @@ export function scheduledDurationMinutes(schedule: ScheduleInfo | null): number 
 function groupEntriesBySchedule(
   entries: ClockEntry[],
   todaySchedules: ScheduleInfo[],
-  windowConfig: WindowConfig,
+  _windowConfig: WindowConfig,
 ): {
   bySchedule: Map<string, ClockEntry[]>;
   unlinked: ClockEntry[];
@@ -105,30 +105,7 @@ function groupEntriesBySchedule(
       continue;
     }
 
-    if (sched.start_time && sched.end_time) {
-      const entryMin =
-        new Date(e.created_at).getHours() * 60 + new Date(e.created_at).getMinutes();
-      const startMin = timeToMinutes(sched.start_time);
-      const endMin = timeToMinutes(sched.end_time);
-      const winStart = startMin - windowConfig.beforeMin;
-      const winEnd = endMin + windowConfig.afterMin;
-
-      let inWindow = isInWindow(entryMin, winStart, winEnd);
-
-      // Check second segment window for split shifts
-      if (!inWindow && sched.start_time_2 && sched.end_time_2) {
-        const startMin2 = timeToMinutes(sched.start_time_2);
-        const endMin2 = timeToMinutes(sched.end_time_2);
-        const winStart2 = startMin2 - windowConfig.beforeMin;
-        const winEnd2 = endMin2 + windowConfig.afterMin;
-        inWindow = isInWindow(entryMin, winStart2, winEnd2);
-      }
-
-      if (!inWindow) {
-        unlinked.push(e);
-        continue;
-      }
-    }
+    // Trust the schedule_id — it belongs to today's schedules, no window check needed.
 
     const list = bySchedule.get(e.schedule_id) ?? [];
     list.push(e);
