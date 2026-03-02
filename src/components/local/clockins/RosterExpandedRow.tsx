@@ -1,17 +1,26 @@
 import { Fragment, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from 'date-fns';
-import { ChevronDown, Camera, Pencil, Trash2 } from 'lucide-react';
-import { createManualClockEntry, updateClockEntry } from '@/services/hrService';
+import { ChevronDown, Camera, Pencil, Trash2, Plus } from 'lucide-react';
+import { createManualClockEntry } from '@/services/hrService';
 import { useAuth } from '@/hooks/useAuth';
 import { useFichajeDetalle } from '@/hooks/useFichajeDetalle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { buildDayRoster, formatDuration } from './helpers';
 import { STATUS_LABEL, type WindowConfig, DEFAULT_WINDOW } from './constants';
 import type { ClockEntry, RosterRow, ScheduleInfo } from './types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface Props {
   row: RosterRow;
@@ -33,15 +42,12 @@ export function RosterExpandedRow({
   onDeleteEntry,
 }: Props) {
   const [openEventKey, setOpenEventKey] = useState<string | null>(null);
-  const [editingEntry, setEditingEntry] = useState<ClockEntry | null>(null);
-  const [editType, setEditType] = useState<'clock_in' | 'clock_out'>('clock_in');
-  const [editTime, setEditTime] = useState('');
-  const [editReason, setEditReason] = useState('');
   const [photoPreview, setPhotoPreview] = useState<ClockEntry | null>(null);
   const [manualEventKey, setManualEventKey] = useState<string | null>(null);
   const [manualType, setManualType] = useState<'clock_in' | 'clock_out'>('clock_in');
   const [manualTime, setManualTime] = useState('');
   const [manualReason, setManualReason] = useState('');
+  const [manualEarlyLeave, setManualEarlyLeave] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -50,31 +56,6 @@ export function RosterExpandedRow({
     queryClient.invalidateQueries({ queryKey: ['expanded-month-history'] });
     queryClient.invalidateQueries({ queryKey: ['day-requests-for-clock'] });
   };
-
-  const editMutation = useMutation({
-    mutationFn: async () => {
-      if (!editingEntry || !user) throw new Error('No se pudo editar el fichaje');
-      if (!editReason.trim()) throw new Error('Ingresá un motivo');
-      if (!editTime) throw new Error('Seleccioná una hora');
-      const base = new Date(editingEntry.created_at);
-      const [h, m] = editTime.split(':').map(Number);
-      const editedDate = new Date(base);
-      editedDate.setHours(h, m, 0, 0);
-
-      return updateClockEntry(
-        editingEntry.id,
-        { entry_type: editType, created_at: editedDate.toISOString(), reason: editReason.trim() },
-        user.id,
-        editingEntry.original_created_at || editingEntry.created_at,
-      );
-    },
-    onSuccess: () => {
-      invalidateAll();
-      setEditingEntry(null);
-      setEditReason('');
-      setEditTime('');
-    },
-  });
 
   const addManualMutation = useMutation({
     mutationFn: async (params: { dateStr: string }) => {
@@ -93,27 +74,20 @@ export function RosterExpandedRow({
         timestamp,
         reason: manualReason.trim(),
         managerId: user.id,
+        earlyLeaveAuthorized: manualType === 'clock_out' ? manualEarlyLeave : undefined,
       });
     },
     onSuccess: () => {
+      toast.success('Fichaje manual agregado');
       invalidateAll();
       setManualEventKey(null);
       setManualType('clock_in');
       setManualTime('');
       setManualReason('');
+      setManualEarlyLeave(false);
     },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Error al guardar'),
   });
-
-  const startInlineEdit = (e: ClockEntry) => {
-    if (!user && onEditEntry) {
-      onEditEntry(e);
-      return;
-    }
-    setEditingEntry(e);
-    setEditType(e.entry_type);
-    setEditReason(e.manual_reason || '');
-    setEditTime(format(new Date(e.created_at), 'HH:mm'));
-  };
 
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
@@ -258,9 +232,11 @@ export function RosterExpandedRow({
                                         setManualType('clock_in');
                                         setManualTime('');
                                         setManualReason('');
+                                        setManualEarlyLeave(false);
                                       }}
                                     >
-                                      + Fichaje manual
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Fichaje manual
                                     </Button>
                                   ) : (
                                     <Button
@@ -282,18 +258,15 @@ export function RosterExpandedRow({
                                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-muted/40 rounded p-2">
                                   <div>
                                     <Label className="text-[10px]">Tipo</Label>
-                                    <select
-                                      value={manualType}
-                                      onChange={(ev) =>
-                                        setManualType(
-                                          ev.target.value as 'clock_in' | 'clock_out',
-                                        )
-                                      }
-                                      className="h-8 w-full rounded border bg-background px-2 text-xs"
-                                    >
-                                      <option value="clock_in">Entrada</option>
-                                      <option value="clock_out">Salida</option>
-                                    </select>
+                                    <Select value={manualType} onValueChange={(v) => setManualType(v as 'clock_in' | 'clock_out')}>
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="clock_in">Entrada</SelectItem>
+                                        <SelectItem value="clock_out">Salida</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                   <div>
                                     <Label className="text-[10px]">Hora</Label>
@@ -305,7 +278,7 @@ export function RosterExpandedRow({
                                     />
                                   </div>
                                   <div className="sm:col-span-2">
-                                    <Label className="text-[10px]">Motivo</Label>
+                                    <Label className="text-[10px]">Motivo *</Label>
                                     <Input
                                       value={manualReason}
                                       onChange={(ev) => setManualReason(ev.target.value)}
@@ -313,6 +286,18 @@ export function RosterExpandedRow({
                                       className="h-8 text-xs"
                                     />
                                   </div>
+                                  {manualType === 'clock_out' && (
+                                    <div className="sm:col-span-4 flex items-center gap-2">
+                                      <Checkbox
+                                        id={`manual-early-${eventKey}`}
+                                        checked={manualEarlyLeave}
+                                        onCheckedChange={(c) => setManualEarlyLeave(!!c)}
+                                      />
+                                      <Label htmlFor={`manual-early-${eventKey}`} className="text-[10px] cursor-pointer">
+                                        Retiro anticipado autorizado (no afecta presentismo)
+                                      </Label>
+                                    </div>
+                                  )}
                                   <div className="sm:col-span-4 flex justify-end gap-2">
                                     <Button
                                       variant="outline"
@@ -328,11 +313,11 @@ export function RosterExpandedRow({
                                       onClick={() =>
                                         addManualMutation.mutate({ dateStr: r.dateStr })
                                       }
-                                      disabled={addManualMutation.isPending}
+                                      disabled={addManualMutation.isPending || !manualReason.trim() || !manualTime}
                                     >
                                       {addManualMutation.isPending
                                         ? 'Guardando...'
-                                        : 'Guardar manual'}
+                                        : 'Guardar'}
                                     </Button>
                                   </div>
                                 </div>
@@ -387,16 +372,18 @@ export function RosterExpandedRow({
                                         </div>
                                         {canEdit && (
                                           <div className="inline-flex gap-1">
-                                            <button
-                                              onClick={(ev) => {
-                                                ev.stopPropagation();
-                                                startInlineEdit(e);
-                                              }}
-                                              className="p-1 rounded hover:bg-muted"
-                                              title="Editar"
-                                            >
-                                              <Pencil className="w-3 h-3" />
-                                            </button>
+                                            {onEditEntry && (
+                                              <button
+                                                onClick={(ev) => {
+                                                  ev.stopPropagation();
+                                                  onEditEntry(e);
+                                                }}
+                                                className="p-1 rounded hover:bg-muted"
+                                                title="Editar"
+                                              >
+                                                <Pencil className="w-3 h-3" />
+                                              </button>
+                                            )}
                                             {onDeleteEntry && (
                                               <button
                                                 onClick={(ev) => {
@@ -412,64 +399,6 @@ export function RosterExpandedRow({
                                           </div>
                                         )}
                                       </div>
-
-                                      {canEdit && editingEntry?.id === e.id && (
-                                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-muted/40 rounded p-2">
-                                          <div>
-                                            <Label className="text-[10px]">Tipo</Label>
-                                            <select
-                                              value={editType}
-                                              onChange={(ev) =>
-                                                setEditType(
-                                                  ev.target.value as 'clock_in' | 'clock_out',
-                                                )
-                                              }
-                                              className="h-8 w-full rounded border bg-background px-2 text-xs"
-                                            >
-                                              <option value="clock_in">Entrada</option>
-                                              <option value="clock_out">Salida</option>
-                                            </select>
-                                          </div>
-                                          <div>
-                                            <Label className="text-[10px]">Hora</Label>
-                                            <Input
-                                              type="time"
-                                              value={editTime}
-                                              onChange={(ev) => setEditTime(ev.target.value)}
-                                              className="h-8 text-xs"
-                                            />
-                                          </div>
-                                          <div className="sm:col-span-2">
-                                            <Label className="text-[10px]">Motivo</Label>
-                                            <Input
-                                              value={editReason}
-                                              onChange={(ev) => setEditReason(ev.target.value)}
-                                              placeholder="Motivo de la corrección"
-                                              className="h-8 text-xs"
-                                            />
-                                          </div>
-                                          <div className="sm:col-span-4 flex justify-end gap-2">
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              className="h-7 text-xs"
-                                              onClick={() => setEditingEntry(null)}
-                                            >
-                                              Cancelar
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              className="h-7 text-xs"
-                                              onClick={() => editMutation.mutate()}
-                                              disabled={editMutation.isPending}
-                                            >
-                                              {editMutation.isPending
-                                                ? 'Guardando...'
-                                                : 'Guardar'}
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      )}
                                     </div>
                                   ))}
                                 </div>

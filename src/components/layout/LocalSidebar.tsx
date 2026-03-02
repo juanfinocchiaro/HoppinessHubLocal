@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Users,
   Clock,
+  CalendarClock,
   DollarSign,
   FileText,
   MessageSquare,
@@ -256,7 +257,7 @@ export function LocalSidebar({ branchId, posEnabled = false, permissions }: Loca
             <NavItemButton to={`${basePath}/equipo/fichajes`} icon={Clock} label="Fichajes" />
           )}
           {canEditSchedules && (
-            <NavItemButton to={`${basePath}/equipo/horarios`} icon={Clock} label="Horarios" />
+            <NavItemButton to={`${basePath}/equipo/horarios`} icon={CalendarClock} label="Horarios" />
           )}
           {canEditSchedules && (
             <NavItemButton
@@ -293,7 +294,7 @@ export function LocalSidebar({ branchId, posEnabled = false, permissions }: Loca
             <NavItemButton
               to={`${basePath}/equipo/apercibimientos`}
               icon={AlertTriangle}
-              label="Advertencias"
+              label="Apercibimientos"
             />
           )}
           {canEditSchedules && (

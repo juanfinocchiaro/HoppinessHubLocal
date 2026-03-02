@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchProfileClockPin,
   updateEmployeeNotes,
@@ -27,7 +28,6 @@ import {
   Calendar,
   AlertTriangle,
   ClipboardList,
-  Clock,
   DollarSign,
   Plus,
   Pencil,
@@ -39,8 +39,6 @@ import { toast } from 'sonner';
 import { useEmployeeDetails } from './useTeamData';
 import { WarningModal } from './WarningModal';
 import { EmployeeDataModal } from './EmployeeDataModal';
-import { EmployeeClockInsModal } from './EmployeeClockInsModal';
-import { EmployeeScheduleModal } from './EmployeeScheduleModal';
 import type { TeamMember, NoteEntry } from './types';
 import { WARNING_TYPE_LABELS, calculateAge } from './types';
 import { format, parseISO } from 'date-fns';
@@ -60,14 +58,13 @@ export function EmployeeExpandedRow({
   onMemberUpdated,
 }: EmployeeExpandedRowProps) {
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { employeeData, warnings } = useEmployeeDetails(member.user_id, branchId);
 
   const [newNote, setNewNote] = useState('');
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showClockInsModal, setShowClockInsModal] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const { data: profileData } = useQuery({
     queryKey: ['profile-clock-pin', member.user_id],
@@ -281,7 +278,7 @@ export function EmployeeExpandedRow({
                 variant="outline"
                 size="sm"
                 className="w-full justify-start"
-                onClick={() => setShowClockInsModal(true)}
+                onClick={() => navigate(`/milocal/${branchId}/equipo/fichajes`)}
               >
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Ver fichajes
@@ -290,16 +287,16 @@ export function EmployeeExpandedRow({
                 variant="outline"
                 size="sm"
                 className="w-full justify-start"
-                onClick={() => setShowScheduleModal(true)}
+                onClick={() => navigate(`/milocal/${branchId}/equipo/horarios`)}
               >
-                <Clock className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Ver horarios
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full justify-start"
-                onClick={() => toast.info('Funcionalidad de liquidación próximamente')}
+                onClick={() => navigate(`/milocal/${branchId}/tiempo/liquidacion`)}
               >
                 <DollarSign className="h-4 w-4 mr-2" />
                 Ver liquidación
@@ -382,26 +379,6 @@ export function EmployeeExpandedRow({
             });
             onMemberUpdated();
           }}
-        />
-      )}
-
-      {showClockInsModal && (
-        <EmployeeClockInsModal
-          userId={member.user_id}
-          userName={member.full_name}
-          branchId={branchId}
-          open={showClockInsModal}
-          onOpenChange={setShowClockInsModal}
-        />
-      )}
-
-      {showScheduleModal && (
-        <EmployeeScheduleModal
-          userId={member.user_id}
-          userName={member.full_name}
-          branchId={branchId}
-          open={showScheduleModal}
-          onOpenChange={setShowScheduleModal}
         />
       )}
     </div>

@@ -752,6 +752,7 @@ export async function createManualClockEntry(params: {
   timestamp: string;
   reason: string;
   managerId: string;
+  earlyLeaveAuthorized?: boolean;
 }) {
   const ts = new Date(params.timestamp);
   const dateStr = ts.toISOString().slice(0, 10);
@@ -837,6 +838,7 @@ export async function createManualClockEntry(params: {
       schedule_id: scheduleId,
       resolved_type: resolvedType,
       work_date: workDate,
+      early_leave_authorized: params.entryType === 'clock_out' && params.earlyLeaveAuthorized ? true : false,
     })
     .select()
     .single();

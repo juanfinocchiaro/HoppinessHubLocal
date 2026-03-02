@@ -15,6 +15,7 @@ import {
   CalendarDays,
   Settings2,
   AlertTriangle,
+  Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -56,10 +57,14 @@ import { RosterTable } from '@/components/local/clockins/RosterTable';
 import { RosterMobileList } from '@/components/local/clockins/RosterMobileList';
 import { EditEntryDialog } from '@/components/local/clockins/EditEntryDialog';
 import { DeleteEntryDialog } from '@/components/local/clockins/DeleteEntryDialog';
+import { AddManualEntryForm } from '@/components/local/clockins/AddManualEntryForm';
 import type { ClockEntry } from '@/components/local/clockins/types';
+import { createManualClockEntry } from '@/services/hrService';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ClockInsPage() {
   const { branchId } = useParams<{ branchId: string }>();
+  const { user } = useAuth();
   const { isSuperadmin, local } = useDynamicPermissions(branchId);
   const canEdit = isSuperadmin || local.canViewTeam;
   const [date, setDate] = useState(() => new Date());
@@ -70,6 +75,7 @@ export default function ClockInsPage() {
   const [qr, setQr] = useState(false);
   const [editEntry, setEditEntry] = useState<ClockEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<ClockEntry | null>(null);
+  const [showManualAdd, setShowManualAdd] = useState(false);
   const [leave, setLeave] = useState<{ userId: string; userName: string } | null>(null);
   const [leaveType, setLeaveType] = useState<'sick_leave' | 'vacation' | 'day_off'>('sick_leave');
   const [leaveReason, setLeaveReason] = useState('');
@@ -154,6 +160,29 @@ export default function ClockInsPage() {
     onSuccess: close,
   });
 
+  const manualAddMutation = useMutation({
+    mutationFn: (params: {
+      userId: string;
+      entryType: 'clock_in' | 'clock_out';
+      timestamp: string;
+      reason: string;
+      earlyLeaveAuthorized?: boolean;
+    }) => createManualClockEntry({
+      branchId: branchId!,
+      userId: params.userId,
+      entryType: params.entryType,
+      timestamp: params.timestamp,
+      reason: params.reason,
+      managerId: user!.id,
+      earlyLeaveAuthorized: params.earlyLeaveAuthorized,
+    }),
+    onSuccess: () => {
+      toast.success('Fichaje manual agregado');
+      setShowManualAdd(false);
+      queryClient.invalidateQueries({ queryKey: ['clock-entries-grouped'] });
+    },
+    onError: () => toast.error('Error al guardar fichaje manual'),
+  });
   if (!branchId) return null;
   const clockUrl = branch?.clock_code ? getClockInUrl(branch.clock_code) : '';
 
@@ -227,7 +256,15 @@ export default function ClockInsPage() {
             {saveWindowMutation.isPending ? 'Guardando...' : 'Guardar'}
           </Button>
         </PopoverContent>
-      </Popover>
+        </Popover>
+      <Button
+        size="sm"
+        className="gap-1.5"
+        onClick={() => setShowManualAdd(true)}
+      >
+        <Plus className="w-4 h-4" />
+        <span className="hidden sm:inline">Fichaje manual</span>
+      </Button>
     </>
   ) : null;
 
@@ -345,6 +382,21 @@ export default function ClockInsPage() {
         onConfirm={(id) => deleteMutation.mutate(id)}
         onClose={() => setDeleteEntry(null)}
       />
+
+      {/* Global manual entry dialog */}
+      <Dialog open={showManualAdd} onOpenChange={setShowManualAdd}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuevo fichaje manual</DialogTitle>
+          </DialogHeader>
+          <AddManualEntryForm
+            staff={staff}
+            isPending={manualAddMutation.isPending}
+            onSubmit={(params) => manualAddMutation.mutate(params)}
+            onCancel={() => setShowManualAdd(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* QR dialog */}
       <Dialog open={qr} onOpenChange={setQr}>

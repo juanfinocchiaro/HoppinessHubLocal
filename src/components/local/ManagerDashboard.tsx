@@ -357,7 +357,7 @@ export function ManagerDashboard({ branch, posEnabled = false }: ManagerDashboar
               </div>
             ) : (
               <div className="space-y-3">
-                <Link to={`/milocal/${branch.id}/equipo/horarios`}>
+                <Link to={`/milocal/${branch.id}/tiempo/solicitudes`}>
                   <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <CalendarX className="w-4 h-4 text-muted-foreground" />
