@@ -57,7 +57,7 @@ export function DaySummaryStats({ rows }: DaySummaryStatsProps) {
 
   if (stats.overtimeMinutes > 0) {
     chips.push({
-      label: 'Extras',
+      label: 'No programadas',
       value: formatMinutes(stats.overtimeMinutes),
       icon: <TrendingUp className="w-3.5 h-3.5" />,
     });
