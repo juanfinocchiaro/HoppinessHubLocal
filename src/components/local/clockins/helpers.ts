@@ -64,8 +64,13 @@ export function scheduledDurationMinutes(schedule: ScheduleInfo | null): number 
   if (!schedule?.start_time || !schedule?.end_time) return 0;
   const start = timeToMinutes(schedule.start_time);
   const end = timeToMinutes(schedule.end_time);
-  if (end >= start) return end - start;
-  return 1440 - start + end;
+  let total = end >= start ? end - start : 1440 - start + end;
+  if (schedule.start_time_2 && schedule.end_time_2) {
+    const start2 = timeToMinutes(schedule.start_time_2);
+    const end2 = timeToMinutes(schedule.end_time_2);
+    total += end2 >= start2 ? end2 - start2 : 1440 - start2 + end2;
+  }
+  return total;
 }
 
 // ── Session grouping by schedule_id ─────────────────────────────────
@@ -108,7 +113,18 @@ function groupEntriesBySchedule(
       const winStart = startMin - windowConfig.beforeMin;
       const winEnd = endMin + windowConfig.afterMin;
 
-      if (!isInWindow(entryMin, winStart, winEnd)) {
+      let inWindow = isInWindow(entryMin, winStart, winEnd);
+
+      // Check second segment window for split shifts
+      if (!inWindow && sched.start_time_2 && sched.end_time_2) {
+        const startMin2 = timeToMinutes(sched.start_time_2);
+        const endMin2 = timeToMinutes(sched.end_time_2);
+        const winStart2 = startMin2 - windowConfig.beforeMin;
+        const winEnd2 = endMin2 + windowConfig.afterMin;
+        inWindow = isInWindow(entryMin, winStart2, winEnd2);
+      }
+
+      if (!inWindow) {
         unlinked.push(e);
         continue;
       }
@@ -288,7 +304,11 @@ function shiftLabel(schedule: ScheduleInfo | null, request: DayRequest | null): 
   if (!schedule) return '—';
   if (schedule.is_day_off) return 'Franco';
   if (schedule.start_time && schedule.end_time) {
-    return `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`;
+    const t1 = `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`;
+    if (schedule.start_time_2 && schedule.end_time_2) {
+      return `${t1} / ${schedule.start_time_2.slice(0, 5)} - ${schedule.end_time_2.slice(0, 5)}`;
+    }
+    return t1;
   }
   return '—';
 }
@@ -639,7 +659,13 @@ function legacyAssignSessions(
       const windowStart = startMin - config.beforeMin;
       const windowEnd = endMin + config.afterMin;
 
-      if (!isInWindow(refMin, windowStart, windowEnd)) continue;
+      let inWin = isInWindow(refMin, windowStart, windowEnd);
+      if (!inWin && sched.start_time_2 && sched.end_time_2) {
+        const s2 = timeToMinutes(sched.start_time_2);
+        const e2 = timeToMinutes(sched.end_time_2);
+        inWin = isInWindow(refMin, s2 - config.beforeMin, e2 + config.afterMin);
+      }
+      if (!inWin) continue;
       const dist = Math.min(
         circularForward(startMin, refMin),
         circularForward(refMin, startMin),

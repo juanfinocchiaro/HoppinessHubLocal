@@ -57,6 +57,8 @@ export function useDaySchedules(branchId: string | undefined, date: Date) {
           id: row.id,
           start_time: row.start_time,
           end_time: row.end_time,
+          start_time_2: (row as any).start_time_2 ?? null,
+          end_time_2: (row as any).end_time_2 ?? null,
           is_day_off: row.is_day_off ?? false,
         });
         map.set(row.user_id, list);

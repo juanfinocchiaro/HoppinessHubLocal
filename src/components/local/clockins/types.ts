@@ -26,6 +26,8 @@ export interface ScheduleInfo {
   id?: string;
   start_time: string | null;
   end_time: string | null;
+  start_time_2?: string | null;
+  end_time_2?: string | null;
   is_day_off: boolean;
 }
 
