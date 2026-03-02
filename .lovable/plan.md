@@ -1,34 +1,26 @@
 
 
-# Fix: Turnos cortados no se muestran en el calendario del empleado
+# Fix: Turnos cortados aparecen como "No programado" en Fichajes
 
-## Diagnóstico
+## Problema
 
-La DB ya tiene columnas `start_time_2` y `end_time_2` para turnos cortados, y el editor del encargado las guarda correctamente. Pero las vistas del empleado no las leen ni muestran:
+`fetchDaySchedulesForClock` solo selecciona `start_time, end_time` — no trae `start_time_2, end_time_2`. Como consecuencia, cuando un empleado tiene turno cortado (ej: 12:00-17:00 / 20:00-02:00), el sistema solo conoce el primer tramo. Si el fichaje cae en el segundo tramo, no matchea con ningún turno y lo marca como **"No programado"**.
 
-1. **`fetchMySchedules`** solo selecciona `start_time, end_time` — no incluye `start_time_2, end_time_2, break_start, break_end`
-2. **`MyScheduleCard.tsx`** y **`MiHorarioPage.tsx`** usan un tipo `ScheduleEntry` sin esos campos y renderizan solo un rango horario
+## Cambios necesarios
 
-## Cambios
+### 1. `src/services/hrService.ts` L685
+Agregar `start_time_2, end_time_2` al select de `fetchDaySchedulesForClock`.
 
-| Archivo | Cambio |
-|---|---|
-| `src/services/schedulesService.ts` L464 | Agregar `start_time_2, end_time_2` al select de `fetchMySchedules` |
-| `src/components/cuenta/MyScheduleCard.tsx` L48-55 | Agregar `start_time_2` y `end_time_2` al tipo `ScheduleEntry`. En todos los renders de horario, si hay `start_time_2`, mostrar `"12:00-17:00 / 20:00-02:00"` |
-| `src/pages/cuenta/MiHorarioPage.tsx` L47-54 | Mismo cambio de tipo. Actualizar `calculateDuration` para sumar ambos tramos. Actualizar renders en "Hoy", "Esta semana" y calendario mensual |
-| `src/pages/cuenta/MiHorarioPage.tsx` L135-154 | `totalHours` debe sumar también el segundo tramo |
+### 2. `src/components/local/clockins/types.ts` L25-30
+Agregar `start_time_2` y `end_time_2` opcionales a `ScheduleInfo`.
 
-## Formato visual
+### 3. `src/hooks/useClockEntries.ts` L56-61
+Propagar `start_time_2` y `end_time_2` al construir el `ScheduleInfo` en `useDaySchedules`.
 
-Donde hoy se muestra:
-```
-12:00 - 17:00
-```
-
-Se mostrará:
-```
-12:00-17:00 / 20:00-02:00
-```
-
-Y la duración sumará ambos tramos (ej: 5h + 6h = 11h).
+### 4. `src/components/local/clockins/helpers.ts`
+- **`shiftLabel`** (~L290): Si hay `start_time_2`, mostrar `"12:00-17:00 / 20:00-02:00"`.
+- **`groupEntriesBySchedule`** (~L103-115): Ampliar la ventana de validación para que entries en el segundo tramo también se vinculen al schedule.
+- **`scheduledDurationMinutes`** (~L63): Sumar ambos tramos.
+- **`resolveRowStatus`** (~L225): Usar `start_time` del primer tramo para tardanza, pero considerar que el turno puede tener dos ventanas válidas.
+- **`isInWindow`**: Verificar contra ambas ventanas (primer y segundo tramo) antes de enviar a `unlinked`.
 
