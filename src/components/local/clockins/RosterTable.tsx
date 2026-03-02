@@ -193,8 +193,15 @@ export function RosterTable({
                   className={`group cursor-pointer hover:bg-muted/40 transition-colors ${groupBg} ${gIdx > 0 ? 'border-t' : ''}`}
                   onClick={() => setExpandedUserId(isExpanded ? null : group.userId)}
                 >
-                  <td className={`py-2.5 pl-4 pr-2 ${hasMultiple ? 'pb-0' : ''}`}>
-                    <span className="font-medium">{mainRow.userName}</span>
+                  <td className={`py-2.5 pl-4 pr-2 ${hasMultiple ? 'border-l-2 border-primary/40' : ''}`}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-medium">{mainRow.userName}</span>
+                      {hasMultiple && (
+                        <span className="text-[10px] font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full">
+                          {group.rows.length} turnos
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className="py-2.5 px-2 text-muted-foreground font-mono text-xs">
                     {mainRow.shiftLabel}
@@ -240,8 +247,8 @@ export function RosterTable({
                     className={`group cursor-pointer hover:bg-muted/40 transition-colors ${groupBg}`}
                     onClick={() => setExpandedUserId(isExpanded ? null : group.userId)}
                   >
-                    <td className="py-1.5 pl-4 pr-2">
-                      <span className="text-xs text-muted-foreground pl-4">↳</span>
+                    <td className="py-1.5 pl-4 pr-2 border-l-2 border-primary/40">
+                      <span className="text-sm text-muted-foreground">{subRow.userName}</span>
                     </td>
                     <td className="py-1.5 px-2 text-muted-foreground font-mono text-xs">{subRow.shiftLabel}</td>
                     <td className={`py-1.5 px-2 font-mono ${subRow.isLate ? 'text-amber-600 font-semibold' : ''}`}>

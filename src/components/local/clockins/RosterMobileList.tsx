@@ -85,7 +85,14 @@ export function RosterMobileList({
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{mainRow.userName}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium text-sm truncate">{mainRow.userName}</span>
+                      {group.rows.length > 1 && (
+                        <span className="text-[10px] font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full">
+                          {group.rows.length} turnos
+                        </span>
+                      )}
+                    </span>
                     <span className={`text-xs font-medium ${STATUS_COLOR[mainRow.status]}`}>
                       {STATUS_LABEL[mainRow.status]}
                     </span>
@@ -188,18 +195,11 @@ export function RosterMobileList({
               </div>
 
               {group.rows.slice(1).map((subRow) => (
-                <div key={subRow.rowKey} className="flex items-center gap-3 px-4 pb-2 pl-8">
+                <div key={subRow.rowKey} className="flex items-center gap-3 px-4 pb-2 border-l-2 border-primary/40 ml-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>↳</span>
-                      <span className="font-mono">{subRow.shiftLabel}</span>
-                      {subRow.entryTime && (
-                        <span className={`font-mono ${subRow.isLate ? 'text-amber-600' : ''}`}>
-                          {subRow.entryTime}
-                          {subRow.exitTime ? ` → ${subRow.exitTime}` : ''}
-                        </span>
-                      )}
-                      <span className={`font-medium ${STATUS_COLOR[subRow.status]}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{subRow.userName}</span>
+                      <span className={`text-xs font-medium ${STATUS_COLOR[subRow.status]}`}>
                         {STATUS_LABEL[subRow.status]}
                       </span>
                       {subRow.anomalyDetail && (
@@ -207,6 +207,15 @@ export function RosterMobileList({
                       )}
                       {subRow.hasManualEntry && (
                         <Hand className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                      <span className="font-mono">{subRow.shiftLabel}</span>
+                      {subRow.entryTime && (
+                        <span className={`font-mono ${subRow.isLate ? 'text-amber-600' : ''}`}>
+                          {subRow.entryTime}
+                          {subRow.exitTime ? ` → ${subRow.exitTime}` : ''}
+                        </span>
                       )}
                     </div>
                   </div>
