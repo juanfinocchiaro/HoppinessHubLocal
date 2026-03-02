@@ -1,45 +1,67 @@
 
 
-# Analisis: "Historial del mes" en RosterExpandedRow
+# Bug: EditEntryDialog — Overnight timestamp miscalculation
 
-## Problema actual
+## Root Cause
 
-El panel expandido muestra **todos los dias del mes** (con horario programado) en una tabla plana. En la imagen se ven ~30 filas, de las cuales **29 dicen "Pendiente"** con guiones en Entrada/Salida/Horas, y **solo 1 tiene datos reales** (01/03). Es ruido visual masivo.
+In `EditEntryDialog.tsx` line 65:
+```js
+const newTimestamp = new Date(`${date}T${time}:00`).toISOString();
+```
 
-### Por que pasa esto
+The `date` field uses `work_date` (e.g. `2026-03-01`). When the user sets time to `00:58` (an exit after midnight for an 18:00-02:00 shift), the timestamp is built as:
 
-Linea 132 del componente: solo omite dias sin schedule, sin entries Y sin requests. Pero como los horarios ya estan cargados para todo el mes, **cada dia futuro con turno programado genera una fila "Pendiente"** que no aporta nada.
+```
+new Date("2026-03-01T00:58:00") → 2026-03-01 03:58:00 UTC
+```
 
-### Funciones que SI cumple (cuando hay datos)
-- Ver fichajes reales de dias pasados, expandir para ver foto/detalle
-- Agregar fichaje manual en un dia especifico
-- Editar/eliminar entries (delegando a EditEntryDialog)
-- Ver total de horas del mes
+But the correct timestamp should be **March 2nd** at 00:58 AR = `2026-03-02T03:58:00Z`, because the exit happened after midnight of the **next calendar day**. The `work_date` is the operational date (March 1st), not the calendar date.
 
-### Funciones que NO cumple bien
-- No distingue pasado de futuro visualmente
-- Ocupa demasiado espacio con informacion vacia
-- El total "Horas del mes" (linea 158) usa su propio calculo, no el de `useLaborHours` (misma redundancia que ya auditamos)
+## Evidence in DB
 
-## Propuesta de mejora
+Guadalupe Malizia, work_date `2026-03-01`, schedule 18:00-02:00:
+- `clock_in` at `2026-03-01 20:44:19 UTC` (17:44 AR) — correct
+- `clock_out` at `2026-03-01 03:58:00 UTC` (00:58 AR **March 1st**) — wrong, should be `2026-03-02 03:58:00 UTC` (00:58 AR **March 2nd**)
 
-**Filtrar dias futuros sin fichajes.** Solo mostrar:
-1. Dias pasados con schedule o entries (historial real)
-2. Dia de HOY (siempre, como referencia)
-3. Dias futuros SOLO si tienen fichajes (caso raro pero posible)
+Since the clock_out timestamp is chronologically **before** the clock_in, `buildSessionsFromEntries` creates two orphaned sessions → "Turno no cerrado".
 
-Esto reduce la tabla de ~30 filas a solo las que importan (tipicamente 1-5 al inicio del mes).
+## Fix
 
-Ademas:
-- Marcar dias futuros restantes con un texto tipo "X dias programados restantes" colapsado, sin listarlos
-- Mantener el total de horas solo de dias pasados con datos reales
+In `EditEntryDialog.tsx` line 65, apply the **inverse** of the operational date rule: if the entered time is between 00:00 and 04:59 (early morning / overnight), the calendar date is `work_date + 1 day`.
 
-### Cambios concretos
+```typescript
+// Before:
+const newTimestamp = new Date(`${date}T${time}:00`).toISOString();
 
-| Archivo | Cambio |
+// After:
+const [hh] = time.split(':').map(Number);
+let calendarDate = date;
+if (hh < 5) {
+  // Overnight: time 00:00-04:59 belongs to work_date operationally,
+  // but calendar-wise it's the next day
+  const next = new Date(`${date}T12:00:00`);
+  next.setDate(next.getDate() + 1);
+  calendarDate = next.toISOString().slice(0, 10);
+}
+const newTimestamp = new Date(`${calendarDate}T${time}:00`).toISOString();
+```
+
+Same fix needed in `RosterExpandedRow.tsx` inline manual entry (lines ~73-76) which also builds timestamps from `dateStr + time`.
+
+## Data fix
+
+Update Guadalupe's corrupted clock_out to the correct timestamp:
+```sql
+UPDATE clock_entries
+SET created_at = '2026-03-02T03:58:00+00'
+WHERE id = 'bf36533d-3741-4f95-985f-cbf173e3f3ab';
+```
+
+## Files to change
+
+| File | Change |
 |---|---|
-| `RosterExpandedRow.tsx` L96-149 | Filtrar `monthRows`: excluir dias futuros sin entries. Agregar linea resumen "X turnos programados pendientes" |
-| `RosterExpandedRow.tsx` L151-158 | Sin cambio (el calculo ya solo suma lo que tiene sessions) |
-
-Es un cambio pequeno (5-10 lineas de filtro) con alto impacto visual.
+| `EditEntryDialog.tsx` L62-65 | Add overnight detection: if time < 05:00, use `work_date + 1 day` for calendar date |
+| `RosterExpandedRow.tsx` ~L73 | Same overnight detection in inline manual add mutation |
+| DB data fix | Correct Guadalupe's clock_out timestamp |
 
