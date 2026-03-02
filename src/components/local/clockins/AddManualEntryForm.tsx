@@ -50,7 +50,15 @@ export function AddManualEntryForm({
   const handleSubmit = () => {
     if (!userId) return;
     if (!reason.trim()) return;
-    const timestamp = new Date(`${date}T${time}:00`).toISOString();
+    // Overnight: if time 00:00-04:59, calendar date = date + 1
+    const [hh] = time.split(':').map(Number);
+    let calendarDate = date;
+    if (hh < 5) {
+      const next = new Date(`${date}T12:00:00`);
+      next.setDate(next.getDate() + 1);
+      calendarDate = next.toISOString().slice(0, 10);
+    }
+    const timestamp = new Date(`${calendarDate}T${time}:00`).toISOString();
     onSubmit({
       userId,
       entryType,

@@ -61,8 +61,15 @@ export function EditEntryDialog({ entry, isPending, onSave, onClose }: EditEntry
 
   const handleSave = () => {
     if (!entry || !reason.trim()) return;
-    // Build timestamp using the selected date + time, interpreted as local
-    const newTimestamp = new Date(`${date}T${time}:00`).toISOString();
+    // Build timestamp: if time is 00:00-04:59 (overnight), calendar date = work_date + 1
+    const [hh] = time.split(':').map(Number);
+    let calendarDate = date;
+    if (hh < 5) {
+      const next = new Date(`${date}T12:00:00`);
+      next.setDate(next.getDate() + 1);
+      calendarDate = next.toISOString().slice(0, 10);
+    }
+    const newTimestamp = new Date(`${calendarDate}T${time}:00`).toISOString();
     onSave({
       entryId: entry.id,
       patch: {

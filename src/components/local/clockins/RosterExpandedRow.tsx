@@ -63,8 +63,15 @@ export function RosterExpandedRow({
       if (!manualTime) throw new Error('Seleccioná una hora');
       if (!manualReason.trim()) throw new Error('Ingresá un motivo');
 
-      const [y, mo, d] = params.dateStr.split('-').map(Number);
       const [hh, mm] = manualTime.split(':').map(Number);
+      // Overnight: if time 00:00-04:59, calendar date = work_date + 1
+      let calendarDate = params.dateStr;
+      if (hh < 5) {
+        const next = new Date(`${params.dateStr}T12:00:00`);
+        next.setDate(next.getDate() + 1);
+        calendarDate = next.toISOString().slice(0, 10);
+      }
+      const [y, mo, d] = calendarDate.split('-').map(Number);
       const timestamp = new Date(y, mo - 1, d, hh, mm, 0, 0).toISOString();
 
       return createManualClockEntry({
