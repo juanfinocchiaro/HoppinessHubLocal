@@ -93,10 +93,13 @@ export function RosterExpandedRow({
   const monthEnd = endOfMonth(selectedDate);
   const { data: monthData } = useFichajeDetalle(branchId, row.userId, selectedDate);
 
-  const monthRows = useMemo(() => {
-    if (!monthData) return [];
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+  const { monthRows, futureScheduledCount } = useMemo(() => {
+    if (!monthData) return { monthRows: [], futureScheduledCount: 0 };
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     const result: Array<RosterRow & { dateStr: string; rawEntries: ClockEntry[] }> = [];
+    let futureCount = 0;
 
     for (const day of days) {
       const dateStr = format(day, 'yyyy-MM-dd');
@@ -126,10 +129,18 @@ export function RosterExpandedRow({
       const reqArr = req
         ? [{ userId: row.userId, requestType: req.request_type, status: req.status }]
         : [];
-      const scheduleMap = new Map<string, ScheduleInfo[]>();
-      if (schedules.length > 0) scheduleMap.set(row.userId, schedules);
 
       if (entries.length === 0 && schedules.length === 0 && reqArr.length === 0) continue;
+
+      // Filter: future days without entries → count but don't list
+      const isFuture = dateStr > todayStr;
+      if (isFuture && entries.length === 0) {
+        if (schedules.length > 0) futureCount++;
+        continue;
+      }
+
+      const scheduleMap = new Map<string, ScheduleInfo[]>();
+      if (schedules.length > 0) scheduleMap.set(row.userId, schedules);
 
       const rows = buildDayRoster(
         entries,
@@ -145,8 +156,11 @@ export function RosterExpandedRow({
       }
     }
 
-    return result.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
-  }, [monthData, monthStart, monthEnd, row.userId, row.userName, windowConfig]);
+    return {
+      monthRows: result.sort((a, b) => b.dateStr.localeCompare(a.dateStr)),
+      futureScheduledCount: futureCount,
+    };
+  }, [monthData, monthStart, monthEnd, row.userId, row.userName, windowConfig, todayStr]);
 
   const monthMinutes = useMemo(
     () =>
@@ -162,6 +176,11 @@ export function RosterExpandedRow({
     <div className="px-4 pb-4 pt-1 space-y-3 bg-muted/20 border-t">
       <div className="space-y-2">
         <p className="text-xs font-medium text-muted-foreground">Historial del mes</p>
+        {futureScheduledCount > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {futureScheduledCount} turno{futureScheduledCount !== 1 ? 's' : ''} programado{futureScheduledCount !== 1 ? 's' : ''} pendiente{futureScheduledCount !== 1 ? 's' : ''}
+          </p>
+        )}
         {monthRows.length === 0 ? (
           <p className="text-xs text-muted-foreground">Sin registros del mes</p>
         ) : (
