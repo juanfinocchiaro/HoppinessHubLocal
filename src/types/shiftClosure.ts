@@ -137,7 +137,7 @@ export interface ClosureConfigItem {
   etiqueta: string;
   categoria_padre: string | null;
   orden: number;
-  activo: boolean;
+  is_active: boolean;
 }
 
 export interface BranchClosureConfig {

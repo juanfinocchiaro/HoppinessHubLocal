@@ -70,7 +70,7 @@ export default function CodigosDescuentoPage() {
       monto_minimo_pedido: code.monto_minimo_pedido,
       fecha_inicio: code.fecha_inicio,
       fecha_fin: code.fecha_fin,
-      activo: code.activo,
+      activo: code.is_active,
       branch_ids: code.branch_ids,
     });
     setFormOpen(true);
@@ -183,8 +183,8 @@ export default function CodigosDescuentoPage() {
                     {code.fecha_inicio} — {code.fecha_fin}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={code.activo ? 'default' : 'outline'}>
-                      {code.activo ? 'Activo' : 'Inactivo'}
+                    <Badge variant={code.is_active ? 'default' : 'outline'}>
+                      {code.is_active ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </TableCell>
                   <TableCell>

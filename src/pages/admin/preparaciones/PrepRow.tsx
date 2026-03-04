@@ -38,7 +38,7 @@ export function PrepRow({
         <Badge variant={prep.tipo === 'elaborado' ? 'default' : 'secondary'} className="shrink-0">
           {prep.tipo === 'elaborado' ? '🍳 Elaborado' : '📦 Componente'}
         </Badge>
-        {prep.es_intercambiable && (
+        {prep.is_interchangeable && (
           <Badge variant="outline" className="text-xs shrink-0">
             <Shuffle className="w-3 h-3 mr-1" /> Intercambiable
           </Badge>

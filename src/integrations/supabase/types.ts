@@ -23,11 +23,11 @@ export type Database = {
           csr_pem: string | null
           cuit: string | null
           direccion_fiscal: string | null
-          es_produccion: boolean
           estado_certificado: string
           estado_conexion: string
           id: string
           inicio_actividades: string | null
+          is_production: boolean
           punto_venta: number | null
           razon_social: string | null
           reglas_facturacion: Json
@@ -46,11 +46,11 @@ export type Database = {
           csr_pem?: string | null
           cuit?: string | null
           direccion_fiscal?: string | null
-          es_produccion?: boolean
           estado_certificado?: string
           estado_conexion?: string
           id?: string
           inicio_actividades?: string | null
+          is_production?: boolean
           punto_venta?: number | null
           razon_social?: string | null
           reglas_facturacion?: Json
@@ -69,11 +69,11 @@ export type Database = {
           csr_pem?: string | null
           cuit?: string | null
           direccion_fiscal?: string | null
-          es_produccion?: boolean
           estado_certificado?: string
           estado_conexion?: string
           id?: string
           inicio_actividades?: string | null
+          is_production?: boolean
           punto_venta?: number | null
           razon_social?: string | null
           reglas_facturacion?: Json
@@ -674,34 +674,34 @@ export type Database = {
       }
       brand_closure_config: {
         Row: {
-          activo: boolean | null
           categoria_padre: string | null
           clave: string
           created_at: string | null
           etiqueta: string
           id: string
+          is_active: boolean | null
           orden: number | null
           tipo: string
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           categoria_padre?: string | null
           clave: string
           created_at?: string | null
           etiqueta: string
           id?: string
+          is_active?: boolean | null
           orden?: number | null
           tipo: string
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           categoria_padre?: string | null
           clave?: string
           created_at?: string | null
           etiqueta?: string
           id?: string
+          is_active?: boolean | null
           orden?: number | null
           tipo?: string
           updated_at?: string | null
@@ -734,33 +734,33 @@ export type Database = {
       }
       cadetes: {
         Row: {
-          activo: boolean | null
           branch_id: string
           created_at: string | null
-          disponible: boolean | null
           id: string
+          is_active: boolean | null
+          is_available: boolean | null
           nombre: string
           pedidos_hoy: number | null
           telefono: string | null
           user_id: string | null
         }
         Insert: {
-          activo?: boolean | null
           branch_id: string
           created_at?: string | null
-          disponible?: boolean | null
           id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
           nombre: string
           pedidos_hoy?: number | null
           telefono?: string | null
           user_id?: string | null
         }
         Update: {
-          activo?: boolean | null
           branch_id?: string
           created_at?: string | null
-          disponible?: boolean | null
           id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
           nombre?: string
           pedidos_hoy?: number | null
           telefono?: string | null
@@ -785,36 +785,36 @@ export type Database = {
       }
       canales_venta: {
         Row: {
-          activo: boolean | null
           ajuste_valor: number | null
           codigo: string
           created_at: string | null
           es_base: boolean | null
           id: string
+          is_active: boolean | null
           nombre: string
           orden: number | null
           tipo_ajuste: string
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           ajuste_valor?: number | null
           codigo: string
           created_at?: string | null
           es_base?: boolean | null
           id?: string
+          is_active?: boolean | null
           nombre: string
           orden?: number | null
           tipo_ajuste?: string
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           ajuste_valor?: number | null
           codigo?: string
           created_at?: string | null
           es_base?: boolean | null
           id?: string
+          is_active?: boolean | null
           nombre?: string
           orden?: number | null
           tipo_ajuste?: string
@@ -1210,33 +1210,33 @@ export type Database = {
       }
       categorias_insumo: {
         Row: {
-          activo: boolean | null
           created_at: string | null
           deleted_at: string | null
           descripcion: string | null
           id: string
+          is_active: boolean | null
           nombre: string
           orden: number | null
           tipo: string
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
           id?: string
+          is_active?: boolean | null
           nombre: string
           orden?: number | null
           tipo: string
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
           id?: string
+          is_active?: boolean | null
           nombre?: string
           orden?: number | null
           tipo?: string
@@ -1246,28 +1246,28 @@ export type Database = {
       }
       categorias_preparacion: {
         Row: {
-          activo: boolean
           created_at: string
           deleted_at: string | null
           id: string
+          is_active: boolean
           nombre: string
           orden: number
           updated_at: string
         }
         Insert: {
-          activo?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_active?: boolean
           nombre: string
           orden?: number
           updated_at?: string
         }
         Update: {
-          activo?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_active?: boolean
           nombre?: string
           orden?: number
           updated_at?: string
@@ -1309,9 +1309,9 @@ export type Database = {
           ciudad: string | null
           created_at: string | null
           direccion: string
-          es_principal: boolean | null
           etiqueta: string
           id: string
+          is_primary: boolean | null
           latitud: number | null
           longitud: number | null
           piso: string | null
@@ -1323,9 +1323,9 @@ export type Database = {
           ciudad?: string | null
           created_at?: string | null
           direccion: string
-          es_principal?: boolean | null
           etiqueta?: string
           id?: string
+          is_primary?: boolean | null
           latitud?: number | null
           longitud?: number | null
           piso?: string | null
@@ -1337,9 +1337,9 @@ export type Database = {
           ciudad?: string | null
           created_at?: string | null
           direccion?: string
-          es_principal?: boolean | null
           etiqueta?: string
           id?: string
+          is_primary?: boolean | null
           latitud?: number | null
           longitud?: number | null
           piso?: string | null
@@ -1609,7 +1609,6 @@ export type Database = {
       }
       codigos_descuento: {
         Row: {
-          activo: boolean
           branch_ids: string[] | null
           brand_id: string | null
           codigo: string
@@ -1619,6 +1618,7 @@ export type Database = {
           fecha_fin: string
           fecha_inicio: string
           id: string
+          is_active: boolean
           monto_minimo_pedido: number | null
           tipo: string
           updated_at: string | null
@@ -1628,7 +1628,6 @@ export type Database = {
           valor: number
         }
         Insert: {
-          activo?: boolean
           branch_ids?: string[] | null
           brand_id?: string | null
           codigo: string
@@ -1638,6 +1637,7 @@ export type Database = {
           fecha_fin?: string
           fecha_inicio?: string
           id?: string
+          is_active?: boolean
           monto_minimo_pedido?: number | null
           tipo: string
           updated_at?: string | null
@@ -1647,7 +1647,6 @@ export type Database = {
           valor?: number
         }
         Update: {
-          activo?: boolean
           branch_ids?: string[] | null
           brand_id?: string | null
           codigo?: string
@@ -1657,6 +1656,7 @@ export type Database = {
           fecha_fin?: string
           fecha_inicio?: string
           id?: string
+          is_active?: boolean
           monto_minimo_pedido?: number | null
           tipo?: string
           updated_at?: string | null
@@ -1811,14 +1811,14 @@ export type Database = {
       }
       conceptos_servicio: {
         Row: {
-          activo: boolean | null
           categoria_gasto: string | null
           created_at: string | null
           deleted_at: string | null
           descripcion: string | null
-          es_calculado: boolean | null
           formula_calculo: Json | null
           id: string
+          is_active: boolean | null
+          is_calculated: boolean | null
           nombre: string
           periodicidad: string | null
           proveedor_id: string | null
@@ -1829,14 +1829,14 @@ export type Database = {
           visible_local: boolean
         }
         Insert: {
-          activo?: boolean | null
           categoria_gasto?: string | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
-          es_calculado?: boolean | null
           formula_calculo?: Json | null
           id?: string
+          is_active?: boolean | null
+          is_calculated?: boolean | null
           nombre: string
           periodicidad?: string | null
           proveedor_id?: string | null
@@ -1847,14 +1847,14 @@ export type Database = {
           visible_local?: boolean
         }
         Update: {
-          activo?: boolean | null
           categoria_gasto?: string | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
-          es_calculado?: boolean | null
           formula_calculo?: Json | null
           id?: string
+          is_active?: boolean | null
+          is_calculated?: boolean | null
           nombre?: string
           periodicidad?: string | null
           proveedor_id?: string | null
@@ -3389,7 +3389,6 @@ export type Database = {
       }
       insumos: {
         Row: {
-          activo: boolean | null
           categoria_id: string | null
           categoria_pl: string | null
           costo_por_unidad_base: number | null
@@ -3401,6 +3400,7 @@ export type Database = {
           especificacion: Json | null
           fc_objetivo_extra: number | null
           id: string
+          is_active: boolean | null
           margen_bruto: number | null
           margen_porcentaje: number | null
           motivo_control: string | null
@@ -3423,7 +3423,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           categoria_id?: string | null
           categoria_pl?: string | null
           costo_por_unidad_base?: number | null
@@ -3435,6 +3434,7 @@ export type Database = {
           especificacion?: Json | null
           fc_objetivo_extra?: number | null
           id?: string
+          is_active?: boolean | null
           margen_bruto?: number | null
           margen_porcentaje?: number | null
           motivo_control?: string | null
@@ -3457,7 +3457,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           categoria_id?: string | null
           categoria_pl?: string | null
           costo_por_unidad_base?: number | null
@@ -3469,6 +3468,7 @@ export type Database = {
           especificacion?: Json | null
           fc_objetivo_extra?: number | null
           id?: string
+          is_active?: boolean | null
           margen_bruto?: number | null
           margen_porcentaje?: number | null
           motivo_control?: string | null
@@ -3680,9 +3680,9 @@ export type Database = {
         Row: {
           cantidad: number
           created_at: string | null
-          es_removible: boolean
           id: string
           insumo_id: string | null
+          is_removable: boolean
           item_carta_id: string
           orden: number | null
           preparacion_id: string | null
@@ -3690,9 +3690,9 @@ export type Database = {
         Insert: {
           cantidad?: number
           created_at?: string | null
-          es_removible?: boolean
           id?: string
           insumo_id?: string | null
+          is_removable?: boolean
           item_carta_id: string
           orden?: number | null
           preparacion_id?: string | null
@@ -3700,9 +3700,9 @@ export type Database = {
         Update: {
           cantidad?: number
           created_at?: string | null
-          es_removible?: boolean
           id?: string
           insumo_id?: string | null
+          is_removable?: boolean
           item_carta_id?: string
           orden?: number | null
           preparacion_id?: string | null
@@ -3798,8 +3798,8 @@ export type Database = {
         Row: {
           costo_promedio: number | null
           created_at: string
-          es_obligatorio: boolean
           id: string
+          is_required: boolean
           item_carta_id: string
           max_selecciones: number | null
           nombre: string
@@ -3809,8 +3809,8 @@ export type Database = {
         Insert: {
           costo_promedio?: number | null
           created_at?: string
-          es_obligatorio?: boolean
           id?: string
+          is_required?: boolean
           item_carta_id: string
           max_selecciones?: number | null
           nombre: string
@@ -3820,8 +3820,8 @@ export type Database = {
         Update: {
           costo_promedio?: number | null
           created_at?: string
-          es_obligatorio?: boolean
           id?: string
+          is_required?: boolean
           item_carta_id?: string
           max_selecciones?: number | null
           nombre?: string
@@ -3994,7 +3994,6 @@ export type Database = {
       }
       item_modificadores: {
         Row: {
-          activo: boolean | null
           cantidad_ahorro: number | null
           cantidad_extra: number | null
           cantidad_nuevo: number | null
@@ -4008,6 +4007,7 @@ export type Database = {
           ingrediente_id: string | null
           ingrediente_nuevo_id: string | null
           ingrediente_original_id: string | null
+          is_active: boolean | null
           item_carta_id: string
           nombre: string
           orden: number | null
@@ -4021,7 +4021,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           cantidad_ahorro?: number | null
           cantidad_extra?: number | null
           cantidad_nuevo?: number | null
@@ -4035,6 +4034,7 @@ export type Database = {
           ingrediente_id?: string | null
           ingrediente_nuevo_id?: string | null
           ingrediente_original_id?: string | null
+          is_active?: boolean | null
           item_carta_id: string
           nombre: string
           orden?: number | null
@@ -4048,7 +4048,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           cantidad_ahorro?: number | null
           cantidad_extra?: number | null
           cantidad_nuevo?: number | null
@@ -4062,6 +4061,7 @@ export type Database = {
           ingrediente_id?: string | null
           ingrediente_nuevo_id?: string | null
           ingrediente_original_id?: string | null
+          is_active?: boolean | null
           item_carta_id?: string
           nombre?: string
           orden?: number | null
@@ -4135,28 +4135,28 @@ export type Database = {
       }
       item_removibles: {
         Row: {
-          activo: boolean | null
           created_at: string | null
           id: string
           insumo_id: string | null
+          is_active: boolean | null
           item_carta_id: string
           nombre_display: string | null
           preparacion_id: string | null
         }
         Insert: {
-          activo?: boolean | null
           created_at?: string | null
           id?: string
           insumo_id?: string | null
+          is_active?: boolean | null
           item_carta_id: string
           nombre_display?: string | null
           preparacion_id?: string | null
         }
         Update: {
-          activo?: boolean | null
           created_at?: string | null
           id?: string
           insumo_id?: string | null
+          is_active?: boolean | null
           item_carta_id?: string
           nombre_display?: string | null
           preparacion_id?: string | null
@@ -4194,7 +4194,6 @@ export type Database = {
       }
       items_carta: {
         Row: {
-          activo: boolean | null
           categoria_carta_id: string | null
           closure_category: string | null
           composicion_ref_insumo_id: string | null
@@ -4209,6 +4208,7 @@ export type Database = {
           fc_objetivo: number | null
           id: string
           imagen_url: string | null
+          is_active: boolean | null
           kitchen_station_id: string | null
           nombre: string
           nombre_corto: string | null
@@ -4222,7 +4222,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           categoria_carta_id?: string | null
           closure_category?: string | null
           composicion_ref_insumo_id?: string | null
@@ -4237,6 +4236,7 @@ export type Database = {
           fc_objetivo?: number | null
           id?: string
           imagen_url?: string | null
+          is_active?: boolean | null
           kitchen_station_id?: string | null
           nombre: string
           nombre_corto?: string | null
@@ -4250,7 +4250,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           categoria_carta_id?: string | null
           closure_category?: string | null
           composicion_ref_insumo_id?: string | null
@@ -4265,6 +4264,7 @@ export type Database = {
           fc_objetivo?: number | null
           id?: string
           imagen_url?: string | null
+          is_active?: boolean | null
           kitchen_station_id?: string | null
           nombre?: string
           nombre_corto?: string | null
@@ -4812,10 +4812,10 @@ export type Database = {
       }
       menu_categorias: {
         Row: {
-          activo: boolean | null
           created_at: string | null
           descripcion: string | null
           id: string
+          is_active: boolean | null
           nombre: string
           orden: number | null
           tipo_impresion: string
@@ -4823,10 +4823,10 @@ export type Database = {
           visible_en_carta: boolean
         }
         Insert: {
-          activo?: boolean | null
           created_at?: string | null
           descripcion?: string | null
           id?: string
+          is_active?: boolean | null
           nombre: string
           orden?: number | null
           tipo_impresion?: string
@@ -4834,10 +4834,10 @@ export type Database = {
           visible_en_carta?: boolean
         }
         Update: {
-          activo?: boolean | null
           created_at?: string | null
           descripcion?: string | null
           id?: string
+          is_active?: boolean | null
           nombre?: string
           orden?: number | null
           tipo_impresion?: string
@@ -5090,11 +5090,11 @@ export type Database = {
           deleted_at: string | null
           fecha_pago: string
           id: string
+          is_verified: boolean
           medio_pago: string
           monto: number
           observaciones: string | null
           referencia: string | null
-          verificado: boolean
           verificado_at: string | null
           verificado_notas: string | null
           verificado_por: string | null
@@ -5108,11 +5108,11 @@ export type Database = {
           deleted_at?: string | null
           fecha_pago: string
           id?: string
+          is_verified?: boolean
           medio_pago: string
           monto: number
           observaciones?: string | null
           referencia?: string | null
-          verificado?: boolean
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -5126,11 +5126,11 @@ export type Database = {
           deleted_at?: string | null
           fecha_pago?: string
           id?: string
+          is_verified?: boolean
           medio_pago?: string
           monto?: number
           observaciones?: string | null
           referencia?: string | null
-          verificado?: boolean
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -5170,12 +5170,12 @@ export type Database = {
           fecha_pago: string
           fecha_vencimiento_pago: string | null
           id: string
+          is_verified: boolean
           medio_pago: string
           monto: number
           observaciones: string | null
           proveedor_id: string
           referencia: string | null
-          verificado: boolean
           verificado_at: string | null
           verificado_notas: string | null
           verificado_por: string | null
@@ -5190,12 +5190,12 @@ export type Database = {
           fecha_pago: string
           fecha_vencimiento_pago?: string | null
           id?: string
+          is_verified?: boolean
           medio_pago: string
           monto: number
           observaciones?: string | null
           proveedor_id: string
           referencia?: string | null
-          verificado?: boolean
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -5210,12 +5210,12 @@ export type Database = {
           fecha_pago?: string
           fecha_vencimiento_pago?: string | null
           id?: string
+          is_verified?: boolean
           medio_pago?: string
           monto?: number
           observaciones?: string | null
           proveedor_id?: string
           referencia?: string | null
-          verificado?: boolean
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -5997,16 +5997,16 @@ export type Database = {
       }
       preparaciones: {
         Row: {
-          activo: boolean | null
           categoria_preparacion_id: string | null
           costo_calculado: number | null
           costo_manual: number | null
           created_at: string | null
           deleted_at: string | null
           descripcion: string | null
-          es_intercambiable: boolean | null
           fc_objetivo_extra: number | null
           id: string
+          is_active: boolean | null
+          is_interchangeable: boolean | null
           metodo_costeo: string | null
           nombre: string
           precio_extra: number | null
@@ -6015,16 +6015,16 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           categoria_preparacion_id?: string | null
           costo_calculado?: number | null
           costo_manual?: number | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
-          es_intercambiable?: boolean | null
           fc_objetivo_extra?: number | null
           id?: string
+          is_active?: boolean | null
+          is_interchangeable?: boolean | null
           metodo_costeo?: string | null
           nombre: string
           precio_extra?: number | null
@@ -6033,16 +6033,16 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           categoria_preparacion_id?: string | null
           costo_calculado?: number | null
           costo_manual?: number | null
           created_at?: string | null
           deleted_at?: string | null
           descripcion?: string | null
-          es_intercambiable?: boolean | null
           fc_objetivo_extra?: number | null
           id?: string
+          is_active?: boolean | null
+          is_interchangeable?: boolean | null
           metodo_costeo?: string | null
           nombre?: string
           precio_extra?: number | null
@@ -6547,7 +6547,6 @@ export type Database = {
       }
       promociones: {
         Row: {
-          activa: boolean
           aplica_a: string
           branch_ids: string[] | null
           brand_id: string | null
@@ -6563,6 +6562,7 @@ export type Database = {
           hora_fin: string | null
           hora_inicio: string | null
           id: string
+          is_active: boolean
           nombre: string
           producto_ids: string[] | null
           restriccion_pago: string
@@ -6572,7 +6572,6 @@ export type Database = {
           valor: number
         }
         Insert: {
-          activa?: boolean
           aplica_a?: string
           branch_ids?: string[] | null
           brand_id?: string | null
@@ -6588,6 +6587,7 @@ export type Database = {
           hora_fin?: string | null
           hora_inicio?: string | null
           id?: string
+          is_active?: boolean
           nombre: string
           producto_ids?: string[] | null
           restriccion_pago?: string
@@ -6597,7 +6597,6 @@ export type Database = {
           valor?: number
         }
         Update: {
-          activa?: boolean
           aplica_a?: string
           branch_ids?: string[] | null
           brand_id?: string | null
@@ -6613,6 +6612,7 @@ export type Database = {
           hora_fin?: string | null
           hora_inicio?: string | null
           id?: string
+          is_active?: boolean
           nombre?: string
           producto_ids?: string[] | null
           restriccion_pago?: string
@@ -6690,7 +6690,6 @@ export type Database = {
       }
       proveedores: {
         Row: {
-          activo: boolean | null
           alias_cbu: string | null
           ambito: string
           banco: string | null
@@ -6707,6 +6706,7 @@ export type Database = {
           direccion: string | null
           email: string | null
           id: string
+          is_active: boolean | null
           medios_pago_aceptados: Json | null
           numero_cuenta: string | null
           observaciones: string | null
@@ -6721,7 +6721,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          activo?: boolean | null
           alias_cbu?: string | null
           ambito?: string
           banco?: string | null
@@ -6738,6 +6737,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
           medios_pago_aceptados?: Json | null
           numero_cuenta?: string | null
           observaciones?: string | null
@@ -6752,7 +6752,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          activo?: boolean | null
           alias_cbu?: string | null
           ambito?: string
           banco?: string | null
@@ -6769,6 +6768,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
           medios_pago_aceptados?: Json | null
           numero_cuenta?: string | null
           observaciones?: string | null
@@ -7303,7 +7303,6 @@ export type Database = {
       }
       socios: {
         Row: {
-          activo: boolean | null
           branch_id: string
           created_at: string | null
           created_by: string | null
@@ -7313,6 +7312,7 @@ export type Database = {
           fecha_ingreso: string
           fecha_salida: string | null
           id: string
+          is_active: boolean | null
           limite_retiro_mensual: number | null
           nombre: string
           porcentaje_participacion: number
@@ -7321,7 +7321,6 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          activo?: boolean | null
           branch_id: string
           created_at?: string | null
           created_by?: string | null
@@ -7331,6 +7330,7 @@ export type Database = {
           fecha_ingreso: string
           fecha_salida?: string | null
           id?: string
+          is_active?: boolean | null
           limite_retiro_mensual?: number | null
           nombre: string
           porcentaje_participacion: number
@@ -7339,7 +7339,6 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          activo?: boolean | null
           branch_id?: string
           created_at?: string | null
           created_by?: string | null
@@ -7349,6 +7348,7 @@ export type Database = {
           fecha_ingreso?: string
           fecha_salida?: string | null
           id?: string
+          is_active?: boolean | null
           limite_retiro_mensual?: number | null
           nombre?: string
           porcentaje_participacion?: number

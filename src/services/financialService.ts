@@ -72,7 +72,7 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
   const { data: pagos, error } = await supabase
     .from('pagos_proveedores')
     .select(
-      'id, fecha_pago, monto, medio_pago, referencia, observaciones, verificado, verificado_por, verificado_at, verificado_notas, created_at',
+      'id, fecha_pago, monto, medio_pago, referencia, observaciones, is_verified, verificado_por, verificado_at, verificado_notas, created_at',
     )
     .eq('factura_id', factura.id)
     .is('deleted_at', null)
@@ -531,7 +531,7 @@ export async function approvePagoProveedor(
   const { error } = await supabase
     .from('pagos_proveedores')
     .update({
-      verificado: true,
+      is_verified: true,
       verificado_por: userId,
       verificado_at: new Date().toISOString(),
       verificado_notas: notas,

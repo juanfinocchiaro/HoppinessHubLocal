@@ -35,7 +35,7 @@ export function useBranchWebappAvailability(branchId: string | undefined) {
         .select(
           'id, nombre, tipo, orden, disponible_webapp, menu_categorias:categoria_carta_id(nombre, orden)',
         )
-        .eq('activo', true)
+        .eq('is_active', true)
         .is('deleted_at', null)
         .order('orden');
       if (itemsErr) throw itemsErr;

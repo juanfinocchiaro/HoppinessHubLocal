@@ -232,9 +232,9 @@ export async function fetchItemsCartaForPricing() {
   const { data, error } = await supabase
     .from('items_carta')
     .select(
-      'id, nombre, orden, precio_base, activo, categoria_carta_id, menu_categorias(id, nombre, orden)',
+      'id, nombre, orden, precio_base, is_active, categoria_carta_id, menu_categorias(id, nombre, orden)',
     )
-    .eq('activo', true)
+    .eq('is_active', true)
     .order('orden');
   if (error) throw error;
   return data || [];

@@ -35,8 +35,8 @@ export default function PromocionesPage() {
   const [confirmClosePromo, setConfirmClosePromo] = useState<Promocion | null>(null);
 
   const menuItems = useMemo(
-    () => (allItems as Array<{ id: string; nombre: string; tipo: string; activo: boolean; precio_base: number; imagen_url?: string | null }>)
-      .filter((i) => i.tipo === 'item' && i.activo),
+    () => (allItems as Array<{ id: string; nombre: string; tipo: string; is_active: boolean; precio_base: number; imagen_url?: string | null }>)
+      .filter((i) => i.tipo === 'item' && i.is_active),
     [allItems],
   );
 

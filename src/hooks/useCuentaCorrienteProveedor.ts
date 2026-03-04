@@ -106,7 +106,7 @@ export function useResumenProveedor(branchId?: string, proveedorId?: string) {
       for (const p of pagos || []) {
         const m = Number(p.monto);
         total_pagado += m;
-        if (p.verificado) {
+        if (p.is_verified) {
           total_pagado_verificado += m;
         } else {
           total_pagado_pendiente_verif += m;
@@ -182,7 +182,7 @@ export function useMovimientosProveedor(branchId?: string, proveedorId?: string)
           referencia: !p.factura_id ? 'Pago a cuenta' : (p.referencia ?? undefined),
           monto: Number(p.monto),
           saldo_acumulado: 0,
-          verificado: p.verificado ?? true,
+          verificado: p.is_verified ?? true,
         });
       }
 
