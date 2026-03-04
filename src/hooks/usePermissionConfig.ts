@@ -19,7 +19,7 @@ export interface PermissionConfigRow {
   created_at: string;
 }
 
-export const BRAND_ROLES = ['superadmin', 'coordinador', 'informes', 'contador_marca'] as const;
+export const BRAND_ROLES = ['superadmin', 'coordinador', 'community_manager', 'informes', 'contador_marca'] as const;
 export const LOCAL_ROLES = [
   'franquiciado',
   'encargado',
@@ -31,6 +31,7 @@ export const LOCAL_ROLES = [
 export const BRAND_ROLE_LABELS: Record<string, string> = {
   superadmin: 'Super',
   coordinador: 'Coord',
+  community_manager: 'CM',
   informes: 'Inform',
   contador_marca: 'Contad',
 };

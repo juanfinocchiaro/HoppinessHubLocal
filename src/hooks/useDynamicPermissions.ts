@@ -31,155 +31,69 @@ export function useDynamicPermissions(currentBranchId?: string): DynamicPermissi
       return permissions.brand;
     }
 
+    const gp = (key: string, fallback: boolean) => getPermission(key, brandRole, fallback);
+
     return {
       // Dashboard
-      canViewDashboard: getPermission(
-        'brand.viewDashboard',
-        brandRole,
-        permissions.brand.canViewDashboard,
-      ),
-      canViewPnL: getPermission('brand.viewPnL', brandRole, permissions.brand.canViewPnL),
-      canViewComparativa: getPermission(
-        'brand.viewComparativa',
-        brandRole,
-        permissions.brand.canViewComparativa,
-      ),
-      canViewHoursSummary: getPermission(
-        'brand.viewHoursSummary',
-        brandRole,
-        permissions.brand.canViewHoursSummary,
-      ),
+      canViewDashboard: gp('brand.viewDashboard', permissions.brand.canViewDashboard),
+      canViewPnL: gp('brand.viewPnL', permissions.brand.canViewPnL),
+      canViewComparativa: gp('brand.viewComparativa', permissions.brand.canViewComparativa),
+      canViewHoursSummary: gp('brand.viewHoursSummary', permissions.brand.canViewHoursSummary),
 
       // Locales
-      canViewLocales: getPermission(
-        'brand.viewBranches',
-        brandRole,
-        permissions.brand.canViewLocales,
-      ),
-      canCreateLocales: getPermission(
-        'brand.createBranches',
-        brandRole,
-        permissions.brand.canCreateLocales,
-      ),
+      canViewLocales: gp('brand.viewBranches', permissions.brand.canViewLocales),
+      canCreateLocales: gp('brand.createBranches', permissions.brand.canCreateLocales),
 
       // Catálogos Marca
-      canViewProducts: getPermission(
-        'brand.viewProducts',
-        brandRole,
-        permissions.brand.canViewProducts,
-      ),
-      canEditProducts: getPermission(
-        'brand.editProducts',
-        brandRole,
-        permissions.brand.canEditProducts,
-      ),
-      canManageModifiers: permissions.brand.canManageModifiers,
-      canManageIngredients: permissions.brand.canManageIngredients,
-      canEditPrices: permissions.brand.canEditPrices,
-      canManagePromotions: permissions.brand.canManagePromotions,
-      canViewInsumos: getPermission(
-        'brand.viewInsumos',
-        brandRole,
-        permissions.brand.canViewInsumos,
-      ),
-      canEditInsumos: getPermission(
-        'brand.editInsumos',
-        brandRole,
-        permissions.brand.canEditInsumos,
-      ),
-      canViewConceptosServicio: getPermission(
-        'brand.viewConceptosServicio',
-        brandRole,
-        permissions.brand.canViewConceptosServicio,
-      ),
-      canEditConceptosServicio: getPermission(
-        'brand.editConceptosServicio',
-        brandRole,
-        permissions.brand.canEditConceptosServicio,
-      ),
-      canViewProveedoresMarca: getPermission(
-        'brand.viewProveedoresMarca',
-        brandRole,
-        permissions.brand.canViewProveedoresMarca,
-      ),
-      canEditProveedoresMarca: getPermission(
-        'brand.editProveedoresMarca',
-        brandRole,
-        permissions.brand.canEditProveedoresMarca,
-      ),
+      canViewProducts: gp('brand.viewProducts', permissions.brand.canViewProducts),
+      canEditProducts: gp('brand.editProducts', permissions.brand.canEditProducts),
+      canManageModifiers: gp('brand.manageModifiers', permissions.brand.canManageModifiers),
+      canManageIngredients: gp('brand.manageIngredients', permissions.brand.canManageIngredients),
+      canEditPrices: gp('brand.editPrices', permissions.brand.canEditPrices),
+      canManagePromotions: gp('brand.managePromotions', permissions.brand.canManagePromotions),
+      canViewInsumos: gp('brand.viewInsumos', permissions.brand.canViewInsumos),
+      canEditInsumos: gp('brand.editInsumos', permissions.brand.canEditInsumos),
+      canViewConceptosServicio: gp('brand.viewConceptosServicio', permissions.brand.canViewConceptosServicio),
+      canEditConceptosServicio: gp('brand.editConceptosServicio', permissions.brand.canEditConceptosServicio),
+      canViewProveedoresMarca: gp('brand.viewProveedoresMarca', permissions.brand.canViewProveedoresMarca),
+      canEditProveedoresMarca: gp('brand.editProveedoresMarca', permissions.brand.canEditProveedoresMarca),
 
       // Finanzas Marca
-      canViewVentasMensuales: getPermission(
-        'brand.viewVentasMensuales',
-        brandRole,
-        permissions.brand.canViewVentasMensuales,
-      ),
-      canEditVentasMensuales: getPermission(
-        'brand.editVentasMensuales',
-        brandRole,
-        permissions.brand.canEditVentasMensuales,
-      ),
-      canViewCanon: getPermission('brand.viewCanon', brandRole, permissions.brand.canViewCanon),
-      canEditCanon: getPermission('brand.editCanon', brandRole, permissions.brand.canEditCanon),
+      canViewVentasMensuales: gp('brand.viewVentasMensuales', permissions.brand.canViewVentasMensuales),
+      canEditVentasMensuales: gp('brand.editVentasMensuales', permissions.brand.canEditVentasMensuales),
+      canViewCanon: gp('brand.viewCanon', permissions.brand.canViewCanon),
+      canEditCanon: gp('brand.editCanon', permissions.brand.canEditCanon),
 
       // Proveedores (legacy)
-      canManageSuppliers: permissions.brand.canManageSuppliers,
+      canManageSuppliers: gp('brand.manageSuppliers', permissions.brand.canManageSuppliers),
 
       // Equipo
-      canManageCentralTeam: getPermission(
-        'brand.editCentralTeam',
-        brandRole,
-        permissions.brand.canManageCentralTeam,
-      ),
-      canViewCentralTeam: getPermission(
-        'brand.viewCentralTeam',
-        brandRole,
-        permissions.brand.canViewCentralTeam,
-      ),
-      canSearchUsers: getPermission('brand.viewUsers', brandRole, permissions.brand.canSearchUsers),
-      canAssignRoles: getPermission(
-        'brand.assignRoles',
-        brandRole,
-        permissions.brand.canAssignRoles,
-      ),
+      canManageCentralTeam: gp('brand.editCentralTeam', permissions.brand.canManageCentralTeam),
+      canViewCentralTeam: gp('brand.viewCentralTeam', permissions.brand.canViewCentralTeam),
+      canSearchUsers: gp('brand.viewUsers', permissions.brand.canSearchUsers),
+      canAssignRoles: gp('brand.assignRoles', permissions.brand.canAssignRoles),
 
       // Comunicación
-      canManageMessages: getPermission(
-        'brand.createCommunications',
-        brandRole,
-        permissions.brand.canManageMessages,
-      ),
-      canViewContactMessages: getPermission(
-        'brand.viewContactMessages',
-        brandRole,
-        permissions.brand.canViewContactMessages,
-      ),
-      canManageContactMessages: getPermission(
-        'brand.manageContactMessages',
-        brandRole,
-        permissions.brand.canManageContactMessages,
-      ),
+      canManageMessages: gp('brand.createCommunications', permissions.brand.canManageMessages),
+      canViewContactMessages: gp('brand.viewContactMessages', permissions.brand.canViewContactMessages),
+      canManageContactMessages: gp('brand.manageContactMessages', permissions.brand.canManageContactMessages),
 
       // Coaching
-      canCoachManagers: getPermission('brand.coachManagers', brandRole, false),
-      canViewCoaching: getPermission('brand.viewCoaching', brandRole, false),
+      canCoachManagers: gp('brand.coachManagers', permissions.brand.canCoachManagers),
+      canViewCoaching: gp('brand.viewCoaching', permissions.brand.canViewCoaching),
 
       // Reuniones
-      canViewMeetings: getPermission('brand.viewMeetings', brandRole, false),
-      canCreateMeetings: getPermission('brand.createMeetings', brandRole, false),
+      canViewMeetings: gp('brand.viewMeetings', permissions.brand.canViewMeetings),
+      canCreateMeetings: gp('brand.createMeetings', permissions.brand.canCreateMeetings),
 
       // Delivery
-      canManageDeliveryPricing: permissions.brand.canManageDeliveryPricing,
-      canManageDeliveryZones: permissions.brand.canManageDeliveryZones,
+      canManageDeliveryPricing: gp('brand.manageDeliveryPricing', permissions.brand.canManageDeliveryPricing),
+      canManageDeliveryZones: gp('brand.manageDeliveryZones', permissions.brand.canManageDeliveryZones),
 
       // Configuración
-      canEditBrandConfig: getPermission(
-        'brand.editConfig',
-        brandRole,
-        permissions.brand.canEditBrandConfig,
-      ),
-      canManageChannels: permissions.brand.canManageChannels,
-      canManageIntegrations: permissions.brand.canManageIntegrations,
+      canEditBrandConfig: gp('brand.editConfig', permissions.brand.canEditBrandConfig),
+      canManageChannels: gp('brand.manageChannels', permissions.brand.canManageChannels),
+      canManageIntegrations: gp('brand.manageIntegrations', permissions.brand.canManageIntegrations),
     };
   }, [permissions, getPermission]);
 
@@ -197,210 +111,88 @@ export function useDynamicPermissions(currentBranchId?: string): DynamicPermissi
       return permissions.local;
     }
 
+    const gp = (key: string, fallback: boolean) => getPermission(key, localRole, fallback);
+
     return {
       // Dashboard
-      canViewDashboard: getPermission(
-        'local.viewDashboard',
-        localRole,
-        permissions.local.canViewDashboard,
-      ),
+      canViewDashboard: gp('local.viewDashboard', permissions.local.canViewDashboard),
 
       // Stock
-      canViewStock: permissions.local.canViewStock,
-      canOrderFromSupplier: permissions.local.canOrderFromSupplier,
-      canDoInventoryCount: permissions.local.canDoInventoryCount,
+      canViewStock: gp('local.viewStock', permissions.local.canViewStock),
+      canOrderFromSupplier: gp('local.orderFromSupplier', permissions.local.canOrderFromSupplier),
+      canDoInventoryCount: gp('local.doInventoryCount', permissions.local.canDoInventoryCount),
 
       // Compras / Operaciones
-      canUploadInvoice: getPermission(
-        'local.createCompras',
-        localRole,
-        permissions.local.canUploadInvoice,
-      ),
-      canViewSuppliers: getPermission(
-        'local.viewProveedoresLocal',
-        localRole,
-        permissions.local.canViewSuppliers,
-      ),
-      canViewSupplierAccounts: getPermission(
-        'local.viewCuentaCorriente',
-        localRole,
-        permissions.local.canViewSupplierAccounts,
-      ),
-      canPaySupplier: getPermission(
-        'local.pagarProveedor',
-        localRole,
-        permissions.local.canPaySupplier,
-      ),
-      canViewPurchaseHistory: getPermission(
-        'local.viewCompras',
-        localRole,
-        permissions.local.canViewPurchaseHistory,
-      ),
+      canUploadInvoice: gp('local.createCompras', permissions.local.canUploadInvoice),
+      canViewSuppliers: gp('local.viewProveedoresLocal', permissions.local.canViewSuppliers),
+      canViewSupplierAccounts: gp('local.viewCuentaCorriente', permissions.local.canViewSupplierAccounts),
+      canPaySupplier: gp('local.pagarProveedor', permissions.local.canPaySupplier),
+      canViewPurchaseHistory: gp('local.viewCompras', permissions.local.canViewPurchaseHistory),
 
       // Equipo
-      canClockInOut: permissions.local.canClockInOut,
-      canViewAllClockIns: getPermission(
-        'local.viewClockIns',
-        localRole,
-        permissions.local.canViewAllClockIns,
-      ),
-      canViewTeam: getPermission('local.viewTeam', localRole, permissions.local.canViewTeam),
-      canEditSchedules: getPermission(
-        'local.editSchedules',
-        localRole,
-        permissions.local.canEditSchedules,
-      ),
-      canViewMonthlyHours: permissions.local.canViewMonthlyHours,
-      canViewPayroll: getPermission(
-        'local.viewPayroll',
-        localRole,
-        permissions.local.canViewPayroll,
-      ),
-      canInviteEmployees: getPermission(
-        'local.inviteEmployees',
-        localRole,
-        permissions.local.canInviteEmployees,
-      ),
-      canDeactivateEmployees: permissions.local.canDeactivateEmployees,
-      canViewSalaryAdvances: getPermission(
-        'local.viewAdvances',
-        localRole,
-        permissions.local.canViewSalaryAdvances,
-      ),
-      canViewWarnings: getPermission(
-        'local.viewWarnings',
-        localRole,
-        permissions.local.canViewWarnings,
-      ),
+      canClockInOut: gp('local.clockInOut', permissions.local.canClockInOut),
+      canViewAllClockIns: gp('local.viewClockIns', permissions.local.canViewAllClockIns),
+      canViewTeam: gp('local.viewTeam', permissions.local.canViewTeam),
+      canEditSchedules: gp('local.editSchedules', permissions.local.canEditSchedules),
+      canViewMonthlyHours: gp('local.viewMonthlyHours', permissions.local.canViewMonthlyHours),
+      canViewPayroll: gp('local.viewPayroll', permissions.local.canViewPayroll),
+      canInviteEmployees: gp('local.inviteEmployees', permissions.local.canInviteEmployees),
+      canDeactivateEmployees: gp('local.deactivateEmployees', permissions.local.canDeactivateEmployees),
+      canViewSalaryAdvances: gp('local.viewAdvances', permissions.local.canViewSalaryAdvances),
+      canViewWarnings: gp('local.viewWarnings', permissions.local.canViewWarnings),
 
       // Acciones operativas
-      canCreateSalaryAdvance: getPermission(
-        'local.createAdvances',
-        localRole,
-        permissions.local.canCreateSalaryAdvance,
-      ),
-      canCancelSalaryAdvance: permissions.local.canCancelSalaryAdvance,
-      canCreateWarning: getPermission(
-        'local.createWarnings',
-        localRole,
-        permissions.local.canCreateWarning,
-      ),
-      canUploadSignature: getPermission(
-        'local.uploadSignatures',
-        localRole,
-        permissions.local.canUploadSignature,
-      ),
-      canDoCoaching: getPermission('local.doCoaching', localRole, permissions.local.canDoCoaching),
-      canViewCoaching: getPermission(
-        'local.viewCoaching',
-        localRole,
-        permissions.local.canViewCoaching,
-      ),
-      canSendLocalCommunication: getPermission(
-        'local.sendLocalCommunications',
-        localRole,
-        permissions.local.canSendLocalCommunication,
-      ),
-      canViewLocalCommunications: getPermission(
-        'local.viewLocalCommunications',
-        localRole,
-        permissions.local.canViewLocalCommunications,
-      ),
+      canCreateSalaryAdvance: gp('local.createAdvances', permissions.local.canCreateSalaryAdvance),
+      canCancelSalaryAdvance: gp('local.cancelAdvance', permissions.local.canCancelSalaryAdvance),
+      canCreateWarning: gp('local.createWarnings', permissions.local.canCreateWarning),
+      canUploadSignature: gp('local.uploadSignatures', permissions.local.canUploadSignature),
+      canDoCoaching: gp('local.doCoaching', permissions.local.canDoCoaching),
+      canViewCoaching: gp('local.viewCoaching', permissions.local.canViewCoaching),
+      canSendLocalCommunication: gp('local.sendLocalCommunications', permissions.local.canSendLocalCommunication),
+      canViewLocalCommunications: gp('local.viewLocalCommunications', permissions.local.canViewLocalCommunications),
 
       // Reuniones
-      canViewMeetings: getPermission(
-        'local.viewMeetings',
-        localRole,
-        permissions.local.canViewMeetings,
-      ),
-      canCreateMeetings: getPermission(
-        'local.createMeetings',
-        localRole,
-        permissions.local.canCreateMeetings,
-      ),
-      canCloseMeetings: getPermission(
-        'local.closeMeetings',
-        localRole,
-        permissions.local.canCloseMeetings,
-      ),
+      canViewMeetings: gp('local.viewMeetings', permissions.local.canViewMeetings),
+      canCreateMeetings: gp('local.createMeetings', permissions.local.canCreateMeetings),
+      canCloseMeetings: gp('local.closeMeetings', permissions.local.canCloseMeetings),
 
       // Cierres
-      canViewClosures: getPermission(
-        'local.viewClosures',
-        localRole,
-        permissions.local.canViewClosures,
-      ),
-      canCloseShifts: getPermission(
-        'local.closeShifts',
-        localRole,
-        permissions.local.canCloseShifts,
-      ),
+      canViewClosures: gp('local.viewClosures', permissions.local.canViewClosures),
+      canCloseShifts: gp('local.closeShifts', permissions.local.canCloseShifts),
 
       // POS
-      canAccessPOS: permissions.local.canAccessPOS,
-      canViewKitchen: permissions.local.canViewKitchen,
-      canAssignDelivery: permissions.local.canAssignDelivery,
-      canOperateDelivery: permissions.local.canOperateDelivery,
-      canOpenRegister: permissions.local.canOpenRegister,
-      canCloseRegister: permissions.local.canCloseRegister,
+      canAccessPOS: gp('local.accessPOS', permissions.local.canAccessPOS),
+      canViewKitchen: gp('local.viewKitchen', permissions.local.canViewKitchen),
+      canAssignDelivery: gp('local.assignDelivery', permissions.local.canAssignDelivery),
+      canOperateDelivery: gp('local.operateDelivery', permissions.local.canOperateDelivery),
+      canOpenRegister: gp('local.openRegister', permissions.local.canOpenRegister),
+      canCloseRegister: gp('local.closeRegister', permissions.local.canCloseRegister),
 
       // Finanzas
-      canViewSalesReports: permissions.local.canViewSalesReports,
-      canViewLocalPnL: getPermission('local.viewPL', localRole, permissions.local.canViewLocalPnL),
-      canViewCMV: permissions.local.canViewCMV,
-      canViewStockMovements: permissions.local.canViewStockMovements,
-      canViewGastos: getPermission('local.viewGastos', localRole, permissions.local.canViewGastos),
-      canCreateGastos: getPermission(
-        'local.createGastos',
-        localRole,
-        permissions.local.canCreateGastos,
-      ),
-      canViewConsumos: getPermission(
-        'local.viewConsumos',
-        localRole,
-        permissions.local.canViewConsumos,
-      ),
-      canCreateConsumos: getPermission(
-        'local.createConsumos',
-        localRole,
-        permissions.local.canCreateConsumos,
-      ),
-      canViewPeriodos: getPermission(
-        'local.viewPeriodos',
-        localRole,
-        permissions.local.canViewPeriodos,
-      ),
-      canEditPeriodos: getPermission(
-        'local.editPeriodos',
-        localRole,
-        permissions.local.canEditPeriodos,
-      ),
-      canViewVentasMensualesLocal: getPermission(
-        'local.viewVentasMensualesLocal',
-        localRole,
-        permissions.local.canViewVentasMensualesLocal,
-      ),
-      canEditVentasMensualesLocal: getPermission(
-        'local.editVentasMensualesLocal',
-        localRole,
-        permissions.local.canEditVentasMensualesLocal,
-      ),
+      canViewSalesReports: gp('local.viewSalesReports', permissions.local.canViewSalesReports),
+      canViewLocalPnL: gp('local.viewPL', permissions.local.canViewLocalPnL),
+      canViewCMV: gp('local.viewCMV', permissions.local.canViewCMV),
+      canViewStockMovements: gp('local.viewStockMovements', permissions.local.canViewStockMovements),
+      canViewGastos: gp('local.viewGastos', permissions.local.canViewGastos),
+      canCreateGastos: gp('local.createGastos', permissions.local.canCreateGastos),
+      canViewConsumos: gp('local.viewConsumos', permissions.local.canViewConsumos),
+      canCreateConsumos: gp('local.createConsumos', permissions.local.canCreateConsumos),
+      canViewPeriodos: gp('local.viewPeriodos', permissions.local.canViewPeriodos),
+      canEditPeriodos: gp('local.editPeriodos', permissions.local.canEditPeriodos),
+      canViewVentasMensualesLocal: gp('local.viewVentasMensualesLocal', permissions.local.canViewVentasMensualesLocal),
+      canEditVentasMensualesLocal: gp('local.editVentasMensualesLocal', permissions.local.canEditVentasMensualesLocal),
 
       // Socios
-      canViewSocios: getPermission('local.viewSocios', localRole, permissions.local.canViewSocios),
-      canEditSocios: getPermission('local.editSocios', localRole, permissions.local.canEditSocios),
+      canViewSocios: gp('local.viewSocios', permissions.local.canViewSocios),
+      canEditSocios: gp('local.editSocios', permissions.local.canEditSocios),
 
       // Configuración
-      canEditLocalConfig: getPermission(
-        'local.editConfig',
-        localRole,
-        permissions.local.canEditLocalConfig,
-      ),
-      canConfigPrinters: permissions.local.canConfigPrinters,
-      canConfigShifts: permissions.local.canConfigShifts,
+      canEditLocalConfig: gp('local.editConfig', permissions.local.canEditLocalConfig),
+      canConfigPrinters: gp('local.configPrinters', permissions.local.canConfigPrinters),
+      canConfigShifts: gp('local.configShifts', permissions.local.canConfigShifts),
 
       // Carga de ventas
-      canEnterSales: getPermission('local.enterSales', localRole, permissions.local.canEnterSales),
+      canEnterSales: gp('local.enterSales', permissions.local.canEnterSales),
     };
   }, [permissions, getPermission, currentBranchId]);
 
