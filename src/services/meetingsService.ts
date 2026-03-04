@@ -596,16 +596,16 @@ export async function createMeetingLegacy(
 // ─── Queries: Team Members ───
 
 export async function fetchBranchTeamMembers(branchId: string): Promise<TeamMember[]> {
-  const { data: branchRoles, error: rError } = await supabase
-    .from('user_branch_roles')
-    .select('user_id, local_role')
+  const { data: assignments, error: rError } = await supabase
+    .from('user_role_assignments')
+    .select('user_id, roles!inner(key)')
     .eq('branch_id', branchId)
     .eq('is_active', true);
 
   if (rError) throw rError;
-  if (!branchRoles?.length) return [];
+  if (!assignments?.length) return [];
 
-  const userIds = branchRoles.map((r) => r.user_id);
+  const userIds = assignments.map((r: any) => r.user_id);
 
   const { data: profiles, error: pError } = await supabase
     .from('profiles')
@@ -614,7 +614,7 @@ export async function fetchBranchTeamMembers(branchId: string): Promise<TeamMemb
 
   if (pError) throw pError;
 
-  const roleMap = new Map(branchRoles.map((r) => [r.user_id, r.local_role]));
+  const roleMap = new Map(assignments.map((r: any) => [r.user_id, (r.roles as any)?.key]));
 
   return (profiles || []).map((p) => ({
     ...p,
@@ -623,15 +623,16 @@ export async function fetchBranchTeamMembers(branchId: string): Promise<TeamMemb
 }
 
 export async function fetchNetworkMembers(): Promise<TeamMember[]> {
-  const { data: branchRoles, error: rError } = await supabase
-    .from('user_branch_roles')
-    .select('user_id, branch_id, local_role')
+  const { data: assignments, error: rError } = await supabase
+    .from('user_role_assignments')
+    .select('user_id, branch_id, roles!inner(key)')
+    .not('branch_id', 'is', null)
     .eq('is_active', true);
 
   if (rError) throw rError;
-  if (!branchRoles?.length) return [];
+  if (!assignments?.length) return [];
 
-  const userIds = [...new Set(branchRoles.map((r) => r.user_id))];
+  const userIds = [...new Set(assignments.map((r: any) => r.user_id))];
 
   const { data: profiles, error: pError } = await supabase
     .from('profiles')
@@ -645,7 +646,7 @@ export async function fetchNetworkMembers(): Promise<TeamMember[]> {
   const branchMap = new Map(branches?.map((b) => [b.id, b.name]) || []);
 
   const members: TeamMember[] = [];
-  branchRoles.forEach((role) => {
+  assignments.forEach((role: any) => {
     const profile = profiles?.find((p) => p.id === role.user_id);
     if (!profile) return;
 
@@ -653,7 +654,7 @@ export async function fetchNetworkMembers(): Promise<TeamMember[]> {
       id: profile.id,
       full_name: profile.full_name,
       avatar_url: profile.avatar_url || undefined,
-      local_role: role.local_role || undefined,
+      local_role: (role.roles as any)?.key || undefined,
       branch_id: role.branch_id,
       branch_name: branchMap.get(role.branch_id),
     });

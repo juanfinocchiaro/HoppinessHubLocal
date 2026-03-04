@@ -8,7 +8,7 @@ import {
   fetchRegulationSignatureHistory,
   getStorageSignedUrl,
 } from '@/services/hrService';
-import type { Database } from '@/integrations/supabase/types';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ import { FileText, Download, CheckCircle, AlertCircle, ExternalLink } from 'luci
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-type LocalRole = Database['public']['Enums']['local_role_type'];
+type LocalRole = string;
 
 export default function MyRegulationsCard() {
   const { id: userId } = useEffectiveUser();
