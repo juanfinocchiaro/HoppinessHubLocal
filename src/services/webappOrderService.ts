@@ -4,8 +4,7 @@ import { ORDER_ACTIVE_STATES } from '@/lib/constants';
 const ACTIVE_STATES = ORDER_ACTIVE_STATES as unknown as string[];
 
 export async function fetchUserOrders(userId: string, limit = 30) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
       `id, numero_pedido, estado, tipo_servicio,
        total, created_at, webapp_tracking_code,

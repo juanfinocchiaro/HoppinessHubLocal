@@ -741,8 +741,7 @@ export async function fetchPosVentasAgregadas(branchId: string, periodo: string)
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 1).toISOString();
 
-  const { data: pedidos, error: pedidosError } = await supabase
-    .from('pedidos')
+  const { data: pedidos, error: pedidosError } = await fromUntyped('orders')
     .select('id, total')
     .eq('branch_id', branchId)
     .in('estado', ['entregado', 'listo'])
@@ -760,8 +759,7 @@ export async function fetchPosVentasAgregadas(branchId: string, periodo: string)
   let totalEfectivo = 0;
   for (let i = 0; i < pedidoIds.length; i += 100) {
     const batch = pedidoIds.slice(i, i + 100);
-    const { data: pagos, error: pagosError } = await supabase
-      .from('pedido_pagos')
+    const { data: pagos, error: pagosError } = await fromUntyped('order_payments')
       .select('monto, metodo')
       .in('pedido_id', batch)
       .eq('metodo', 'efectivo');
@@ -861,8 +859,7 @@ export async function fetchZClosings(branchId: string): Promise<FiscalZData[]> {
 // ── Gastos ───────────────────────────────────────────────────────────
 
 export async function fetchGastos(branchId: string, startDate: string, endDate: string) {
-  const { data, error } = await supabase
-    .from('gastos')
+  const { data, error } = await fromUntyped('expenses')
     .select('*')
     .eq('branch_id', branchId)
     .gte('fecha', startDate)
@@ -874,8 +871,7 @@ export async function fetchGastos(branchId: string, startDate: string, endDate: 
 }
 
 export async function softDeleteGasto(id: string) {
-  const { error } = await supabase
-    .from('gastos')
+  const { error } = await fromUntyped('expenses')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -883,10 +879,10 @@ export async function softDeleteGasto(id: string) {
 
 export async function saveGasto(payload: Record<string, unknown>, editingId?: string) {
   if (editingId) {
-    const { error } = await supabase.from('gastos').update(payload).eq('id', editingId);
+    const { error } = await fromUntyped('expenses').update(payload).eq('id', editingId);
     if (error) throw error;
   } else {
-    const { error } = await supabase.from('gastos').insert(payload as any);
+    const { error } = await fromUntyped('expenses').insert(payload as any);
     if (error) throw error;
   }
 }
@@ -899,19 +895,17 @@ export async function fetchShiftClosureReport(
   endIso: string,
 ) {
   const [ordersRes, cancelledRes, cashShiftsRes] = await Promise.all([
-    supabase
-      .from('pedidos')
+    fromUntyped('orders')
       .select(
         `id, created_at, total, estado, canal_venta, tipo_servicio, canal_app,
-        pedido_pagos (metodo, monto),
-        pedido_items (nombre, cantidad, precio_unitario, subtotal)`,
+        order_payments (metodo, monto),
+        order_items (nombre, cantidad, precio_unitario, subtotal)`,
       )
       .eq('branch_id', branchId)
       .gte('created_at', startIso)
       .lt('created_at', endIso)
       .neq('estado', 'cancelado'),
-    supabase
-      .from('pedidos')
+    fromUntyped('orders')
       .select('id, numero_llamador, total, cliente_notas, created_at')
       .eq('branch_id', branchId)
       .eq('estado', 'cancelado')

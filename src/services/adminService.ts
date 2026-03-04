@@ -407,8 +407,7 @@ export async function fetchAuditLogTables() {
 // ── Reports ─────────────────────────────────────────────────────────
 
 export async function fetchGastosSummary(periodo: string) {
-  const { data, error } = await supabase
-    .from('gastos')
+  const { data, error } = await fromUntyped('expenses')
     .select('branch_id, monto')
     .eq('periodo', periodo)
     .is('deleted_at', null)
@@ -781,7 +780,7 @@ export async function fetchPromoItemsWithExtras(promoId: string) {
 
     if (extrasData && (extrasData as Array<Record<string, unknown>>).length > 0) {
       const extraItemIds = [...new Set((extrasData as Array<Record<string, unknown>>).map((e) => e.extra_item_carta_id as string))];
-      const { data: extraInfo } = await supabase.from('items_carta').select('id, nombre, precio_base').in('id', extraItemIds);
+      const { data: extraInfo } = await fromUntyped('menu_items').select('id, nombre, precio_base').in('id', extraItemIds);
       const infoMap = new Map((extraInfo || []).map((n) => [n.id, { nombre: n.nombre, precio: Number(n.precio_base ?? 0) }]));
 
       for (const e of extrasData as Array<Record<string, unknown>>) {

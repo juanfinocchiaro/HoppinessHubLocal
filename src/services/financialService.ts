@@ -10,8 +10,7 @@ import type { CanonLiquidacionFormData, PagoCanonFormData } from '@/types/ventas
 // ── Canon Liquidaciones ─────────────────────────────────────────────
 
 export async function fetchCanonLiquidaciones(branchId?: string) {
-  let q = supabase
-    .from('canon_liquidaciones')
+  let q = fromUntyped('canon_settlements')
     .select('*, branches!canon_liquidaciones_branch_id_fkey(name)')
     .is('deleted_at', null)
     .order('periodo', { ascending: false });
@@ -24,8 +23,7 @@ export async function fetchCanonLiquidaciones(branchId?: string) {
 }
 
 export async function createCanonLiquidacion(data: CanonLiquidacionFormData, userId?: string) {
-  const { data: result, error } = await supabase
-    .from('canon_liquidaciones')
+  const { data: result, error } = await fromUntyped('canon_settlements')
     .insert({
       branch_id: data.branch_id,
       periodo: data.periodo,
@@ -48,8 +46,7 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
 }
 
 export async function fetchPagosCanon(canonId: string) {
-  const { data, error } = await supabase
-    .from('pagos_canon')
+  const { data, error } = await fromUntyped('canon_payments')
     .select('*')
     .eq('canon_liquidacion_id', canonId)
     .is('deleted_at', null)
@@ -59,8 +56,7 @@ export async function fetchPagosCanon(canonId: string) {
 }
 
 export async function fetchPagosCanonFromProveedores(branchId: string, periodo: string) {
-  const { data: factura } = await supabase
-    .from('facturas_proveedores')
+  const { data: factura } = await fromUntyped('supplier_invoices')
     .select('id')
     .eq('branch_id', branchId)
     .eq('periodo', periodo)
@@ -70,8 +66,7 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
 
   if (!factura) return [];
 
-  const { data: pagos, error } = await supabase
-    .from('pagos_proveedores')
+  const { data: pagos, error } = await fromUntyped('supplier_payments')
     .select(
       'id, fecha_pago, monto, medio_pago, referencia, observaciones, is_verified, verificado_por, verificado_at, verificado_notas, created_at',
     )
@@ -83,8 +78,7 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
 }
 
 export async function createPagoCanon(data: PagoCanonFormData, userId?: string) {
-  const { data: result, error } = await supabase
-    .from('pagos_canon')
+  const { data: result, error } = await fromUntyped('canon_payments')
     .insert({
       canon_liquidacion_id: data.canon_liquidacion_id,
       branch_id: data.branch_id,
@@ -152,10 +146,9 @@ export async function reabrirPeriodo(id: string, userId?: string, motivo?: strin
 // ── Facturas ────────────────────────────────────────────────────────
 
 export async function fetchFacturas(branchId: string, periodo?: string) {
-  let q = supabase
-    .from('facturas_proveedores')
+  let q = fromUntyped('supplier_invoices')
     .select(
-      '*, proveedores(razon_social), items_factura(*, insumos(nombre), conceptos_servicio(nombre))',
+      '*, suppliers(razon_social), invoice_items(*, supplies(nombre), service_concepts(nombre))',
     )
     .eq('branch_id', branchId)
     .is('deleted_at', null)
@@ -169,8 +162,7 @@ export async function fetchFacturas(branchId: string, periodo?: string) {
 }
 
 export async function fetchFacturaById(facturaId: string) {
-  const { data, error } = await supabase
-    .from('facturas_proveedores')
+  const { data, error } = await fromUntyped('supplier_invoices')
     .select('*')
     .eq('id', facturaId)
     .single();
@@ -256,8 +248,7 @@ export async function insertFacturaCompleta(
 }
 
 export async function softDeleteFactura(id: string) {
-  const { error } = await supabase
-    .from('facturas_proveedores')
+  const { error } = await fromUntyped('supplier_invoices')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -266,14 +257,12 @@ export async function softDeleteFactura(id: string) {
 // ── Pagos proveedor ─────────────────────────────────────────────────
 
 export async function fetchPagosProveedor(facturaId: string) {
-  const { data, error } = await supabase
-    .from('pago_factura')
-    .select('monto_aplicado, pagos_proveedores(*)')
+  const { data, error } = await fromUntyped('pago_factura')
+    .select('monto_aplicado, supplier_payments(*)')
     .eq('factura_id', facturaId);
 
   if (error) {
-    const { data: legacyData, error: legacyErr } = await supabase
-      .from('pagos_proveedores')
+    const { data: legacyData, error: legacyErr } = await fromUntyped('supplier_payments')
       .select('*')
       .eq('factura_id', facturaId)
       .is('deleted_at', null)
@@ -282,15 +271,14 @@ export async function fetchPagosProveedor(facturaId: string) {
     return legacyData;
   }
 
-  return (data || []).map((row) => ({
-    ...row.pagos_proveedores,
+  return (data || []).map((row: any) => ({
+    ...row.supplier_payments,
     monto_aplicado: row.monto_aplicado,
   }));
 }
 
 export async function createPagoProveedor(data: PagoProveedorFormData, userId?: string) {
-  const { data: pago, error: pagoErr } = await supabase
-    .from('pagos_proveedores')
+  const { data: pago, error: pagoErr } = await fromUntyped('supplier_payments')
     .insert({
       proveedor_id: data.proveedor_id,
       branch_id: data.branch_id,
@@ -313,12 +301,11 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
       monto_aplicado: app.monto_aplicado,
     }));
 
-    const { error: junctionErr } = await supabase.from('pago_factura').insert(junctionRows);
+    const { error: junctionErr } = await fromUntyped('pago_factura').insert(junctionRows);
     if (junctionErr) throw junctionErr;
 
     for (const app of data.aplicaciones) {
-      const { data: factura, error: facturaErr } = await supabase
-        .from('facturas_proveedores')
+      const { data: factura, error: facturaErr } = await fromUntyped('supplier_invoices')
         .select('saldo_pendiente')
         .eq('id', app.factura_id)
         .single();
@@ -326,8 +313,7 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
       if (facturaErr) throw facturaErr;
 
       const nuevoSaldo = Math.max(0, (factura.saldo_pendiente || 0) - app.monto_aplicado);
-      const { error: updateErr } = await supabase
-        .from('facturas_proveedores')
+      const { error: updateErr } = await fromUntyped('supplier_invoices')
         .update({
           saldo_pendiente: nuevoSaldo,
           estado_pago: nuevoSaldo === 0 ? 'pagado' : 'parcial',
@@ -342,8 +328,7 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
 }
 
 export async function softDeletePago(id: string) {
-  const { error } = await supabase
-    .from('pagos_proveedores')
+  const { error } = await fromUntyped('supplier_payments')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -352,8 +337,7 @@ export async function softDeletePago(id: string) {
 // ── Inversiones ─────────────────────────────────────────────────────
 
 export async function fetchInversiones(branchId: string, periodo?: string) {
-  let q = supabase
-    .from('inversiones')
+  let q = fromUntyped('investments')
     .select('*')
     .eq('branch_id', branchId)
     .is('deleted_at', null)
@@ -367,8 +351,7 @@ export async function fetchInversiones(branchId: string, periodo?: string) {
 }
 
 export async function createInversion(data: InversionFormData, userId?: string) {
-  const { data: result, error } = await supabase
-    .from('inversiones')
+  const { data: result, error } = await fromUntyped('investments')
     .insert({ ...data, created_by: userId })
     .select()
     .single();
@@ -377,13 +360,12 @@ export async function createInversion(data: InversionFormData, userId?: string) 
 }
 
 export async function updateInversion(id: string, data: Partial<InversionFormData>) {
-  const { error } = await supabase.from('inversiones').update(data).eq('id', id);
+  const { error } = await fromUntyped('investments').update(data).eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteInversion(id: string) {
-  const { error } = await supabase
-    .from('inversiones')
+  const { error } = await fromUntyped('investments')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -392,8 +374,7 @@ export async function softDeleteInversion(id: string) {
 // ── Consumos manuales ───────────────────────────────────────────────
 
 export async function fetchConsumosManuales(branchId: string, periodo?: string) {
-  let q = supabase
-    .from('consumos_manuales')
+  let q = fromUntyped('manual_consumptions')
     .select('*')
     .eq('branch_id', branchId)
     .is('deleted_at', null)
@@ -407,8 +388,7 @@ export async function fetchConsumosManuales(branchId: string, periodo?: string) 
 }
 
 export async function createConsumoManual(data: ConsumoManualFormData, userId?: string) {
-  const { data: result, error } = await supabase
-    .from('consumos_manuales')
+  const { data: result, error } = await fromUntyped('manual_consumptions')
     .insert({ ...data, created_by: userId })
     .select()
     .single();
@@ -417,13 +397,12 @@ export async function createConsumoManual(data: ConsumoManualFormData, userId?: 
 }
 
 export async function updateConsumoManual(id: string, data: Partial<ConsumoManualFormData>) {
-  const { error } = await supabase.from('consumos_manuales').update(data).eq('id', id);
+  const { error } = await fromUntyped('manual_consumptions').update(data).eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteConsumoManual(id: string) {
-  const { error } = await supabase
-    .from('consumos_manuales')
+  const { error } = await fromUntyped('manual_consumptions')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -481,8 +460,7 @@ export async function createMovimientoSocio(data: MovimientoSocioFormData, userI
 // ── Conceptos de servicio ───────────────────────────────────────────
 
 export async function fetchConceptosServicio() {
-  const { data, error } = await supabase
-    .from('conceptos_servicio')
+  const { data, error } = await fromUntyped('service_concepts')
     .select('*')
     .is('deleted_at', null)
     .order('tipo')
@@ -492,8 +470,7 @@ export async function fetchConceptosServicio() {
 }
 
 export async function createConceptoServicio(data: ConceptoServicioFormData) {
-  const { data: result, error } = await supabase
-    .from('conceptos_servicio')
+  const { data: result, error } = await fromUntyped('service_concepts')
     .insert(data as any)
     .select()
     .single();
@@ -505,17 +482,15 @@ export async function updateConceptoServicio(
   id: string,
   data: Partial<ConceptoServicioFormData>,
 ) {
-  const { error } = await supabase
-    .from('conceptos_servicio')
+  const { error } = await fromUntyped('service_concepts')
     .update(data as any)
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteConceptoServicio(id: string) {
-  const { error } = await supabase
-    .from('conceptos_servicio')
-    .update({ deleted_at: new Date().toISOString(), activo: false } as any)
+  const { error } = await fromUntyped('service_concepts')
+    .update({ deleted_at: new Date().toISOString(), activo: false })
     .eq('id', id);
   if (error) throw error;
 }
@@ -525,8 +500,7 @@ export async function approvePagoProveedor(
   userId: string,
   notas: string | null,
 ) {
-  const { error } = await supabase
-    .from('pagos_proveedores')
+  const { error } = await fromUntyped('supplier_payments')
     .update({
       is_verified: true,
       verificado_por: userId,
@@ -538,8 +512,7 @@ export async function approvePagoProveedor(
 }
 
 export async function rejectPagoProveedor(pagoId: string, notas: string) {
-  const { error } = await supabase
-    .from('pagos_proveedores')
+  const { error } = await fromUntyped('supplier_payments')
     .update({
       deleted_at: new Date().toISOString(),
       verificado_notas: `RECHAZADO: ${notas}`,

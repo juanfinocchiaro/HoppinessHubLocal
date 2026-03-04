@@ -46,8 +46,7 @@ export async function fetchPreconfigExtras(promoItemIds: string[]) {
 }
 
 export async function fetchItemsCartaPriceInfo(ids: string[]) {
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select('id, nombre, precio_base')
     .in('id', ids);
   if (error) throw error;
@@ -229,10 +228,9 @@ export async function fetchAllPriceListItems(priceListIds: string[]) {
 }
 
 export async function fetchItemsCartaForPricing() {
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select(
-      'id, nombre, orden, precio_base, is_active, categoria_carta_id, menu_categorias(id, nombre, orden)',
+      'id, nombre, orden, precio_base, is_active, categoria_carta_id, menu_categories(id, nombre, orden)',
     )
     .eq('is_active', true)
     .order('orden');
@@ -282,8 +280,7 @@ export async function deletePriceOverride(price_list_id: string, item_carta_id: 
 }
 
 export async function fetchActiveItemsPrices() {
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select('id, precio_base')
     .eq('is_active', true);
   if (error) throw error;
@@ -317,10 +314,9 @@ export async function fetchPromoDiscountItems(
   startDate: string,
   endDate: string,
 ) {
-  const { data, error } = await supabase
-    .from('pedido_items')
+  const { data, error } = await fromUntyped('order_items')
     .select(
-      'precio_unitario, precio_referencia, cantidad, subtotal, pedido_id, pedidos!inner(branch_id, created_at)',
+      'precio_unitario, precio_referencia, cantidad, subtotal, pedido_id, orders!inner(branch_id, created_at)',
     )
     .gte('pedidos.created_at', startDate)
     .lt('pedidos.created_at', endDate)

@@ -10,7 +10,7 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 // ---------------------------------------------------------------------------
 
 export async function fetchProveedores(branchId?: string) {
-  let q = supabase.from('proveedores').select('*').is('deleted_at', null).order('razon_social');
+  let q = fromUntyped('suppliers').select('*').is('deleted_at', null).order('razon_social');
 
   if (branchId === '__marca_only__') {
     q = q.eq('ambito', 'marca');
@@ -24,8 +24,7 @@ export async function fetchProveedores(branchId?: string) {
 }
 
 export async function createProveedor(data: ProveedorFormData, userId?: string) {
-  const { data: result, error } = await supabase
-    .from('proveedores')
+  const { data: result, error } = await fromUntyped('suppliers')
     .insert({
       ...data,
       medios_pago_aceptados: data.medios_pago_aceptados || null,
@@ -38,8 +37,7 @@ export async function createProveedor(data: ProveedorFormData, userId?: string) 
 }
 
 export async function updateProveedor(id: string, data: Partial<ProveedorFormData>) {
-  const { error } = await supabase
-    .from('proveedores')
+  const { error } = await fromUntyped('suppliers')
     .update({
       ...data,
       medios_pago_aceptados: data.medios_pago_aceptados || undefined,
@@ -49,8 +47,7 @@ export async function updateProveedor(id: string, data: Partial<ProveedorFormDat
 }
 
 export async function softDeleteProveedor(id: string) {
-  const { error } = await supabase
-    .from('proveedores')
+  const { error } = await fromUntyped('suppliers')
     .update({ deleted_at: new Date().toISOString(), is_active: false })
     .eq('id', id);
   if (error) throw error;

@@ -85,9 +85,9 @@ export async function testAfipConnection(branchId: string) {
 
 export async function fetchPedidoWithDetails(pedidoId: string) {
   const [pedidoRes, itemsRes, pagosRes] = await Promise.all([
-    supabase.from('pedidos').select('*').eq('id', pedidoId).single(),
-    supabase.from('pedido_items').select('*').eq('pedido_id', pedidoId),
-    supabase.from('pedido_pagos').select('*').eq('pedido_id', pedidoId).limit(1),
+    fromUntyped('orders').select('*').eq('id', pedidoId).single(),
+    fromUntyped('order_items').select('*').eq('pedido_id', pedidoId),
+    fromUntyped('order_payments').select('*').eq('pedido_id', pedidoId).limit(1),
   ]);
   if (pedidoRes.error) throw pedidoRes.error;
   return {

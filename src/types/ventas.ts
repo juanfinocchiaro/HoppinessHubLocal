@@ -1,8 +1,6 @@
-import type { Tables } from '@/integrations/supabase/types';
-
-export type VentaMensual = Tables<'ventas_mensuales_local'>;
-export type CanonLiquidacion = Tables<'canon_liquidaciones'>;
-export type PagoCannon = Tables<'pagos_canon'>;
+export type VentaMensual = any;
+export type CanonLiquidacion = any;
+export type PagoCannon = any;
 
 export interface VentaMensualFormData {
   branch_id: string;

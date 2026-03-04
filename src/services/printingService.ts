@@ -45,8 +45,7 @@ export async function logCompletedPrintJob(data: {
 }
 
 export async function fetchPedidoForTracking(pedidoId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('delivery_lat, delivery_lng, branch_id')
     .eq('id', pedidoId)
     .single();
@@ -65,8 +64,7 @@ export async function fetchBranchCoords(branchId: string) {
 }
 
 export async function fetchPedidoForTicket(pedidoId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
       `id, numero_pedido, tipo_servicio, canal_venta, canal_app, numero_llamador, cliente_nombre, cliente_telefono, cliente_direccion, created_at, total, descuento,
        pedido_items(nombre, cantidad, notas, precio_unitario, subtotal, categoria_carta_id),
@@ -80,8 +78,7 @@ export async function fetchPedidoForTicket(pedidoId: string) {
 }
 
 export async function fetchPedidoForDeliveryTicket(pedidoId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
       `id, numero_pedido, tipo_servicio, canal_venta, canal_app, numero_llamador,
        cliente_nombre, cliente_telefono, cliente_direccion,

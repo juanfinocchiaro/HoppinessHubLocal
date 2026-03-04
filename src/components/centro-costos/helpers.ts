@@ -1,4 +1,3 @@
-import type { EI, CG } from './types';
 import type { EI, CG, ItemCartaRow } from './types';
 import { IVA } from '@/lib/constants';
 

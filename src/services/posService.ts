@@ -9,8 +9,7 @@ import type {} from '@/types/pos';
 // ─── Orders ───
 
 export async function fetchOrders(branchId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('*')
     .eq('branch_id', branchId)
     .order('created_at', { ascending: false });
@@ -27,8 +26,7 @@ export async function generateOrderNumber(branchId: string): Promise<number> {
 }
 
 export async function insertPedido(payload: Record<string, unknown>) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .insert(payload as never)
     .select('id, numero_pedido')
     .single();
@@ -38,12 +36,12 @@ export async function insertPedido(payload: Record<string, unknown>) {
 }
 
 export async function insertPedidoItems(items: Array<Record<string, unknown>>) {
-  const { error } = await supabase.from('pedido_items').insert(items as never);
+  const { error } = await fromUntyped('order_items').insert(items as never);
   if (error) throw error;
 }
 
 export async function insertPedidoPagos(pagos: Array<Record<string, unknown>>) {
-  const { error } = await supabase.from('pedido_pagos').insert(pagos as never);
+  const { error } = await fromUntyped('order_payments').insert(pagos as never);
   if (error) throw error;
 }
 
@@ -87,8 +85,7 @@ export async function insertCashMovement(movement: Record<string, unknown>) {
 // ─── Payments ───
 
 export async function fetchPayments(pedidoId: string) {
-  const { data } = await supabase
-    .from('pedido_pagos')
+  const { data } = await fromUntyped('order_payments')
     .select('*')
     .eq('pedido_id', pedidoId);
   return data ?? [];
@@ -98,8 +95,7 @@ export async function fetchPayments(pedidoId: string) {
 
 export async function fetchStockData(branchId: string) {
   const [insumosResult, stockResult, movimientosResult] = await Promise.all([
-    supabase
-      .from('insumos')
+    fromUntyped('supplies')
       .select(
         'id, nombre, unidad_base, categoria_id, costo_por_unidad_base, categorias_insumo:categorias_insumo!insumos_categoria_id_fkey(nombre)',
       )
@@ -126,8 +122,7 @@ export async function fetchStockData(branchId: string) {
 }
 
 export async function fetchInsumoUnit(insumoId: string) {
-  const { data } = await supabase
-    .from('insumos')
+  const { data } = await fromUntyped('supplies')
     .select('unidad_base')
     .eq('id', insumoId)
     .single();
@@ -215,15 +210,14 @@ export async function signInWithPassword(email: string, password: string) {
 // ─── Order Items ───
 
 export async function fetchOrderItems(pedidoId: string) {
-  const { data } = await supabase.from('pedido_items').select('*').eq('pedido_id', pedidoId);
+  const { data } = await fromUntyped('order_items').select('*').eq('pedido_id', pedidoId);
   return data ?? [];
 }
 
 // ─── Order Heatmap ───
 
 export async function fetchDeliveredOrders(branchId: string, fromDate: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('created_at, total')
     .eq('branch_id', branchId)
     .eq('estado', 'entregado')
@@ -239,9 +233,8 @@ export async function fetchClosureOrders(
   fecha: string,
   turno: string,
 ) {
-  let query = supabase
-    .from('pedidos')
-    .select('*, pedido_items(*), pedido_pagos(*)')
+  let query = fromUntyped('orders')
+    .select('*, order_items(*), order_payments(*)')
     .eq('branch_id', branchId)
     .in('estado', ['entregado', 'completado', 'listo'])
     .gte('created_at', `${fecha}T00:00:00`)
@@ -264,10 +257,9 @@ export async function fetchReconciliationPayments(
   desde: string | null,
   hasta: string | null,
 ) {
-  let query = supabase
-    .from('pedido_pagos')
-    .select('metodo, monto, conciliado, mp_payment_id, pedidos!inner(branch_id)')
-    .eq('pedidos.branch_id', branchId);
+  let query = fromUntyped('order_payments')
+    .select('metodo, monto, conciliado, mp_payment_id, orders!inner(branch_id)')
+    .eq('orders.branch_id', branchId);
 
   if (desde) query = query.gte('created_at', desde);
   if (hasta) query = query.lte('created_at', hasta);
@@ -280,10 +272,9 @@ export async function fetchReconciliationPayments(
 // ─── Kitchen ───
 
 export async function fetchKitchenOrders(branchId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
-      'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, pedido_items(id, nombre, cantidad, notas, estacion, estado, pedido_item_modificadores(id, descripcion, tipo, precio_extra))',
+      'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, order_items(id, nombre, cantidad, notas, estacion, estado, order_item_modifiers(id, descripcion, tipo, precio_extra))',
     )
     .eq('branch_id', branchId)
     .in('estado', ['pendiente', 'confirmado', 'en_preparacion', 'listo'])
@@ -297,7 +288,7 @@ export function subscribeToPedidosChanges(branchId: string, callback: () => void
     .channel(`kitchen-${branchId}`)
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'pedidos', filter: `branch_id=eq.${branchId}` },
+      { event: '*', schema: 'public', table: 'orders', filter: `branch_id=eq.${branchId}` },
       callback,
     )
     .subscribe();
@@ -310,10 +301,9 @@ export function removeSupabaseChannel(channel: ReturnType<typeof supabase.channe
 // ─── Order History ───
 
 export async function fetchOrderHistory(branchId: string, fromDate: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
-      'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, pedido_items(id, nombre, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), pedido_pagos(id, metodo, monto), facturas_emitidas(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
+      'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, order_items(id, nombre, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), order_payments(id, metodo, monto), facturas_emitidas(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
     )
     .eq('branch_id', branchId)
     .gte('created_at', fromDate)
@@ -325,8 +315,7 @@ export async function fetchOrderHistory(branchId: string, fromDate: string) {
 // ─── Register ───
 
 export async function fetchOpenRegister(branchId: string) {
-  const { data } = await supabase
-    .from('turnos_caja')
+  const { data } = await fromUntyped('cash_register_shifts')
     .select('*')
     .eq('branch_id', branchId)
     .eq('estado', 'abierto')
@@ -337,17 +326,16 @@ export async function fetchOpenRegister(branchId: string) {
 // ─── Frequent Items ───
 
 export async function fetchFrequentItemSales(branchId: string, since: string) {
-  const { data, error } = await supabase
-    .from('pedido_items')
+  const { data, error } = await fromUntyped('order_items')
     .select(
       `
       item_carta_id,
       cantidad,
-      pedidos!inner(branch_id, created_at)
+      orders!inner(branch_id, created_at)
     `,
     )
-    .eq('pedidos.branch_id', branchId)
-    .gte('pedidos.created_at', since);
+    .eq('orders.branch_id', branchId)
+    .gte('orders.created_at', since);
   if (error) throw error;
   return data ?? [];
 }
@@ -397,8 +385,7 @@ export async function fetchStockActualWithNames(branchId: string) {
 }
 
 export async function fetchInsumosById(ids: string[]) {
-  const { data } = await supabase
-    .from('insumos')
+  const { data } = await fromUntyped('supplies')
     .select('id, nombre, unidad_base')
     .in('id', ids);
   return data ?? [];
@@ -453,8 +440,7 @@ export async function fetchStockActualRow(branchId: string, insumoId: string) {
 }
 
 export async function fetchInsumoCostInfo(insumoId: string) {
-  const { data } = await supabase
-    .from('insumos')
+  const { data } = await fromUntyped('supplies')
     .select('categoria_pl, costo_por_unidad_base, nombre')
     .eq('id', insumoId)
     .single();
@@ -462,7 +448,7 @@ export async function fetchInsumoCostInfo(insumoId: string) {
 }
 
 export async function insertConsumoManual(record: Record<string, unknown>) {
-  await supabase.from('consumos_manuales').insert(record as any);
+  await fromUntyped('manual_consumptions').insert(record as any);
 }
 
 // ─── Stock Movimientos History ───
@@ -558,16 +544,14 @@ export async function lookupProfileByPhone(phoneVariants: string[]) {
 // ─── Hamburguesas Count (shift) ───
 
 export async function fetchMenuCategoriesByName(pattern: string) {
-  const { data } = await supabase
-    .from('menu_categorias')
+  const { data } = await fromUntyped('menu_categories')
     .select('id')
     .ilike('nombre', pattern);
   return data ?? [];
 }
 
 export async function fetchShiftPedidoIds(branchId: string, since: string) {
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select('id')
     .eq('branch_id', branchId)
     .gte('created_at', since)
@@ -579,8 +563,7 @@ export async function fetchItemQuantitiesByCategories(
   categoryIds: string[],
   pedidoIds: string[],
 ) {
-  const { data } = await supabase
-    .from('pedido_items')
+  const { data } = await fromUntyped('order_items')
     .select('cantidad')
     .in('categoria_carta_id', categoryIds)
     .in('pedido_id', pedidoIds);
@@ -598,7 +581,7 @@ export async function updatePedidoEstado(
   if (estado === 'en_preparacion') updateData.tiempo_inicio_prep = new Date().toISOString();
   if (estado === 'listo') updateData.tiempo_listo = new Date().toISOString();
   if (estado === 'en_camino') updateData.tiempo_en_camino = new Date().toISOString();
-  const { error } = await supabase.from('pedidos').update(updateData).eq('id', pedidoId);
+  const { error } = await fromUntyped('orders').update(updateData).eq('id', pedidoId);
   if (error) throw error;
 }
 
@@ -637,8 +620,7 @@ const WEBAPP_SELECT = `
 `;
 
 export async function fetchWebappPendingOrders(branchId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(WEBAPP_SELECT)
     .eq('branch_id', branchId)
     .eq('origen', 'webapp')
@@ -652,8 +634,7 @@ export async function fetchWebappActiveOrders(
   branchId: string,
   activeStates: string[],
 ) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(WEBAPP_SELECT)
     .eq('branch_id', branchId)
     .eq('origen', 'webapp')
@@ -664,8 +645,7 @@ export async function fetchWebappActiveOrders(
 }
 
 export async function fetchWebappRecentOrders(branchId: string, since: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('id, numero_pedido, tipo_servicio, total, estado, created_at, cliente_nombre')
     .eq('branch_id', branchId)
     .eq('origen', 'webapp')
@@ -694,16 +674,14 @@ export function subscribeToWebappOrders(branchId: string, callback: () => void) 
 }
 
 export async function acceptWebappOrder(orderId: string) {
-  const { error } = await supabase
-    .from('pedidos')
-    .update({ estado: 'confirmado', tiempo_confirmado: new Date().toISOString() } as never)
+  const { error } = await fromUntyped('orders')
+    .update({ estado: 'confirmado', tiempo_confirmado: new Date().toISOString() })
     .eq('id', orderId);
   if (error) throw error;
 }
 
 export async function rejectWebappOrder(orderId: string) {
-  const { error } = await supabase
-    .from('pedidos')
+  const { error } = await fromUntyped('orders')
     .update({ estado: 'cancelado' })
     .eq('id', orderId);
   if (error) throw error;
@@ -718,8 +696,7 @@ export async function fetchItemExtraAssignments(itemId: string) {
     .eq('item_carta_id', itemId);
   if (asignaciones && asignaciones.length > 0) {
     const extraIds = asignaciones.map((a) => a.extra_id);
-    const { data: extras } = await supabase
-      .from('items_carta')
+    const { data: extras } = await fromUntyped('menu_items')
       .select('id, nombre, precio_base, is_active')
       .in('id', extraIds)
       .eq('is_active', true)
@@ -776,8 +753,7 @@ export async function fetchUserActiveRoles(userId: string) {
 // ─── Payment Edit ───
 
 export async function deletePedidoPagos(pedidoId: string) {
-  const { error } = await supabase
-    .from('pedido_pagos')
+  const { error } = await fromUntyped('order_payments')
     .delete()
     .eq('pedido_id', pedidoId);
   if (error) throw error;
@@ -839,8 +815,7 @@ export async function fetchBranchShifts(branchId: string) {
 }
 
 export async function fetchShiftAnalysisOrders(branchId: string, since: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('id, total, created_at, estado')
     .eq('branch_id', branchId)
     .gte('created_at', since)
@@ -896,8 +871,7 @@ export function subscribeToChatMessages(pedidoId: string, callback: () => void) 
 // ─── Menu Categorias (for printing) ───
 
 export async function fetchMenuCategoriasPrint() {
-  const { data } = await supabase
-    .from('menu_categorias')
+  const { data } = await fromUntyped('menu_categories')
     .select('id, nombre, tipo_impresion')
     .eq('is_active', true);
   return (data ?? []) as { id: string; nombre: string; tipo_impresion: string }[];
@@ -906,15 +880,14 @@ export async function fetchMenuCategoriasPrint() {
 // ─── Cancel Pedido ───
 
 export async function cancelPedido(pedidoId: string) {
-  await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', pedidoId);
+  await fromUntyped('orders').update({ estado: 'cancelado' }).eq('id', pedidoId);
 }
 
 // ─── Delivery Page ───
 
 export async function fetchDeliveryPedidos(branchId: string) {
-  const { data } = await supabase
-    .from('pedidos')
-    .select('*, pedido_items(nombre, cantidad)')
+  const { data } = await fromUntyped('orders')
+    .select('*, order_items(nombre, cantidad)')
     .eq('branch_id', branchId)
     .eq('tipo', 'delivery')
     .in('estado', ['listo', 'en_camino'])
@@ -923,8 +896,7 @@ export async function fetchDeliveryPedidos(branchId: string) {
 }
 
 export async function fetchValeCategoryIds(): Promise<Set<string>> {
-  const { data } = await supabase
-    .from('menu_categorias')
+  const { data } = await fromUntyped('menu_categories')
     .select('id, tipo_impresion')
     .eq('is_active', true);
   return new Set(
@@ -935,13 +907,12 @@ export async function fetchValeCategoryIds(): Promise<Set<string>> {
 }
 
 export async function assignCadeteToPedido(pedidoId: string, cadeteId: string) {
-  const { error } = await supabase
-    .from('pedidos')
+  const { error } = await fromUntyped('orders')
     .update({
       cadete_id: cadeteId,
       estado: 'en_camino',
       tiempo_en_camino: new Date().toISOString(),
-    } as never)
+    })
     .eq('id', pedidoId);
   if (error) throw error;
 }

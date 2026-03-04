@@ -1,4 +1,3 @@
-import type { Tables } from '@/integrations/supabase/types';
 import type { useModificadoresMutations } from '@/hooks/useModificadores';
 import type { DeepIngredientGroup } from '@/hooks/useItemIngredientesDeepList';
 

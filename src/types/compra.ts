@@ -1,9 +1,7 @@
-import type { Tables } from '@/integrations/supabase/types';
-
-export type FacturaProveedor = Tables<'facturas_proveedores'>;
-export type ItemFactura = Tables<'items_factura'>;
-export type PagoProveedor = Tables<'pagos_proveedores'>;
-export type Gasto = Tables<'gastos'>;
+export type FacturaProveedor = any;
+export type ItemFactura = any;
+export type PagoProveedor = any;
+export type Gasto = any;
 
 // Form types
 export interface FacturaFormData {

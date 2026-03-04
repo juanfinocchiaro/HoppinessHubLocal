@@ -285,8 +285,7 @@ export async function fetchNeighborhoodAssignments(neighborhoodIds: string[]) {
 }
 
 export async function fetchActiveDeliveryStats(branchId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('id, created_at, tiempo_en_camino')
     .eq('branch_id', branchId)
     .eq('tipo_servicio', 'delivery')

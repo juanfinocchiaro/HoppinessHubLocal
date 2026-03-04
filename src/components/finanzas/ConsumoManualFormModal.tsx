@@ -18,9 +18,7 @@ import {
   type ConsumoManualFormData,
 } from '@/hooks/useConsumosManuales';
 import { getCurrentPeriodo } from '@/types/compra';
-import type { Tables } from '@/integrations/supabase/types';
-
-type ConsumoManual = Tables<'consumos_manuales'>;
+type ConsumoManual = any;
 
 interface Props {
   open: boolean;

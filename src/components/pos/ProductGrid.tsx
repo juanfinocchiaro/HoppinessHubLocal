@@ -13,9 +13,7 @@ import { Search, X, Tag, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useActivePromoItems, type PromocionItem, type PromocionItemExtra } from '@/hooks/usePromociones';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { Tables } from '@/integrations/supabase/types';
-
-type ItemCarta = Tables<'items_carta'>;
+type ItemCarta = any;
 
 type MenuItemWithCategory = ItemCarta & {
   menu_categorias: { id: string; nombre: string; orden: number | null } | null;
@@ -32,7 +30,7 @@ type PromoArticle = MenuItemWithCategory & {
 
 type GridItem = MenuItemWithCategory | PromoArticle;
 
-interface SelectableItem extends MenuItemWithCategory {
+interface SelectableItem extends Record<string, any> {
   _promoPrice?: number;
   _originalPrecioBase?: number;
   _preconfigExtras?: PromocionItemExtra[];
