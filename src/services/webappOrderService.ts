@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
 import { ORDER_ACTIVE_STATES } from '@/lib/constants';
 
 const ACTIVE_STATES = ORDER_ACTIVE_STATES as unknown as string[];
@@ -32,30 +33,27 @@ export async function fetchBranchNamesAndSlugs(branchIds: string[]) {
 }
 
 export async function fetchActiveOrdersForUser(userId: string) {
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select('numero_pedido, estado, webapp_tracking_code')
     .eq('cliente_user_id', userId)
     .eq('origen', 'webapp')
     .in('estado', ACTIVE_STATES)
     .order('created_at', { ascending: false });
-  return data || [];
+  return (data as any[]) || [];
 }
 
 export async function fetchActiveOrdersByTrackingCode(code: string) {
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select('numero_pedido, estado, webapp_tracking_code')
     .eq('webapp_tracking_code', code)
     .in('estado', ACTIVE_STATES);
-  return data || [];
+  return (data as any[]) || [];
 }
 
 export async function fetchActiveOrderWithBranch(userId: string) {
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select(
-      'id, numero_pedido, estado, webapp_tracking_code, branch:branches!pedidos_branch_id_fkey(name)',
+      'id, numero_pedido, estado, webapp_tracking_code, branch:branches!orders_branch_id_fkey(name)',
     )
     .eq('cliente_user_id', userId)
     .eq('origen', 'webapp')
@@ -63,24 +61,22 @@ export async function fetchActiveOrderWithBranch(userId: string) {
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data;
+  return data as any;
 }
 
 export async function fetchOrderByTrackingWithBranch(code: string) {
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select(
-      'id, numero_pedido, estado, webapp_tracking_code, branch:branches!pedidos_branch_id_fkey(name)',
+      'id, numero_pedido, estado, webapp_tracking_code, branch:branches!orders_branch_id_fkey(name)',
     )
     .eq('webapp_tracking_code', code)
     .in('estado', ACTIVE_STATES)
     .maybeSingle();
-  return data;
+  return data as any;
 }
 
 export async function fetchPendingWebappCount(branchId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('pedidos')
+  const { count, error } = await fromUntyped('orders')
     .select('*', { count: 'exact', head: true })
     .eq('branch_id', branchId)
     .eq('origen', 'webapp')
@@ -101,7 +97,7 @@ export function subscribeToPedidosChanges(
       {
         event: '*',
         schema: 'public',
-        table: 'pedidos',
+        table: 'orders',
         filter: `branch_id=eq.${branchId}`,
       },
       callback,
@@ -117,26 +113,24 @@ export function unsubscribeChannel(channel: ReturnType<typeof supabase.channel>)
 
 export async function fetchOrderStatuses(trackingCodes: string[]) {
   if (trackingCodes.length === 0) return [];
-  const { data } = await supabase
-    .from('pedidos')
+  const { data } = await fromUntyped('orders')
     .select('webapp_tracking_code, estado, numero_pedido')
     .in('webapp_tracking_code', trackingCodes);
-  return data || [];
+  return (data as any[]) || [];
 }
 
 export async function fetchLastUserOrder(userId: string) {
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select(
       `id, numero_pedido, estado, total, created_at, webapp_tracking_code, branch_id,
-       pedido_items(nombre, cantidad)`,
+       order_items(nombre, cantidad)`,
     )
     .eq('cliente_user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  return data;
+  return data as any;
 }
 
 export async function fetchBranchNameAndSlug(branchId: string) {
@@ -160,7 +154,7 @@ export function subscribeToTrackingUpdates(
       {
         event: 'UPDATE',
         schema: 'public',
-        table: 'pedidos',
+        table: 'orders',
         filter: `webapp_tracking_code=eq.${trackingCode}`,
       },
       callback,

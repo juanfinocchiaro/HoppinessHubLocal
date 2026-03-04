@@ -1,5 +1,6 @@
 import { differenceInMinutes } from 'date-fns';
 import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
 import { getOperationalDateString } from '@/lib/operationalDate';
 
 export async function fetchCurrentlyWorking(branchId: string) {
@@ -152,16 +153,15 @@ export async function fetchPendingItems(branchId: string) {
 
 export async function fetchPosSalesToday(branchId: string) {
   const today = getOperationalDateString();
-  const { data, error } = await supabase
-    .from('pedidos')
+  const { data, error } = await fromUntyped('orders')
     .select('id, total, estado, created_at')
     .eq('branch_id', branchId)
     .gte('created_at', today)
     .not('estado', 'eq', 'cancelado');
 
   if (error) throw error;
-  const pedidos = data || [];
-  const totalVendido = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const pedidos = (data as any[]) || [];
+  const totalVendido = pedidos.reduce((sum: number, p: any) => sum + Number(p.total || 0), 0);
   const cantidad = pedidos.length;
   const ticketPromedio = cantidad > 0 ? totalVendido / cantidad : 0;
   return { totalVendido, cantidad, ticketPromedio };

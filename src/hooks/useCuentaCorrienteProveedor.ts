@@ -61,8 +61,8 @@ export function useResumenProveedor(branchId?: string, proveedorId?: string) {
   return useQuery({
     queryKey: ['resumen-proveedor', branchId, proveedorId],
     queryFn: async () => {
-      const facturas = await fetchProveedorFacturas(branchId!, proveedorId!);
-      const pagos = await fetchProveedorPagos(branchId!, proveedorId!);
+      const facturas = await fetchProveedorFacturas(branchId!, proveedorId!) as any[];
+      const pagos = await fetchProveedorPagos(branchId!, proveedorId!) as any[];
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -154,7 +154,7 @@ export function useMovimientosProveedor(branchId?: string, proveedorId?: string)
   return useQuery({
     queryKey: ['movimientos-proveedor', branchId, proveedorId],
     queryFn: async () => {
-      const { facturas, pagos } = await fetchMovimientosProveedorData(branchId!, proveedorId!);
+      const { facturas, pagos } = await fetchMovimientosProveedorData(branchId!, proveedorId!) as { facturas: any[]; pagos: any[] };
 
       // Merge and sort chronologically, compute running balance
       const movimientos: MovimientoCuenta[] = [];

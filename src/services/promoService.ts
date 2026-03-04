@@ -1,4 +1,3 @@
-import { supabase } from './supabaseClient';
 import { fromUntyped } from '@/lib/supabase-helpers';
 
 // ── Promociones ─────────────────────────────────────────────────────
@@ -151,24 +150,22 @@ export async function registerCodeUsage(params: {
   pedidoId?: string;
   montoDescontado: number;
 }) {
-  await supabase.from('codigos_descuento_usos').insert({
+  await fromUntyped('codigos_descuento_usos').insert({
     codigo_id: params.codigoId,
     user_id: params.userId || null,
     pedido_id: params.pedidoId || null,
     monto_descontado: params.montoDescontado,
   } as any);
 
-  const { data } = await supabase
-    .from('codigos_descuento')
+  const { data } = await fromUntyped('codigos_descuento')
     .select('usos_actuales')
     .eq('id', params.codigoId)
     .single();
   if (data) {
-    await supabase
-      .from('codigos_descuento')
+    await fromUntyped('codigos_descuento')
       .update({
-        usos_actuales: ((data as Record<string, unknown>).usos_actuales as number) + 1,
-      } as Record<string, unknown>)
+        usos_actuales: ((data as any).usos_actuales as number) + 1,
+      } as any)
       .eq('id', params.codigoId);
   }
 }

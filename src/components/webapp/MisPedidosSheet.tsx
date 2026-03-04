@@ -48,7 +48,7 @@ export function MisPedidosSheet({ open, onOpenChange, onShowTracking, currentBra
     enabled: !!user && open,
   });
 
-  const branchIds = [...new Set((orders || []).map((o) => o.branch_id).filter(Boolean))];
+  const branchIds = [...new Set((orders || []).map((o: any) => o.branch_id).filter(Boolean))] as string[];
   const { data: branches } = useQuery({
     queryKey: ['branches-names-slugs-sheet', branchIds],
     queryFn: () => fetchBranchNamesAndSlugs(branchIds),

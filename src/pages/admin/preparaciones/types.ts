@@ -1,4 +1,4 @@
-import type { Tables } from '@/integrations/supabase/types';
+// Tables type removed - using any for renamed tables
 import type { usePreparacionMutations } from '@/hooks/usePreparaciones';
 export { formatCurrency } from '@/lib/formatters';
 

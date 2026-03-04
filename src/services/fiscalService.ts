@@ -101,9 +101,8 @@ export async function searchFacturasEmitidas(
   branchId: string,
   params: { mode: 'number' | 'recent' | 'date'; searchNumber?: string; searchDate?: string },
 ) {
-  let query = supabase
-    .from('facturas_emitidas')
-    .select('*, pedidos!inner(numero_pedido, total, cliente_nombre)')
+  let query = fromUntyped('issued_invoices')
+    .select('*, orders!inner(numero_pedido, total, cliente_nombre)')
     .eq('branch_id', branchId)
     .order('created_at', { ascending: false });
 

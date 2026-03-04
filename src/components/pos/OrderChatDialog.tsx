@@ -59,7 +59,7 @@ export function OrderChatDialog({
     queryKey: ['order-chat', pedidoId],
     queryFn: async () => {
       const data = await fetchOrderChatMessages(pedidoId);
-      return data as ChatMessage[];
+      return data as unknown as ChatMessage[];
     },
     enabled: !!pedidoId,
     refetchInterval: open ? 10000 : 30000,

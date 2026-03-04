@@ -24,9 +24,9 @@ import { DateRangeFilter } from '@/components/ui/DateRangeFilter';
 import { ConsumoManualFormModal } from '@/components/finanzas/ConsumoManualFormModal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/states';
-import type { Tables } from '@/integrations/supabase/types';
+// Tables type not needed for renamed tables
 
-type ConsumoManual = Tables<'consumos_manuales'>;
+type ConsumoManual = any;
 
 export default function ConsumosPage() {
   const { branchId } = useParams<{ branchId: string }>();

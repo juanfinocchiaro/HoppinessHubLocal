@@ -90,7 +90,7 @@ export function useItemExtrasMutations() {
       tipo: 'preparacion' | 'insumo';
       id: string;
       precio_extra: number | null;
-    }) => updatePrecioExtra(tipo === 'preparacion' ? 'preparaciones' : 'insumos', id, precio_extra),
+    }) => updatePrecioExtra(tipo === 'preparacion' ? 'recipes' : 'supplies', id, precio_extra),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['item-carta-extras'] });
       qc.invalidateQueries({ queryKey: ['preparaciones'] });

@@ -17,7 +17,7 @@ import { useRdoCategories } from '@/hooks/useRdoCategories';
 import { useAuth } from '@/hooks/useAuth';
 import { enrich, groupByCat, fcColor } from '@/components/centro-costos/helpers';
 import type { Tab } from '@/components/centro-costos/types';
-import type { Tables } from '@/integrations/supabase/types';
+// Tables type removed - using any for renamed tables
 import type { LucideIcon } from 'lucide-react';
 
 import { AnalisisTab } from '@/components/centro-costos/AnalisisTab';

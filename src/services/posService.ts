@@ -377,11 +377,10 @@ export async function fetchCierreAnterior(branchId: string, periodo: string) {
 }
 
 export async function fetchStockActualWithNames(branchId: string) {
-  const { data } = await supabase
-    .from('stock_actual')
-    .select('insumo_id, cantidad, unidad, insumos(nombre)')
+  const { data } = await fromUntyped('stock_actual')
+    .select('insumo_id, cantidad, unidad, insumos:supplies!stock_actual_insumo_id_fkey(nombre)')
     .eq('branch_id', branchId);
-  return data ?? [];
+  return (data as any[]) ?? [];
 }
 
 export async function fetchInsumosById(ids: string[]) {
@@ -690,18 +689,17 @@ export async function rejectWebappOrder(orderId: string) {
 // ─── Item Extras / Removibles Prefetch ───
 
 export async function fetchItemExtraAssignments(itemId: string) {
-  const { data: asignaciones } = await supabase
-    .from('item_extra_asignaciones')
+  const { data: asignaciones } = await fromUntyped('item_extra_asignaciones')
     .select('extra_id')
     .eq('item_carta_id', itemId);
-  if (asignaciones && asignaciones.length > 0) {
-    const extraIds = asignaciones.map((a) => a.extra_id);
+  if (asignaciones && (asignaciones as any[]).length > 0) {
+    const extraIds = (asignaciones as any[]).map((a: any) => a.extra_id);
     const { data: extras } = await fromUntyped('menu_items')
       .select('id, nombre, precio_base, is_active')
       .in('id', extraIds)
       .eq('is_active', true)
       .is('deleted_at', null);
-    return (extras || []).map((e, i) => ({
+    return ((extras as any[]) || []).map((e: any, i: number) => ({
       id: e.id,
       item_carta_id: itemId,
       preparacion_id: null,
@@ -717,23 +715,21 @@ export async function fetchItemExtraAssignments(itemId: string) {
       insumos: null,
     }));
   }
-  const { data } = await supabase
-    .from('item_carta_extras')
+  const { data } = await fromUntyped('menu_item_extras')
     .select(
-      '*, preparaciones(id, nombre, costo_calculado, precio_extra, puede_ser_extra), insumos(id, nombre, costo_por_unidad_base, precio_extra, puede_ser_extra)',
+      '*, recipes:recipes(id, nombre, costo_calculado, precio_extra, puede_ser_extra), supplies:supplies(id, nombre, costo_por_unidad_base, precio_extra, puede_ser_extra)',
     )
     .eq('item_carta_id', itemId)
     .order('orden');
-  return data ?? [];
+  return (data as any[]) ?? [];
 }
 
 export async function fetchItemRemovibles(itemId: string) {
-  const { data } = await supabase
-    .from('item_removibles')
-    .select('*, insumos(id, nombre), preparaciones(id, nombre)')
+  const { data } = await fromUntyped('item_removibles')
+    .select('*, supplies:supplies(id, nombre), recipes:recipes(id, nombre)')
     .eq('item_carta_id', itemId)
     .eq('is_active', true);
-  return data ?? [];
+  return (data as any[]) ?? [];
 }
 
 // ─── User Roles (for expense approval check) ───
@@ -827,25 +823,22 @@ export async function fetchShiftAnalysisOrders(branchId: string, since: string) 
 // ─── Order Chat ───
 
 export async function fetchOrderChatMessages(pedidoId: string) {
-  const { data, error } = await supabase
-    .from('webapp_pedido_mensajes')
+  const { data, error } = await fromUntyped('webapp_pedido_mensajes')
     .select('id, sender_type, sender_nombre, mensaje, leido, created_at')
     .eq('pedido_id', pedidoId)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  return (data as any[]) ?? [];
 }
 
 export async function insertOrderChatMessage(message: Record<string, unknown>) {
-  const { error } = await supabase
-    .from('webapp_pedido_mensajes')
+  const { error } = await fromUntyped('webapp_pedido_mensajes')
     .insert(message as never);
   if (error) throw error;
 }
 
 export async function markChatMessagesRead(pedidoId: string) {
-  await supabase
-    .from('webapp_pedido_mensajes')
+  await fromUntyped('webapp_pedido_mensajes')
     .update({ leido: true } as never)
     .eq('pedido_id', pedidoId)
     .eq('sender_type', 'cliente')

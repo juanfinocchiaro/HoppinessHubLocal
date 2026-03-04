@@ -69,16 +69,11 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
       }
 
       if (insumoIds.size === 0) {
-        const stockActual = await fetchStockActualWithNames(branchId);
+        const stockActual = await fetchStockActualWithNames(branchId) as any[];
         return stockActual.map(
-          (r: {
-            insumo_id: string;
-            cantidad: number;
-            unidad: string;
-            insumos?: { nombre?: string };
-          }) => ({
+          (r: any) => ({
             insumo_id: r.insumo_id,
-            insumo_nombre: (r.insumos as { nombre?: string })?.nombre ?? r.insumo_id,
+            insumo_nombre: r.insumos?.nombre ?? r.insumo_id,
             unidad: r.unidad,
             stock_apertura: 0,
             compras: 0,
@@ -88,10 +83,10 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
         );
       }
 
-      const insumos = await fetchInsumosById(Array.from(insumoIds));
+      const insumos = await fetchInsumosById(Array.from(insumoIds)) as any[];
 
       const insumoInfo = new Map(
-        insumos.map((i: { id: string; nombre?: string; unidad_base?: string }) => [
+        insumos.map((i: any) => [
           i.id,
           { nombre: i.nombre ?? i.id, unidad: i.unidad_base ?? 'un' },
         ]),

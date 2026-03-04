@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { Tables } from '@/integrations/supabase/types';
+// Tables type removed - using any for renamed tables
 import { PageHeader } from '@/components/ui/page-header';
 import { DataToolbar } from '@/components/ui/data-table-pro';
 import { Badge } from '@/components/ui/badge';

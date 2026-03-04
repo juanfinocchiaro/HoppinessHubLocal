@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fetchPedidoWithDetails, searchFacturasEmitidas } from '@/services/fiscalService';
-import type { Tables } from '@/integrations/supabase/types';
+// Tables type not needed for renamed tables
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
 import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
@@ -109,7 +109,7 @@ export function ReimprimirCard({
             | string
             | null,
           created_at: pedido.created_at!,
-          items: (items || []).map((it: Tables<'pedido_items'>) => ({
+          items: (items || []).map((it: any) => ({
             nombre: it.nombre,
             cantidad: it.cantidad,
             notas: it.notas,

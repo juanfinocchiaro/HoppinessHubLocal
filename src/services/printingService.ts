@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
 
 export async function insertPrintJob(data: {
   branch_id: string;

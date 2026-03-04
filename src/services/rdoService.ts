@@ -361,14 +361,13 @@ export async function fetchRdoCategories(filters?: RdoCategoryFilters): Promise<
 // ── Ventas Mensuales ────────────────────────────────────────────────
 
 export async function fetchVentasMensuales(branchId: string) {
-  const { data, error } = await supabase
-    .from('ventas_mensuales_local')
+  const { data, error } = await fromUntyped('branch_monthly_sales')
     .select('*')
     .eq('branch_id', branchId)
     .is('deleted_at', null)
     .order('periodo', { ascending: false });
   if (error) throw error;
-  return data;
+  return (data as any[]) ?? [];
 }
 
 export async function createVentaMensual(payload: VentaMensualPayload, userId?: string) {
@@ -376,8 +375,7 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
   const ef = payload.efectivo ?? 0;
   const fc = vt - ef;
 
-  const { data: existing } = await supabase
-    .from('ventas_mensuales_local')
+  const { data: existing } = await fromUntyped('branch_monthly_sales')
     .select('id')
     .eq('branch_id', payload.branch_id!)
     .eq('periodo', payload.periodo!)
@@ -385,8 +383,7 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
     .maybeSingle();
 
   if (existing) {
-    const { data: result, error } = await supabase
-      .from('ventas_mensuales_local')
+    const { data: result, error } = await fromUntyped('branch_monthly_sales')
       .update({
         venta_total: vt,
         efectivo: ef,
@@ -395,16 +392,15 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
         observaciones: payload.observaciones,
         cargado_por: userId,
         deleted_at: null,
-      })
-      .eq('id', existing.id)
+      } as any)
+      .eq('id', (existing as any).id)
       .select()
       .single();
     if (error) throw error;
     return result;
   }
 
-  const { data: result, error } = await supabase
-    .from('ventas_mensuales_local')
+  const { data: result, error } = await fromUntyped('branch_monthly_sales')
     .insert({
       branch_id: payload.branch_id!,
       periodo: payload.periodo!,
@@ -414,7 +410,7 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
       ft_total: ef,
       observaciones: payload.observaciones,
       cargado_por: userId,
-    })
+    } as any)
     .select()
     .single();
   if (error) throw error;
@@ -425,23 +421,21 @@ export async function updateVentaMensual(id: string, payload: VentaMensualPayloa
   const vt = payload.venta_total ?? 0;
   const ef = payload.efectivo ?? 0;
   const fc = vt - ef;
-  const { error } = await supabase
-    .from('ventas_mensuales_local')
+  const { error } = await fromUntyped('branch_monthly_sales')
     .update({
       venta_total: vt,
       efectivo: ef,
       fc_total: fc,
       ft_total: ef,
       observaciones: payload.observaciones,
-    })
+    } as any)
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteVentaMensual(id: string) {
-  const { error } = await supabase
-    .from('ventas_mensuales_local')
-    .update({ deleted_at: new Date().toISOString() })
+  const { error } = await fromUntyped('branch_monthly_sales')
+    .update({ deleted_at: new Date().toISOString() } as any)
     .eq('id', id);
   if (error) throw error;
 }

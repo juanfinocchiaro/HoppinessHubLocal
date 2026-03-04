@@ -65,23 +65,21 @@ export interface UpsertCondicionesPayload {
 }
 
 export async function fetchCondicionesByBranch(branchId: string) {
-  const { data, error } = await supabase
-    .from('proveedor_condiciones_local')
+  const { data, error } = await fromUntyped('proveedor_condiciones_local')
     .select('*')
     .eq('branch_id', branchId);
   if (error) throw error;
-  return data;
+  return data as any[];
 }
 
 export async function fetchCondicionesProveedor(branchId: string, proveedorId: string) {
-  const { data, error } = await supabase
-    .from('proveedor_condiciones_local')
+  const { data, error } = await fromUntyped('proveedor_condiciones_local')
     .select('*')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .maybeSingle();
   if (error) throw error;
-  return data;
+  return data as any;
 }
 
 export async function upsertCondiciones(
@@ -89,7 +87,7 @@ export async function upsertCondiciones(
   branchId: string,
   data: UpsertCondicionesPayload,
 ) {
-  const { error } = await supabase.from('proveedor_condiciones_local').upsert(
+  const { error } = await fromUntyped('proveedor_condiciones_local').upsert(
     {
       proveedor_id: proveedorId,
       branch_id: branchId,
@@ -97,7 +95,7 @@ export async function upsertCondiciones(
       dias_pago_habitual: data.dias_pago_habitual ?? null,
       descuento_pago_contado: data.descuento_pago_contado ?? null,
       observaciones: data.observaciones ?? null,
-    },
+    } as any,
     { onConflict: 'proveedor_id,branch_id' },
   );
   if (error) throw error;
@@ -167,25 +165,23 @@ export async function softDeleteProveedorDoc(docId: string) {
 // ---------------------------------------------------------------------------
 
 export async function fetchProveedorFacturas(branchId: string, proveedorId: string) {
-  const { data, error } = await supabase
-    .from('facturas_proveedores')
+  const { data, error } = await fromUntyped('supplier_invoices')
     .select('id, total, saldo_pendiente, estado_pago, fecha_vencimiento')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .is('deleted_at', null);
   if (error) throw error;
-  return data || [];
+  return (data as any[]) || [];
 }
 
 export async function fetchProveedorPagos(branchId: string, proveedorId: string) {
-  const { data, error } = await supabase
-    .from('pagos_proveedores')
+  const { data, error } = await fromUntyped('supplier_payments')
     .select('id, monto, is_verified')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .is('deleted_at', null);
   if (error) throw error;
-  return data || [];
+  return (data as any[]) || [];
 }
 
 export async function fetchSaldoProveedor(branchId: string, proveedorId: string) {
@@ -209,10 +205,9 @@ export async function fetchSaldosProveedores(branchId: string) {
 }
 
 export async function fetchMovimientosProveedorData(branchId: string, proveedorId: string) {
-  const { data: facturas, error: fErr } = await supabase
-    .from('facturas_proveedores')
+  const { data: facturas, error: fErr } = await fromUntyped('supplier_invoices')
     .select(
-      'id, factura_fecha, factura_tipo, factura_numero, total, saldo_pendiente, estado_pago, fecha_vencimiento, items_factura(id)',
+      'id, factura_fecha, factura_tipo, factura_numero, total, saldo_pendiente, estado_pago, fecha_vencimiento, invoice_items:supplier_invoice_items(id)',
     )
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
@@ -220,8 +215,7 @@ export async function fetchMovimientosProveedorData(branchId: string, proveedorI
     .order('factura_fecha', { ascending: true });
   if (fErr) throw fErr;
 
-  const { data: pagos, error: pErr } = await supabase
-    .from('pagos_proveedores')
+  const { data: pagos, error: pErr } = await fromUntyped('supplier_payments')
     .select('id, fecha_pago, monto, medio_pago, referencia, factura_id, is_verified')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
@@ -229,7 +223,7 @@ export async function fetchMovimientosProveedorData(branchId: string, proveedorI
     .order('fecha_pago', { ascending: true });
   if (pErr) throw pErr;
 
-  return { facturas: facturas || [], pagos: pagos || [] };
+  return { facturas: (facturas as any[]) || [], pagos: (pagos as any[]) || [] };
 }
 
 export async function uploadFacturaPdf(facturaId: string, file: File) {

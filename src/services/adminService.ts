@@ -4,6 +4,7 @@
  *         impersonation, user management, brand-level sales
  */
 import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
 
 // ── Branches ────────────────────────────────────────────────────────
 
@@ -429,13 +430,12 @@ export async function fetchClockEntriesSummary(startDate: string, endDate: strin
 // ── Ventas Mensuales Marca ──────────────────────────────────────────
 
 export async function fetchVentasMensualesMarca(periodo: string) {
-  const { data, error } = await supabase
-    .from('ventas_mensuales_local')
+  const { data, error } = await fromUntyped('branch_monthly_sales')
     .select('*')
     .eq('periodo', periodo)
     .is('deleted_at', null);
   if (error) throw error;
-  return data || [];
+  return (data as any[]) || [];
 }
 
 // ── Regulations ─────────────────────────────────────────────────────
@@ -764,26 +764,24 @@ export async function recalcularTodosLosCostos() {
 // ── Promo items fetching (PromocionesPage) ──────────────────────────
 
 export async function fetchPromoItemsWithExtras(promoId: string) {
-  const { data } = await supabase
-    .from('promocion_items')
-    .select('*, items_carta!inner(nombre, imagen_url, precio_base)')
+  const { data } = await fromUntyped('promotion_items')
+    .select('*, menu_items!inner(nombre, imagen_url, precio_base)')
     .eq('promocion_id', promoId);
 
-  const promoItemIds = (data || []).map((d: Record<string, unknown>) => d.id as string);
+  const promoItemIds = (data || []).map((d: any) => d.id as string);
   const extrasMap = new Map<string, Array<{ extra_item_carta_id: string; cantidad: number; nombre: string; precio_extra: number }>>();
 
   if (promoItemIds.length > 0) {
-    const { data: extrasData } = await supabase
-      .from('promocion_item_extras' as never)
+    const { data: extrasData } = await fromUntyped('promotion_item_extras')
       .select('promocion_item_id, extra_item_carta_id, cantidad')
       .in('promocion_item_id', promoItemIds);
 
-    if (extrasData && (extrasData as Array<Record<string, unknown>>).length > 0) {
-      const extraItemIds = [...new Set((extrasData as Array<Record<string, unknown>>).map((e) => e.extra_item_carta_id as string))];
+    if (extrasData && (extrasData as any[]).length > 0) {
+      const extraItemIds = [...new Set((extrasData as any[]).map((e: any) => e.extra_item_carta_id as string))];
       const { data: extraInfo } = await fromUntyped('menu_items').select('id, nombre, precio_base').in('id', extraItemIds);
-      const infoMap = new Map((extraInfo || []).map((n) => [n.id, { nombre: n.nombre, precio: Number(n.precio_base ?? 0) }]));
+      const infoMap = new Map((extraInfo as any[] || []).map((n: any) => [n.id, { nombre: n.nombre, precio: Number(n.precio_base ?? 0) }]));
 
-      for (const e of extrasData as Array<Record<string, unknown>>) {
+      for (const e of extrasData as any[]) {
         const info = infoMap.get(e.extra_item_carta_id as string);
         const list = extrasMap.get(e.promocion_item_id as string) || [];
         list.push({
@@ -797,8 +795,8 @@ export async function fetchPromoItemsWithExtras(promoId: string) {
     }
   }
 
-  return (data || []).map((d: Record<string, unknown>) => {
-    const ic = d.items_carta as { nombre: string; imagen_url?: string | null; precio_base: number } | null;
+  return ((data as any[]) || []).map((d: any) => {
+    const ic = d.menu_items as { nombre: string; imagen_url?: string | null; precio_base: number } | null;
     return {
       item_carta_id: d.item_carta_id as string,
       nombre: ic?.nombre || '',
