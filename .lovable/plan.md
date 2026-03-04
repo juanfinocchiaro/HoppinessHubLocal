@@ -1,41 +1,127 @@
 
 
-# Fix: Turno cortado debe generar DOS filas, no una
+# Auditoría y Actualización de Permisos + Botón Informativo
 
-## Diagnóstico
+## Diagnóstico: Gaps entre DB y Código
 
-Pablo tiene **UN solo schedule** con dos segmentos: `11:00-17:00` y `21:00-02:00`. El sistema trata esto como una sola fila y muestra `"11:00 - 17:00 / 21:00 - 02:00"` todo junto.
+Audité las 3 fuentes de verdad: la tabla `permission_config` (DB), `usePermissions.ts` (hardcoded), y `useDynamicPermissions.ts` (override dinámico).
 
-El fichaje de la noche (20:52) no tiene `schedule_id` → cae a "unlinked". La lógica de rescue en L373-378 **no lo puede rescatar** porque el schedule ya tiene entries del turno mañana (`hasLinked = true`), así que lo salta y crea "No programado".
+### Permisos en DB pero NO conectados al código dinámico
 
-Resultado: fila 1 = "No programado" con datos de noche, fila 2 = "11:00-17:00 / 21:00-02:00" con datos de mañana. Datos cruzados y confusos.
+| permission_key | En DB | Wired en useDynamic |
+|---|---|---|
+| `brand.viewSalesTable` | ✅ | ❌ |
+| `brand.viewCommunications` | ✅ | ❌ |
+| `brand.viewConfig` | ✅ | ❌ |
+| `brand.editBranches` | ✅ | ❌ |
+| `brand.manageRegulations` | ✅ | ❌ |
+| `brand.viewRegulations` | ✅ | ❌ |
+| `brand.viewClosureConfig` | ✅ | ❌ |
+| `local.addTeamMember` | ✅ | ❌ (usa `inviteEmployees`) |
+| `local.editTeamMember` | ✅ | ❌ |
+| `local.approveRequests` | ✅ | ❌ |
+| `local.viewSchedules` | ✅ | ❌ |
+| `local.viewRegulationSignatures` | ✅ | ❌ |
+| `local.viewConfig` | ✅ | ❌ |
 
-## Solución
+### Permisos en código pero SIN entrada en DB
 
-Cuando un schedule tiene `start_time_2 / end_time_2`, **expandirlo en dos schedules virtuales** antes de hacer el matching. Cada segmento genera su propia fila con su propio label y sus propias entries.
+| permission_key | En código | En DB |
+|---|---|---|
+| `brand.viewProducts` | ✅ | ❌ |
+| `brand.editProducts` | ✅ | ❌ |
+| `local.inviteEmployees` | ✅ | ❌ (DB usa `addTeamMember`) |
 
-### Archivo: `src/components/local/clockins/helpers.ts`
+### Permisos hardcoded que nunca pasan por `permission_config`
 
-**Paso 1 — Expandir split schedules (~L341)**: Antes del matching, recorrer `workSchedules` y para cada schedule con `start_time_2/end_time_2`, reemplazarlo por dos "virtual schedules":
-- Segmento 1: `{ ...sched, start_time, end_time, start_time_2: null, end_time_2: null, _virtualSegment: 1 }`
-- Segmento 2: `{ ...sched, start_time: start_time_2, end_time: end_time_2, start_time_2: null, end_time_2: null, _virtualSegment: 2 }`
+Varios permisos en `useDynamicPermissions` usan directamente `permissions.local.X` sin pasar por `getPermission()`:
+- `canViewStock`, `canOrderFromSupplier`, `canDoInventoryCount`
+- `canClockInOut`, `canViewMonthlyHours`, `canDeactivateEmployees`, `canCancelSalaryAdvance`
+- `canAccessPOS`, `canViewKitchen`, `canAssignDelivery`, `canOperateDelivery`, `canOpenRegister`, `canCloseRegister`
+- `canViewSalesReports`, `canViewCMV`, `canViewStockMovements`
+- `canConfigPrinters`, `canConfigShifts`
+- Todos los de `brand`: `canManageModifiers`, `canManageIngredients`, `canEditPrices`, `canManagePromotions`, `canManageSuppliers`, `canManageDeliveryPricing`, `canManageDeliveryZones`, `canManageChannels`, `canManageIntegrations`
 
-Ambos mantienen el mismo `id` para que entries con `schedule_id` apuntando a ese schedule sean asignados.
+---
 
-**Paso 2 — Distribuir entries entre segmentos (~L94-113)**: En `groupEntriesBySchedule`, cuando dos virtual schedules comparten el mismo `id`, distribuir los entries por proximidad temporal al `start_time` de cada segmento en vez de simplemente agrupar todo bajo el mismo id.
+## Plan de Implementación
 
-**Paso 3 — Rescue mejorado (~L373-378)**: Permitir que un segmento virtual vacío reciba entries rescatados, incluso si el otro segmento del mismo schedule original ya tiene entries.
+### 1. Migración SQL: Insertar permisos faltantes en `permission_config`
 
-**Paso 4 — Labels correctos**: Como cada segmento virtual ya tiene solo su `start_time/end_time` sin `_2`, el `shiftLabel` automáticamente mostrará `"11:00 - 17:00"` y `"21:00 - 02:00"` por separado.
+Agregar las filas que faltan para que TODOS los permisos del sistema estén configurables:
 
-### Cambios en types
+**Brand (nuevos):**
+- `brand.viewProducts` — "Ver Carta y Productos" — Catálogos Marca
+- `brand.editProducts` — "Editar Carta y Productos" — Catálogos Marca
+- `brand.manageModifiers` — "Gestionar Modificadores" — Catálogos Marca
+- `brand.manageIngredients` — "Gestionar Ingredientes" — Catálogos Marca
+- `brand.editPrices` — "Editar Precios" — Catálogos Marca
+- `brand.managePromotions` — "Gestionar Promociones" — Catálogos Marca
+- `brand.manageDeliveryPricing` — "Gestionar Precios Delivery" — Delivery
+- `brand.manageDeliveryZones` — "Gestionar Zonas Delivery" — Delivery
+- `brand.manageChannels` — "Gestionar Canales" — Configuración
+- `brand.manageIntegrations` — "Gestionar Integraciones" — Configuración
 
-Agregar campo opcional `_virtualSegment?: 1 | 2` a `ScheduleInfo` para distinguir segmentos expandidos (solo uso interno, no viene del DB).
+**Local (nuevos):**
+- `local.viewStock` — "Ver Stock" — Stock
+- `local.orderFromSupplier` — "Pedir a Proveedor" — Stock
+- `local.doInventoryCount` — "Hacer Conteo" — Stock
+- `local.clockInOut` — "Fichar Entrada/Salida" — Fichajes
+- `local.viewMonthlyHours` — "Ver Horas Mensuales" — RRHH
+- `local.deactivateEmployees` — "Desactivar Empleados" — Equipo
+- `local.cancelAdvance` — "Cancelar Adelantos" — Adelantos
+- `local.accessPOS` — "Acceder al POS" — POS
+- `local.viewKitchen` — "Ver Cocina (KDS)" — POS
+- `local.assignDelivery` — "Asignar Delivery" — POS
+- `local.operateDelivery` — "Operar Delivery" — POS
+- `local.openRegister` — "Abrir Caja" — POS
+- `local.closeRegister` — "Cerrar Caja" — POS
+- `local.viewSalesReports` — "Ver Reportes de Ventas" — Finanzas
+- `local.viewCMV` — "Ver CMV" — Finanzas
+- `local.viewStockMovements` — "Ver Movimientos Stock" — Stock
+- `local.configPrinters` — "Configurar Impresoras" — Configuración
+- `local.configShifts` — "Configurar Turnos" — Configuración
+
+Además, arreglar el key mismatch: `local.inviteEmployees` en código vs `local.addTeamMember` en DB → renombrar en DB a `local.inviteEmployees` para coincidir con el código.
+
+### 2. Conectar TODOS los permisos al override dinámico
+
+**Archivo: `src/hooks/useDynamicPermissions.ts`**
+
+Cambiar todos los permisos que hoy usan `permissions.local.X` directamente para que pasen por `getPermission('local.xxx', localRole, permissions.local.X)`. Lo mismo para los de `brand`.
+
+Esto asegura que CADA permiso visible en la tabla de configuración realmente se aplique cuando se togglea.
+
+### 3. Agregar descripciones a `permission_config`
+
+Agregar columna `description` a la tabla (o usar un mapa estático en el frontend) con textos explicativos de cada permiso. Ejemplo:
+- `local.viewTeam` → "Permite ver la lista de empleados del local, sus datos de contacto y posición"
+- `brand.viewDashboard` → "Permite acceder al dashboard principal de Mi Marca con métricas consolidadas"
+
+Usaré un **mapa estático en el frontend** para evitar migración de columna y mantener flexibilidad.
+
+### 4. Botón informativo (Info Popup) en la UI
+
+**Archivo: `src/pages/admin/PermissionsConfigPage.tsx`**
+
+Al lado de cada nombre de permiso en la tabla, agregar un pequeño icono `Info` (de lucide) que al hacer hover o click muestre un `Tooltip` o `Popover` con la descripción de qué hace ese permiso exactamente.
+
+```text
+| Ver Equipo ⓘ | ✅ | ✅ | ❌ | ❌ | ❌ |
+                 ↕
+         ┌──────────────────────────────┐
+         │ Permite ver la lista de      │
+         │ empleados, datos de contacto │
+         │ y posiciones asignadas.      │
+         └──────────────────────────────┘
+```
 
 ### Archivos a modificar
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/local/clockins/types.ts` | Agregar `_virtualSegment?: 1 \| 2` a `ScheduleInfo` |
-| `src/components/local/clockins/helpers.ts` | Expandir split schedules en dos virtuales + distribuir entries por segmento + fix rescue |
+| **Migración SQL** | INSERT de ~28 permisos faltantes + fix key mismatch |
+| `src/hooks/useDynamicPermissions.ts` | Conectar todos los permisos al `getPermission()` |
+| `src/pages/admin/PermissionsConfigPage.tsx` | Agregar botón info con tooltip por permiso |
+| Nuevo: `src/constants/permissionDescriptions.ts` | Mapa de `permission_key → descripción` |
 
