@@ -456,7 +456,7 @@ export type Database = {
             foreignKeyName: "branch_item_availability_item_carta_id_fkey"
             columns: ["item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -464,6 +464,75 @@ export type Database = {
             columns: ["item_carta_id"]
             isOneToOne: false
             referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branch_monthly_sales: {
+        Row: {
+          branch_id: string
+          cargado_por: string | null
+          created_at: string | null
+          deleted_at: string | null
+          efectivo: number | null
+          fc_total: number
+          fecha_carga: string | null
+          ft_total: number
+          fuente: string
+          id: string
+          observaciones: string | null
+          periodo: string
+          porcentaje_ft: number | null
+          updated_at: string | null
+          venta_total: number | null
+        }
+        Insert: {
+          branch_id: string
+          cargado_por?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          efectivo?: number | null
+          fc_total: number
+          fecha_carga?: string | null
+          ft_total: number
+          fuente?: string
+          id?: string
+          observaciones?: string | null
+          periodo: string
+          porcentaje_ft?: number | null
+          updated_at?: string | null
+          venta_total?: number | null
+        }
+        Update: {
+          branch_id?: string
+          cargado_por?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          efectivo?: number | null
+          fc_total?: number
+          fecha_carga?: string | null
+          ft_total?: number
+          fuente?: string
+          id?: string
+          observaciones?: string | null
+          periodo?: string
+          porcentaje_ft?: number | null
+          updated_at?: string | null
+          venta_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventas_mensuales_local_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventas_mensuales_local_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
             referencedColumns: ["id"]
           },
         ]
@@ -732,7 +801,86 @@ export type Database = {
         }
         Relationships: []
       }
-      canon_liquidaciones: {
+      canon_payments: {
+        Row: {
+          branch_id: string
+          canon_liquidacion_id: string
+          created_at: string | null
+          created_by: string | null
+          datos_pago: Json | null
+          deleted_at: string | null
+          fecha_pago: string
+          id: string
+          is_verified: boolean
+          medio_pago: string
+          monto: number
+          observaciones: string | null
+          referencia: string | null
+          verificado_at: string | null
+          verificado_notas: string | null
+          verificado_por: string | null
+        }
+        Insert: {
+          branch_id: string
+          canon_liquidacion_id: string
+          created_at?: string | null
+          created_by?: string | null
+          datos_pago?: Json | null
+          deleted_at?: string | null
+          fecha_pago: string
+          id?: string
+          is_verified?: boolean
+          medio_pago: string
+          monto: number
+          observaciones?: string | null
+          referencia?: string | null
+          verificado_at?: string | null
+          verificado_notas?: string | null
+          verificado_por?: string | null
+        }
+        Update: {
+          branch_id?: string
+          canon_liquidacion_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          datos_pago?: Json | null
+          deleted_at?: string | null
+          fecha_pago?: string
+          id?: string
+          is_verified?: boolean
+          medio_pago?: string
+          monto?: number
+          observaciones?: string | null
+          referencia?: string | null
+          verificado_at?: string | null
+          verificado_notas?: string | null
+          verificado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_canon_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_canon_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_canon_canon_liquidacion_id_fkey"
+            columns: ["canon_liquidacion_id"]
+            isOneToOne: false
+            referencedRelation: "canon_settlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canon_settlements: {
         Row: {
           branch_id: string
           canon_monto: number
@@ -824,7 +972,7 @@ export type Database = {
             foreignKeyName: "canon_liquidaciones_ventas_id_fkey"
             columns: ["ventas_id"]
             isOneToOne: false
-            referencedRelation: "ventas_mensuales_local"
+            referencedRelation: "branch_monthly_sales"
             referencedColumns: ["id"]
           },
         ]
@@ -900,7 +1048,7 @@ export type Database = {
             foreignKeyName: "cash_register_movements_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -1117,72 +1265,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      categorias_insumo: {
-        Row: {
-          created_at: string | null
-          deleted_at: string | null
-          descripcion: string | null
-          id: string
-          is_active: boolean | null
-          nombre: string
-          orden: number | null
-          tipo: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          id?: string
-          is_active?: boolean | null
-          nombre: string
-          orden?: number | null
-          tipo: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          id?: string
-          is_active?: boolean | null
-          nombre?: string
-          orden?: number | null
-          tipo?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      categorias_preparacion: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          id: string
-          is_active: boolean
-          nombre: string
-          orden: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          is_active?: boolean
-          nombre: string
-          orden?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          is_active?: boolean
-          nombre?: string
-          orden?: number
-          updated_at?: string
-        }
-        Relationships: []
       }
       city_neighborhoods: {
         Row: {
@@ -1517,101 +1599,6 @@ export type Database = {
           },
         ]
       }
-      codigos_descuento: {
-        Row: {
-          branch_ids: string[] | null
-          brand_id: string | null
-          codigo: string
-          created_at: string | null
-          created_by: string | null
-          deleted_at: string | null
-          fecha_fin: string
-          fecha_inicio: string
-          id: string
-          is_active: boolean
-          monto_minimo_pedido: number | null
-          tipo: string
-          updated_at: string | null
-          uso_unico_por_usuario: boolean
-          usos_actuales: number
-          usos_maximos: number | null
-          valor: number
-        }
-        Insert: {
-          branch_ids?: string[] | null
-          brand_id?: string | null
-          codigo: string
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          fecha_fin?: string
-          fecha_inicio?: string
-          id?: string
-          is_active?: boolean
-          monto_minimo_pedido?: number | null
-          tipo: string
-          updated_at?: string | null
-          uso_unico_por_usuario?: boolean
-          usos_actuales?: number
-          usos_maximos?: number | null
-          valor?: number
-        }
-        Update: {
-          branch_ids?: string[] | null
-          brand_id?: string | null
-          codigo?: string
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          fecha_fin?: string
-          fecha_inicio?: string
-          id?: string
-          is_active?: boolean
-          monto_minimo_pedido?: number | null
-          tipo?: string
-          updated_at?: string | null
-          uso_unico_por_usuario?: boolean
-          usos_actuales?: number
-          usos_maximos?: number | null
-          valor?: number
-        }
-        Relationships: []
-      }
-      codigos_descuento_usos: {
-        Row: {
-          codigo_id: string
-          created_at: string | null
-          id: string
-          monto_descontado: number
-          pedido_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          codigo_id: string
-          created_at?: string | null
-          id?: string
-          monto_descontado?: number
-          pedido_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          codigo_id?: string
-          created_at?: string | null
-          id?: string
-          monto_descontado?: number
-          pedido_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "codigos_descuento_usos_codigo_id_fkey"
-            columns: ["codigo_id"]
-            isOneToOne: false
-            referencedRelation: "codigos_descuento"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       communication_reads: {
         Row: {
           communication_id: string
@@ -1713,202 +1700,6 @@ export type Database = {
           {
             foreignKeyName: "communications_source_branch_id_fkey"
             columns: ["source_branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conceptos_servicio: {
-        Row: {
-          categoria_gasto: string | null
-          created_at: string | null
-          deleted_at: string | null
-          descripcion: string | null
-          formula_calculo: Json | null
-          id: string
-          is_active: boolean | null
-          is_calculated: boolean | null
-          nombre: string
-          periodicidad: string | null
-          proveedor_id: string | null
-          rdo_category_code: string | null
-          subcategoria: string | null
-          tipo: string
-          updated_at: string | null
-          visible_local: boolean
-        }
-        Insert: {
-          categoria_gasto?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          formula_calculo?: Json | null
-          id?: string
-          is_active?: boolean | null
-          is_calculated?: boolean | null
-          nombre: string
-          periodicidad?: string | null
-          proveedor_id?: string | null
-          rdo_category_code?: string | null
-          subcategoria?: string | null
-          tipo?: string
-          updated_at?: string | null
-          visible_local?: boolean
-        }
-        Update: {
-          categoria_gasto?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          formula_calculo?: Json | null
-          id?: string
-          is_active?: boolean | null
-          is_calculated?: boolean | null
-          nombre?: string
-          periodicidad?: string | null
-          proveedor_id?: string | null
-          rdo_category_code?: string | null
-          subcategoria?: string | null
-          tipo?: string
-          updated_at?: string | null
-          visible_local?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conceptos_servicio_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "conceptos_servicio_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conceptos_servicio_rdo_category_code_fkey"
-            columns: ["rdo_category_code"]
-            isOneToOne: false
-            referencedRelation: "rdo_categories"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
-      configuracion_impuestos: {
-        Row: {
-          branch_id: string
-          created_at: string | null
-          deleted_at: string | null
-          id: string
-          iibb_alicuota: number
-          observaciones: string | null
-          otros_impuestos: Json | null
-          tasas_municipales: number | null
-          updated_at: string | null
-          vigencia_desde: string
-          vigencia_hasta: string | null
-        }
-        Insert: {
-          branch_id: string
-          created_at?: string | null
-          deleted_at?: string | null
-          id?: string
-          iibb_alicuota: number
-          observaciones?: string | null
-          otros_impuestos?: Json | null
-          tasas_municipales?: number | null
-          updated_at?: string | null
-          vigencia_desde: string
-          vigencia_hasta?: string | null
-        }
-        Update: {
-          branch_id?: string
-          created_at?: string | null
-          deleted_at?: string | null
-          id?: string
-          iibb_alicuota?: number
-          observaciones?: string | null
-          otros_impuestos?: Json | null
-          tasas_municipales?: number | null
-          updated_at?: string | null
-          vigencia_desde?: string
-          vigencia_hasta?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "configuracion_impuestos_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "configuracion_impuestos_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      consumos_manuales: {
-        Row: {
-          branch_id: string
-          categoria_pl: string
-          created_at: string | null
-          created_by: string | null
-          deleted_at: string | null
-          detalle: Json | null
-          id: string
-          monto_consumido: number
-          observaciones: string | null
-          periodo: string
-          tipo: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          branch_id: string
-          categoria_pl: string
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          detalle?: Json | null
-          id?: string
-          monto_consumido: number
-          observaciones?: string | null
-          periodo: string
-          tipo?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          branch_id?: string
-          categoria_pl?: string
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          detalle?: Json | null
-          id?: string
-          monto_consumido?: number
-          observaciones?: string | null
-          periodo?: string
-          tipo?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consumos_manuales_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consumos_manuales_branch_id_fkey"
-            columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches_public"
             referencedColumns: ["id"]
@@ -2240,6 +2031,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      discount_code_uses: {
+        Row: {
+          codigo_id: string
+          created_at: string | null
+          id: string
+          monto_descontado: number
+          pedido_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          codigo_id: string
+          created_at?: string | null
+          id?: string
+          monto_descontado?: number
+          pedido_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          codigo_id?: string
+          created_at?: string | null
+          id?: string
+          monto_descontado?: number
+          pedido_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "codigos_descuento_usos_codigo_id_fkey"
+            columns: ["codigo_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discount_codes: {
+        Row: {
+          branch_ids: string[] | null
+          brand_id: string | null
+          codigo: string
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          is_active: boolean
+          monto_minimo_pedido: number | null
+          tipo: string
+          updated_at: string | null
+          uso_unico_por_usuario: boolean
+          usos_actuales: number
+          usos_maximos: number | null
+          valor: number
+        }
+        Insert: {
+          branch_ids?: string[] | null
+          brand_id?: string | null
+          codigo: string
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          is_active?: boolean
+          monto_minimo_pedido?: number | null
+          tipo: string
+          updated_at?: string | null
+          uso_unico_por_usuario?: boolean
+          usos_actuales?: number
+          usos_maximos?: number | null
+          valor?: number
+        }
+        Update: {
+          branch_ids?: string[] | null
+          brand_id?: string | null
+          codigo?: string
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          is_active?: boolean
+          monto_minimo_pedido?: number | null
+          tipo?: string
+          updated_at?: string | null
+          uso_unico_por_usuario?: boolean
+          usos_actuales?: number
+          usos_maximos?: number | null
+          valor?: number
+        }
+        Relationships: []
       }
       distribuciones_utilidades: {
         Row: {
@@ -2617,253 +2503,195 @@ export type Database = {
           },
         ]
       }
-      facturas_emitidas: {
+      expenses: {
         Row: {
-          afip_request: Json | null
-          afip_response: Json | null
-          anulada: boolean
+          adjuntos: Json | null
+          afecta_caja: boolean | null
           branch_id: string
-          cae: string | null
-          cae_vencimiento: string | null
-          created_at: string
-          emitido_por: string | null
-          factura_asociada_id: string | null
-          fecha_emision: string
-          id: string
-          iva: number
-          moneda: string
-          neto: number
-          numero_comprobante: number
-          pedido_id: string | null
-          punto_venta: number
-          receptor_condicion_iva: string | null
-          receptor_cuit: string | null
-          receptor_razon_social: string | null
-          tipo_comprobante: string
-          total: number
-        }
-        Insert: {
-          afip_request?: Json | null
-          afip_response?: Json | null
-          anulada?: boolean
-          branch_id: string
-          cae?: string | null
-          cae_vencimiento?: string | null
-          created_at?: string
-          emitido_por?: string | null
-          factura_asociada_id?: string | null
-          fecha_emision?: string
-          id?: string
-          iva?: number
-          moneda?: string
-          neto?: number
-          numero_comprobante: number
-          pedido_id?: string | null
-          punto_venta: number
-          receptor_condicion_iva?: string | null
-          receptor_cuit?: string | null
-          receptor_razon_social?: string | null
-          tipo_comprobante: string
-          total?: number
-        }
-        Update: {
-          afip_request?: Json | null
-          afip_response?: Json | null
-          anulada?: boolean
-          branch_id?: string
-          cae?: string | null
-          cae_vencimiento?: string | null
-          created_at?: string
-          emitido_por?: string | null
-          factura_asociada_id?: string | null
-          fecha_emision?: string
-          id?: string
-          iva?: number
-          moneda?: string
-          neto?: number
-          numero_comprobante?: number
-          pedido_id?: string | null
-          punto_venta?: number
-          receptor_condicion_iva?: string | null
-          receptor_cuit?: string | null
-          receptor_razon_social?: string | null
-          tipo_comprobante?: string
-          total?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "facturas_emitidas_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "facturas_emitidas_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "facturas_emitidas_factura_asociada_id_fkey"
-            columns: ["factura_asociada_id"]
-            isOneToOne: false
-            referencedRelation: "facturas_emitidas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "facturas_emitidas_pedido_id_fkey"
-            columns: ["pedido_id"]
-            isOneToOne: false
-            referencedRelation: "pedidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "facturas_emitidas_pedido_id_fkey"
-            columns: ["pedido_id"]
-            isOneToOne: false
-            referencedRelation: "rdo_multivista_ventas_base"
-            referencedColumns: ["pedido_id"]
-          },
-        ]
-      }
-      facturas_proveedores: {
-        Row: {
-          branch_id: string
-          condicion_pago: string | null
-          costo_real: number | null
+          categoria_principal: string
+          concepto: string
+          costo_transferencia: number | null
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
-          estado_pago: string | null
-          factura_fecha: string
-          factura_numero: string
-          factura_tipo: string | null
-          factura_url: string | null
+          detalle: Json | null
+          estado: string | null
+          fecha: string
+          fecha_pago: string | null
           fecha_vencimiento: string | null
+          gasto_relacionado_id: string | null
           id: string
-          imp_internos: number | null
-          iva: number | null
-          iva_105: number | null
-          iva_21: number | null
-          motivo_extraordinaria: string | null
+          medio_pago: string | null
+          monto: number
           observaciones: string | null
-          otros_impuestos: number | null
-          perc_iva: number | null
-          perc_municipal: number | null
-          perc_provincial: number | null
           periodo: string
-          proveedor_id: string
-          saldo_pendiente: number | null
-          subtotal: number
-          subtotal_bruto: number | null
-          subtotal_neto: number | null
-          tipo: string | null
-          total: number
-          total_descuentos: number | null
-          total_factura: number | null
+          proveedor_id: string | null
+          rdo_category_code: string | null
+          rdo_section: string | null
+          referencia_pago: string | null
+          shift_id: string | null
+          subcategoria: string | null
+          tipo_pago: string | null
           updated_at: string | null
         }
         Insert: {
+          adjuntos?: Json | null
+          afecta_caja?: boolean | null
           branch_id: string
-          condicion_pago?: string | null
-          costo_real?: number | null
+          categoria_principal: string
+          concepto: string
+          costo_transferencia?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
-          estado_pago?: string | null
-          factura_fecha: string
-          factura_numero: string
-          factura_tipo?: string | null
-          factura_url?: string | null
+          detalle?: Json | null
+          estado?: string | null
+          fecha: string
+          fecha_pago?: string | null
           fecha_vencimiento?: string | null
+          gasto_relacionado_id?: string | null
           id?: string
-          imp_internos?: number | null
-          iva?: number | null
-          iva_105?: number | null
-          iva_21?: number | null
-          motivo_extraordinaria?: string | null
+          medio_pago?: string | null
+          monto: number
           observaciones?: string | null
-          otros_impuestos?: number | null
-          perc_iva?: number | null
-          perc_municipal?: number | null
-          perc_provincial?: number | null
           periodo: string
-          proveedor_id: string
-          saldo_pendiente?: number | null
-          subtotal?: number
-          subtotal_bruto?: number | null
-          subtotal_neto?: number | null
-          tipo?: string | null
-          total?: number
-          total_descuentos?: number | null
-          total_factura?: number | null
+          proveedor_id?: string | null
+          rdo_category_code?: string | null
+          rdo_section?: string | null
+          referencia_pago?: string | null
+          shift_id?: string | null
+          subcategoria?: string | null
+          tipo_pago?: string | null
           updated_at?: string | null
         }
         Update: {
+          adjuntos?: Json | null
+          afecta_caja?: boolean | null
           branch_id?: string
-          condicion_pago?: string | null
-          costo_real?: number | null
+          categoria_principal?: string
+          concepto?: string
+          costo_transferencia?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
-          estado_pago?: string | null
-          factura_fecha?: string
-          factura_numero?: string
-          factura_tipo?: string | null
-          factura_url?: string | null
+          detalle?: Json | null
+          estado?: string | null
+          fecha?: string
+          fecha_pago?: string | null
           fecha_vencimiento?: string | null
+          gasto_relacionado_id?: string | null
           id?: string
-          imp_internos?: number | null
-          iva?: number | null
-          iva_105?: number | null
-          iva_21?: number | null
-          motivo_extraordinaria?: string | null
+          medio_pago?: string | null
+          monto?: number
           observaciones?: string | null
-          otros_impuestos?: number | null
-          perc_iva?: number | null
-          perc_municipal?: number | null
-          perc_provincial?: number | null
           periodo?: string
-          proveedor_id?: string
-          saldo_pendiente?: number | null
-          subtotal?: number
-          subtotal_bruto?: number | null
-          subtotal_neto?: number | null
-          tipo?: string | null
-          total?: number
-          total_descuentos?: number | null
-          total_factura?: number | null
+          proveedor_id?: string | null
+          rdo_category_code?: string | null
+          rdo_section?: string | null
+          referencia_pago?: string | null
+          shift_id?: string | null
+          subcategoria?: string | null
+          tipo_pago?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "facturas_proveedores_branch_id_fkey"
+            foreignKeyName: "gastos_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "facturas_proveedores_branch_id_fkey"
+            foreignKeyName: "gastos_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "facturas_proveedores_proveedor_id_fkey"
+            foreignKeyName: "gastos_gasto_relacionado_id_fkey"
+            columns: ["gasto_relacionado_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
             referencedRelation: "cuenta_corriente_proveedores"
             referencedColumns: ["proveedor_id"]
           },
           {
-            foreignKeyName: "facturas_proveedores_proveedor_id_fkey"
+            foreignKeyName: "gastos_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "proveedores"
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_rdo_category_code_fkey"
+            columns: ["rdo_category_code"]
+            isOneToOne: false
+            referencedRelation: "rdo_categories"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "gastos_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "cash_register_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extra_assignments: {
+        Row: {
+          created_at: string | null
+          extra_id: string
+          id: string
+          item_carta_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          extra_id: string
+          id?: string
+          item_carta_id: string
+        }
+        Update: {
+          created_at?: string | null
+          extra_id?: string
+          id?: string
+          item_carta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_extra_asignaciones_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_extra_asignaciones_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_extra_asignaciones_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_extra_asignaciones_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
             referencedColumns: ["id"]
           },
         ]
@@ -3054,149 +2882,6 @@ export type Database = {
           },
         ]
       }
-      gastos: {
-        Row: {
-          adjuntos: Json | null
-          afecta_caja: boolean | null
-          branch_id: string
-          categoria_principal: string
-          concepto: string
-          costo_transferencia: number | null
-          created_at: string | null
-          created_by: string | null
-          deleted_at: string | null
-          detalle: Json | null
-          estado: string | null
-          fecha: string
-          fecha_pago: string | null
-          fecha_vencimiento: string | null
-          gasto_relacionado_id: string | null
-          id: string
-          medio_pago: string | null
-          monto: number
-          observaciones: string | null
-          periodo: string
-          proveedor_id: string | null
-          rdo_category_code: string | null
-          rdo_section: string | null
-          referencia_pago: string | null
-          shift_id: string | null
-          subcategoria: string | null
-          tipo_pago: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          adjuntos?: Json | null
-          afecta_caja?: boolean | null
-          branch_id: string
-          categoria_principal: string
-          concepto: string
-          costo_transferencia?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          detalle?: Json | null
-          estado?: string | null
-          fecha: string
-          fecha_pago?: string | null
-          fecha_vencimiento?: string | null
-          gasto_relacionado_id?: string | null
-          id?: string
-          medio_pago?: string | null
-          monto: number
-          observaciones?: string | null
-          periodo: string
-          proveedor_id?: string | null
-          rdo_category_code?: string | null
-          rdo_section?: string | null
-          referencia_pago?: string | null
-          shift_id?: string | null
-          subcategoria?: string | null
-          tipo_pago?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          adjuntos?: Json | null
-          afecta_caja?: boolean | null
-          branch_id?: string
-          categoria_principal?: string
-          concepto?: string
-          costo_transferencia?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          deleted_at?: string | null
-          detalle?: Json | null
-          estado?: string | null
-          fecha?: string
-          fecha_pago?: string | null
-          fecha_vencimiento?: string | null
-          gasto_relacionado_id?: string | null
-          id?: string
-          medio_pago?: string | null
-          monto?: number
-          observaciones?: string | null
-          periodo?: string
-          proveedor_id?: string | null
-          rdo_category_code?: string | null
-          rdo_section?: string | null
-          referencia_pago?: string | null
-          shift_id?: string | null
-          subcategoria?: string | null
-          tipo_pago?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gastos_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_gasto_relacionado_id_fkey"
-            columns: ["gasto_relacionado_id"]
-            isOneToOne: false
-            referencedRelation: "gastos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "gastos_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_rdo_category_code_fkey"
-            columns: ["rdo_category_code"]
-            isOneToOne: false
-            referencedRelation: "rdo_categories"
-            referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "gastos_shift_id_fkey"
-            columns: ["shift_id"]
-            isOneToOne: false
-            referencedRelation: "cash_register_shifts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       general_competencies: {
         Row: {
           created_at: string
@@ -3348,154 +3033,6 @@ export type Database = {
         }
         Relationships: []
       }
-      insumos: {
-        Row: {
-          categoria_id: string | null
-          categoria_pl: string | null
-          costo_por_unidad_base: number | null
-          creado_por: string | null
-          created_at: string | null
-          default_alicuota_iva: number | null
-          deleted_at: string | null
-          descripcion: string | null
-          especificacion: Json | null
-          fc_objetivo_extra: number | null
-          id: string
-          is_active: boolean | null
-          margen_bruto: number | null
-          margen_porcentaje: number | null
-          motivo_control: string | null
-          nivel_control: string
-          nombre: string
-          precio_extra: number | null
-          precio_maximo_sugerido: number | null
-          precio_referencia: number | null
-          precio_venta: number | null
-          proveedor_obligatorio_id: string | null
-          proveedor_sugerido_id: string | null
-          puede_ser_extra: boolean
-          rdo_category_code: string | null
-          tipo_item: string
-          tracks_stock: boolean
-          unidad_base: string
-          unidad_compra: string | null
-          unidad_compra_contenido: number | null
-          unidad_compra_precio: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          categoria_id?: string | null
-          categoria_pl?: string | null
-          costo_por_unidad_base?: number | null
-          creado_por?: string | null
-          created_at?: string | null
-          default_alicuota_iva?: number | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          especificacion?: Json | null
-          fc_objetivo_extra?: number | null
-          id?: string
-          is_active?: boolean | null
-          margen_bruto?: number | null
-          margen_porcentaje?: number | null
-          motivo_control?: string | null
-          nivel_control?: string
-          nombre: string
-          precio_extra?: number | null
-          precio_maximo_sugerido?: number | null
-          precio_referencia?: number | null
-          precio_venta?: number | null
-          proveedor_obligatorio_id?: string | null
-          proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
-          rdo_category_code?: string | null
-          tipo_item?: string
-          tracks_stock?: boolean
-          unidad_base: string
-          unidad_compra?: string | null
-          unidad_compra_contenido?: number | null
-          unidad_compra_precio?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          categoria_id?: string | null
-          categoria_pl?: string | null
-          costo_por_unidad_base?: number | null
-          creado_por?: string | null
-          created_at?: string | null
-          default_alicuota_iva?: number | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          especificacion?: Json | null
-          fc_objetivo_extra?: number | null
-          id?: string
-          is_active?: boolean | null
-          margen_bruto?: number | null
-          margen_porcentaje?: number | null
-          motivo_control?: string | null
-          nivel_control?: string
-          nombre?: string
-          precio_extra?: number | null
-          precio_maximo_sugerido?: number | null
-          precio_referencia?: number | null
-          precio_venta?: number | null
-          proveedor_obligatorio_id?: string | null
-          proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
-          rdo_category_code?: string | null
-          tipo_item?: string
-          tracks_stock?: boolean
-          unidad_base?: string
-          unidad_compra?: string | null
-          unidad_compra_contenido?: number | null
-          unidad_compra_precio?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "insumos_categoria_id_fkey"
-            columns: ["categoria_id"]
-            isOneToOne: false
-            referencedRelation: "categorias_insumo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "insumos_proveedor_obligatorio_id_fkey"
-            columns: ["proveedor_obligatorio_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "insumos_proveedor_obligatorio_id_fkey"
-            columns: ["proveedor_obligatorio_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "insumos_proveedor_sugerido_id_fkey"
-            columns: ["proveedor_sugerido_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "insumos_proveedor_sugerido_id_fkey"
-            columns: ["proveedor_sugerido_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "insumos_rdo_category_code_fkey"
-            columns: ["rdo_category_code"]
-            isOneToOne: false
-            referencedRelation: "rdo_categories"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
       insumos_costos_historial: {
         Row: {
           branch_id: string | null
@@ -3553,19 +3090,19 @@ export type Database = {
             foreignKeyName: "insumos_costos_historial_factura_id_fkey"
             columns: ["factura_id"]
             isOneToOne: false
-            referencedRelation: "facturas_proveedores"
+            referencedRelation: "supplier_invoices"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "insumos_costos_historial_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
       }
-      inversiones: {
+      investments: {
         Row: {
           branch_id: string
           created_at: string
@@ -3637,323 +3174,269 @@ export type Database = {
           },
         ]
       }
-      item_carta_composicion: {
+      invoice_items: {
         Row: {
+          afecta_costo_base: boolean | null
+          alicuota_iva: number | null
           cantidad: number
+          categoria_pl: string | null
+          concepto_servicio_id: string | null
           created_at: string | null
+          descuento_monto: number | null
+          descuento_porcentaje: number | null
+          factura_id: string
           id: string
           insumo_id: string | null
-          is_removable: boolean
-          item_carta_id: string
-          orden: number | null
-          preparacion_id: string | null
+          iva_monto: number | null
+          observaciones: string | null
+          precio_bruto: number | null
+          precio_neto: number | null
+          precio_unitario: number
+          precio_unitario_bruto: number | null
+          rdo_category_code: string | null
+          subtotal: number
+          tipo_item: string
+          unidad: string | null
         }
         Insert: {
+          afecta_costo_base?: boolean | null
+          alicuota_iva?: number | null
           cantidad?: number
+          categoria_pl?: string | null
+          concepto_servicio_id?: string | null
           created_at?: string | null
+          descuento_monto?: number | null
+          descuento_porcentaje?: number | null
+          factura_id: string
           id?: string
           insumo_id?: string | null
-          is_removable?: boolean
-          item_carta_id: string
-          orden?: number | null
-          preparacion_id?: string | null
+          iva_monto?: number | null
+          observaciones?: string | null
+          precio_bruto?: number | null
+          precio_neto?: number | null
+          precio_unitario: number
+          precio_unitario_bruto?: number | null
+          rdo_category_code?: string | null
+          subtotal: number
+          tipo_item?: string
+          unidad?: string | null
         }
         Update: {
+          afecta_costo_base?: boolean | null
+          alicuota_iva?: number | null
           cantidad?: number
+          categoria_pl?: string | null
+          concepto_servicio_id?: string | null
           created_at?: string | null
+          descuento_monto?: number | null
+          descuento_porcentaje?: number | null
+          factura_id?: string
           id?: string
           insumo_id?: string | null
-          is_removable?: boolean
-          item_carta_id?: string
-          orden?: number | null
-          preparacion_id?: string | null
+          iva_monto?: number | null
+          observaciones?: string | null
+          precio_bruto?: number | null
+          precio_neto?: number | null
+          precio_unitario?: number
+          precio_unitario_bruto?: number | null
+          rdo_category_code?: string | null
+          subtotal?: number
+          tipo_item?: string
+          unidad?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "item_carta_composicion_insumo_id_fkey"
+            foreignKeyName: "items_factura_concepto_servicio_id_fkey"
+            columns: ["concepto_servicio_id"]
+            isOneToOne: false
+            referencedRelation: "service_concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_factura_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_marca"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_factura_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_factura_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_composicion_item_carta_id_fkey"
-            columns: ["item_carta_id"]
+            foreignKeyName: "items_factura_rdo_category_code_fkey"
+            columns: ["rdo_category_code"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "rdo_categories"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      invoice_payment_links: {
+        Row: {
+          factura_id: string
+          id: string
+          monto_aplicado: number
+          pago_id: string
+        }
+        Insert: {
+          factura_id: string
+          id?: string
+          monto_aplicado: number
+          pago_id: string
+        }
+        Update: {
+          factura_id?: string
+          id?: string
+          monto_aplicado?: number
+          pago_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pago_factura_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_marca"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_composicion_item_carta_id_fkey"
-            columns: ["item_carta_id"]
+            foreignKeyName: "pago_factura_factura_id_fkey"
+            columns: ["factura_id"]
             isOneToOne: false
-            referencedRelation: "webapp_menu_items"
+            referencedRelation: "supplier_invoices"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_composicion_preparacion_id_fkey"
-            columns: ["preparacion_id"]
+            foreignKeyName: "pago_factura_pago_id_fkey"
+            columns: ["pago_id"]
             isOneToOne: false
-            referencedRelation: "preparaciones"
+            referencedRelation: "supplier_payments"
             referencedColumns: ["id"]
           },
         ]
       }
-      item_carta_extras: {
+      issued_invoices: {
         Row: {
+          afip_request: Json | null
+          afip_response: Json | null
+          anulada: boolean
+          branch_id: string
+          cae: string | null
+          cae_vencimiento: string | null
           created_at: string
+          emitido_por: string | null
+          factura_asociada_id: string | null
+          fecha_emision: string
           id: string
-          insumo_id: string | null
-          item_carta_id: string
-          orden: number
-          preparacion_id: string | null
+          iva: number
+          moneda: string
+          neto: number
+          numero_comprobante: number
+          pedido_id: string | null
+          punto_venta: number
+          receptor_condicion_iva: string | null
+          receptor_cuit: string | null
+          receptor_razon_social: string | null
+          tipo_comprobante: string
+          total: number
         }
         Insert: {
+          afip_request?: Json | null
+          afip_response?: Json | null
+          anulada?: boolean
+          branch_id: string
+          cae?: string | null
+          cae_vencimiento?: string | null
           created_at?: string
+          emitido_por?: string | null
+          factura_asociada_id?: string | null
+          fecha_emision?: string
           id?: string
-          insumo_id?: string | null
-          item_carta_id: string
-          orden?: number
-          preparacion_id?: string | null
+          iva?: number
+          moneda?: string
+          neto?: number
+          numero_comprobante: number
+          pedido_id?: string | null
+          punto_venta: number
+          receptor_condicion_iva?: string | null
+          receptor_cuit?: string | null
+          receptor_razon_social?: string | null
+          tipo_comprobante: string
+          total?: number
         }
         Update: {
+          afip_request?: Json | null
+          afip_response?: Json | null
+          anulada?: boolean
+          branch_id?: string
+          cae?: string | null
+          cae_vencimiento?: string | null
           created_at?: string
+          emitido_por?: string | null
+          factura_asociada_id?: string | null
+          fecha_emision?: string
           id?: string
-          insumo_id?: string | null
-          item_carta_id?: string
-          orden?: number
-          preparacion_id?: string | null
+          iva?: number
+          moneda?: string
+          neto?: number
+          numero_comprobante?: number
+          pedido_id?: string | null
+          punto_venta?: number
+          receptor_condicion_iva?: string | null
+          receptor_cuit?: string | null
+          receptor_razon_social?: string | null
+          tipo_comprobante?: string
+          total?: number
         }
         Relationships: [
           {
-            foreignKeyName: "item_carta_extras_insumo_id_fkey"
-            columns: ["insumo_id"]
+            foreignKeyName: "facturas_emitidas_branch_id_fkey"
+            columns: ["branch_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_extras_item_carta_id_fkey"
-            columns: ["item_carta_id"]
+            foreignKeyName: "facturas_emitidas_branch_id_fkey"
+            columns: ["branch_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "branches_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_extras_item_carta_id_fkey"
-            columns: ["item_carta_id"]
+            foreignKeyName: "facturas_emitidas_factura_asociada_id_fkey"
+            columns: ["factura_asociada_id"]
             isOneToOne: false
-            referencedRelation: "webapp_menu_items"
+            referencedRelation: "issued_invoices"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_carta_extras_preparacion_id_fkey"
-            columns: ["preparacion_id"]
+            foreignKeyName: "facturas_emitidas_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "preparaciones"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_emitidas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_multivista_ventas_base"
+            referencedColumns: ["pedido_id"]
           },
         ]
       }
-      item_carta_grupo_opcional: {
-        Row: {
-          costo_promedio: number | null
-          created_at: string
-          id: string
-          is_required: boolean
-          item_carta_id: string
-          max_selecciones: number | null
-          nombre: string
-          orden: number
-          updated_at: string
-        }
-        Insert: {
-          costo_promedio?: number | null
-          created_at?: string
-          id?: string
-          is_required?: boolean
-          item_carta_id: string
-          max_selecciones?: number | null
-          nombre: string
-          orden?: number
-          updated_at?: string
-        }
-        Update: {
-          costo_promedio?: number | null
-          created_at?: string
-          id?: string
-          is_required?: boolean
-          item_carta_id?: string
-          max_selecciones?: number | null
-          nombre?: string
-          orden?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_carta_grupo_opcional_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "items_carta"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_carta_grupo_opcional_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "webapp_menu_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      item_carta_grupo_opcional_items: {
-        Row: {
-          cantidad: number
-          costo_unitario: number | null
-          created_at: string
-          grupo_id: string
-          id: string
-          insumo_id: string | null
-          preparacion_id: string | null
-        }
-        Insert: {
-          cantidad?: number
-          costo_unitario?: number | null
-          created_at?: string
-          grupo_id: string
-          id?: string
-          insumo_id?: string | null
-          preparacion_id?: string | null
-        }
-        Update: {
-          cantidad?: number
-          costo_unitario?: number | null
-          created_at?: string
-          grupo_id?: string
-          id?: string
-          insumo_id?: string | null
-          preparacion_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_carta_grupo_opcional_items_grupo_id_fkey"
-            columns: ["grupo_id"]
-            isOneToOne: false
-            referencedRelation: "item_carta_grupo_opcional"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_carta_grupo_opcional_items_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_carta_grupo_opcional_items_preparacion_id_fkey"
-            columns: ["preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      item_carta_precios_historial: {
-        Row: {
-          created_at: string | null
-          id: string
-          item_carta_id: string
-          motivo: string | null
-          precio_anterior: number | null
-          precio_nuevo: number
-          usuario_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          item_carta_id: string
-          motivo?: string | null
-          precio_anterior?: number | null
-          precio_nuevo: number
-          usuario_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          item_carta_id?: string
-          motivo?: string | null
-          precio_anterior?: number | null
-          precio_nuevo?: number
-          usuario_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_carta_precios_historial_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "items_carta"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_carta_precios_historial_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "webapp_menu_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      item_extra_asignaciones: {
-        Row: {
-          created_at: string | null
-          extra_id: string
-          id: string
-          item_carta_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          extra_id: string
-          id?: string
-          item_carta_id: string
-        }
-        Update: {
-          created_at?: string | null
-          extra_id?: string
-          id?: string
-          item_carta_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_extra_asignaciones_extra_id_fkey"
-            columns: ["extra_id"]
-            isOneToOne: false
-            referencedRelation: "items_carta"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_extra_asignaciones_extra_id_fkey"
-            columns: ["extra_id"]
-            isOneToOne: false
-            referencedRelation: "webapp_menu_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_extra_asignaciones_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "items_carta"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_extra_asignaciones_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "webapp_menu_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      item_modificadores: {
+      item_modifiers: {
         Row: {
           cantidad_ahorro: number | null
           cantidad_extra: number | null
@@ -4040,35 +3523,35 @@ export type Database = {
             foreignKeyName: "item_modificadores_ingrediente_extra_id_fkey"
             columns: ["ingrediente_extra_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "item_modificadores_ingrediente_id_fkey"
             columns: ["ingrediente_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "item_modificadores_ingrediente_nuevo_id_fkey"
             columns: ["ingrediente_nuevo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "item_modificadores_ingrediente_original_id_fkey"
             columns: ["ingrediente_original_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "item_modificadores_item_carta_id_fkey"
             columns: ["item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -4082,305 +3565,15 @@ export type Database = {
             foreignKeyName: "item_modificadores_receta_extra_id_fkey"
             columns: ["receta_extra_id"]
             isOneToOne: false
-            referencedRelation: "preparaciones"
+            referencedRelation: "recipes"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "item_modificadores_receta_id_fkey"
             columns: ["receta_id"]
             isOneToOne: false
-            referencedRelation: "preparaciones"
+            referencedRelation: "recipes"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      item_removibles: {
-        Row: {
-          created_at: string | null
-          id: string
-          insumo_id: string | null
-          is_active: boolean | null
-          item_carta_id: string
-          nombre_display: string | null
-          preparacion_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          insumo_id?: string | null
-          is_active?: boolean | null
-          item_carta_id: string
-          nombre_display?: string | null
-          preparacion_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          insumo_id?: string | null
-          is_active?: boolean | null
-          item_carta_id?: string
-          nombre_display?: string | null
-          preparacion_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_removibles_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_removibles_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "items_carta"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_removibles_item_carta_id_fkey"
-            columns: ["item_carta_id"]
-            isOneToOne: false
-            referencedRelation: "webapp_menu_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_removibles_preparacion_id_fkey"
-            columns: ["preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      items_carta: {
-        Row: {
-          categoria_carta_id: string | null
-          closure_category: string | null
-          composicion_ref_insumo_id: string | null
-          composicion_ref_preparacion_id: string | null
-          costo_total: number | null
-          created_at: string | null
-          deleted_at: string | null
-          descripcion: string | null
-          disponible_delivery: boolean | null
-          disponible_webapp: boolean | null
-          fc_actual: number | null
-          fc_objetivo: number | null
-          id: string
-          imagen_url: string | null
-          is_active: boolean | null
-          kitchen_station_id: string | null
-          nombre: string
-          nombre_corto: string | null
-          orden: number | null
-          precio_base: number
-          precio_promo: number | null
-          precio_referencia: number | null
-          promo_etiqueta: string | null
-          rdo_category_code: string | null
-          tipo: string
-          updated_at: string | null
-        }
-        Insert: {
-          categoria_carta_id?: string | null
-          closure_category?: string | null
-          composicion_ref_insumo_id?: string | null
-          composicion_ref_preparacion_id?: string | null
-          costo_total?: number | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          disponible_delivery?: boolean | null
-          disponible_webapp?: boolean | null
-          fc_actual?: number | null
-          fc_objetivo?: number | null
-          id?: string
-          imagen_url?: string | null
-          is_active?: boolean | null
-          kitchen_station_id?: string | null
-          nombre: string
-          nombre_corto?: string | null
-          orden?: number | null
-          precio_base?: number
-          precio_promo?: number | null
-          precio_referencia?: number | null
-          promo_etiqueta?: string | null
-          rdo_category_code?: string | null
-          tipo?: string
-          updated_at?: string | null
-        }
-        Update: {
-          categoria_carta_id?: string | null
-          closure_category?: string | null
-          composicion_ref_insumo_id?: string | null
-          composicion_ref_preparacion_id?: string | null
-          costo_total?: number | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          disponible_delivery?: boolean | null
-          disponible_webapp?: boolean | null
-          fc_actual?: number | null
-          fc_objetivo?: number | null
-          id?: string
-          imagen_url?: string | null
-          is_active?: boolean | null
-          kitchen_station_id?: string | null
-          nombre?: string
-          nombre_corto?: string | null
-          orden?: number | null
-          precio_base?: number
-          precio_promo?: number | null
-          precio_referencia?: number | null
-          promo_etiqueta?: string | null
-          rdo_category_code?: string | null
-          tipo?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "items_carta_categoria_carta_id_fkey"
-            columns: ["categoria_carta_id"]
-            isOneToOne: false
-            referencedRelation: "menu_categorias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_carta_composicion_ref_insumo_id_fkey"
-            columns: ["composicion_ref_insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_carta_composicion_ref_preparacion_id_fkey"
-            columns: ["composicion_ref_preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_carta_kitchen_station_id_fkey"
-            columns: ["kitchen_station_id"]
-            isOneToOne: false
-            referencedRelation: "kitchen_stations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_carta_rdo_category_code_fkey"
-            columns: ["rdo_category_code"]
-            isOneToOne: false
-            referencedRelation: "rdo_categories"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
-      items_factura: {
-        Row: {
-          afecta_costo_base: boolean | null
-          alicuota_iva: number | null
-          cantidad: number
-          categoria_pl: string | null
-          concepto_servicio_id: string | null
-          created_at: string | null
-          descuento_monto: number | null
-          descuento_porcentaje: number | null
-          factura_id: string
-          id: string
-          insumo_id: string | null
-          iva_monto: number | null
-          observaciones: string | null
-          precio_bruto: number | null
-          precio_neto: number | null
-          precio_unitario: number
-          precio_unitario_bruto: number | null
-          rdo_category_code: string | null
-          subtotal: number
-          tipo_item: string
-          unidad: string | null
-        }
-        Insert: {
-          afecta_costo_base?: boolean | null
-          alicuota_iva?: number | null
-          cantidad?: number
-          categoria_pl?: string | null
-          concepto_servicio_id?: string | null
-          created_at?: string | null
-          descuento_monto?: number | null
-          descuento_porcentaje?: number | null
-          factura_id: string
-          id?: string
-          insumo_id?: string | null
-          iva_monto?: number | null
-          observaciones?: string | null
-          precio_bruto?: number | null
-          precio_neto?: number | null
-          precio_unitario: number
-          precio_unitario_bruto?: number | null
-          rdo_category_code?: string | null
-          subtotal: number
-          tipo_item?: string
-          unidad?: string | null
-        }
-        Update: {
-          afecta_costo_base?: boolean | null
-          alicuota_iva?: number | null
-          cantidad?: number
-          categoria_pl?: string | null
-          concepto_servicio_id?: string | null
-          created_at?: string | null
-          descuento_monto?: number | null
-          descuento_porcentaje?: number | null
-          factura_id?: string
-          id?: string
-          insumo_id?: string | null
-          iva_monto?: number | null
-          observaciones?: string | null
-          precio_bruto?: number | null
-          precio_neto?: number | null
-          precio_unitario?: number
-          precio_unitario_bruto?: number | null
-          rdo_category_code?: string | null
-          subtotal?: number
-          tipo_item?: string
-          unidad?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "items_factura_concepto_servicio_id_fkey"
-            columns: ["concepto_servicio_id"]
-            isOneToOne: false
-            referencedRelation: "conceptos_servicio"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_factura_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_factura_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "facturas_proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_factura_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "items_factura_rdo_category_code_fkey"
-            columns: ["rdo_category_code"]
-            isOneToOne: false
-            referencedRelation: "rdo_categories"
-            referencedColumns: ["code"]
           },
         ]
       }
@@ -4546,6 +3739,66 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      manual_consumptions: {
+        Row: {
+          branch_id: string
+          categoria_pl: string
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          detalle: Json | null
+          id: string
+          monto_consumido: number
+          observaciones: string | null
+          periodo: string
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          categoria_pl: string
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          detalle?: Json | null
+          id?: string
+          monto_consumido: number
+          observaciones?: string | null
+          periodo: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          categoria_pl?: string
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          detalle?: Json | null
+          id?: string
+          monto_consumido?: number
+          observaciones?: string | null
+          periodo?: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumos_manuales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumos_manuales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meeting_agreement_assignees: {
         Row: {
@@ -4715,7 +3968,7 @@ export type Database = {
           },
         ]
       }
-      menu_categorias: {
+      menu_categories: {
         Row: {
           created_at: string | null
           descripcion: string | null
@@ -4750,6 +4003,395 @@ export type Database = {
           visible_en_carta?: boolean
         }
         Relationships: []
+      }
+      menu_item_compositions: {
+        Row: {
+          cantidad: number
+          created_at: string | null
+          id: string
+          insumo_id: string | null
+          is_removable: boolean
+          item_carta_id: string
+          orden: number | null
+          preparacion_id: string | null
+        }
+        Insert: {
+          cantidad?: number
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          is_removable?: boolean
+          item_carta_id: string
+          orden?: number | null
+          preparacion_id?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          is_removable?: boolean
+          item_carta_id?: string
+          orden?: number | null
+          preparacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_carta_composicion_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_composicion_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_composicion_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_composicion_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_extras: {
+        Row: {
+          created_at: string
+          id: string
+          insumo_id: string | null
+          item_carta_id: string
+          orden: number
+          preparacion_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          item_carta_id: string
+          orden?: number
+          preparacion_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          item_carta_id?: string
+          orden?: number
+          preparacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_carta_extras_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_extras_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_extras_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_extras_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_option_group_items: {
+        Row: {
+          cantidad: number
+          costo_unitario: number | null
+          created_at: string
+          grupo_id: string
+          id: string
+          insumo_id: string | null
+          preparacion_id: string | null
+        }
+        Insert: {
+          cantidad?: number
+          costo_unitario?: number | null
+          created_at?: string
+          grupo_id: string
+          id?: string
+          insumo_id?: string | null
+          preparacion_id?: string | null
+        }
+        Update: {
+          cantidad?: number
+          costo_unitario?: number | null
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          insumo_id?: string | null
+          preparacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_carta_grupo_opcional_items_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_option_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_grupo_opcional_items_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_grupo_opcional_items_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_option_groups: {
+        Row: {
+          costo_promedio: number | null
+          created_at: string
+          id: string
+          is_required: boolean
+          item_carta_id: string
+          max_selecciones: number | null
+          nombre: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          costo_promedio?: number | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          item_carta_id: string
+          max_selecciones?: number | null
+          nombre: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          costo_promedio?: number | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          item_carta_id?: string
+          max_selecciones?: number | null
+          nombre?: string
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_carta_grupo_opcional_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_grupo_opcional_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_price_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_carta_id: string
+          motivo: string | null
+          precio_anterior: number | null
+          precio_nuevo: number
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_carta_id: string
+          motivo?: string | null
+          precio_anterior?: number | null
+          precio_nuevo: number
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_carta_id?: string
+          motivo?: string | null
+          precio_anterior?: number | null
+          precio_nuevo?: number
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_carta_precios_historial_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_carta_precios_historial_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          categoria_carta_id: string | null
+          closure_category: string | null
+          composicion_ref_insumo_id: string | null
+          composicion_ref_preparacion_id: string | null
+          costo_total: number | null
+          created_at: string | null
+          deleted_at: string | null
+          descripcion: string | null
+          disponible_delivery: boolean | null
+          disponible_webapp: boolean | null
+          fc_actual: number | null
+          fc_objetivo: number | null
+          id: string
+          imagen_url: string | null
+          is_active: boolean | null
+          kitchen_station_id: string | null
+          nombre: string
+          nombre_corto: string | null
+          orden: number | null
+          precio_base: number
+          precio_promo: number | null
+          precio_referencia: number | null
+          promo_etiqueta: string | null
+          rdo_category_code: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          categoria_carta_id?: string | null
+          closure_category?: string | null
+          composicion_ref_insumo_id?: string | null
+          composicion_ref_preparacion_id?: string | null
+          costo_total?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          disponible_delivery?: boolean | null
+          disponible_webapp?: boolean | null
+          fc_actual?: number | null
+          fc_objetivo?: number | null
+          id?: string
+          imagen_url?: string | null
+          is_active?: boolean | null
+          kitchen_station_id?: string | null
+          nombre: string
+          nombre_corto?: string | null
+          orden?: number | null
+          precio_base?: number
+          precio_promo?: number | null
+          precio_referencia?: number | null
+          promo_etiqueta?: string | null
+          rdo_category_code?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          categoria_carta_id?: string | null
+          closure_category?: string | null
+          composicion_ref_insumo_id?: string | null
+          composicion_ref_preparacion_id?: string | null
+          costo_total?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          disponible_delivery?: boolean | null
+          disponible_webapp?: boolean | null
+          fc_actual?: number | null
+          fc_objetivo?: number | null
+          id?: string
+          imagen_url?: string | null
+          is_active?: boolean | null
+          kitchen_station_id?: string | null
+          nombre?: string
+          nombre_corto?: string | null
+          orden?: number | null
+          precio_base?: number
+          precio_promo?: number | null
+          precio_referencia?: number | null
+          promo_etiqueta?: string | null
+          rdo_category_code?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_carta_categoria_carta_id_fkey"
+            columns: ["categoria_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_carta_composicion_ref_insumo_id_fkey"
+            columns: ["composicion_ref_insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_carta_composicion_ref_preparacion_id_fkey"
+            columns: ["composicion_ref_preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_carta_kitchen_station_id_fkey"
+            columns: ["kitchen_station_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_carta_rdo_category_code_fkey"
+            columns: ["rdo_category_code"]
+            isOneToOne: false
+            referencedRelation: "rdo_categories"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       mercadopago_config: {
         Row: {
@@ -4942,291 +4584,7 @@ export type Database = {
           },
         ]
       }
-      pagers: {
-        Row: {
-          assigned_at: string | null
-          branch_id: string
-          en_uso: boolean | null
-          id: string
-          number: number
-          order_id: string | null
-        }
-        Insert: {
-          assigned_at?: string | null
-          branch_id: string
-          en_uso?: boolean | null
-          id?: string
-          number: number
-          order_id?: string | null
-        }
-        Update: {
-          assigned_at?: string | null
-          branch_id?: string
-          en_uso?: boolean | null
-          id?: string
-          number?: number
-          order_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "llamadores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "llamadores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "llamadores_pedido_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "pedidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "llamadores_pedido_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "rdo_multivista_ventas_base"
-            referencedColumns: ["pedido_id"]
-          },
-        ]
-      }
-      pago_factura: {
-        Row: {
-          factura_id: string
-          id: string
-          monto_aplicado: number
-          pago_id: string
-        }
-        Insert: {
-          factura_id: string
-          id?: string
-          monto_aplicado: number
-          pago_id: string
-        }
-        Update: {
-          factura_id?: string
-          id?: string
-          monto_aplicado?: number
-          pago_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pago_factura_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pago_factura_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "facturas_proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pago_factura_pago_id_fkey"
-            columns: ["pago_id"]
-            isOneToOne: false
-            referencedRelation: "pagos_proveedores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pagos_canon: {
-        Row: {
-          branch_id: string
-          canon_liquidacion_id: string
-          created_at: string | null
-          created_by: string | null
-          datos_pago: Json | null
-          deleted_at: string | null
-          fecha_pago: string
-          id: string
-          is_verified: boolean
-          medio_pago: string
-          monto: number
-          observaciones: string | null
-          referencia: string | null
-          verificado_at: string | null
-          verificado_notas: string | null
-          verificado_por: string | null
-        }
-        Insert: {
-          branch_id: string
-          canon_liquidacion_id: string
-          created_at?: string | null
-          created_by?: string | null
-          datos_pago?: Json | null
-          deleted_at?: string | null
-          fecha_pago: string
-          id?: string
-          is_verified?: boolean
-          medio_pago: string
-          monto: number
-          observaciones?: string | null
-          referencia?: string | null
-          verificado_at?: string | null
-          verificado_notas?: string | null
-          verificado_por?: string | null
-        }
-        Update: {
-          branch_id?: string
-          canon_liquidacion_id?: string
-          created_at?: string | null
-          created_by?: string | null
-          datos_pago?: Json | null
-          deleted_at?: string | null
-          fecha_pago?: string
-          id?: string
-          is_verified?: boolean
-          medio_pago?: string
-          monto?: number
-          observaciones?: string | null
-          referencia?: string | null
-          verificado_at?: string | null
-          verificado_notas?: string | null
-          verificado_por?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pagos_canon_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_canon_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_canon_canon_liquidacion_id_fkey"
-            columns: ["canon_liquidacion_id"]
-            isOneToOne: false
-            referencedRelation: "canon_liquidaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pagos_proveedores: {
-        Row: {
-          branch_id: string
-          created_at: string | null
-          created_by: string | null
-          datos_pago: Json | null
-          deleted_at: string | null
-          factura_id: string | null
-          fecha_pago: string
-          fecha_vencimiento_pago: string | null
-          id: string
-          is_verified: boolean
-          medio_pago: string
-          monto: number
-          observaciones: string | null
-          proveedor_id: string
-          referencia: string | null
-          verificado_at: string | null
-          verificado_notas: string | null
-          verificado_por: string | null
-        }
-        Insert: {
-          branch_id: string
-          created_at?: string | null
-          created_by?: string | null
-          datos_pago?: Json | null
-          deleted_at?: string | null
-          factura_id?: string | null
-          fecha_pago: string
-          fecha_vencimiento_pago?: string | null
-          id?: string
-          is_verified?: boolean
-          medio_pago: string
-          monto: number
-          observaciones?: string | null
-          proveedor_id: string
-          referencia?: string | null
-          verificado_at?: string | null
-          verificado_notas?: string | null
-          verificado_por?: string | null
-        }
-        Update: {
-          branch_id?: string
-          created_at?: string | null
-          created_by?: string | null
-          datos_pago?: Json | null
-          deleted_at?: string | null
-          factura_id?: string | null
-          fecha_pago?: string
-          fecha_vencimiento_pago?: string | null
-          id?: string
-          is_verified?: boolean
-          medio_pago?: string
-          monto?: number
-          observaciones?: string | null
-          proveedor_id?: string
-          referencia?: string | null
-          verificado_at?: string | null
-          verificado_notas?: string | null
-          verificado_por?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pagos_proveedores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_proveedores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_proveedores_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_proveedores_factura_id_fkey"
-            columns: ["factura_id"]
-            isOneToOne: false
-            referencedRelation: "facturas_proveedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_proveedores_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "pagos_proveedores_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pedido_item_modificadores: {
+      order_item_modifiers: {
         Row: {
           created_at: string | null
           descripcion: string
@@ -5256,7 +4614,7 @@ export type Database = {
             foreignKeyName: "pedido_item_modificadores_pedido_item_id_fkey"
             columns: ["pedido_item_id"]
             isOneToOne: false
-            referencedRelation: "pedido_items"
+            referencedRelation: "order_items"
             referencedColumns: ["id"]
           },
           {
@@ -5268,7 +4626,7 @@ export type Database = {
           },
         ]
       }
-      pedido_items: {
+      order_items: {
         Row: {
           articulo_id: string | null
           articulo_tipo: string | null
@@ -5331,14 +4689,14 @@ export type Database = {
             foreignKeyName: "pedido_items_categoria_carta_id_fkey"
             columns: ["categoria_carta_id"]
             isOneToOne: false
-            referencedRelation: "menu_categorias"
+            referencedRelation: "menu_categories"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pedido_items_item_carta_id_fkey"
             columns: ["item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -5352,7 +4710,7 @@ export type Database = {
             foreignKeyName: "pedido_items_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -5366,19 +4724,64 @@ export type Database = {
             foreignKeyName: "pedido_items_promocion_id_fkey"
             columns: ["promocion_id"]
             isOneToOne: false
-            referencedRelation: "promociones"
+            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pedido_items_promocion_item_id_fkey"
             columns: ["promocion_item_id"]
             isOneToOne: false
-            referencedRelation: "promocion_items"
+            referencedRelation: "promotion_items"
             referencedColumns: ["id"]
           },
         ]
       }
-      pedido_pagos: {
+      order_payment_edits: {
+        Row: {
+          created_at: string
+          editado_por: string
+          id: string
+          motivo: string
+          pagos_antes: Json
+          pagos_despues: Json
+          pedido_id: string
+        }
+        Insert: {
+          created_at?: string
+          editado_por: string
+          id?: string
+          motivo: string
+          pagos_antes: Json
+          pagos_despues: Json
+          pedido_id: string
+        }
+        Update: {
+          created_at?: string
+          editado_por?: string
+          id?: string
+          motivo?: string
+          pagos_antes?: Json
+          pagos_despues?: Json
+          pedido_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_payment_edits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_payment_edits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_multivista_ventas_base"
+            referencedColumns: ["pedido_id"]
+          },
+        ]
+      }
+      order_payments: {
         Row: {
           conciliado: boolean | null
           conciliado_at: string | null
@@ -5432,7 +4835,7 @@ export type Database = {
             foreignKeyName: "pedido_pagos_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -5444,52 +4847,7 @@ export type Database = {
           },
         ]
       }
-      pedido_payment_edits: {
-        Row: {
-          created_at: string
-          editado_por: string
-          id: string
-          motivo: string
-          pagos_antes: Json
-          pagos_despues: Json
-          pedido_id: string
-        }
-        Insert: {
-          created_at?: string
-          editado_por: string
-          id?: string
-          motivo: string
-          pagos_antes: Json
-          pagos_despues: Json
-          pedido_id: string
-        }
-        Update: {
-          created_at?: string
-          editado_por?: string
-          id?: string
-          motivo?: string
-          pagos_antes?: Json
-          pagos_despues?: Json
-          pedido_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pedido_payment_edits_pedido_id_fkey"
-            columns: ["pedido_id"]
-            isOneToOne: false
-            referencedRelation: "pedidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pedido_payment_edits_pedido_id_fkey"
-            columns: ["pedido_id"]
-            isOneToOne: false
-            referencedRelation: "rdo_multivista_ventas_base"
-            referencedColumns: ["pedido_id"]
-          },
-        ]
-      }
-      pedidos: {
+      orders: {
         Row: {
           branch_id: string
           cadete_id: string | null
@@ -5664,6 +5022,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagers: {
+        Row: {
+          assigned_at: string | null
+          branch_id: string
+          en_uso: boolean | null
+          id: string
+          number: number
+          order_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          branch_id: string
+          en_uso?: boolean | null
+          id?: string
+          number: number
+          order_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          branch_id?: string
+          en_uso?: boolean | null
+          id?: string
+          number?: number
+          order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llamadores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llamadores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llamadores_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llamadores_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_multivista_ventas_base"
+            referencedColumns: ["pedido_id"]
           },
         ]
       }
@@ -5859,165 +5273,6 @@ export type Database = {
           },
         ]
       }
-      preparacion_ingredientes: {
-        Row: {
-          cantidad: number
-          created_at: string | null
-          id: string
-          insumo_id: string | null
-          orden: number | null
-          preparacion_id: string
-          sub_preparacion_id: string | null
-          unidad: string
-        }
-        Insert: {
-          cantidad: number
-          created_at?: string | null
-          id?: string
-          insumo_id?: string | null
-          orden?: number | null
-          preparacion_id: string
-          sub_preparacion_id?: string | null
-          unidad?: string
-        }
-        Update: {
-          cantidad?: number
-          created_at?: string | null
-          id?: string
-          insumo_id?: string | null
-          orden?: number | null
-          preparacion_id?: string
-          sub_preparacion_id?: string | null
-          unidad?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "preparacion_ingredientes_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "preparacion_ingredientes_preparacion_id_fkey"
-            columns: ["preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "preparacion_ingredientes_sub_preparacion_id_fkey"
-            columns: ["sub_preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      preparacion_opciones: {
-        Row: {
-          created_at: string | null
-          id: string
-          insumo_id: string
-          orden: number | null
-          preparacion_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          insumo_id: string
-          orden?: number | null
-          preparacion_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          insumo_id?: string
-          orden?: number | null
-          preparacion_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "preparacion_opciones_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "preparacion_opciones_preparacion_id_fkey"
-            columns: ["preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "preparaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      preparaciones: {
-        Row: {
-          categoria_preparacion_id: string | null
-          costo_calculado: number | null
-          costo_manual: number | null
-          created_at: string | null
-          deleted_at: string | null
-          descripcion: string | null
-          fc_objetivo_extra: number | null
-          id: string
-          is_active: boolean | null
-          is_interchangeable: boolean | null
-          metodo_costeo: string | null
-          nombre: string
-          precio_extra: number | null
-          puede_ser_extra: boolean
-          tipo: string
-          updated_at: string | null
-        }
-        Insert: {
-          categoria_preparacion_id?: string | null
-          costo_calculado?: number | null
-          costo_manual?: number | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          fc_objetivo_extra?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_interchangeable?: boolean | null
-          metodo_costeo?: string | null
-          nombre: string
-          precio_extra?: number | null
-          puede_ser_extra?: boolean
-          tipo?: string
-          updated_at?: string | null
-        }
-        Update: {
-          categoria_preparacion_id?: string | null
-          costo_calculado?: number | null
-          costo_manual?: number | null
-          created_at?: string | null
-          deleted_at?: string | null
-          descripcion?: string | null
-          fc_objetivo_extra?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_interchangeable?: boolean | null
-          metodo_costeo?: string | null
-          nombre?: string
-          precio_extra?: number | null
-          puede_ser_extra?: boolean
-          tipo?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "preparaciones_categoria_preparacion_id_fkey"
-            columns: ["categoria_preparacion_id"]
-            isOneToOne: false
-            referencedRelation: "categorias_preparacion"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       price_list_items: {
         Row: {
           created_at: string
@@ -6048,7 +5303,7 @@ export type Database = {
             foreignKeyName: "price_list_items_item_carta_id_fkey"
             columns: ["item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -6266,7 +5521,7 @@ export type Database = {
             foreignKeyName: "print_jobs_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -6411,7 +5666,7 @@ export type Database = {
           },
         ]
       }
-      promocion_item_extras: {
+      promotion_item_extras: {
         Row: {
           cantidad: number
           created_at: string | null
@@ -6438,7 +5693,7 @@ export type Database = {
             foreignKeyName: "promocion_item_extras_extra_item_carta_id_fkey"
             columns: ["extra_item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -6452,12 +5707,12 @@ export type Database = {
             foreignKeyName: "promocion_item_extras_promocion_item_id_fkey"
             columns: ["promocion_item_id"]
             isOneToOne: false
-            referencedRelation: "promocion_items"
+            referencedRelation: "promotion_items"
             referencedColumns: ["id"]
           },
         ]
       }
-      promocion_items: {
+      promotion_items: {
         Row: {
           created_at: string | null
           id: string
@@ -6484,7 +5739,7 @@ export type Database = {
             foreignKeyName: "promocion_items_item_carta_id_fkey"
             columns: ["item_carta_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -6498,12 +5753,12 @@ export type Database = {
             foreignKeyName: "promocion_items_promocion_id_fkey"
             columns: ["promocion_id"]
             isOneToOne: false
-            referencedRelation: "promociones"
+            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
         ]
       }
-      promociones: {
+      promotions: {
         Row: {
           aplica_a: string
           branch_ids: string[] | null
@@ -6580,182 +5835,6 @@ export type Database = {
           valor?: number
         }
         Relationships: []
-      }
-      proveedor_condiciones_local: {
-        Row: {
-          branch_id: string
-          created_at: string
-          descuento_pago_contado: number | null
-          dias_pago_habitual: number | null
-          id: string
-          observaciones: string | null
-          permite_cuenta_corriente: boolean
-          proveedor_id: string
-          updated_at: string
-        }
-        Insert: {
-          branch_id: string
-          created_at?: string
-          descuento_pago_contado?: number | null
-          dias_pago_habitual?: number | null
-          id?: string
-          observaciones?: string | null
-          permite_cuenta_corriente?: boolean
-          proveedor_id: string
-          updated_at?: string
-        }
-        Update: {
-          branch_id?: string
-          created_at?: string
-          descuento_pago_contado?: number | null
-          dias_pago_habitual?: number | null
-          id?: string
-          observaciones?: string | null
-          permite_cuenta_corriente?: boolean
-          proveedor_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "proveedor_condiciones_local_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proveedor_condiciones_local_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proveedor_condiciones_local_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
-            referencedColumns: ["proveedor_id"]
-          },
-          {
-            foreignKeyName: "proveedor_condiciones_local_proveedor_id_fkey"
-            columns: ["proveedor_id"]
-            isOneToOne: false
-            referencedRelation: "proveedores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      proveedores: {
-        Row: {
-          alias_cbu: string | null
-          ambito: string
-          banco: string | null
-          branch_id: string | null
-          cbu: string | null
-          contacto: string | null
-          contacto_secundario: string | null
-          created_at: string | null
-          created_by: string | null
-          cuit: string | null
-          deleted_at: string | null
-          descuento_pago_contado: number | null
-          dias_pago_habitual: number | null
-          direccion: string | null
-          email: string | null
-          id: string
-          is_active: boolean | null
-          medios_pago_aceptados: Json | null
-          numero_cuenta: string | null
-          observaciones: string | null
-          permite_cuenta_corriente: boolean | null
-          razon_social: string
-          rdo_categories_default: string[] | null
-          telefono: string | null
-          telefono_secundario: string | null
-          tipo_especial: string | null
-          tipo_proveedor: string[] | null
-          titular_cuenta: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          alias_cbu?: string | null
-          ambito?: string
-          banco?: string | null
-          branch_id?: string | null
-          cbu?: string | null
-          contacto?: string | null
-          contacto_secundario?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          cuit?: string | null
-          deleted_at?: string | null
-          descuento_pago_contado?: number | null
-          dias_pago_habitual?: number | null
-          direccion?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          medios_pago_aceptados?: Json | null
-          numero_cuenta?: string | null
-          observaciones?: string | null
-          permite_cuenta_corriente?: boolean | null
-          razon_social: string
-          rdo_categories_default?: string[] | null
-          telefono?: string | null
-          telefono_secundario?: string | null
-          tipo_especial?: string | null
-          tipo_proveedor?: string[] | null
-          titular_cuenta?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          alias_cbu?: string | null
-          ambito?: string
-          banco?: string | null
-          branch_id?: string | null
-          cbu?: string | null
-          contacto?: string | null
-          contacto_secundario?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          cuit?: string | null
-          deleted_at?: string | null
-          descuento_pago_contado?: number | null
-          dias_pago_habitual?: number | null
-          direccion?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          medios_pago_aceptados?: Json | null
-          numero_cuenta?: string | null
-          observaciones?: string | null
-          permite_cuenta_corriente?: boolean | null
-          razon_social?: string
-          rdo_categories_default?: string[] | null
-          telefono?: string | null
-          telefono_secundario?: string | null
-          tipo_especial?: string | null
-          tipo_proveedor?: string[] | null
-          titular_cuenta?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "proveedores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proveedores_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       push_subscriptions: {
         Row: {
@@ -6901,6 +5980,270 @@ export type Database = {
           },
         ]
       }
+      recipe_categories: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          nombre: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          nombre: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          nombre?: string
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          cantidad: number
+          created_at: string | null
+          id: string
+          insumo_id: string | null
+          orden: number | null
+          preparacion_id: string
+          sub_preparacion_id: string | null
+          unidad: string
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          orden?: number | null
+          preparacion_id: string
+          sub_preparacion_id?: string | null
+          unidad?: string
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          orden?: number | null
+          preparacion_id?: string
+          sub_preparacion_id?: string | null
+          unidad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparacion_ingredientes_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparacion_ingredientes_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparacion_ingredientes_sub_preparacion_id_fkey"
+            columns: ["sub_preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          insumo_id: string
+          orden: number | null
+          preparacion_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insumo_id: string
+          orden?: number | null
+          preparacion_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string
+          orden?: number | null
+          preparacion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparacion_opciones_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparacion_opciones_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          categoria_preparacion_id: string | null
+          costo_calculado: number | null
+          costo_manual: number | null
+          created_at: string | null
+          deleted_at: string | null
+          descripcion: string | null
+          fc_objetivo_extra: number | null
+          id: string
+          is_active: boolean | null
+          is_interchangeable: boolean | null
+          metodo_costeo: string | null
+          nombre: string
+          precio_extra: number | null
+          puede_ser_extra: boolean
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          categoria_preparacion_id?: string | null
+          costo_calculado?: number | null
+          costo_manual?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          fc_objetivo_extra?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_interchangeable?: boolean | null
+          metodo_costeo?: string | null
+          nombre: string
+          precio_extra?: number | null
+          puede_ser_extra?: boolean
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          categoria_preparacion_id?: string | null
+          costo_calculado?: number | null
+          costo_manual?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          fc_objetivo_extra?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_interchangeable?: boolean | null
+          metodo_costeo?: string | null
+          nombre?: string
+          precio_extra?: number | null
+          puede_ser_extra?: boolean
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparaciones_categoria_preparacion_id_fkey"
+            columns: ["categoria_preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      register_shifts_legacy: {
+        Row: {
+          apertura_at: string
+          branch_id: string
+          cajero_id: string
+          cierre_at: string | null
+          diferencia: number | null
+          diferencia_motivo: string | null
+          efectivo_contado: number | null
+          estado: string | null
+          fondo_apertura: number
+          id: string
+          retiros_efectivo: number | null
+          total_efectivo: number | null
+          total_mercadopago: number | null
+          total_tarjeta_credito: number | null
+          total_tarjeta_debito: number | null
+          total_transferencia: number | null
+          total_ventas: number | null
+        }
+        Insert: {
+          apertura_at?: string
+          branch_id: string
+          cajero_id: string
+          cierre_at?: string | null
+          diferencia?: number | null
+          diferencia_motivo?: string | null
+          efectivo_contado?: number | null
+          estado?: string | null
+          fondo_apertura: number
+          id?: string
+          retiros_efectivo?: number | null
+          total_efectivo?: number | null
+          total_mercadopago?: number | null
+          total_tarjeta_credito?: number | null
+          total_tarjeta_debito?: number | null
+          total_transferencia?: number | null
+          total_ventas?: number | null
+        }
+        Update: {
+          apertura_at?: string
+          branch_id?: string
+          cajero_id?: string
+          cierre_at?: string | null
+          diferencia?: number | null
+          diferencia_motivo?: string | null
+          efectivo_contado?: number | null
+          estado?: string | null
+          fondo_apertura?: number
+          id?: string
+          retiros_efectivo?: number | null
+          total_efectivo?: number | null
+          total_mercadopago?: number | null
+          total_tarjeta_credito?: number | null
+          total_tarjeta_debito?: number | null
+          total_transferencia?: number | null
+          total_ventas?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turnos_caja_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turnos_caja_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regulation_signatures: {
         Row: {
           branch_id: string
@@ -7000,6 +6343,65 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      removable_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          insumo_id: string | null
+          is_active: boolean | null
+          item_carta_id: string
+          nombre_display: string | null
+          preparacion_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          is_active?: boolean | null
+          item_carta_id: string
+          nombre_display?: string | null
+          preparacion_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          is_active?: boolean | null
+          item_carta_id?: string
+          nombre_display?: string | null
+          preparacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_removibles_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_removibles_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_removibles_item_carta_id_fkey"
+            columns: ["item_carta_id"]
+            isOneToOne: false
+            referencedRelation: "webapp_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_removibles_preparacion_id_fkey"
+            columns: ["preparacion_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -7250,6 +6652,85 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches_public"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_concepts: {
+        Row: {
+          categoria_gasto: string | null
+          created_at: string | null
+          deleted_at: string | null
+          descripcion: string | null
+          formula_calculo: Json | null
+          id: string
+          is_active: boolean | null
+          is_calculated: boolean | null
+          nombre: string
+          periodicidad: string | null
+          proveedor_id: string | null
+          rdo_category_code: string | null
+          subcategoria: string | null
+          tipo: string
+          updated_at: string | null
+          visible_local: boolean
+        }
+        Insert: {
+          categoria_gasto?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          formula_calculo?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_calculated?: boolean | null
+          nombre: string
+          periodicidad?: string | null
+          proveedor_id?: string | null
+          rdo_category_code?: string | null
+          subcategoria?: string | null
+          tipo?: string
+          updated_at?: string | null
+          visible_local?: boolean
+        }
+        Update: {
+          categoria_gasto?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          formula_calculo?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_calculated?: boolean | null
+          nombre?: string
+          periodicidad?: string | null
+          proveedor_id?: string | null
+          rdo_category_code?: string | null
+          subcategoria?: string | null
+          tipo?: string
+          updated_at?: string | null
+          visible_local?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conceptos_servicio_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "conceptos_servicio_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conceptos_servicio_rdo_category_code_fkey"
+            columns: ["rdo_category_code"]
+            isOneToOne: false
+            referencedRelation: "rdo_categories"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -7635,7 +7116,7 @@ export type Database = {
             foreignKeyName: "stock_actual_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
@@ -7702,7 +7183,7 @@ export type Database = {
             foreignKeyName: "stock_cierre_mensual_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
@@ -7750,7 +7231,7 @@ export type Database = {
             foreignKeyName: "stock_conteo_items_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
@@ -7881,21 +7362,21 @@ export type Database = {
             foreignKeyName: "stock_movimientos_factura_proveedor_id_fkey"
             columns: ["factura_proveedor_id"]
             isOneToOne: false
-            referencedRelation: "facturas_proveedores"
+            referencedRelation: "supplier_invoices"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stock_movimientos_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stock_movimientos_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -7907,74 +7388,662 @@ export type Database = {
           },
         ]
       }
-      turnos_caja: {
+      supplier_branch_terms: {
         Row: {
-          apertura_at: string
           branch_id: string
-          cajero_id: string
-          cierre_at: string | null
-          diferencia: number | null
-          diferencia_motivo: string | null
-          efectivo_contado: number | null
-          estado: string | null
-          fondo_apertura: number
+          created_at: string
+          descuento_pago_contado: number | null
+          dias_pago_habitual: number | null
           id: string
-          retiros_efectivo: number | null
-          total_efectivo: number | null
-          total_mercadopago: number | null
-          total_tarjeta_credito: number | null
-          total_tarjeta_debito: number | null
-          total_transferencia: number | null
-          total_ventas: number | null
+          observaciones: string | null
+          permite_cuenta_corriente: boolean
+          proveedor_id: string
+          updated_at: string
         }
         Insert: {
-          apertura_at?: string
           branch_id: string
-          cajero_id: string
-          cierre_at?: string | null
-          diferencia?: number | null
-          diferencia_motivo?: string | null
-          efectivo_contado?: number | null
-          estado?: string | null
-          fondo_apertura: number
+          created_at?: string
+          descuento_pago_contado?: number | null
+          dias_pago_habitual?: number | null
           id?: string
-          retiros_efectivo?: number | null
-          total_efectivo?: number | null
-          total_mercadopago?: number | null
-          total_tarjeta_credito?: number | null
-          total_tarjeta_debito?: number | null
-          total_transferencia?: number | null
-          total_ventas?: number | null
+          observaciones?: string | null
+          permite_cuenta_corriente?: boolean
+          proveedor_id: string
+          updated_at?: string
         }
         Update: {
-          apertura_at?: string
           branch_id?: string
-          cajero_id?: string
-          cierre_at?: string | null
-          diferencia?: number | null
-          diferencia_motivo?: string | null
-          efectivo_contado?: number | null
-          estado?: string | null
-          fondo_apertura?: number
+          created_at?: string
+          descuento_pago_contado?: number | null
+          dias_pago_habitual?: number | null
           id?: string
-          retiros_efectivo?: number | null
-          total_efectivo?: number | null
-          total_mercadopago?: number | null
-          total_tarjeta_credito?: number | null
-          total_tarjeta_debito?: number | null
-          total_transferencia?: number | null
-          total_ventas?: number | null
+          observaciones?: string | null
+          permite_cuenta_corriente?: boolean
+          proveedor_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "turnos_caja_branch_id_fkey"
+            foreignKeyName: "proveedor_condiciones_local_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "turnos_caja_branch_id_fkey"
+            foreignKeyName: "proveedor_condiciones_local_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proveedor_condiciones_local_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "proveedor_condiciones_local_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_invoices: {
+        Row: {
+          branch_id: string
+          condicion_pago: string | null
+          costo_real: number | null
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          estado_pago: string | null
+          factura_fecha: string
+          factura_numero: string
+          factura_tipo: string | null
+          factura_url: string | null
+          fecha_vencimiento: string | null
+          id: string
+          imp_internos: number | null
+          iva: number | null
+          iva_105: number | null
+          iva_21: number | null
+          motivo_extraordinaria: string | null
+          observaciones: string | null
+          otros_impuestos: number | null
+          perc_iva: number | null
+          perc_municipal: number | null
+          perc_provincial: number | null
+          periodo: string
+          proveedor_id: string
+          saldo_pendiente: number | null
+          subtotal: number
+          subtotal_bruto: number | null
+          subtotal_neto: number | null
+          tipo: string | null
+          total: number
+          total_descuentos: number | null
+          total_factura: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          condicion_pago?: string | null
+          costo_real?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          estado_pago?: string | null
+          factura_fecha: string
+          factura_numero: string
+          factura_tipo?: string | null
+          factura_url?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          imp_internos?: number | null
+          iva?: number | null
+          iva_105?: number | null
+          iva_21?: number | null
+          motivo_extraordinaria?: string | null
+          observaciones?: string | null
+          otros_impuestos?: number | null
+          perc_iva?: number | null
+          perc_municipal?: number | null
+          perc_provincial?: number | null
+          periodo: string
+          proveedor_id: string
+          saldo_pendiente?: number | null
+          subtotal?: number
+          subtotal_bruto?: number | null
+          subtotal_neto?: number | null
+          tipo?: string | null
+          total?: number
+          total_descuentos?: number | null
+          total_factura?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          condicion_pago?: string | null
+          costo_real?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          estado_pago?: string | null
+          factura_fecha?: string
+          factura_numero?: string
+          factura_tipo?: string | null
+          factura_url?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          imp_internos?: number | null
+          iva?: number | null
+          iva_105?: number | null
+          iva_21?: number | null
+          motivo_extraordinaria?: string | null
+          observaciones?: string | null
+          otros_impuestos?: number | null
+          perc_iva?: number | null
+          perc_municipal?: number | null
+          perc_provincial?: number | null
+          periodo?: string
+          proveedor_id?: string
+          saldo_pendiente?: number | null
+          subtotal?: number
+          subtotal_bruto?: number | null
+          subtotal_neto?: number | null
+          tipo?: string | null
+          total?: number
+          total_descuentos?: number | null
+          total_factura?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_proveedores_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "facturas_proveedores_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payments: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          created_by: string | null
+          datos_pago: Json | null
+          deleted_at: string | null
+          factura_id: string | null
+          fecha_pago: string
+          fecha_vencimiento_pago: string | null
+          id: string
+          is_verified: boolean
+          medio_pago: string
+          monto: number
+          observaciones: string | null
+          proveedor_id: string
+          referencia: string | null
+          verificado_at: string | null
+          verificado_notas: string | null
+          verificado_por: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          created_by?: string | null
+          datos_pago?: Json | null
+          deleted_at?: string | null
+          factura_id?: string | null
+          fecha_pago: string
+          fecha_vencimiento_pago?: string | null
+          id?: string
+          is_verified?: boolean
+          medio_pago: string
+          monto: number
+          observaciones?: string | null
+          proveedor_id: string
+          referencia?: string | null
+          verificado_at?: string | null
+          verificado_notas?: string | null
+          verificado_por?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          datos_pago?: Json | null
+          deleted_at?: string | null
+          factura_id?: string | null
+          fecha_pago?: string
+          fecha_vencimiento_pago?: string | null
+          id?: string
+          is_verified?: boolean
+          medio_pago?: string
+          monto?: number
+          observaciones?: string | null
+          proveedor_id?: string
+          referencia?: string | null
+          verificado_at?: string | null
+          verificado_notas?: string | null
+          verificado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedores_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_marca"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedores_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedores_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedores_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          alias_cbu: string | null
+          ambito: string
+          banco: string | null
+          branch_id: string | null
+          cbu: string | null
+          contacto: string | null
+          contacto_secundario: string | null
+          created_at: string | null
+          created_by: string | null
+          cuit: string | null
+          deleted_at: string | null
+          descuento_pago_contado: number | null
+          dias_pago_habitual: number | null
+          direccion: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          medios_pago_aceptados: Json | null
+          numero_cuenta: string | null
+          observaciones: string | null
+          permite_cuenta_corriente: boolean | null
+          razon_social: string
+          rdo_categories_default: string[] | null
+          telefono: string | null
+          telefono_secundario: string | null
+          tipo_especial: string | null
+          tipo_proveedor: string[] | null
+          titular_cuenta: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alias_cbu?: string | null
+          ambito?: string
+          banco?: string | null
+          branch_id?: string | null
+          cbu?: string | null
+          contacto?: string | null
+          contacto_secundario?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cuit?: string | null
+          deleted_at?: string | null
+          descuento_pago_contado?: number | null
+          dias_pago_habitual?: number | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          medios_pago_aceptados?: Json | null
+          numero_cuenta?: string | null
+          observaciones?: string | null
+          permite_cuenta_corriente?: boolean | null
+          razon_social: string
+          rdo_categories_default?: string[] | null
+          telefono?: string | null
+          telefono_secundario?: string | null
+          tipo_especial?: string | null
+          tipo_proveedor?: string[] | null
+          titular_cuenta?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alias_cbu?: string | null
+          ambito?: string
+          banco?: string | null
+          branch_id?: string | null
+          cbu?: string | null
+          contacto?: string | null
+          contacto_secundario?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cuit?: string | null
+          deleted_at?: string | null
+          descuento_pago_contado?: number | null
+          dias_pago_habitual?: number | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          medios_pago_aceptados?: Json | null
+          numero_cuenta?: string | null
+          observaciones?: string | null
+          permite_cuenta_corriente?: boolean | null
+          razon_social?: string
+          rdo_categories_default?: string[] | null
+          telefono?: string | null
+          telefono_secundario?: string | null
+          tipo_especial?: string | null
+          tipo_proveedor?: string[] | null
+          titular_cuenta?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proveedores_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplies: {
+        Row: {
+          categoria_id: string | null
+          categoria_pl: string | null
+          costo_por_unidad_base: number | null
+          creado_por: string | null
+          created_at: string | null
+          default_alicuota_iva: number | null
+          deleted_at: string | null
+          descripcion: string | null
+          especificacion: Json | null
+          fc_objetivo_extra: number | null
+          id: string
+          is_active: boolean | null
+          margen_bruto: number | null
+          margen_porcentaje: number | null
+          motivo_control: string | null
+          nivel_control: string
+          nombre: string
+          precio_extra: number | null
+          precio_maximo_sugerido: number | null
+          precio_referencia: number | null
+          precio_venta: number | null
+          proveedor_obligatorio_id: string | null
+          proveedor_sugerido_id: string | null
+          puede_ser_extra: boolean
+          rdo_category_code: string | null
+          tipo_item: string
+          tracks_stock: boolean
+          unidad_base: string
+          unidad_compra: string | null
+          unidad_compra_contenido: number | null
+          unidad_compra_precio: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          categoria_id?: string | null
+          categoria_pl?: string | null
+          costo_por_unidad_base?: number | null
+          creado_por?: string | null
+          created_at?: string | null
+          default_alicuota_iva?: number | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          especificacion?: Json | null
+          fc_objetivo_extra?: number | null
+          id?: string
+          is_active?: boolean | null
+          margen_bruto?: number | null
+          margen_porcentaje?: number | null
+          motivo_control?: string | null
+          nivel_control?: string
+          nombre: string
+          precio_extra?: number | null
+          precio_maximo_sugerido?: number | null
+          precio_referencia?: number | null
+          precio_venta?: number | null
+          proveedor_obligatorio_id?: string | null
+          proveedor_sugerido_id?: string | null
+          puede_ser_extra?: boolean
+          rdo_category_code?: string | null
+          tipo_item?: string
+          tracks_stock?: boolean
+          unidad_base: string
+          unidad_compra?: string | null
+          unidad_compra_contenido?: number | null
+          unidad_compra_precio?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          categoria_id?: string | null
+          categoria_pl?: string | null
+          costo_por_unidad_base?: number | null
+          creado_por?: string | null
+          created_at?: string | null
+          default_alicuota_iva?: number | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          especificacion?: Json | null
+          fc_objetivo_extra?: number | null
+          id?: string
+          is_active?: boolean | null
+          margen_bruto?: number | null
+          margen_porcentaje?: number | null
+          motivo_control?: string | null
+          nivel_control?: string
+          nombre?: string
+          precio_extra?: number | null
+          precio_maximo_sugerido?: number | null
+          precio_referencia?: number | null
+          precio_venta?: number | null
+          proveedor_obligatorio_id?: string | null
+          proveedor_sugerido_id?: string | null
+          puede_ser_extra?: boolean
+          rdo_category_code?: string | null
+          tipo_item?: string
+          tracks_stock?: boolean
+          unidad_base?: string
+          unidad_compra?: string | null
+          unidad_compra_contenido?: number | null
+          unidad_compra_precio?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insumos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "supply_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumos_proveedor_obligatorio_id_fkey"
+            columns: ["proveedor_obligatorio_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "insumos_proveedor_obligatorio_id_fkey"
+            columns: ["proveedor_obligatorio_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumos_proveedor_sugerido_id_fkey"
+            columns: ["proveedor_sugerido_id"]
+            isOneToOne: false
+            referencedRelation: "cuenta_corriente_proveedores"
+            referencedColumns: ["proveedor_id"]
+          },
+          {
+            foreignKeyName: "insumos_proveedor_sugerido_id_fkey"
+            columns: ["proveedor_sugerido_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumos_rdo_category_code_fkey"
+            columns: ["rdo_category_code"]
+            isOneToOne: false
+            referencedRelation: "rdo_categories"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      supply_categories: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          descripcion: string | null
+          id: string
+          is_active: boolean | null
+          nombre: string
+          orden: number | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          is_active?: boolean | null
+          nombre: string
+          orden?: number | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          is_active?: boolean | null
+          nombre?: string
+          orden?: number | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tax_config: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          deleted_at: string | null
+          id: string
+          iibb_alicuota: number
+          observaciones: string | null
+          otros_impuestos: Json | null
+          tasas_municipales: number | null
+          updated_at: string | null
+          vigencia_desde: string
+          vigencia_hasta: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          iibb_alicuota: number
+          observaciones?: string | null
+          otros_impuestos?: Json | null
+          tasas_municipales?: number | null
+          updated_at?: string | null
+          vigencia_desde: string
+          vigencia_hasta?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          iibb_alicuota?: number
+          observaciones?: string | null
+          otros_impuestos?: Json | null
+          tasas_municipales?: number | null
+          updated_at?: string | null
+          vigencia_desde?: string
+          vigencia_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracion_impuestos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configuracion_impuestos_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches_public"
@@ -8033,75 +8102,6 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ventas_mensuales_local: {
-        Row: {
-          branch_id: string
-          cargado_por: string | null
-          created_at: string | null
-          deleted_at: string | null
-          efectivo: number | null
-          fc_total: number
-          fecha_carga: string | null
-          ft_total: number
-          fuente: string
-          id: string
-          observaciones: string | null
-          periodo: string
-          porcentaje_ft: number | null
-          updated_at: string | null
-          venta_total: number | null
-        }
-        Insert: {
-          branch_id: string
-          cargado_por?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          efectivo?: number | null
-          fc_total: number
-          fecha_carga?: string | null
-          ft_total: number
-          fuente?: string
-          id?: string
-          observaciones?: string | null
-          periodo: string
-          porcentaje_ft?: number | null
-          updated_at?: string | null
-          venta_total?: number | null
-        }
-        Update: {
-          branch_id?: string
-          cargado_por?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          efectivo?: number | null
-          fc_total?: number
-          fecha_carga?: string | null
-          ft_total?: number
-          fuente?: string
-          id?: string
-          observaciones?: string | null
-          periodo?: string
-          porcentaje_ft?: number | null
-          updated_at?: string | null
-          venta_total?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ventas_mensuales_local_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ventas_mensuales_local_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
             referencedColumns: ["id"]
           },
         ]
@@ -8256,7 +8256,7 @@ export type Database = {
           },
         ]
       }
-      webapp_pedido_mensajes: {
+      webapp_order_messages: {
         Row: {
           branch_id: string
           created_at: string | null
@@ -8309,7 +8309,7 @@ export type Database = {
             foreignKeyName: "webapp_pedido_mensajes_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -8595,7 +8595,7 @@ export type Database = {
             foreignKeyName: "pedido_items_item_carta_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
-            referencedRelation: "items_carta"
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
           {
@@ -8609,7 +8609,7 @@ export type Database = {
             foreignKeyName: "pedido_items_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: "pedidos"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -8729,7 +8729,7 @@ export type Database = {
             foreignKeyName: "items_carta_categoria_carta_id_fkey"
             columns: ["categoria_carta_id"]
             isOneToOne: false
-            referencedRelation: "menu_categorias"
+            referencedRelation: "menu_categories"
             referencedColumns: ["id"]
           },
         ]
