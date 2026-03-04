@@ -1,12 +1,12 @@
 /**
- * useDynamicPermissions - Hook combinado que usa permission_config como override
+ * useDynamicPermissions - Hook combinado que usa role_permissions como override
  *
  * Combina:
  * 1. usePermissions (roles y permisos hardcodeados)
- * 2. usePermissionOverrides (configuración dinámica de permission_config)
+ * 2. usePermissionOverrides (configuración dinámica de role_permissions)
  *
  * La lógica:
- * - Si existe una configuración en permission_config → usa esa
+ * - Si existe una configuración en role_permissions → usa esa
  * - Si no existe → usa el fallback hardcodeado de usePermissions
  */
 import { useMemo } from 'react';

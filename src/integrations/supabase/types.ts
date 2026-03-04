@@ -5775,39 +5775,6 @@ export type Database = {
           },
         ]
       }
-      permission_config: {
-        Row: {
-          allowed_roles: string[]
-          category: string
-          created_at: string | null
-          id: string
-          is_editable: boolean | null
-          permission_key: string
-          permission_label: string
-          scope: string
-        }
-        Insert: {
-          allowed_roles: string[]
-          category: string
-          created_at?: string | null
-          id?: string
-          is_editable?: boolean | null
-          permission_key: string
-          permission_label: string
-          scope: string
-        }
-        Update: {
-          allowed_roles?: string[]
-          category?: string
-          created_at?: string | null
-          id?: string
-          is_editable?: boolean | null
-          permission_key?: string
-          permission_label?: string
-          scope?: string
-        }
-        Relationships: []
-      }
       permissions: {
         Row: {
           category: string
@@ -9017,6 +8984,14 @@ export type Database = {
           local_role: Database["public"]["Enums"]["local_role_type"]
         }[]
       }
+      has_any_brand_role: {
+        Args: { _role_keys: string[]; _user_id: string }
+        Returns: boolean
+      }
+      has_any_local_role: {
+        Args: { _role_keys: string[]; _user_id: string }
+        Returns: boolean
+      }
       has_branch_access_v2: {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
@@ -9031,10 +9006,15 @@ export type Database = {
         Args: { p_branch_id: string; p_user_id: string }
         Returns: boolean
       }
+      has_role_for_branch: {
+        Args: { _branch_id: string; _role_key: string; _user_id: string }
+        Returns: boolean
+      }
       insert_factura_completa: {
         Args: { p_factura: Json; p_items: Json }
         Returns: string
       }
+      is_active_staff: { Args: { _user_id: string }; Returns: boolean }
       is_branch_manager_v2: {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
@@ -9109,6 +9089,10 @@ export type Database = {
         Returns: number
       }
       recalcular_todos_los_costos: { Args: never; Returns: undefined }
+      shares_branch_as_manager: {
+        Args: { _target_user_id: string; _viewer_id: string }
+        Returns: boolean
+      }
       sync_orphan_users: {
         Args: never
         Returns: {
@@ -9116,6 +9100,14 @@ export type Database = {
           synced_email: string
           synced_user_id: string
         }[]
+      }
+      user_has_access_to_any_branch: {
+        Args: { _branch_ids: string[]; _user_id: string }
+        Returns: boolean
+      }
+      user_has_any_role_key: {
+        Args: { _role_keys: string[]; _user_id: string }
+        Returns: boolean
       }
       user_has_branch_access: {
         Args: { p_branch_id: string }

@@ -52,26 +52,7 @@ export async function fetchUserBranchRoles(userId: string) {
   }));
 }
 
-// ── Permission Config (legacy - kept for backward compat) ────────────
-
-export async function fetchPermissionConfig() {
-  const { data, error } = await supabase
-    .from('permission_config')
-    .select('*')
-    .order('scope')
-    .order('category')
-    .order('permission_label');
-  if (error) throw error;
-  return data || [];
-}
-
-export async function updatePermissionRoles(permissionId: string, newRoles: string[]) {
-  const { error } = await supabase
-    .from('permission_config')
-    .update({ allowed_roles: newRoles })
-    .eq('id', permissionId);
-  if (error) throw error;
-}
+// ── Permission Config (removed - table dropped, use permissions + role_permissions) ──
 
 // ── Normalized model (new tables) ────────────────────────────────────
 

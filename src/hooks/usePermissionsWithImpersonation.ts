@@ -2,7 +2,7 @@
  * usePermissionsWithImpersonation - Wrapper de useDynamicPermissions con soporte para impersonación
  *
  * Cuando hay impersonación activa, calcula permisos para el usuario impersonado
- * aplicando los mismos overrides de permission_config que useDynamicPermissions.
+ * aplicando los mismos overrides de role_permissions que useDynamicPermissions.
  * Las operaciones de DB siguen usando auth.uid() real.
  */
 import { useMemo } from 'react';
