@@ -1,8 +1,8 @@
-import type { Tables } from '@/integrations/supabase/types';
+
 import type { useItemCartaMutations } from '@/hooks/useItemsCarta';
 import type { useGruposOpcionalesMutations } from '@/hooks/useGruposOpcionales';
 
-export type ItemCartaRow = Tables<'items_carta'> & {
+export type ItemCartaRow = any & {
   menu_categorias: { id: string; nombre: string; orden: number | null } | null;
   rdo_categories: { code: string; name: string } | null;
 };

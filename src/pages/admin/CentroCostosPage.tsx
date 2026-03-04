@@ -49,10 +49,10 @@ export default function CentroCostosPage() {
 
   const [tab, setTab] = useState<Tab>('analisis');
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Tables<'items_carta'> | null>(null);
-  const [compItem, setCompItem] = useState<Tables<'items_carta'> | null>(null);
-  const [histItem, setHistItem] = useState<Tables<'items_carta'> | null>(null);
-  const [delItem, setDelItem] = useState<Tables<'items_carta'> | null>(null);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [compItem, setCompItem] = useState<any | null>(null);
+  const [histItem, setHistItem] = useState<any | null>(null);
+  const [delItem, setDelItem] = useState<any | null>(null);
   const [simPrices, setSimPrices] = useState<Record<string, number>>({});
   const [pending, setPending] = useState<Record<string, number>>({});
 

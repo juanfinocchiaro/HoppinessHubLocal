@@ -23,7 +23,6 @@ import { useItemIngredientesDeepList } from '@/hooks/useItemIngredientesDeepList
 import { useItemRemovibles, useItemRemoviblesMutations } from '@/hooks/useItemRemovibles';
 import { useExtraAutoDiscovery } from '@/hooks/useExtraAutoDiscovery';
 import { useToggleExtra } from '@/hooks/useToggleExtra';
-import type { Tables } from '@/integrations/supabase/types';
 import type { GrupoOpcional } from '@/hooks/useGruposOpcionales';
 import type { DeepIngredient, DeepSubPrep } from '@/hooks/useItemIngredientesDeepList';
 import { formatCurrency } from '@/lib/formatters';
@@ -49,15 +48,7 @@ interface RemovibleRecord {
   nombre_display: string | null;
 }
 
-interface ComposicionRecord {
-  preparacion_id: string | null;
-  insumo_id: string | null;
-  cantidad: number;
-  preparaciones?: { nombre: string; costo_calculado: number | null } | null;
-  insumos?: { nombre: string; costo_por_unidad_base: number | null } | null;
-}
-
-export function ComposicionInline({ item, mutations }: { item: Tables<'items_carta'>; mutations: ItemCartaMutations }) {
+export function ComposicionInline({ item, mutations }: { item: any; mutations: ItemCartaMutations }) {
   const { data: composicionActual } = useItemCartaComposicion(item?.id);
   const { data: grupos } = useGruposOpcionales(item?.id);
   const { data: preparaciones } = usePreparaciones();
@@ -79,13 +70,13 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
   useEffect(() => {
     if (composicionActual) {
       setRows(
-        composicionActual.map((c: ComposicionRecord) => ({
+        (composicionActual as any[]).map((c: any) => ({
           tipo: c.preparacion_id ? 'preparacion' : 'insumo',
           preparacion_id: c.preparacion_id || '',
           insumo_id: c.insumo_id || '',
           cantidad: c.cantidad,
-          _label: c.preparaciones?.nombre || c.insumos?.nombre || '',
-          _costo: c.preparaciones?.costo_calculado || c.insumos?.costo_por_unidad_base || 0,
+          _label: c.recipes?.nombre || c.preparaciones?.nombre || c.supplies?.nombre || c.insumos?.nombre || '',
+          _costo: c.recipes?.costo_calculado || c.preparaciones?.costo_calculado || c.supplies?.costo_por_unidad_base || c.insumos?.costo_por_unidad_base || 0,
         })),
       );
       setHasChanges(false);
@@ -120,12 +111,12 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
       nr[i]._label = '';
     }
     if (field === 'preparacion_id') {
-      const p = (preparaciones || []).find((x: Tables<'preparaciones'>) => x.id === value);
+      const p = ((preparaciones || []) as any[]).find((x: any) => x.id === value);
       nr[i]._label = p?.nombre || '';
       nr[i]._costo = p?.costo_calculado || 0;
     }
     if (field === 'insumo_id') {
-      const ins = (insumos || []).find((x: Tables<'insumos'>) => x.id === value);
+      const ins = ((insumos || []) as any[]).find((x: any) => x.id === value);
       nr[i]._label = ins?.nombre || '';
       nr[i]._costo = ins?.costo_por_unidad_base || 0;
     }
@@ -152,7 +143,7 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
   );
   const removiblesMap = useMemo(() => {
     const map = new Map<string, RemovibleRecord>();
-    for (const r of removibles || []) {
+    for (const r of (removibles || []) as RemovibleRecord[]) {
       const key = r.insumo_id || r.preparacion_id;
       if (key) map.set(key, r);
     }
@@ -239,7 +230,7 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Seleccionar...</SelectItem>
-            {(preparaciones || []).map((p: Tables<'preparaciones'>) => (
+            {((preparaciones || []) as any[]).map((p: any) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.nombre} ({formatCurrency(p.costo_calculado || 0)})
               </SelectItem>
@@ -248,10 +239,10 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
         </Select>
       );
     }
-    const allInsumos = insumos || [];
-    const productos = allInsumos.filter((x: Tables<'insumos'>) => x.tipo_item === 'producto');
-    const ingredientes = allInsumos.filter((x: Tables<'insumos'>) => x.tipo_item === 'ingrediente');
-    const insumosItems = allInsumos.filter((x: Tables<'insumos'>) => x.tipo_item === 'insumo' || !x.tipo_item);
+    const allInsumos = ((insumos || []) as any[]);
+    const productos = allInsumos.filter((x: any) => x.tipo_item === 'producto');
+    const ingredientes = allInsumos.filter((x: any) => x.tipo_item === 'ingrediente');
+    const insumosItems = allInsumos.filter((x: any) => x.tipo_item === 'insumo' || !x.tipo_item);
     return (
       <Select
         value={row.insumo_id || 'none'}
@@ -271,7 +262,7 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
               >
                 ── Productos ──
               </SelectItem>
-              {productos.map((ins: Tables<'insumos'>) => (
+              {productos.map((ins: any) => (
                 <SelectItem key={ins.id} value={ins.id}>
                   {ins.nombre} ({formatCurrency(ins.costo_por_unidad_base || 0)})
                 </SelectItem>
@@ -287,7 +278,7 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
               >
                 ── Ingredientes ──
               </SelectItem>
-              {ingredientes.map((ins: Tables<'insumos'>) => (
+              {ingredientes.map((ins: any) => (
                 <SelectItem key={ins.id} value={ins.id}>
                   {ins.nombre} ({formatCurrency(ins.costo_por_unidad_base || 0)})
                 </SelectItem>
@@ -303,7 +294,7 @@ export function ComposicionInline({ item, mutations }: { item: Tables<'items_car
               >
                 ── Insumos ──
               </SelectItem>
-              {insumosItems.map((ins: Tables<'insumos'>) => (
+              {insumosItems.map((ins: any) => (
                 <SelectItem key={ins.id} value={ins.id}>
                   {ins.nombre} ({formatCurrency(ins.costo_por_unidad_base || 0)})
                 </SelectItem>

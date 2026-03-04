@@ -13,7 +13,7 @@ import { FormRow } from '@/components/ui/forms-pro';
 import { Tag, Save } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useMenuCategorias } from '@/hooks/useMenu';
-import type { Tables } from '@/integrations/supabase/types';
+
 import type { ItemCartaMutations } from './types';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -22,7 +22,7 @@ export function EditarInline({
   mutations,
   onSaved,
 }: {
-  item: Tables<'items_carta'>;
+  item: any;
   mutations: ItemCartaMutations;
   onSaved: () => void;
 }) {
@@ -75,7 +75,7 @@ export function EditarInline({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Sin categoría</SelectItem>
-              {categorias?.map((c: Tables<'menu_categorias'>) => (
+              {categorias?.map((c: any) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.nombre}
                 </SelectItem>

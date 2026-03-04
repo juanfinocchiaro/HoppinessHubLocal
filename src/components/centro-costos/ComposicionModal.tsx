@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,15 +13,15 @@ import { useItemCartaComposicion } from '@/hooks/useItemsCarta';
 import { useGruposOpcionales, useGruposOpcionalesMutations } from '@/hooks/useGruposOpcionales';
 import type { GrupoOpcional } from '@/hooks/useGruposOpcionales';
 import { fmt, fmtPct, calcFC, fcColor, badgeVar } from './helpers';
-import type { Tables } from '@/integrations/supabase/types';
 import type { ComposicionRow, GrupoEditItem, ItemCartaMutations, GruposMutations } from './types';
+import { useState as useStateReact, useEffect } from 'react';
 
 interface ComposicionModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  item: Tables<'items_carta'>;
-  preparaciones: Tables<'preparaciones'>[];
-  insumos: Tables<'insumos'>[];
+  item: any;
+  preparaciones: any[];
+  insumos: any[];
   mutations: ItemCartaMutations;
 }
 
@@ -37,13 +37,13 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
   useEffect(() => {
     if (composicionActual) {
       setRows(
-        composicionActual.map((c) => ({
+        (composicionActual as any[]).map((c: any) => ({
           tipo: (c.preparacion_id ? 'preparacion' : 'insumo') as ComposicionRow['tipo'],
           preparacion_id: c.preparacion_id || '',
           insumo_id: c.insumo_id || '',
           cantidad: c.cantidad,
-          _label: c.preparaciones?.nombre || c.insumos?.nombre || '',
-          _costo: c.preparaciones?.costo_calculado || c.insumos?.costo_por_unidad_base || 0,
+          _label: c.recipes?.nombre || c.preparaciones?.nombre || c.supplies?.nombre || c.insumos?.nombre || '',
+          _costo: c.recipes?.costo_calculado || c.preparaciones?.costo_calculado || c.supplies?.costo_por_unidad_base || c.insumos?.costo_por_unidad_base || 0,
         })),
       );
       setHasChanges(false);
@@ -59,8 +59,8 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
     const nr = [...rows];
     nr[i] = { ...nr[i], [field]: value };
     if (field === 'tipo') { nr[i].preparacion_id = ''; nr[i].insumo_id = ''; nr[i]._costo = 0; nr[i]._label = ''; }
-    if (field === 'preparacion_id') { const p = preparaciones.find((x) => x.id === value); nr[i]._label = p?.nombre || ''; nr[i]._costo = p?.costo_calculado || 0; }
-    if (field === 'insumo_id') { const ins = insumos.find((x) => x.id === value); nr[i]._label = ins?.nombre || ''; nr[i]._costo = ins?.costo_por_unidad_base || 0; }
+    if (field === 'preparacion_id') { const p = preparaciones.find((x: any) => x.id === value); nr[i]._label = p?.nombre || ''; nr[i]._costo = p?.costo_calculado || 0; }
+    if (field === 'insumo_id') { const ins = insumos.find((x: any) => x.id === value); nr[i]._label = ins?.nombre || ''; nr[i]._costo = ins?.costo_por_unidad_base || 0; }
     setRows(nr);
     setHasChanges(true);
   };
@@ -89,17 +89,17 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
   };
 
   const renderInsumoSelect = (row: ComposicionRow, i: number) => {
-    const productos = insumos.filter((x) => x.tipo_item === 'producto');
-    const ingredientes = insumos.filter((x) => x.tipo_item === 'ingrediente');
-    const insumosItems = insumos.filter((x) => x.tipo_item === 'insumo' || !x.tipo_item);
+    const productos = insumos.filter((x: any) => x.tipo_item === 'producto');
+    const ingredientes = insumos.filter((x: any) => x.tipo_item === 'ingrediente');
+    const insumosItems = insumos.filter((x: any) => x.tipo_item === 'insumo' || !x.tipo_item);
     return (
       <Select value={row.insumo_id || 'none'} onValueChange={(v) => updateRow(i, 'insumo_id', v === 'none' ? '' : v)}>
         <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Seleccionar...</SelectItem>
-          {productos.length > 0 && (<><SelectItem value="__h_prod" disabled className="text-xs font-semibold text-muted-foreground">── Productos ──</SelectItem>{productos.map((ins) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
-          {ingredientes.length > 0 && (<><SelectItem value="__h_ing" disabled className="text-xs font-semibold text-muted-foreground">── Ingredientes ──</SelectItem>{ingredientes.map((ins) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
-          {insumosItems.length > 0 && (<><SelectItem value="__h_ins" disabled className="text-xs font-semibold text-muted-foreground">── Insumos ──</SelectItem>{insumosItems.map((ins) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
+          {productos.length > 0 && (<><SelectItem value="__h_prod" disabled className="text-xs font-semibold text-muted-foreground">── Productos ──</SelectItem>{productos.map((ins: any) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
+          {ingredientes.length > 0 && (<><SelectItem value="__h_ing" disabled className="text-xs font-semibold text-muted-foreground">── Ingredientes ──</SelectItem>{ingredientes.map((ins: any) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
+          {insumosItems.length > 0 && (<><SelectItem value="__h_ins" disabled className="text-xs font-semibold text-muted-foreground">── Insumos ──</SelectItem>{insumosItems.map((ins: any) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre} ({fmt(ins.costo_por_unidad_base || 0)})</SelectItem>))}</>)}
         </SelectContent>
       </Select>
     );
@@ -131,7 +131,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
                           <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Seleccionar...</SelectItem>
-                            {preparaciones.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nombre} ({fmt(p.costo_calculado || 0)})</SelectItem>))}
+                            {preparaciones.map((p: any) => (<SelectItem key={p.id} value={p.id}>{p.nombre} ({fmt(p.costo_calculado || 0)})</SelectItem>))}
                           </SelectContent>
                         </Select>
                       ) : renderInsumoSelect(row, i)}
@@ -148,7 +148,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
 
           <FormSection title="Grupos Opcionales" icon={Tag}>
             <p className="text-xs text-muted-foreground mb-2">Para componentes variables (ej: bebida).</p>
-            {(grupos || []).map((grupo) => (
+            {(grupos || []).map((grupo: any) => (
               <GrupoEditor key={grupo.id} grupo={grupo} itemId={item.id} insumos={insumos} preparaciones={preparaciones} mutations={gruposMutations} />
             ))}
             {showNewGrupo ? (
@@ -190,19 +190,19 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
 }
 
 function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
-  grupo: GrupoOpcional; itemId: string; insumos: Tables<'insumos'>[]; preparaciones: Tables<'preparaciones'>[]; mutations: GruposMutations;
+  grupo: GrupoOpcional; itemId: string; insumos: any[]; preparaciones: any[]; mutations: GruposMutations;
 }) {
-  const [editItems, setEditItems] = useState<GrupoEditItem[]>([]);
-  const [editing, setEditing] = useState(false);
-  const [nombre, setNombre] = useState(grupo.nombre);
+  const [editItems, setEditItems] = useStateReact<GrupoEditItem[]>([]);
+  const [editing, setEditing] = useStateReact(false);
+  const [nombre, setNombre] = useStateReact(grupo.nombre);
 
   useEffect(() => {
     if (grupo.items)
-      setEditItems(grupo.items.map((gi) => ({
+      setEditItems(grupo.items.map((gi: any) => ({
         tipo: (gi.preparacion_id ? 'preparacion' : 'insumo') as GrupoEditItem['tipo'],
         insumo_id: gi.insumo_id || '', preparacion_id: gi.preparacion_id || '', cantidad: gi.cantidad,
-        costo_unitario: gi.costo_unitario || gi.insumos?.costo_por_unidad_base || gi.preparaciones?.costo_calculado || 0,
-        _nombre: gi.insumos?.nombre || gi.preparaciones?.nombre || '',
+        costo_unitario: gi.costo_unitario || gi.insumos?.costo_por_unidad_base || gi.preparaciones?.costo_calculado || gi.supplies?.costo_por_unidad_base || gi.recipes?.costo_calculado || 0,
+        _nombre: gi.insumos?.nombre || gi.preparaciones?.nombre || gi.supplies?.nombre || gi.recipes?.nombre || '',
       })));
   }, [grupo.items]);
 
@@ -214,8 +214,8 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
     const next = [...editItems];
     next[i] = { ...next[i], [field]: value };
     if (field === 'tipo') { next[i].insumo_id = ''; next[i].preparacion_id = ''; next[i].costo_unitario = 0; next[i]._nombre = ''; }
-    if (field === 'insumo_id') { const ins = insumos.find((x) => x.id === value); next[i].costo_unitario = ins?.costo_por_unidad_base || 0; next[i]._nombre = ins?.nombre || ''; }
-    if (field === 'preparacion_id') { const p = preparaciones.find((x) => x.id === value); next[i].costo_unitario = p?.costo_calculado || 0; next[i]._nombre = p?.nombre || ''; }
+    if (field === 'insumo_id') { const ins = insumos.find((x: any) => x.id === value); next[i].costo_unitario = ins?.costo_por_unidad_base || 0; next[i]._nombre = ins?.nombre || ''; }
+    if (field === 'preparacion_id') { const p = preparaciones.find((x: any) => x.id === value); next[i].costo_unitario = p?.costo_calculado || 0; next[i]._nombre = p?.nombre || ''; }
     setEditItems(next);
     setEditing(true);
   };
@@ -258,16 +258,16 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
           <div className="flex-1 min-w-0">
             {ei.tipo === 'insumo' ? (() => {
               const selectedIds = editItems.filter((_, idx) => idx !== i).map((x) => x.insumo_id).filter(Boolean);
-              const available = insumos.filter((x) => (x.tipo_item === 'insumo' || x.tipo_item === 'producto') && !selectedIds.includes(x.id));
-              const productos = available.filter((x) => x.tipo_item === 'producto');
-              const otros = available.filter((x) => x.tipo_item !== 'producto');
+              const available = insumos.filter((x: any) => (x.tipo_item === 'insumo' || x.tipo_item === 'producto') && !selectedIds.includes(x.id));
+              const productos = available.filter((x: any) => x.tipo_item === 'producto');
+              const otros = available.filter((x: any) => x.tipo_item !== 'producto');
               return (
                 <Select value={ei.insumo_id || 'none'} onValueChange={(v) => updateItem(i, 'insumo_id', v === 'none' ? '' : v)}>
                   <SelectTrigger className="h-6 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Seleccionar...</SelectItem>
-                    {productos.length > 0 && (<><SelectItem value="__h_prod" disabled className="text-xs font-semibold text-muted-foreground">── Productos ──</SelectItem>{productos.map((ins) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre}</SelectItem>))}</>)}
-                    {otros.length > 0 && (<><SelectItem value="__h_ins" disabled className="text-xs font-semibold text-muted-foreground">── Insumos ──</SelectItem>{otros.map((ins) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre}</SelectItem>))}</>)}
+                    {productos.length > 0 && (<><SelectItem value="__h_prod" disabled className="text-xs font-semibold text-muted-foreground">── Productos ──</SelectItem>{productos.map((ins: any) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre}</SelectItem>))}</>)}
+                    {otros.length > 0 && (<><SelectItem value="__h_ins" disabled className="text-xs font-semibold text-muted-foreground">── Insumos ──</SelectItem>{otros.map((ins: any) => (<SelectItem key={ins.id} value={ins.id}>{ins.nombre}</SelectItem>))}</>)}
                   </SelectContent>
                 </Select>
               );
@@ -278,7 +278,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
                   <SelectTrigger className="h-6 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Seleccionar...</SelectItem>
-                    {preparaciones.filter((p) => !selectedIds.includes(p.id)).map((p) => (<SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>))}
+                    {preparaciones.filter((p: any) => !selectedIds.includes(p.id)).map((p: any) => (<SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>))}
                   </SelectContent>
                 </Select>
               );

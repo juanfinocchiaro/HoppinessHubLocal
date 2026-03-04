@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useItemCartaHistorial } from '@/hooks/useItemsCarta';
 import { fmt } from './helpers';
-import type { Tables } from '@/integrations/supabase/types';
+
 
 interface HistorialModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  item: Tables<'items_carta'>;
+  item: any;
 }
 
 export function HistorialModal({ open, onOpenChange, item }: HistorialModalProps) {

@@ -5,8 +5,7 @@ import type { InsumoFormData, CategoriaInsumoFormData } from '@/types/financial'
 // ── Categorías Insumo ──────────────────────────────────────────────
 
 export async function fetchCategoriasInsumo() {
-  const { data, error } = await supabase
-    .from('categorias_insumo')
+  const { data, error } = await fromUntyped('supply_categories')
     .select('*')
     .is('deleted_at', null)
     .order('orden', { ascending: true });
@@ -15,8 +14,7 @@ export async function fetchCategoriasInsumo() {
 }
 
 export async function createCategoriaInsumo(payload: CategoriaInsumoFormData) {
-  const { data, error } = await supabase
-    .from('categorias_insumo')
+  const { data, error } = await fromUntyped('supply_categories')
     .insert(payload)
     .select()
     .single();
@@ -28,16 +26,14 @@ export async function updateCategoriaInsumo(
   id: string,
   payload: Partial<CategoriaInsumoFormData>,
 ) {
-  const { error } = await supabase
-    .from('categorias_insumo')
+  const { error } = await fromUntyped('supply_categories')
     .update(payload)
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteCategoriaInsumo(id: string) {
-  const { error } = await supabase
-    .from('categorias_insumo')
+  const { error } = await fromUntyped('supply_categories')
     .update({ deleted_at: new Date().toISOString(), activo: false })
     .eq('id', id);
   if (error) throw error;
@@ -46,10 +42,9 @@ export async function softDeleteCategoriaInsumo(id: string) {
 // ── Insumos ────────────────────────────────────────────────────────
 
 export async function fetchInsumos() {
-  const { data, error } = await supabase
-    .from('insumos')
+  const { data, error } = await fromUntyped('supplies')
     .select(
-      '*, categorias_insumo(nombre, tipo), rdo_categories!insumos_rdo_category_code_fkey(code, name), proveedor_obligatorio:proveedores!insumos_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:proveedores!insumos_proveedor_sugerido_id_fkey(id, razon_social)',
+      '*, supply_categories(nombre, tipo), rdo_categories!supplies_rdo_category_code_fkey(code, name), proveedor_obligatorio:suppliers!supplies_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:suppliers!supplies_proveedor_sugerido_id_fkey(id, razon_social)',
     )
     .is('deleted_at', null)
     .neq('is_active', false)
@@ -59,8 +54,7 @@ export async function fetchInsumos() {
 }
 
 export async function createInsumo(payload: InsumoFormData) {
-  const { data, error } = await supabase
-    .from('insumos')
+  const { data, error } = await fromUntyped('supplies')
     .insert(payload)
     .select()
     .single();
@@ -69,14 +63,13 @@ export async function createInsumo(payload: InsumoFormData) {
 }
 
 export async function updateInsumo(id: string, payload: Partial<InsumoFormData>) {
-  const { error } = await supabase.from('insumos').update(payload).eq('id', id);
+  const { error } = await fromUntyped('supplies').update(payload).eq('id', id);
   if (error) throw error;
   return payload;
 }
 
 export async function softDeleteInsumo(id: string) {
-  const { error } = await supabase
-    .from('insumos')
+  const { error } = await fromUntyped('supplies')
     .update({ deleted_at: new Date().toISOString(), activo: false })
     .eq('id', id);
   if (error) throw error;
@@ -85,8 +78,7 @@ export async function softDeleteInsumo(id: string) {
 // ── Preparaciones ──────────────────────────────────────────────────
 
 export async function fetchPreparaciones() {
-  const { data, error } = await supabase
-    .from('preparaciones')
+  const { data, error } = await fromUntyped('recipes')
     .select('*')
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -96,10 +88,9 @@ export async function fetchPreparaciones() {
 }
 
 export async function fetchPreparacionIngredientes(preparacionId: string) {
-  const { data, error } = await supabase
-    .from('preparacion_ingredientes')
+  const { data, error } = await fromUntyped('recipe_ingredients')
     .select(
-      `*, insumos(id, nombre, unidad_base, costo_por_unidad_base), preparaciones!preparacion_ingredientes_sub_preparacion_id_fkey(id, nombre, costo_calculado)`,
+      `*, supplies(id, nombre, unidad_base, costo_por_unidad_base), recipes!recipe_ingredients_sub_preparacion_id_fkey(id, nombre, costo_calculado)`,
     )
     .eq('preparacion_id', preparacionId)
     .order('orden');
@@ -108,9 +99,8 @@ export async function fetchPreparacionIngredientes(preparacionId: string) {
 }
 
 export async function fetchPreparacionOpciones(preparacionId: string) {
-  const { data, error } = await supabase
-    .from('preparacion_opciones')
-    .select(`*, insumos(id, nombre, costo_por_unidad_base)`)
+  const { data, error } = await fromUntyped('recipe_options')
+    .select(`*, supplies(id, nombre, costo_por_unidad_base)`)
     .eq('preparacion_id', preparacionId)
     .order('orden');
   if (error) throw error;
@@ -124,9 +114,8 @@ export async function createPreparacion(payload: {
   is_interchangeable?: boolean;
   metodo_costeo?: string;
 }) {
-  const { data, error } = await supabase
-    .from('preparaciones')
-    .insert(payload as any)
+  const { data, error } = await fromUntyped('recipes')
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
@@ -134,17 +123,15 @@ export async function createPreparacion(payload: {
 }
 
 export async function updatePreparacion(id: string, payload: any) {
-  const { error } = await supabase
-    .from('preparaciones')
-    .update({ ...payload, updated_at: new Date().toISOString() } as any)
+  const { error } = await fromUntyped('recipes')
+    .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeletePreparacion(id: string) {
-  const { error } = await supabase
-    .from('preparaciones')
-    .update({ activo: false, deleted_at: new Date().toISOString() } as any)
+  const { error } = await fromUntyped('recipes')
+    .update({ activo: false, deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
@@ -153,13 +140,12 @@ export async function savePreparacionIngredientes(
   preparacion_id: string,
   items: any[],
 ) {
-  await supabase
-    .from('preparacion_ingredientes')
+  await fromUntyped('recipe_ingredients')
     .delete()
     .eq('preparacion_id', preparacion_id);
 
   if (items.length > 0) {
-    const { error } = await supabase.from('preparacion_ingredientes').insert(
+    const { error } = await fromUntyped('recipe_ingredients').insert(
       items.map((item, index) => ({
         preparacion_id,
         insumo_id: item.insumo_id || null,
@@ -167,7 +153,7 @@ export async function savePreparacionIngredientes(
         cantidad: item.cantidad,
         unidad: item.unidad,
         orden: index,
-      })) as any,
+      })),
     );
     if (error) throw error;
   }
@@ -179,18 +165,17 @@ export async function savePreparacionOpciones(
   preparacion_id: string,
   insumo_ids: string[],
 ) {
-  await supabase
-    .from('preparacion_opciones')
+  await fromUntyped('recipe_options')
     .delete()
     .eq('preparacion_id', preparacion_id);
 
   if (insumo_ids.length > 0) {
-    const { error } = await supabase.from('preparacion_opciones').insert(
+    const { error } = await fromUntyped('recipe_options').insert(
       insumo_ids.map((insumo_id, index) => ({
         preparacion_id,
         insumo_id,
         orden: index,
-      })) as any,
+      })),
     );
     if (error) throw error;
   }
@@ -202,7 +187,7 @@ export async function savePreparacionOpciones(
 
 const ITEMS_CARTA_SELECT = `
   *,
-  menu_categorias:categoria_carta_id(id, nombre, orden),
+  menu_categories:categoria_carta_id(id, nombre, orden),
   rdo_categories:rdo_category_code(code, name)
 `;
 
@@ -215,8 +200,7 @@ export async function fetchBranchItemAvailability(branchId: string) {
 }
 
 export async function fetchItemsCarta() {
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select(ITEMS_CARTA_SELECT)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -226,13 +210,12 @@ export async function fetchItemsCarta() {
 }
 
 export async function fetchItemCartaComposicion(itemId: string) {
-  const { data, error } = await supabase
-    .from('item_carta_composicion')
+  const { data, error } = await fromUntyped('menu_item_compositions')
     .select(
       `
       *,
-      preparaciones(id, nombre, costo_calculado, tipo),
-      insumos(id, nombre, costo_por_unidad_base, unidad_base)
+      recipes(id, nombre, costo_calculado, tipo),
+      supplies(id, nombre, costo_por_unidad_base, unidad_base)
     `,
     )
     .eq('item_carta_id', itemId)
@@ -242,8 +225,7 @@ export async function fetchItemCartaComposicion(itemId: string) {
 }
 
 export async function fetchItemCartaHistorial(itemId: string) {
-  const { data, error } = await supabase
-    .from('item_carta_precios_historial')
+  const { data, error } = await fromUntyped('menu_item_price_history')
     .select('*')
     .eq('item_carta_id', itemId)
     .order('created_at', { ascending: false });
@@ -262,9 +244,8 @@ export async function createItemCarta(payload: {
   disponible_delivery?: boolean;
   tipo?: string;
 }) {
-  const { data, error } = await supabase
-    .from('items_carta')
-    .insert(payload as any)
+  const { data, error } = await fromUntyped('menu_items')
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
@@ -272,17 +253,15 @@ export async function createItemCarta(payload: {
 }
 
 export async function updateItemCarta(id: string, payload: any) {
-  const { error } = await supabase
-    .from('items_carta')
-    .update({ ...payload } as any)
+  const { error } = await fromUntyped('menu_items')
+    .update({ ...payload })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteItemCarta(id: string) {
-  const { error } = await supabase
-    .from('items_carta')
-    .update({ activo: false, deleted_at: new Date().toISOString() } as any)
+  const { error } = await fromUntyped('menu_items')
+    .update({ activo: false, deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
@@ -291,20 +270,19 @@ export async function saveItemCartaComposicion(
   item_carta_id: string,
   items: { preparacion_id?: string; insumo_id?: string; cantidad: number }[],
 ) {
-  await supabase
-    .from('item_carta_composicion')
+  await fromUntyped('menu_item_compositions')
     .delete()
     .eq('item_carta_id', item_carta_id);
 
   if (items.length > 0) {
-    const { error } = await supabase.from('item_carta_composicion').insert(
+    const { error } = await fromUntyped('menu_item_compositions').insert(
       items.map((item, index) => ({
         item_carta_id,
         preparacion_id: item.preparacion_id || null,
         insumo_id: item.insumo_id || null,
         cantidad: item.cantidad,
         orden: index,
-      })) as any,
+      })),
     );
     if (error) throw error;
   }
@@ -321,21 +299,19 @@ export async function cambiarPrecioItemCarta(params: {
 }) {
   const { itemId, precioAnterior, precioNuevo, motivo, userId } = params;
 
-  const { error: errUpdate } = await supabase
-    .from('items_carta')
-    .update({ precio_base: precioNuevo } as any)
+  const { error: errUpdate } = await fromUntyped('menu_items')
+    .update({ precio_base: precioNuevo })
     .eq('id', itemId);
   if (errUpdate) throw errUpdate;
 
-  const { error: errHist } = await supabase
-    .from('item_carta_precios_historial')
+  const { error: errHist } = await fromUntyped('menu_item_price_history')
     .insert({
       item_carta_id: itemId,
       precio_anterior: precioAnterior,
       precio_nuevo: precioNuevo,
       motivo: motivo || null,
       usuario_id: userId || null,
-    } as any);
+    });
   if (errHist) throw errHist;
 
   await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
@@ -351,8 +327,7 @@ export async function recalcularCostoItemCarta(itemId: string) {
 // ── Menu Categorías ─────────────────────────────────────────────────
 
 export async function fetchMenuCategorias() {
-  const { data, error } = await supabase
-    .from('menu_categorias')
+  const { data, error } = await fromUntyped('menu_categories')
     .select('*')
     .eq('is_active', true)
     .order('orden');
@@ -365,7 +340,7 @@ export async function createMenuCategoria(payload: {
   descripcion?: string | null;
   orden?: number;
 }) {
-  const { data, error } = await fromUntyped('menu_categorias')
+  const { data, error } = await fromUntyped('menu_categories')
     .insert({
       nombre: payload.nombre,
       descripcion: payload.descripcion || null,
@@ -381,7 +356,7 @@ export async function updateMenuCategoria(
   id: string,
   payload: { nombre?: string; descripcion?: string; orden?: number },
 ) {
-  const { error } = await fromUntyped('menu_categorias')
+  const { error } = await fromUntyped('menu_categories')
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -389,7 +364,7 @@ export async function updateMenuCategoria(
 
 export async function reorderMenuCategorias(items: { id: string; orden: number }[]) {
   for (const item of items) {
-    const { error } = await fromUntyped('menu_categorias')
+    const { error } = await fromUntyped('menu_categories')
       .update({ orden: item.orden, updated_at: new Date().toISOString() })
       .eq('id', item.id);
     if (error) throw error;
@@ -397,21 +372,21 @@ export async function reorderMenuCategorias(items: { id: string; orden: number }
 }
 
 export async function softDeleteMenuCategoria(id: string) {
-  const { error } = await fromUntyped('menu_categorias')
+  const { error } = await fromUntyped('menu_categories')
     .update({ activo: false, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function toggleMenuCategoriaVisibility(id: string, visible: boolean) {
-  const { error } = await fromUntyped('menu_categorias')
+  const { error } = await fromUntyped('menu_categories')
     .update({ visible_en_carta: visible, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function fetchHiddenMenuCategoriaIds() {
-  const { data } = await fromUntyped('menu_categorias')
+  const { data } = await fromUntyped('menu_categories')
     .select('id')
     .eq('visible_en_carta', false);
   return ((data || []) as Array<Record<string, unknown>>).map((c) => c.id as string);
@@ -422,14 +397,14 @@ export async function fetchHiddenMenuCategoriaIds() {
 // ── Grupos Opcionales ───────────────────────────────────────────────
 
 export async function fetchGruposOpcionales(itemId: string) {
-  const { data, error } = await fromUntyped('item_carta_grupo_opcional')
+  const { data, error } = await fromUntyped('menu_item_option_groups')
     .select(
       `
       *,
-      items:item_carta_grupo_opcional_items(
+      items:menu_item_option_group_items(
         *,
-        insumos(id, nombre, costo_por_unidad_base),
-        preparaciones(id, nombre, costo_calculado)
+        supplies(id, nombre, costo_por_unidad_base),
+        recipes(id, nombre, costo_calculado)
       )
     `,
     )
@@ -444,7 +419,7 @@ export async function createGrupoOpcional(params: {
   nombre: string;
   orden: number;
 }) {
-  const { data, error } = await fromUntyped('item_carta_grupo_opcional')
+  const { data, error } = await fromUntyped('menu_item_option_groups')
     .insert(params)
     .select()
     .single();
@@ -453,14 +428,14 @@ export async function createGrupoOpcional(params: {
 }
 
 export async function updateGrupoOpcional(id: string, data: { nombre?: string }) {
-  const { error } = await fromUntyped('item_carta_grupo_opcional')
+  const { error } = await fromUntyped('menu_item_option_groups')
     .update(data as Record<string, unknown>)
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function deleteGrupoOpcional(id: string) {
-  const { error } = await fromUntyped('item_carta_grupo_opcional').delete().eq('id', id);
+  const { error } = await fromUntyped('menu_item_option_groups').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -473,10 +448,10 @@ export async function saveGrupoOpcionalItems(
     costo_unitario: number;
   }[],
 ) {
-  await fromUntyped('item_carta_grupo_opcional_items').delete().eq('grupo_id', grupo_id);
+  await fromUntyped('menu_item_option_group_items').delete().eq('grupo_id', grupo_id);
 
   if (items.length > 0) {
-    const { error } = await fromUntyped('item_carta_grupo_opcional_items').insert(
+    const { error } = await fromUntyped('menu_item_option_group_items').insert(
       items.map((item) => ({
         grupo_id,
         insumo_id: item.insumo_id || null,
@@ -490,7 +465,7 @@ export async function saveGrupoOpcionalItems(
 }
 
 export async function updateGrupoOpcionalCosto(grupo_id: string, costo_promedio: number) {
-  const { error } = await fromUntyped('item_carta_grupo_opcional')
+  const { error } = await fromUntyped('menu_item_option_groups')
     .update({ costo_promedio: Math.round(costo_promedio * 100) / 100 })
     .eq('id', grupo_id);
   if (error) throw error;
@@ -499,7 +474,7 @@ export async function updateGrupoOpcionalCosto(grupo_id: string, costo_promedio:
 // ── Extras & Asignaciones ───────────────────────────────────────────
 
 export async function fetchExtrasCategoryId(): Promise<string | null> {
-  const { data, error } = await fromUntyped('menu_categorias')
+  const { data, error } = await fromUntyped('menu_categories')
     .select('id')
     .ilike('nombre', '%extras%')
     .limit(1)
@@ -514,8 +489,7 @@ export async function findExistingExtraItem(
 ): Promise<{ id: string; is_active: boolean; deleted_at: string | null } | null> {
   const field =
     tipo === 'preparacion' ? 'composicion_ref_preparacion_id' : 'composicion_ref_insumo_id';
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select('id, is_active, deleted_at')
     .eq('tipo', 'extra')
     .eq(field, refId)
@@ -524,8 +498,7 @@ export async function findExistingExtraItem(
   if (!data) return null;
 
   if (tipo === 'preparacion') {
-    const { data: prep, error: prepErr } = await supabase
-      .from('preparaciones')
+    const { data: prep, error: prepErr } = await fromUntyped('recipes')
       .select('id')
       .eq('id', refId)
       .is('deleted_at', null)
@@ -534,7 +507,7 @@ export async function findExistingExtraItem(
     if (!prep) return null;
   }
 
-  return { id: data.id, is_active: data.is_active ?? true, deleted_at: data.deleted_at ?? null };
+  return { id: (data as any).id, is_active: (data as any).is_active ?? true, deleted_at: (data as any).deleted_at ?? null };
 }
 
 export async function createExtraItemCarta(params: {
@@ -544,7 +517,7 @@ export async function createExtraItemCarta(params: {
   composicion_ref_preparacion_id?: string | null;
   composicion_ref_insumo_id?: string | null;
 }) {
-  const { data, error } = await fromUntyped('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .insert({
       nombre: params.nombre,
       tipo: 'extra',
@@ -562,14 +535,14 @@ export async function createExtraItemCarta(params: {
 }
 
 export async function reactivateExtraItemCarta(id: string, costo: number) {
-  const { error } = await fromUntyped('items_carta')
+  const { error } = await fromUntyped('menu_items')
     .update({ activo: true, deleted_at: null, costo_total: costo })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function deleteComposicionByItem(item_carta_id: string) {
-  await supabase.from('item_carta_composicion').delete().eq('item_carta_id', item_carta_id);
+  await fromUntyped('menu_item_compositions').delete().eq('item_carta_id', item_carta_id);
 }
 
 export async function insertComposicionRow(row: {
@@ -579,12 +552,12 @@ export async function insertComposicionRow(row: {
   cantidad: number;
   orden: number;
 }) {
-  const { error } = await supabase.from('item_carta_composicion').insert(row as any);
+  const { error } = await fromUntyped('menu_item_compositions').insert(row);
   if (error) throw error;
 }
 
 export async function upsertExtraAssignment(item_carta_id: string, extra_id: string) {
-  const { error } = await fromUntyped('item_extra_asignaciones').upsert(
+  const { error } = await fromUntyped('extra_assignments').upsert(
     { item_carta_id, extra_id },
     { onConflict: 'item_carta_id,extra_id' },
   );
@@ -592,21 +565,21 @@ export async function upsertExtraAssignment(item_carta_id: string, extra_id: str
 }
 
 export async function deleteExtraAssignment(item_carta_id: string, extra_id: string) {
-  await fromUntyped('item_extra_asignaciones')
+  await fromUntyped('extra_assignments')
     .delete()
     .eq('item_carta_id', item_carta_id)
     .eq('extra_id', extra_id);
 }
 
 export async function countExtraAssignments(extra_id: string) {
-  const { count } = await fromUntyped('item_extra_asignaciones')
+  const { count } = await fromUntyped('extra_assignments')
     .select('id', { count: 'exact', head: true })
     .eq('extra_id', extra_id);
   return count ?? 0;
 }
 
 export async function fetchExtraAssignmentsByItem(itemId: string) {
-  const { data, error } = await fromUntyped('item_extra_asignaciones')
+  const { data, error } = await fromUntyped('extra_assignments')
     .select('extra_id')
     .eq('item_carta_id', itemId);
   if (error) throw error;
@@ -614,7 +587,7 @@ export async function fetchExtraAssignmentsByItem(itemId: string) {
 }
 
 export async function fetchExtraAssignmentsWithJoin(itemId: string) {
-  const { data, error } = await fromUntyped('item_extra_asignaciones')
+  const { data, error } = await fromUntyped('extra_assignments')
     .select('*, extra:extra_id(id, nombre, precio_base, costo_total, tipo)')
     .eq('item_carta_id', itemId);
   if (error) throw error;
@@ -622,7 +595,7 @@ export async function fetchExtraAssignmentsWithJoin(itemId: string) {
 }
 
 export async function fetchExtraAssignmentsForExtra(extraId: string) {
-  const { data, error } = await fromUntyped('item_extra_asignaciones')
+  const { data, error } = await fromUntyped('extra_assignments')
     .select('*')
     .eq('extra_id', extraId);
   if (error) throw error;
@@ -630,8 +603,7 @@ export async function fetchExtraAssignmentsForExtra(extraId: string) {
 }
 
 export async function fetchActiveExtrasByIds(extraIds: string[]) {
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select('id, nombre, precio_base, is_active')
     .in('id', extraIds)
     .eq('is_active', true)
@@ -641,13 +613,13 @@ export async function fetchActiveExtrasByIds(extraIds: string[]) {
 }
 
 export async function saveExtraAssignments(item_carta_id: string, extra_ids: string[]) {
-  const { error: delErr } = await fromUntyped('item_extra_asignaciones')
+  const { error: delErr } = await fromUntyped('extra_assignments')
     .delete()
     .eq('item_carta_id', item_carta_id);
   if (delErr) throw delErr;
 
   if (extra_ids.length > 0) {
-    const { error } = await fromUntyped('item_extra_asignaciones').insert(
+    const { error } = await fromUntyped('extra_assignments').insert(
       extra_ids.map((extra_id) => ({ item_carta_id, extra_id })),
     );
     if (error) throw error;
@@ -655,13 +627,12 @@ export async function saveExtraAssignments(item_carta_id: string, extra_ids: str
 }
 
 export async function updatePrecioExtra(
-  table: 'preparaciones' | 'insumos',
+  table: 'recipes' | 'supplies',
   id: string,
   precio_extra: number | null,
 ) {
-  const { error } = await supabase
-    .from(table)
-    .update({ precio_extra } as Record<string, unknown>)
+  const { error } = await fromUntyped(table)
+    .update({ precio_extra })
     .eq('id', id);
   if (error) throw error;
 }
@@ -669,8 +640,8 @@ export async function updatePrecioExtra(
 // ── Removibles ──────────────────────────────────────────────────────
 
 export async function fetchItemRemovibles(itemId: string) {
-  const { data, error } = await fromUntyped('item_removibles')
-    .select('*, insumos(id, nombre), preparaciones(id, nombre)')
+  const { data, error } = await fromUntyped('removable_items')
+    .select('*, supplies(id, nombre), recipes(id, nombre)')
     .eq('item_carta_id', itemId)
     .eq('is_active', true);
   if (error) throw error;
@@ -686,19 +657,19 @@ export async function upsertRemovible(params: {
   const field = params.insumo_id ? 'insumo_id' : 'preparacion_id';
   const refId = params.insumo_id || params.preparacion_id;
 
-  const { data: existing } = await fromUntyped('item_removibles')
+  const { data: existing } = await fromUntyped('removable_items')
     .select('id')
     .eq('item_carta_id', params.item_carta_id)
     .eq(field, refId!)
     .maybeSingle();
 
   if (existing) {
-    const { error } = await fromUntyped('item_removibles')
+    const { error } = await fromUntyped('removable_items')
       .update({ activo: true, nombre_display: params.nombre_display || null })
       .eq('id', (existing as Record<string, unknown>).id as string);
     if (error) throw error;
   } else {
-    const { error } = await fromUntyped('item_removibles').insert({
+    const { error } = await fromUntyped('removable_items').insert({
       item_carta_id: params.item_carta_id,
       insumo_id: params.insumo_id || null,
       preparacion_id: params.preparacion_id || null,
@@ -710,7 +681,7 @@ export async function upsertRemovible(params: {
 }
 
 export async function deleteRemovibleByInsumo(item_carta_id: string, insumo_id: string) {
-  await fromUntyped('item_removibles')
+  await fromUntyped('removable_items')
     .delete()
     .eq('item_carta_id', item_carta_id)
     .eq('insumo_id', insumo_id);
@@ -720,21 +691,21 @@ export async function deleteRemovibleByPreparacion(
   item_carta_id: string,
   preparacion_id: string,
 ) {
-  await fromUntyped('item_removibles')
+  await fromUntyped('removable_items')
     .delete()
     .eq('item_carta_id', item_carta_id)
     .eq('preparacion_id', preparacion_id);
 }
 
 export async function updateRemovibleNombreDisplay(id: string, nombre_display: string) {
-  const { error } = await fromUntyped('item_removibles').update({ nombre_display }).eq('id', id);
+  const { error } = await fromUntyped('removable_items').update({ nombre_display }).eq('id', id);
   if (error) throw error;
 }
 
 // ── Modificadores ───────────────────────────────────────────────────
 
 export async function fetchModificadores(itemId: string) {
-  const { data, error } = await fromUntyped('item_modificadores')
+  const { data, error } = await fromUntyped('item_modifiers')
     .select('*')
     .eq('item_carta_id', itemId)
     .order('tipo')
@@ -744,7 +715,7 @@ export async function fetchModificadores(itemId: string) {
 }
 
 export async function createModificador(payload: Record<string, unknown>) {
-  const { data, error } = await fromUntyped('item_modificadores')
+  const { data, error } = await fromUntyped('item_modifiers')
     .insert(payload)
     .select()
     .single();
@@ -753,14 +724,14 @@ export async function createModificador(payload: Record<string, unknown>) {
 }
 
 export async function updateModificador(id: string, payload: Record<string, unknown>) {
-  const { error } = await fromUntyped('item_modificadores')
+  const { error } = await fromUntyped('item_modifiers')
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function deleteModificador(id: string) {
-  const { error } = await fromUntyped('item_modificadores').delete().eq('id', id);
+  const { error } = await fromUntyped('item_modifiers').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -789,15 +760,14 @@ export async function fetchWebappConfig(branchSlug: string) {
 export async function fetchWebappMenuItems(branchId: string) {
   const hiddenCatIds = await fetchHiddenMenuCategoriaIds();
 
-  let query = supabase
-    .from('items_carta')
+  const query = fromUntyped('menu_items')
     .select(
       `
       id, nombre, nombre_corto, descripcion, imagen_url,
       precio_base, precio_promo, promo_etiqueta,
       categoria_carta_id, orden, disponible_delivery,
       disponible_webapp, tipo,
-      menu_categorias:categoria_carta_id(id, nombre, orden)
+      menu_categories:categoria_carta_id(id, nombre, orden)
     `,
     )
     .eq('is_active', true)
@@ -805,23 +775,25 @@ export async function fetchWebappMenuItems(branchId: string) {
     .eq('disponible_webapp', true)
     .order('orden');
 
-  if (hiddenCatIds.length > 0) {
-    query = query.not('categoria_carta_id', 'in', `(${hiddenCatIds.join(',')})`);
-  }
-
+  // Note: fromUntyped doesn't support chaining .not() easily, filter after
   const { data, error } = await query;
   if (error) throw error;
+
+  let items = data || [];
+  if (hiddenCatIds.length > 0) {
+    items = items.filter((i: any) => !hiddenCatIds.includes(i.categoria_carta_id));
+  }
 
   const { data: availability, error: avErr } = await fromUntyped('branch_item_availability')
     .select('item_carta_id, available, available_webapp, out_of_stock')
     .eq('branch_id', branchId);
   if (avErr) throw avErr;
 
-  return { items: data || [], availability: availability || [] };
+  return { items, availability: availability || [] };
 }
 
 export async function fetchWebappItemOptionalGroups(itemId: string) {
-  const { data: groups, error: gErr } = await fromUntyped('item_carta_grupo_opcional')
+  const { data: groups, error: gErr } = await fromUntyped('menu_item_option_groups')
     .select('id, nombre, is_required, max_selecciones, orden')
     .eq('item_carta_id', itemId)
     .order('orden');
@@ -831,9 +803,9 @@ export async function fetchWebappItemOptionalGroups(itemId: string) {
   const groupIds = (groups as Array<Record<string, unknown>>).map(
     (g: Record<string, unknown>) => g.id as string,
   );
-  const { data: options, error: oErr } = await fromUntyped('item_carta_grupo_opcional_items')
+  const { data: options, error: oErr } = await fromUntyped('menu_item_option_group_items')
     .select(
-      'id, grupo_id, insumo_id, preparacion_id, costo_unitario, insumos(id, nombre), preparaciones(id, nombre)',
+      'id, grupo_id, insumo_id, preparacion_id, costo_unitario, supplies(id, nombre), recipes(id, nombre)',
     )
     .in('grupo_id', groupIds);
   if (oErr) throw oErr;
@@ -849,8 +821,7 @@ export async function fetchWebappItemExtras(itemId: string) {
   const extraIds = asignaciones.map((a) => a.extra_id as string);
   if (extraIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from('items_carta')
+  const { data, error } = await fromUntyped('menu_items')
     .select('id, nombre, precio_base, imagen_url')
     .in('id', extraIds)
     .eq('is_active', true)
@@ -860,9 +831,9 @@ export async function fetchWebappItemExtras(itemId: string) {
 }
 
 export async function fetchWebappItemRemovables(itemId: string) {
-  const { data, error } = await fromUntyped('item_removibles')
+  const { data, error } = await fromUntyped('removable_items')
     .select(
-      'id, nombre_display, activo, insumo_id, preparacion_id, insumos(id, nombre), preparaciones(id, nombre)',
+      'id, nombre_display, activo, insumo_id, preparacion_id, supplies(id, nombre), recipes(id, nombre)',
     )
     .eq('item_carta_id', itemId)
     .eq('activo', true);
@@ -873,8 +844,7 @@ export async function fetchWebappItemRemovables(itemId: string) {
 // ── Categorías Preparación ──────────────────────────────────────────
 
 export async function fetchCategoriasPreparacion() {
-  const { data, error } = await supabase
-    .from('categorias_preparacion')
+  const { data, error } = await fromUntyped('recipe_categories')
     .select('*')
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -884,9 +854,8 @@ export async function fetchCategoriasPreparacion() {
 }
 
 export async function createCategoriaPreparacion(payload: { nombre: string; orden: number }) {
-  const { data, error } = await supabase
-    .from('categorias_preparacion')
-    .insert(payload as any)
+  const { data, error } = await fromUntyped('recipe_categories')
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
@@ -897,35 +866,31 @@ export async function updateCategoriaPreparacion(
   id: string,
   payload: Record<string, unknown>,
 ) {
-  const { error } = await supabase
-    .from('categorias_preparacion')
-    .update({ ...payload, updated_at: new Date().toISOString() } as Record<string, unknown>)
+  const { error } = await fromUntyped('recipe_categories')
+    .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function reorderCategoriasPreparacion(items: { id: string; orden: number }[]) {
   for (const item of items) {
-    const { error } = await supabase
-      .from('categorias_preparacion')
-      .update({ orden: item.orden } as Record<string, unknown>)
+    const { error } = await fromUntyped('recipe_categories')
+      .update({ orden: item.orden })
       .eq('id', item.id);
     if (error) throw error;
   }
 }
 
 export async function softDeleteCategoriaPreparacion(id: string) {
-  const { error } = await supabase
-    .from('categorias_preparacion')
+  const { error } = await fromUntyped('recipe_categories')
     .update({
       is_active: false,
       deleted_at: new Date().toISOString(),
-    } as Record<string, unknown>)
+    })
     .eq('id', id);
   if (error) throw error;
-  await supabase
-    .from('preparaciones')
-    .update({ categoria_preparacion_id: null } as Record<string, unknown>)
+  await fromUntyped('recipes')
+    .update({ categoria_preparacion_id: null })
     .eq('categoria_preparacion_id', id);
 }
 
@@ -943,21 +908,19 @@ export async function uploadProductImage(itemId: string, file: File) {
 }
 
 export async function updateItemCartaImageUrl(itemId: string, url: string) {
-  const { error } = await supabase
-    .from('items_carta')
-    .update({ imagen_url: url } as any)
+  const { error } = await fromUntyped('menu_items')
+    .update({ imagen_url: url })
     .eq('id', itemId);
   if (error) throw error;
 }
 
 export async function fetchPrepIngredientesForDeepList(prepId: string) {
-  const { data, error } = await supabase
-    .from('preparacion_ingredientes')
+  const { data, error } = await fromUntyped('recipe_ingredients')
     .select(
       `
       *,
-      insumos(id, nombre, costo_por_unidad_base, unidad_base),
-      sub_prep:preparaciones!preparacion_ingredientes_sub_preparacion_id_fkey(id, nombre)
+      supplies(id, nombre, costo_por_unidad_base, unidad_base),
+      sub_prep:recipes!recipe_ingredients_sub_preparacion_id_fkey(id, nombre)
     `,
     )
     .eq('preparacion_id', prepId)

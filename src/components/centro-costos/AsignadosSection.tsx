@@ -6,18 +6,21 @@ import { FormSection } from '@/components/ui/forms-pro';
 import { Link2 } from 'lucide-react';
 import { useExtraAssignableItems } from '@/hooks/useExtraAutoDiscovery';
 import { useToggleExtra } from '@/hooks/useToggleExtra';
-import type { Tables } from '@/integrations/supabase/types';
 import type { DiscoveredExtra } from '@/hooks/useExtraAutoDiscovery';
 import { formatCurrency } from '@/lib/formatters';
+import { fromUntyped } from '@/lib/supabase-helpers';
 
-type ItemCartaWithCategory = Tables<'items_carta'> & {
+interface ItemCartaWithCategory {
+  id: string;
+  nombre: string;
   menu_categorias?: { id: string; nombre: string; orden: number | null } | null;
-};
+  [key: string]: any;
+}
 
 // ═══ ASIGNADOS TAB (for tipo='extra') ═══
-export function AsignadosInline({ item }: { item: Tables<'items_carta'> }) {
+export function AsignadosInline({ item }: { item: any }) {
   const { productItems, assignedSet } = useExtraAssignableItems(item);
-  const assignedProducts = productItems.filter((p: ItemCartaWithCategory) => assignedSet.has(p.id));
+  const assignedProducts = (productItems as any[]).filter((p: any) => assignedSet.has(p.id));
 
   return (
     <div className="space-y-4">
@@ -62,9 +65,7 @@ export function ExtraRow({ d, itemId, toggleExtra }: { d: DiscoveredExtra; itemI
 
   const handleSaveNombre = async () => {
     if (!d.extra_id || localNombre === d.extra_nombre) return;
-    const { supabase } = await import('@/integrations/supabase/client');
-    await supabase
-      .from('items_carta')
+    await fromUntyped('menu_items')
       .update({ nombre: localNombre })
       .eq('id', d.extra_id!);
   };
@@ -109,7 +110,7 @@ export function ExtraRow({ d, itemId, toggleExtra }: { d: DiscoveredExtra; itemI
           d.extra_precio > 0 ? (
             <span className="text-foreground">{formatCurrency(d.extra_precio)}</span>
           ) : (
-            <span className="text-yellow-600">⚠ $0</span>
+            <span className="text-amber-600">⚠ $0</span>
           )
         ) : null}
       </span>

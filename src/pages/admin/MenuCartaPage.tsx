@@ -47,8 +47,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { formatCurrency } from '@/lib/formatters';
 
-type MenuCategoria = Tables<'menu_categorias'>;
-type ItemCarta = Tables<'items_carta'>;
+type MenuCategoria = any;
+type ItemCarta = any;
 
 
 

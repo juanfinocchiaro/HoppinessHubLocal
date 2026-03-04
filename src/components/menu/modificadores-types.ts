@@ -2,9 +2,9 @@ import type { Tables } from '@/integrations/supabase/types';
 import type { useModificadoresMutations } from '@/hooks/useModificadores';
 import type { DeepIngredientGroup } from '@/hooks/useItemIngredientesDeepList';
 
-export type Modificador = Tables<'item_modificadores'>;
-export type Insumo = Tables<'insumos'>;
-export type Preparacion = Tables<'preparaciones'>;
+export type Modificador = any;
+export type Insumo = any;
+export type Preparacion = any;
 export type CreateMutation = ReturnType<typeof useModificadoresMutations>['create'];
 
 export interface FlatIngredient {
@@ -17,10 +17,7 @@ export interface FlatIngredient {
   _recetaOrigen: string;
 }
 
-export type ComposicionWithJoins = Tables<'item_carta_composicion'> & {
-  preparaciones: Pick<Preparacion, 'id' | 'nombre' | 'costo_calculado' | 'tipo'> | null;
-  insumos: Pick<Insumo, 'id' | 'nombre' | 'costo_por_unidad_base' | 'unidad_base'> | null;
-};
+export type ComposicionWithJoins = any;
 
 export interface InsumoLike {
   id: string;

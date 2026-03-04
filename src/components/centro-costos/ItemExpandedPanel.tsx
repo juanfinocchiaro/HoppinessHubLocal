@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useItemCartaMutations } from '@/hooks/useItemsCarta';
 import type { LucideIcon } from 'lucide-react';
-import type { Tables } from '@/integrations/supabase/types';
+
 
 import { ComposicionInline } from './ComposicionInline';
 import { AsignadosInline } from './AsignadosSection';
@@ -21,7 +21,7 @@ import { HistorialInline } from './HistorialInline';
 type PanelTab = 'composicion' | 'asignados' | 'editar' | 'historial';
 
 interface Props {
-  item: Tables<'items_carta'>;
+  item: any;
   onClose: () => void;
   onDeleted: () => void;
 }

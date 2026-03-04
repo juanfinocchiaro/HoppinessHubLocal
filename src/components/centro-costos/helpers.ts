@@ -1,4 +1,4 @@
-import type { Tables } from '@/integrations/supabase/types';
+import type { EI, CG } from './types';
 import type { EI, CG, ItemCartaRow } from './types';
 import { IVA } from '@/lib/constants';
 
@@ -63,14 +63,14 @@ export function enrich(items: ItemCartaRow[]): EI[] {
   });
 }
 
-export function groupByCat(items: EI[], categorias?: Tables<'menu_categorias'>[]): CG[] {
+export function groupByCat(items: EI[], categorias?: any[]): CG[] {
   const m = new Map<string, EI[]>();
   items.forEach((i) => {
     if (!m.has(i.catId)) m.set(i.catId, []);
     m.get(i.catId)!.push(i);
   });
-  const catMap = new Map<string, Tables<'menu_categorias'>>();
-  (categorias || []).forEach((c) => catMap.set(c.id, c));
+  const catMap = new Map<string, any>();
+  (categorias || []).forEach((c: any) => catMap.set(c.id, c));
   return Array.from(m.entries())
     .map(([id, ci]) => {
       const w = ci.filter((i) => i.hasComp && i.hasPrice);

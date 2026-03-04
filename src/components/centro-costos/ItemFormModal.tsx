@@ -10,15 +10,15 @@ import { LoadingButton } from '@/components/ui/loading-button';
 import { FormRow, FormSection, StickyActions } from '@/components/ui/forms-pro';
 import { DollarSign } from 'lucide-react';
 import { fmt, IVA } from './helpers';
-import type { Tables } from '@/integrations/supabase/types';
+
 import type { ItemCartaMutations } from './types';
 
 interface ItemFormModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  item: Tables<'items_carta'> | null;
-  categorias: Tables<'menu_categorias'>[] | undefined;
-  cmvCats: Tables<'rdo_categories'>[];
+  item: any | null;
+  categorias: any[] | undefined;
+  cmvCats: any[];
   mutations: ItemCartaMutations;
 }
 

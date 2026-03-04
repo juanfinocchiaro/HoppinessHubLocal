@@ -1,9 +1,9 @@
 import type { Tables } from '@/integrations/supabase/types';
 
 // Re-export DB types
-export type Proveedor = Tables<'proveedores'>;
-export type CategoriaInsumo = Tables<'categorias_insumo'>;
-export type Insumo = Tables<'insumos'>;
+export type Proveedor = Tables<'suppliers'>;
+export type CategoriaInsumo = any;
+export type Insumo = any;
 
 // Form types for create/edit
 export interface ProveedorFormData {
