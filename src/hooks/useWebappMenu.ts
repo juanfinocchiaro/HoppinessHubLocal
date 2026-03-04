@@ -61,7 +61,7 @@ export interface OptionalGroupOption {
 export interface OptionalGroup {
   id: string;
   nombre: string;
-  es_obligatorio: boolean;
+  is_required: boolean;
   max_selecciones: number | null;
   opciones: OptionalGroupOption[];
 }
@@ -76,7 +76,7 @@ export function useWebappItemOptionalGroups(itemId: string | undefined) {
       return groups.map((g: Record<string, unknown>) => ({
         id: g.id,
         nombre: g.nombre,
-        es_obligatorio: g.es_obligatorio ?? false,
+        is_required: g.is_required ?? false,
         max_selecciones: g.max_selecciones,
         opciones: (options as Array<Record<string, unknown>>)
           .filter((o: Record<string, unknown>) => o.grupo_id === g.id)

@@ -38,7 +38,7 @@ export function PreparacionFullModal({
     nombre: '',
     descripcion: '',
     tipo: 'elaborado',
-    es_intercambiable: false,
+    is_interchangeable: false,
     metodo_costeo: 'promedio',
     categoria_preparacion_id: '',
   });
@@ -52,7 +52,7 @@ export function PreparacionFullModal({
         nombre: preparacion.nombre,
         descripcion: preparacion.descripcion || '',
         tipo: preparacion.tipo,
-        es_intercambiable: preparacion.is_interchangeable || false,
+        is_interchangeable: preparacion.is_interchangeable || false,
         metodo_costeo: preparacion.metodo_costeo || 'promedio',
         categoria_preparacion_id: preparacion.categoria_preparacion_id || '',
       });
@@ -62,7 +62,7 @@ export function PreparacionFullModal({
         nombre: '',
         descripcion: '',
         tipo: 'elaborado',
-        es_intercambiable: false,
+        is_interchangeable: false,
         metodo_costeo: 'promedio',
         categoria_preparacion_id: '',
       });
@@ -161,11 +161,11 @@ export function PreparacionFullModal({
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Intercambiable (múltiples opciones)</span>
                   <Switch
-                    checked={form.es_intercambiable}
-                    onCheckedChange={(v) => set('es_intercambiable', v)}
+                    checked={form.is_interchangeable}
+                    onCheckedChange={(v) => set('is_interchangeable', v)}
                   />
                 </div>
-                {form.es_intercambiable && (
+                {form.is_interchangeable && (
                   <FormRow label="Método de costeo">
                     <Select
                       value={form.metodo_costeo}

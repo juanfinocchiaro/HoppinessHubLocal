@@ -29,7 +29,7 @@ interface GroupOption {
 interface ParsedGroup {
   id: string;
   nombre: string;
-  es_obligatorio: boolean;
+  is_required: boolean;
   max_selecciones: number;
   opciones: GroupOption[];
 }
@@ -120,7 +120,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
     return (gruposOpcionales as unknown as Array<Record<string, unknown>>).map((g: any) => ({
       id: g.id,
       nombre: g.nombre,
-      es_obligatorio: g.es_obligatorio ?? false,
+      is_required: g.is_required ?? false,
       max_selecciones: g.max_selecciones ?? 1,
       opciones: ((g.items || []) as Array<Record<string, unknown>>).map((it: any) => ({
         id: it.id,
@@ -234,7 +234,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
 
   // Validation: mandatory groups must have selections
   const missingRequired = parsedGroups.filter(
-    (g) => g.es_obligatorio && !(groupSelections[g.id]?.length > 0),
+    (g) => g.is_required && !(groupSelections[g.id]?.length > 0),
   );
   const canConfirm = missingRequired.length === 0;
 
@@ -392,7 +392,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
             {parsedGroups.map((group) => {
               const isRadio = group.max_selecciones === 1;
               const currentSelections = groupSelections[group.id] || [];
-              const isMissing = group.es_obligatorio && currentSelections.length === 0;
+              const isMissing = group.is_required && currentSelections.length === 0;
 
               return (
                 <div key={group.id}>
@@ -402,14 +402,14 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
                     </h4>
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                        group.es_obligatorio
+                        group.is_required
                           ? isMissing
                             ? 'bg-destructive/10 text-destructive'
                             : 'bg-primary/10 text-primary'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {group.es_obligatorio ? 'Obligatorio' : 'Opcional'}
+                      {group.is_required ? 'Obligatorio' : 'Opcional'}
                       {isRadio ? ' · Elegí 1' : ` · Hasta ${group.max_selecciones}`}
                     </span>
                   </div>

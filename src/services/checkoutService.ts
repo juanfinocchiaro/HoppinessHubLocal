@@ -16,7 +16,7 @@ export async function fetchSavedAddresses(userId: string) {
     .from('cliente_direcciones')
     .select('id, etiqueta, direccion, piso, referencia')
     .eq('user_id', userId)
-    .order('es_principal', { ascending: false });
+    .order('is_primary', { ascending: false });
 
   if (error) throw error;
 

@@ -121,7 +121,7 @@ export async function createPreparacion(payload: {
   nombre: string;
   descripcion?: string;
   tipo: string;
-  es_intercambiable?: boolean;
+  is_interchangeable?: boolean;
   metodo_costeo?: string;
 }) {
   const { data, error } = await supabase
@@ -822,7 +822,7 @@ export async function fetchWebappMenuItems(branchId: string) {
 
 export async function fetchWebappItemOptionalGroups(itemId: string) {
   const { data: groups, error: gErr } = await fromUntyped('item_carta_grupo_opcional')
-    .select('id, nombre, es_obligatorio, max_selecciones, orden')
+    .select('id, nombre, is_required, max_selecciones, orden')
     .eq('item_carta_id', itemId)
     .order('orden');
   if (gErr) throw gErr;

@@ -19,7 +19,7 @@ export async function saveAfipConfig(input: {
   punto_venta?: number;
   certificado_crt?: string;
   clave_privada_enc?: string;
-  es_produccion?: boolean;
+  is_production?: boolean;
 }) {
   const { data: existing } = await fromUntyped('afip_config')
     .select('id')

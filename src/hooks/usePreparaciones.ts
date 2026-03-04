@@ -48,7 +48,7 @@ export function usePreparacionMutations() {
       nombre: string;
       descripcion?: string;
       tipo: string;
-      es_intercambiable?: boolean;
+      is_interchangeable?: boolean;
       metodo_costeo?: string;
     }) => createPreparacion(data),
     onSuccess: () => {

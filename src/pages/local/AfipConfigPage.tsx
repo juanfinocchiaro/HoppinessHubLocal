@@ -98,7 +98,7 @@ export default function AfipConfigPage() {
 
   const handleSwitchToHomologacion = () => {
     if (!branchId) return;
-    save.mutate({ branch_id: branchId, es_produccion: false } as any, {
+    save.mutate({ branch_id: branchId, is_production: false } as any, {
       onError: (err: any) => {
         toast.error('Error al cambiar a homologación', { description: err?.message });
       },
@@ -108,7 +108,7 @@ export default function AfipConfigPage() {
 
   const handleSwitchToProduccion = () => {
     if (!branchId) return;
-    save.mutate({ branch_id: branchId, es_produccion: true } as any, {
+    save.mutate({ branch_id: branchId, is_production: true } as any, {
       onError: (err: any) => {
         toast.error('Error al cambiar a producción', { description: err?.message });
       },
@@ -127,7 +127,7 @@ export default function AfipConfigPage() {
         estado_certificado: 'sin_configurar',
         estado_conexion: 'sin_configurar',
         ultimo_error: null,
-        es_produccion: false,
+        is_production: false,
       } as any,
       {
         onSuccess: () => {
@@ -179,7 +179,7 @@ export default function AfipConfigPage() {
       </div>
 
       {/* Banner Homologación */}
-      {config && !config.es_produccion && config.estado_certificado !== 'sin_configurar' && (
+      {config && !config.is_production && config.estado_certificado !== 'sin_configurar' && (
         <div className="flex items-center justify-between gap-4 rounded-lg border border-orange-300 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/30">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
@@ -223,7 +223,7 @@ export default function AfipConfigPage() {
                 Modo
               </p>
               <div className="flex items-center gap-2">
-                {config?.es_produccion ? (
+                {config?.is_production ? (
                   <>
                     <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
                     <span className="text-sm font-semibold">PRODUCCIÓN</span>
@@ -236,7 +236,7 @@ export default function AfipConfigPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {config?.es_produccion
+                {config?.is_production
                   ? 'Facturas válidas ante ARCA'
                   : 'Las facturas NO son válidas fiscalmente'}
               </p>
@@ -530,11 +530,11 @@ export default function AfipConfigPage() {
                   <div>
                     <p className="text-sm font-medium">Cambiar modo de operación</p>
                     <p className="text-xs text-muted-foreground">
-                      Modo actual: {config?.es_produccion ? '🟢 Producción' : '🟡 Homologación'}
+                      Modo actual: {config?.is_production ? '🟢 Producción' : '🟡 Homologación'}
                     </p>
                   </div>
                 </div>
-                {config?.es_produccion ? (
+                {config?.is_production ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
                       Cambiar a homologación significa que las facturas emitidas NO serán válidas

@@ -52,7 +52,7 @@ export async function saveClienteAddress(userId: string, direccion: string) {
     etiqueta: 'Otro',
     direccion: direccion.trim(),
     ciudad: 'Córdoba',
-    es_principal: false,
+    is_primary: false,
   } as never);
 }
 

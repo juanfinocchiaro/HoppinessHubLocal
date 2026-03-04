@@ -94,7 +94,7 @@ function ProductDetailContent({
   const total = (effectivePrice + extrasTotal) * cantidad;
 
   const missingRequired = (optionalGroups || []).filter(
-    (g) => g.es_obligatorio && !(groupSelections[g.id]?.length > 0),
+    (g) => g.is_required && !(groupSelections[g.id]?.length > 0),
   );
   const canAdd = missingRequired.length === 0;
 
@@ -232,7 +232,7 @@ function ProductDetailContent({
             const effectiveMax = group.max_selecciones ?? 1;
             const isRadio = effectiveMax === 1;
             const currentSelections = groupSelections[group.id] || [];
-            const isMissing = group.es_obligatorio && currentSelections.length === 0;
+            const isMissing = group.is_required && currentSelections.length === 0;
 
             return (
               <div key={group.id}>
@@ -240,14 +240,14 @@ function ProductDetailContent({
                   <h3 className="text-sm font-bold text-foreground">{group.nombre}</h3>
                   <span
                     className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                      group.es_obligatorio
+                      group.is_required
                         ? isMissing
                           ? 'bg-destructive/10 text-destructive'
                           : 'bg-primary/10 text-primary'
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {group.es_obligatorio ? 'Obligatorio' : 'Opcional'}
+                    {group.is_required ? 'Obligatorio' : 'Opcional'}
                     {effectiveMax === 1 ? ' · Elegí 1' : ` · Hasta ${effectiveMax}`}
                   </span>
                 </div>

@@ -45,7 +45,7 @@ export interface AfipConfig {
   ultimo_nro_factura_a: number;
   ultimo_nro_factura_b: number;
   ultimo_nro_factura_c: number;
-  es_produccion: boolean;
+  is_production: boolean;
   estado_certificado: string;
   csr_pem: string | null;
   reglas_facturacion: ReglasFacturacion;
@@ -74,7 +74,7 @@ interface SaveAfipConfigInput {
   punto_venta?: number;
   certificado_crt?: string;
   clave_privada_enc?: string;
-  es_produccion?: boolean;
+  is_production?: boolean;
 }
 
 export function useAfipConfigMutations(branchId: string | undefined) {

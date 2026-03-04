@@ -1,44 +1,35 @@
 
+# Auditoría de Idioma y Convenciones — Estado de Ejecución
 
-## Estado: NADA del plan se ha ejecutado aún
+## ✅ Fase 0 — Tablas muertas: COMPLETADA
+DROP de tablas y vistas legacy (webapp_customers, menu_combos, menu_precios_historial, devoluciones, v_menu_costos).
 
-El plan completo de 4 fases está pendiente. Ningún archivo del frontend ha sido migrado — `user_role_assignments` solo existe en el `types.ts` autogenerado pero **ningún service, hook ni edge function lo usa todavía**.
+## ✅ Fase 1 — Booleanos: COMPLETADA (DB + Frontend)
+Renombrados en DB y en frontend:
+- `es_produccion` → `is_production` (afip_config)
+- `es_obligatorio` → `is_required` (item_carta_grupo_opcional)
+- `es_principal` → `is_primary` (cliente_direcciones)
+- `es_removible` → `is_removable` (item_carta_composicion)
+- `es_intercambiable` → `is_interchangeable` (preparaciones)
+- `activo` → `is_active` (~15 tablas)
+- `verificado` → `is_verified` (pagos_proveedores, pagos_canon)
 
-### Lo que falta (todo):
+Archivos frontend actualizados: useAfipConfig.ts, fiscalService.ts, AfipConfigPage.tsx, posService.ts, checkoutService.ts, menuService.ts, usePreparaciones.ts, PreparacionFullModal.tsx, ModifiersModal.tsx, ProductCustomizeSheet.tsx, useWebappMenu.ts.
 
-**Fase 1 — SQL Migration**
-- Agregar `clock_pin` y `default_position` a `user_role_assignments`
-- Migrar datos desde `user_branch_roles`
-- Reescribir funciones de PIN (`validate_clock_pin_v2`, `is_clock_pin_available`)
-- Reescribir `get_user_branches` RPC
-- Actualizar helpers RLS que referencien tablas legacy
-- DROP `user_branch_roles`, `user_roles_v2`, ENUMs `brand_role_type`, `local_role_type`
+## ❌ Fase 2 — Columnas comunes: PENDIENTE
+~150 columnas en español (nombre→name, monto→amount, cantidad→quantity, orden→sort_order, etc.)
+Impacto: ~200 archivos frontend, ~50 DB functions, ~20 triggers.
 
-**Fase 2 — 8 Service files** (todos siguen usando tablas legacy)
-| Archivo | Refs legacy |
-|---------|-------------|
-| `adminService.ts` | ~20 funciones con `user_roles_v2` y `user_branch_roles` |
-| `staffService.ts` | 8 funciones + `syncLegacyRole` (a eliminar) |
-| `permissionsService.ts` | 4 funciones con `user_roles_v2` |
-| `profileService.ts` | 4 funciones con `user_branch_roles` |
-| `posService.ts` | 2 funciones con `user_roles_v2` |
-| `meetingsService.ts` | 2 funciones con `user_branch_roles` |
-| `warningsService.ts` | 2 funciones con `user_branch_roles` |
-| `inspectionsService.ts` | 1 función con `user_branch_roles` |
+## ❌ Fase 3 — Tablas core: PENDIENTE
+58 tablas a renombrar (pedidos→orders, items_carta→menu_items, preparaciones→recipes, etc.)
+Impacto: Todas las queries del frontend, todas las DB functions, todas las RLS policies.
 
-**Fase 3 — Components/Hooks** (5 archivos)
-- `useUsersData.ts` — usa `fetchAllBrandRoles`/`fetchAllBranchRoles` legacy
-- `types.ts` — comentarios referenciando `user_roles_v2`
-- `RegistroStaff.tsx` — llama a `syncLegacyRole`
-- `PinManagementModal.tsx` — depende de signatures de profileService
+## ❌ Fase 4 — Enum values: PENDIENTE
+18 enum values en español a renombrar.
+Impacto: Lógica de roles, pagos, posiciones, áreas.
 
-**Fase 4 — Edge Functions** (2 archivos)
-- `send-staff-invitation/index.ts` — escribe en `user_branch_roles`
-- `mp-point-payment/index.ts` — comentario legacy
-
-### Recomendación
-
-Dado el volumen (~20 archivos, ~40 funciones), sugiero ejecutar por fases empezando por la **Fase 1 (SQL)** que es prerequisito de todo lo demás. Una vez aplicada la migración SQL, se pueden ejecutar las fases 2-4 del frontend en paralelo.
-
-¿Confirmo para arrancar con la Fase 1 (migración SQL)?
-
+## ⚠️ Nota sobre Fases 2-4
+Cada fase requiere migración SQL coordinada con actualización masiva del frontend. 
+Renombrar 1 tabla implica actualizar entre 5 y 50 archivos.
+Ejecutar las 3 fases juntas afectaría ~200+ archivos y es un proyecto de varias semanas.
+Recomendación: ejecutar tabla por tabla o por módulo funcional.
