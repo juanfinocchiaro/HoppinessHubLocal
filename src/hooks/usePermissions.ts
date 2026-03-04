@@ -264,7 +264,7 @@ export const LOCAL_ROLE_LABELS: Record<string, string> = {
 export function usePermissions(currentBranchId?: string): PermissionsV2 {
   const { user } = useAuth();
 
-  // Query para obtener el rol de marca del usuario (desde user_roles_v2)
+  // Query para obtener el rol de marca del usuario
   const {
     data: brandRoleData,
     isLoading: loadingBrandRole,

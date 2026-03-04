@@ -16,15 +16,15 @@ export interface BranchRoleInfo {
 
 export interface UserWithStats {
   id: string;
-  user_id: string | null; // auth.users id - needed for user_roles_v2
+  user_id: string | null; // auth.users id
   full_name: string;
   email: string;
   phone: string | null;
   created_at: string;
-  // Rol de marca (de user_roles_v2)
+  // Rol de marca
   brand_role: BrandRole;
   brand_role_id: string | null;
-  // Roles locales (de user_branch_roles) - NUEVA ARQUITECTURA
+  // Roles locales (de user_role_assignments)
   branch_roles: BranchRoleInfo[];
   // Helpers para compatibilidad
   hasLocalAccess: boolean;

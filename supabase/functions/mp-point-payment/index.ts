@@ -56,11 +56,11 @@ Deno.serve(async (req) => {
     const body: PointPaymentRequest = await req.json();
     const { branch_id, pedido_id, amount, ticket_number, force_cancel_pending } = body;
 
-    // Access check: user_roles_v2 (old) + user_branch_roles (new)
+    // Access check via normalized model
     const [{ data: hasAccessV2 }, { data: localRole }] = await Promise.all([
       supabase.rpc("has_branch_access_v2", { p_user_id: user.id, p_branch_id: branch_id }),
       supabase
-        .from("user_branch_roles")
+        .from("user_role_assignments")
         .select("id")
         .eq("user_id", user.id)
         .eq("branch_id", branch_id)

@@ -42,7 +42,7 @@ export default function CentralTeam() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<BrandRole>('coordinador');
 
-  // Query optimizada: user_roles_v2 + profiles en paralelo
+  // Query optimizada: user_role_assignments + profiles en paralelo
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['central-team-v2'],
     queryFn: async () => {

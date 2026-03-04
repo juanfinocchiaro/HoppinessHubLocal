@@ -128,7 +128,7 @@ export default function WarningsPage() {
   const [uploadingWarningId, setUploadingWarningId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch team members using user_branch_roles + profiles
+  // Fetch team members using user_role_assignments + profiles
   const { data: teamMembers } = useQuery({
     queryKey: ['branch-team-members', branchId],
     queryFn: () => fetchBranchTeamMembersBasic(branchId!),

@@ -78,15 +78,25 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('email', normalizedEmail)
       .maybeSingle();
 
-    // CASE 1: User already exists - add directly to user_branch_roles
-    // After migration: profiles.id IS the user_id
+    // CASE 1: User already exists - add directly to user_role_assignments
     if (existingProfile?.id) {
+      // Lookup role_id from roles table
+      const { data: roleRow } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('key', role)
+        .eq('scope', 'local')
+        .single();
+
+      if (!roleRow) throw new Error(`Rol '${role}' no encontrado`);
+
       // Check if already has a role in this branch
       const { data: existingRole } = await supabase
-        .from('user_branch_roles')
+        .from('user_role_assignments')
         .select('id, is_active')
         .eq('user_id', existingProfile.id)
         .eq('branch_id', branch_id)
+        .eq('role_id', roleRow.id)
         .maybeSingle();
 
       if (existingRole) {
@@ -95,23 +105,22 @@ const handler = async (req: Request): Promise<Response> => {
         }
         // Reactivate existing role
         const { error: updateError } = await supabase
-          .from('user_branch_roles')
+          .from('user_role_assignments')
           .update({ 
             is_active: true, 
-            local_role: role,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingRole.id);
 
         if (updateError) throw updateError;
       } else {
-        // Create new branch role
+        // Create new role assignment
         const { error: insertError } = await supabase
-          .from('user_branch_roles')
+          .from('user_role_assignments')
           .insert({
-            user_id: existingProfile.id,  // profiles.id = user_id after migration
+            user_id: existingProfile.id,
+            role_id: roleRow.id,
             branch_id,
-            local_role: role,
             is_active: true,
           });
 
