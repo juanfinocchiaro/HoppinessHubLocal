@@ -52,7 +52,7 @@ export function PreparacionFullModal({
         nombre: preparacion.nombre,
         descripcion: preparacion.descripcion || '',
         tipo: preparacion.tipo,
-        es_intercambiable: preparacion.es_intercambiable || false,
+        es_intercambiable: preparacion.is_interchangeable || false,
         metodo_costeo: preparacion.metodo_costeo || 'promedio',
         categoria_preparacion_id: preparacion.categoria_preparacion_id || '',
       });

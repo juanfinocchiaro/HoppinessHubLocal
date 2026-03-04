@@ -51,7 +51,7 @@ export async function updateProveedor(id: string, data: Partial<ProveedorFormDat
 export async function softDeleteProveedor(id: string) {
   const { error } = await supabase
     .from('proveedores')
-    .update({ deleted_at: new Date().toISOString(), activo: false })
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
     .eq('id', id);
   if (error) throw error;
 }
@@ -183,7 +183,7 @@ export async function fetchProveedorFacturas(branchId: string, proveedorId: stri
 export async function fetchProveedorPagos(branchId: string, proveedorId: string) {
   const { data, error } = await supabase
     .from('pagos_proveedores')
-    .select('id, monto, verificado')
+    .select('id, monto, is_verified')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .is('deleted_at', null);
@@ -225,7 +225,7 @@ export async function fetchMovimientosProveedorData(branchId: string, proveedorI
 
   const { data: pagos, error: pErr } = await supabase
     .from('pagos_proveedores')
-    .select('id, fecha_pago, monto, medio_pago, referencia, factura_id, verificado')
+    .select('id, fecha_pago, monto, medio_pago, referencia, factura_id, is_verified')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .is('deleted_at', null)

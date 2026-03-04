@@ -103,7 +103,7 @@ export async function fetchStockData(branchId: string) {
         'id, nombre, unidad_base, categoria_id, costo_por_unidad_base, categorias_insumo:categorias_insumo!insumos_categoria_id_fkey(nombre)',
       )
       .is('deleted_at', null)
-      .neq('activo', false)
+      .neq('is_active', false)
       .order('nombre'),
     supabase.from('stock_actual').select('*').eq('branch_id', branchId),
     supabase
@@ -356,7 +356,7 @@ export async function fetchActiveCadetes(branchId: string) {
     .from('cadetes')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('activo', true);
+    .eq('is_active', true);
   return data ?? [];
 }
 
@@ -717,9 +717,9 @@ export async function fetchItemExtraAssignments(itemId: string) {
     const extraIds = asignaciones.map((a) => a.extra_id);
     const { data: extras } = await supabase
       .from('items_carta')
-      .select('id, nombre, precio_base, activo')
+      .select('id, nombre, precio_base, is_active')
       .in('id', extraIds)
-      .eq('activo', true)
+      .eq('is_active', true)
       .is('deleted_at', null);
     return (extras || []).map((e, i) => ({
       id: e.id,
@@ -752,7 +752,7 @@ export async function fetchItemRemovibles(itemId: string) {
     .from('item_removibles')
     .select('*, insumos(id, nombre), preparaciones(id, nombre)')
     .eq('item_carta_id', itemId)
-    .eq('activo', true);
+    .eq('is_active', true);
   return data ?? [];
 }
 
@@ -893,7 +893,7 @@ export async function fetchMenuCategoriasPrint() {
   const { data } = await supabase
     .from('menu_categorias')
     .select('id, nombre, tipo_impresion')
-    .eq('activo', true);
+    .eq('is_active', true);
   return (data ?? []) as { id: string; nombre: string; tipo_impresion: string }[];
 }
 
@@ -920,7 +920,7 @@ export async function fetchValeCategoryIds(): Promise<Set<string>> {
   const { data } = await supabase
     .from('menu_categorias')
     .select('id, tipo_impresion')
-    .eq('activo', true);
+    .eq('is_active', true);
   return new Set(
     ((data ?? []) as { id: string; tipo_impresion: string }[])
       .filter((c) => c.tipo_impresion === 'vale')

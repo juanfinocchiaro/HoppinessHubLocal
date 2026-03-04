@@ -116,9 +116,9 @@ export function ModificadoresTab({ itemId }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 <Switch
-                  checked={mod.activo}
+                  checked={mod.is_active}
                   onCheckedChange={(checked) =>
-                    update.mutate({ id: mod.id, data: { activo: checked } })
+                    update.mutate({ id: mod.id, data: { is_active: checked } })
                   }
                 />
                 <Button
@@ -203,9 +203,9 @@ export function ModificadoresTab({ itemId }: Props) {
                   </Badge>
                 )}
                 <Switch
-                  checked={mod.activo}
+                  checked={mod.is_active}
                   onCheckedChange={(checked) =>
-                    update.mutate({ id: mod.id, data: { activo: checked } })
+                    update.mutate({ id: mod.id, data: { is_active: checked } })
                   }
                 />
                 <Button
@@ -337,9 +337,9 @@ export function ModificadoresTab({ itemId }: Props) {
                   </Badge>
                 )}
                 <Switch
-                  checked={mod.activo}
+                  checked={mod.is_active}
                   onCheckedChange={(checked) =>
-                    update.mutate({ id: mod.id, data: { activo: checked } })
+                    update.mutate({ id: mod.id, data: { is_active: checked } })
                   }
                 />
                 <Button

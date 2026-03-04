@@ -187,9 +187,9 @@ function ClosureConfigPageContent() {
                       </Label>
                       <Switch
                         id={`active-${item.id}`}
-                        checked={item.activo}
-                        onCheckedChange={(checked) =>
-                          toggleMutation.mutate({ id: item.id, activo: checked })
+                      checked={item.is_active}
+                      onCheckedChange={(checked) =>
+                        toggleMutation.mutate({ id: item.id, activo: checked })
                         }
                       />
                     </div>

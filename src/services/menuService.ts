@@ -52,7 +52,7 @@ export async function fetchInsumos() {
       '*, categorias_insumo(nombre, tipo), rdo_categories!insumos_rdo_category_code_fkey(code, name), proveedor_obligatorio:proveedores!insumos_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:proveedores!insumos_proveedor_sugerido_id_fkey(id, razon_social)',
     )
     .is('deleted_at', null)
-    .neq('activo', false)
+    .neq('is_active', false)
     .order('nombre');
   if (error) throw error;
   return data;
@@ -88,7 +88,7 @@ export async function fetchPreparaciones() {
   const { data, error } = await supabase
     .from('preparaciones')
     .select('*')
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null)
     .order('nombre');
   if (error) throw error;
@@ -218,7 +218,7 @@ export async function fetchItemsCarta() {
   const { data, error } = await supabase
     .from('items_carta')
     .select(ITEMS_CARTA_SELECT)
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null)
     .order('orden');
   if (error) throw error;
@@ -354,7 +354,7 @@ export async function fetchMenuCategorias() {
   const { data, error } = await supabase
     .from('menu_categorias')
     .select('*')
-    .eq('activo', true)
+    .eq('is_active', true)
     .order('orden');
   if (error) throw error;
   return data;
@@ -511,12 +511,12 @@ export async function fetchExtrasCategoryId(): Promise<string | null> {
 export async function findExistingExtraItem(
   tipo: 'preparacion' | 'insumo',
   refId: string,
-): Promise<{ id: string; activo: boolean; deleted_at: string | null } | null> {
+): Promise<{ id: string; is_active: boolean; deleted_at: string | null } | null> {
   const field =
     tipo === 'preparacion' ? 'composicion_ref_preparacion_id' : 'composicion_ref_insumo_id';
   const { data, error } = await supabase
     .from('items_carta')
-    .select('id, activo, deleted_at')
+    .select('id, is_active, deleted_at')
     .eq('tipo', 'extra')
     .eq(field, refId)
     .maybeSingle();
@@ -534,7 +534,7 @@ export async function findExistingExtraItem(
     if (!prep) return null;
   }
 
-  return { id: data.id, activo: data.activo ?? true, deleted_at: data.deleted_at ?? null };
+  return { id: data.id, is_active: data.is_active ?? true, deleted_at: data.deleted_at ?? null };
 }
 
 export async function createExtraItemCarta(params: {
@@ -632,9 +632,9 @@ export async function fetchExtraAssignmentsForExtra(extraId: string) {
 export async function fetchActiveExtrasByIds(extraIds: string[]) {
   const { data, error } = await supabase
     .from('items_carta')
-    .select('id, nombre, precio_base, activo')
+    .select('id, nombre, precio_base, is_active')
     .in('id', extraIds)
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null);
   if (error) throw error;
   return data || [];
@@ -672,7 +672,7 @@ export async function fetchItemRemovibles(itemId: string) {
   const { data, error } = await fromUntyped('item_removibles')
     .select('*, insumos(id, nombre), preparaciones(id, nombre)')
     .eq('item_carta_id', itemId)
-    .eq('activo', true);
+    .eq('is_active', true);
   if (error) throw error;
   return data as Array<Record<string, unknown>>;
 }
@@ -800,7 +800,7 @@ export async function fetchWebappMenuItems(branchId: string) {
       menu_categorias:categoria_carta_id(id, nombre, orden)
     `,
     )
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null)
     .eq('disponible_webapp', true)
     .order('orden');
@@ -853,7 +853,7 @@ export async function fetchWebappItemExtras(itemId: string) {
     .from('items_carta')
     .select('id, nombre, precio_base, imagen_url')
     .in('id', extraIds)
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null);
   if (error) throw error;
   return data || [];
@@ -876,7 +876,7 @@ export async function fetchCategoriasPreparacion() {
   const { data, error } = await supabase
     .from('categorias_preparacion')
     .select('*')
-    .eq('activo', true)
+    .eq('is_active', true)
     .is('deleted_at', null)
     .order('orden');
   if (error) throw error;
@@ -918,7 +918,7 @@ export async function softDeleteCategoriaPreparacion(id: string) {
   const { error } = await supabase
     .from('categorias_preparacion')
     .update({
-      activo: false,
+      is_active: false,
       deleted_at: new Date().toISOString(),
     } as Record<string, unknown>)
     .eq('id', id);

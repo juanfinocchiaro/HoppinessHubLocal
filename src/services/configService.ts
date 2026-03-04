@@ -90,7 +90,7 @@ function toClosureConfigItem(row: any): ClosureConfigItem {
     etiqueta: row.etiqueta,
     categoria_padre: row.categoria_padre,
     orden: row.orden,
-    activo: row.activo,
+    is_active: row.is_active,
   };
 }
 
@@ -98,7 +98,7 @@ export async function fetchBrandClosureConfig() {
   const { data, error } = await supabase
     .from('brand_closure_config')
     .select('*')
-    .eq('activo', true)
+    .eq('is_active', true)
     .order('orden');
 
   if (error) throw error;
@@ -145,7 +145,7 @@ export async function fetchBranchClosureConfig(branchId: string) {
     .from('brand_closure_config')
     .select('*')
     .eq('tipo', 'app_delivery')
-    .eq('activo', true)
+    .eq('is_active', true)
     .order('orden');
 
   if (appsError) throw appsError;

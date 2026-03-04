@@ -113,8 +113,8 @@ export default function SociosPage() {
                       {new Date(socio.fecha_ingreso).toLocaleDateString('es-AR')}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={socio.activo ? 'default' : 'secondary'}>
-                        {socio.activo ? 'Activo' : 'Inactivo'}
+                      <Badge variant={socio.is_active ? 'default' : 'secondary'}>
+                        {socio.is_active ? 'Activo' : 'Inactivo'}
                       </Badge>
                     </TableCell>
                     <TableCell>

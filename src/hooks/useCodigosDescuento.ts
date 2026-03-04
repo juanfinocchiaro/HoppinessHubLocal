@@ -22,7 +22,7 @@ export interface CodigoDescuento {
   monto_minimo_pedido: number | null;
   fecha_inicio: string;
   fecha_fin: string;
-  activo: boolean;
+  is_active: boolean;
   branch_ids: string[];
   created_at: string;
 }

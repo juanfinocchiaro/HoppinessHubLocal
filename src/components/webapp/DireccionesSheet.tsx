@@ -219,14 +219,14 @@ export function DireccionesSheet({ open, onOpenChange }: Props) {
             {addresses.map((addr) => (
               <div
                 key={addr.id}
-                className={`flex items-start justify-between gap-3 p-3 rounded-xl border ${addr.es_principal ? 'border-primary/50 bg-primary/5' : ''}`}
+                className={`flex items-start justify-between gap-3 p-3 rounded-xl border ${addr.is_primary ? 'border-primary/50 bg-primary/5' : ''}`}
               >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-sm">{addr.etiqueta}</span>
-                      {addr.es_principal && (
+                      {addr.is_primary && (
                         <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                       )}
                     </div>

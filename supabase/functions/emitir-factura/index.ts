@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     let nuevoNumero: number = rpcNumero;
 
     // 4. Calcular montos según tipo (RI siempre desglosa IVA en A y B)
-    const esProduccion = !!config.es_produccion;
+    const esProduccion = !!config.is_production;
     const neto = Math.round((total / 1.21) * 100) / 100;
     const iva = Math.round((total - neto) * 100) / 100;
 

@@ -7,7 +7,7 @@ export interface ClienteAddress {
   piso: string | null;
   referencia: string | null;
   ciudad: string | null;
-  es_principal: boolean;
+  is_primary: boolean;
 }
 
 export async function listAddresses(userId: string) {
@@ -15,7 +15,7 @@ export async function listAddresses(userId: string) {
     .from('cliente_direcciones')
     .select('*')
     .eq('user_id', userId)
-    .order('es_principal', { ascending: false });
+    .order('is_primary', { ascending: false });
   if (error) throw error;
   return (data || []) as ClienteAddress[];
 }
