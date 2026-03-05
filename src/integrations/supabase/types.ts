@@ -982,11 +982,11 @@ export type Database = {
           amount: number
           approval_status: string | null
           branch_id: string
-          categoria_gasto: string | null
           concept: string
           created_at: string | null
+          expense_category: string | null
+          extra_notes: string | null
           id: string
-          notes_extra: string | null
           order_id: string | null
           payment_method: string
           rdo_category_code: string | null
@@ -999,11 +999,11 @@ export type Database = {
           amount: number
           approval_status?: string | null
           branch_id: string
-          categoria_gasto?: string | null
           concept: string
           created_at?: string | null
+          expense_category?: string | null
+          extra_notes?: string | null
           id?: string
-          notes_extra?: string | null
           order_id?: string | null
           payment_method?: string
           rdo_category_code?: string | null
@@ -1016,11 +1016,11 @@ export type Database = {
           amount?: number
           approval_status?: string | null
           branch_id?: string
-          categoria_gasto?: string | null
           concept?: string
           created_at?: string | null
+          expense_category?: string | null
+          extra_notes?: string | null
           id?: string
-          notes_extra?: string | null
           order_id?: string | null
           payment_method?: string
           rdo_category_code?: string | null
@@ -3300,8 +3300,8 @@ export type Database = {
       }
       item_modifiers: {
         Row: {
+          cost_difference: number | null
           created_at: string | null
-          diferencia_costo: number | null
           extra_cost: number | null
           extra_price: number | null
           extra_quantity: number | null
@@ -3327,8 +3327,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          cost_difference?: number | null
           created_at?: string | null
-          diferencia_costo?: number | null
           extra_cost?: number | null
           extra_price?: number | null
           extra_quantity?: number | null
@@ -3354,8 +3354,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          cost_difference?: number | null
           created_at?: string | null
-          diferencia_costo?: number | null
           extra_cost?: number | null
           extra_price?: number | null
           extra_quantity?: number | null
@@ -6171,61 +6171,61 @@ export type Database = {
       }
       register_shifts_legacy: {
         Row: {
-          apertura_at: string
           branch_id: string
-          cajero_id: string
           cash_counted: number | null
-          cierre_at: string | null
-          diferencia: number | null
-          diferencia_motivo: string | null
-          fondo_apertura: number
+          cash_withdrawals: number | null
+          cashier_id: string
+          closed_at: string | null
+          difference: number | null
+          difference_reason: string | null
           id: string
-          retiros_efectivo: number | null
+          opened_at: string
+          opening_fund: number
           status: string | null
-          total_efectivo: number | null
+          total_cash: number | null
+          total_credit: number | null
+          total_debit: number | null
           total_mercadopago: number | null
-          total_tarjeta_credito: number | null
-          total_tarjeta_debito: number | null
-          total_transferencia: number | null
-          total_ventas: number | null
+          total_sales: number | null
+          total_transfer: number | null
         }
         Insert: {
-          apertura_at?: string
           branch_id: string
-          cajero_id: string
           cash_counted?: number | null
-          cierre_at?: string | null
-          diferencia?: number | null
-          diferencia_motivo?: string | null
-          fondo_apertura: number
+          cash_withdrawals?: number | null
+          cashier_id: string
+          closed_at?: string | null
+          difference?: number | null
+          difference_reason?: string | null
           id?: string
-          retiros_efectivo?: number | null
+          opened_at?: string
+          opening_fund: number
           status?: string | null
-          total_efectivo?: number | null
+          total_cash?: number | null
+          total_credit?: number | null
+          total_debit?: number | null
           total_mercadopago?: number | null
-          total_tarjeta_credito?: number | null
-          total_tarjeta_debito?: number | null
-          total_transferencia?: number | null
-          total_ventas?: number | null
+          total_sales?: number | null
+          total_transfer?: number | null
         }
         Update: {
-          apertura_at?: string
           branch_id?: string
-          cajero_id?: string
           cash_counted?: number | null
-          cierre_at?: string | null
-          diferencia?: number | null
-          diferencia_motivo?: string | null
-          fondo_apertura?: number
+          cash_withdrawals?: number | null
+          cashier_id?: string
+          closed_at?: string | null
+          difference?: number | null
+          difference_reason?: string | null
           id?: string
-          retiros_efectivo?: number | null
+          opened_at?: string
+          opening_fund?: number
           status?: string | null
-          total_efectivo?: number | null
+          total_cash?: number | null
+          total_credit?: number | null
+          total_debit?: number | null
           total_mercadopago?: number | null
-          total_tarjeta_credito?: number | null
-          total_tarjeta_debito?: number | null
-          total_transferencia?: number | null
-          total_ventas?: number | null
+          total_sales?: number | null
+          total_transfer?: number | null
         }
         Relationships: [
           {
@@ -6657,10 +6657,10 @@ export type Database = {
       }
       service_concepts: {
         Row: {
-          categoria_gasto: string | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
+          expense_category: string | null
           formula_calculo: Json | null
           id: string
           is_active: boolean | null
@@ -6675,10 +6675,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          categoria_gasto?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
+          expense_category?: string | null
           formula_calculo?: Json | null
           id?: string
           is_active?: boolean | null
@@ -6693,10 +6693,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          categoria_gasto?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
+          expense_category?: string | null
           formula_calculo?: Json | null
           id?: string
           is_active?: boolean | null
@@ -6736,91 +6736,91 @@ export type Database = {
       }
       shift_closures: {
         Row: {
-          arqueo_caja: Json | null
+          app_sales: Json
+          apps_difference: number | null
           branch_id: string
+          burgers: Json
           closed_at: string
           closed_by: string
           date: string
-          diferencia_apps: number | null
-          diferencia_posnet: number | null
           expected_invoicing: number
-          hamburguesas: Json
+          has_apps_alert: boolean | null
+          has_invoicing_alert: boolean
+          has_posnet_alert: boolean | null
+          has_register_alert: boolean | null
           id: string
           invoicing_difference: number
+          local_sales: Json
           notes: string | null
+          posnet_difference: number | null
+          register_reconciliation: Json | null
           shift: string
           source: string | null
-          tiene_alerta_apps: boolean | null
-          tiene_alerta_caja: boolean | null
-          tiene_alerta_facturacion: boolean
-          tiene_alerta_posnet: boolean | null
+          total_burgers: number
+          total_cash: number
           total_digital: number
-          total_efectivo: number
-          total_facturado: number
-          total_hamburguesas: number
-          total_vendido: number
+          total_invoiced: number
+          total_sold: number
           updated_at: string | null
           updated_by: string | null
-          ventas_apps: Json
-          ventas_local: Json
         }
         Insert: {
-          arqueo_caja?: Json | null
+          app_sales?: Json
+          apps_difference?: number | null
           branch_id: string
+          burgers?: Json
           closed_at?: string
           closed_by: string
           date: string
-          diferencia_apps?: number | null
-          diferencia_posnet?: number | null
           expected_invoicing?: number
-          hamburguesas?: Json
+          has_apps_alert?: boolean | null
+          has_invoicing_alert?: boolean
+          has_posnet_alert?: boolean | null
+          has_register_alert?: boolean | null
           id?: string
           invoicing_difference?: number
+          local_sales?: Json
           notes?: string | null
+          posnet_difference?: number | null
+          register_reconciliation?: Json | null
           shift: string
           source?: string | null
-          tiene_alerta_apps?: boolean | null
-          tiene_alerta_caja?: boolean | null
-          tiene_alerta_facturacion?: boolean
-          tiene_alerta_posnet?: boolean | null
+          total_burgers?: number
+          total_cash?: number
           total_digital?: number
-          total_efectivo?: number
-          total_facturado?: number
-          total_hamburguesas?: number
-          total_vendido?: number
+          total_invoiced?: number
+          total_sold?: number
           updated_at?: string | null
           updated_by?: string | null
-          ventas_apps?: Json
-          ventas_local?: Json
         }
         Update: {
-          arqueo_caja?: Json | null
+          app_sales?: Json
+          apps_difference?: number | null
           branch_id?: string
+          burgers?: Json
           closed_at?: string
           closed_by?: string
           date?: string
-          diferencia_apps?: number | null
-          diferencia_posnet?: number | null
           expected_invoicing?: number
-          hamburguesas?: Json
+          has_apps_alert?: boolean | null
+          has_invoicing_alert?: boolean
+          has_posnet_alert?: boolean | null
+          has_register_alert?: boolean | null
           id?: string
           invoicing_difference?: number
+          local_sales?: Json
           notes?: string | null
+          posnet_difference?: number | null
+          register_reconciliation?: Json | null
           shift?: string
           source?: string | null
-          tiene_alerta_apps?: boolean | null
-          tiene_alerta_caja?: boolean | null
-          tiene_alerta_facturacion?: boolean
-          tiene_alerta_posnet?: boolean | null
+          total_burgers?: number
+          total_cash?: number
           total_digital?: number
-          total_efectivo?: number
-          total_facturado?: number
-          total_hamburguesas?: number
-          total_vendido?: number
+          total_invoiced?: number
+          total_sold?: number
           updated_at?: string | null
           updated_by?: string | null
-          ventas_apps?: Json
-          ventas_local?: Json
         }
         Relationships: [
           {
