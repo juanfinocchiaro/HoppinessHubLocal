@@ -297,7 +297,7 @@ export async function fetchRdoMovimientosByCategory(
     .from('rdo_movimientos')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('periodo', periodo)
+    .eq('period', periodo)
     .eq('rdo_category_code', categoryCode)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
