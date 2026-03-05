@@ -144,7 +144,7 @@ export async function fetchBranchClosureConfig(branchId: string) {
   const { data: brandApps, error: appsError } = await supabase
     .from('brand_closure_config')
     .select('*')
-    .eq('tipo', 'app_delivery')
+    .eq('type', 'app_delivery')
     .eq('is_active', true)
     .order('sort_order');
 
