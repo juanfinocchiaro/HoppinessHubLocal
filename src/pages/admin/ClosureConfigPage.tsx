@@ -115,7 +115,7 @@ function ClosureConfigPageContent() {
       titulo: 'Categorías de Hamburguesas',
       descripcion:
         'Categorías principales que se muestran en el formulario de cierre (Clásicas, Originales, etc.)',
-      items: configItems?.filter((i) => i.tipo === 'categoria_hamburguesa') || [],
+      items: configItems?.filter((i) => i.type === 'categoria_hamburguesa') || [],
     },
     {
       tipo: 'tipo_hamburguesa',
