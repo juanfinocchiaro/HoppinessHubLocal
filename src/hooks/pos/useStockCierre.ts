@@ -53,10 +53,10 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
         new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10),
       );
 
-      const prevMap = new Map(
-        cierreAnterior.map((r) => [r.insumo_id, Number(r.stock_cierre_fisico)]),
+      const prevMap = new Map<string, number>(
+        cierreAnterior.map((r: any) => [r.insumo_id as string, Number(r.stock_cierre_fisico)]),
       );
-      const insumoIds = new Set<string>(movimientos.map((m) => m.insumo_id));
+      const insumoIds = new Set<string>(movimientos.map((m: any) => m.insumo_id as string));
       prevMap.forEach((_, id) => insumoIds.add(id));
 
       const comprasByInsumo = new Map<string, number>();
@@ -158,7 +158,7 @@ export function useSaveCierreMensual(branchId: string) {
           branchId,
           it.insumo_id,
           it.stock_cierre_fisico,
-          actualRow?.unidad ?? 'un',
+          (actualRow as any)?.unit ?? (actualRow as any)?.unidad ?? 'un',
         );
         if (merma > 0) {
           await insertStockMovimiento({

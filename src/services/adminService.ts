@@ -709,9 +709,9 @@ export async function toggleClosureConfigItem(id: string, is_active: boolean) {
 export async function addClosureConfigItem(params: {
   tipo: string;
   clave: string;
-  etiqueta: string;
+  label: string;
   categoria_padre?: string;
-  orden: number;
+  sort_order: number;
   is_active: boolean;
 }) {
   const { error } = await supabase.from('brand_closure_config').insert(params);

@@ -137,7 +137,7 @@ export default function ProveedoresPage() {
         open={!!deleting}
         onOpenChange={() => setDeleting(null)}
         title="Eliminar proveedor"
-        description={`¿Estás seguro de eliminar a "${deleting?.razon_social}"?`}
+        description={`¿Estás seguro de eliminar a "${deleting?.business_name}"?`}
         confirmLabel="Eliminar"
         variant="destructive"
         onConfirm={async () => {

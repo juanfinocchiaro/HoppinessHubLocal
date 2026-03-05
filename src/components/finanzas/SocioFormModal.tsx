@@ -35,9 +35,9 @@ export function SocioFormModal({ open, onOpenChange, branchId, socio }: Props) {
         nombre: socio.name || '',
         cuit: socio.cuit || '',
         email: socio.email || '',
-        telefono: socio.telefono || '',
-        porcentaje_participacion: String(socio.porcentaje_participacion),
-        fecha_ingreso: socio.fecha_ingreso,
+        telefono: socio.phone || '',
+        porcentaje_participacion: String(socio.ownership_percentage),
+        fecha_ingreso: socio.start_date,
         limite_retiro_mensual: socio.limite_retiro_mensual
           ? String(socio.limite_retiro_mensual)
           : '',

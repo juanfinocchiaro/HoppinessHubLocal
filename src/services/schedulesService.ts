@@ -196,8 +196,8 @@ export async function fetchShiftClosuresByDate(branchId: string, dateStr: string
     .from('shift_closures')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('fecha', dateStr)
-    .order('turno');
+    .eq('date', dateStr)
+    .order('shift');
   if (error) throw error;
   return data || [];
 }
@@ -207,10 +207,10 @@ export async function fetchShiftClosuresByDateRange(branchId: string, fromStr: s
     .from('shift_closures')
     .select('*')
     .eq('branch_id', branchId)
-    .gte('fecha', fromStr)
-    .lte('fecha', toStr)
-    .order('fecha', { ascending: false })
-    .order('turno');
+    .gte('date', fromStr)
+    .lte('date', toStr)
+    .order('date', { ascending: false })
+    .order('shift');
   if (error) throw error;
   return data || [];
 }
@@ -220,8 +220,8 @@ export async function fetchShiftClosureSingle(branchId: string, fecha: string, t
     .from('shift_closures')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('fecha', fecha)
-    .eq('turno', turno)
+    .eq('date', fecha)
+    .eq('shift', turno)
     .maybeSingle();
   if (error) throw error;
   return data;
@@ -231,8 +231,8 @@ export async function fetchAllShiftClosuresInRange(fromStr: string, toStr: strin
   const { data, error } = await supabase
     .from('shift_closures')
     .select('*')
-    .gte('fecha', fromStr)
-    .lte('fecha', toStr);
+    .gte('date', fromStr)
+    .lte('date', toStr);
   if (error) throw error;
   return data || [];
 }

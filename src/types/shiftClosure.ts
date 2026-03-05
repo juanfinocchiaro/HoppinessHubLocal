@@ -134,9 +134,9 @@ export interface ClosureConfigItem {
   id: string;
   tipo: ConfigTipo;
   clave: string;
-  etiqueta: string;
+  label: string;
   categoria_padre: string | null;
-  orden: number;
+  sort_order: number;
   is_active: boolean;
 }
 

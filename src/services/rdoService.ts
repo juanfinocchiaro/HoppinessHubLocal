@@ -281,7 +281,7 @@ export async function fetchRdoMovimientos(branchId: string, periodo: string) {
     .from('rdo_movimientos')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('periodo', periodo)
+    .eq('period', periodo)
     .is('deleted_at', null)
     .order('rdo_category_code');
   if (error) throw error;
@@ -297,7 +297,7 @@ export async function fetchRdoMovimientosByCategory(
     .from('rdo_movimientos')
     .select('*')
     .eq('branch_id', branchId)
-    .eq('periodo', periodo)
+    .eq('period', periodo)
     .eq('rdo_category_code', categoryCode)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
@@ -310,7 +310,7 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
     .from('rdo_movimientos')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
-    .eq('periodo', data.periodo)
+    .eq('period', data.periodo)
     .eq('rdo_category_code', data.rdo_category_code)
     .eq('origen', data.origen)
     .is('source_id', null)
@@ -323,7 +323,7 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
     .insert([
       {
         branch_id: data.branch_id,
-        periodo: data.periodo,
+        period: data.periodo,
         rdo_category_code: data.rdo_category_code,
         origen: data.origen,
         amount: data.monto,
@@ -787,7 +787,7 @@ export async function fetchFiscalBranchData(
     supabase.from('branches').select('name, address').eq('id', branchId).single(),
     supabase
       .from('afip_config')
-      .select('cuit, punto_venta, direccion_fiscal, razon_social, inicio_actividades')
+      .select('cuit, punto_venta, fiscal_address, business_name, activity_start_date')
       .eq('branch_id', branchId)
       .single(),
   ]);
@@ -795,13 +795,13 @@ export async function fetchFiscalBranchData(
   return {
     name: branchRes.data.name,
     cuit: afipRes.data.cuit || '',
-    address: afipRes.data.direccion_fiscal || branchRes.data.address || '',
+    address: afipRes.data.fiscal_address || branchRes.data.address || '',
     punto_venta: afipRes.data.punto_venta || 0,
-    razon_social: afipRes.data.razon_social || branchRes.data.name || '',
+    razon_social: afipRes.data.business_name || branchRes.data.name || '',
     iibb: afipRes.data.cuit || '',
     condicion_iva: 'IVA Responsable Inscripto',
-    inicio_actividades: afipRes.data.inicio_actividades || '',
-    direccion_fiscal: afipRes.data.direccion_fiscal || branchRes.data.address || '',
+    inicio_actividades: afipRes.data.activity_start_date || '',
+    direccion_fiscal: afipRes.data.fiscal_address || branchRes.data.address || '',
   };
 }
 

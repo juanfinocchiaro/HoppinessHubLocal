@@ -105,7 +105,7 @@ export async function fetchStockData(branchId: string) {
     supabase.from('stock_actual').select('*').eq('branch_id', branchId),
     supabase
       .from('stock_movimientos')
-      .select('insumo_id, created_at, tipo, motivo')
+      .select('insumo_id, created_at, tipo, reason')
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false }),
   ]);
@@ -138,7 +138,7 @@ export async function upsertStockActual(
   const { error } = await supabase
     .from('stock_actual')
     .upsert(
-      { branch_id: branchId, insumo_id: insumoId, quantity: cantidad, unidad },
+      { branch_id: branchId, insumo_id: insumoId, quantity: cantidad, unit: unidad },
       { onConflict: 'branch_id,insumo_id' },
     );
   if (error) throw error;
@@ -368,8 +368,7 @@ export async function fetchStockMovimientosPeriod(
 }
 
 export async function fetchCierreAnterior(branchId: string, periodo: string) {
-  const { data } = await supabase
-    .from('stock_cierre_mensual')
+  const { data } = await fromUntyped('stock_cierre_mensual')
     .select('insumo_id, stock_cierre_fisico')
     .eq('branch_id', branchId)
     .eq('periodo', periodo);
@@ -379,7 +378,7 @@ export async function fetchCierreAnterior(branchId: string, periodo: string) {
 export async function fetchStockActualWithNames(branchId: string) {
   const { data } = await supabase
     .from('stock_actual')
-    .select('insumo_id, quantity, unidad, insumos:supplies!stock_actual_insumo_id_fkey(name)')
+    .select('insumo_id, quantity, unit, insumos:supplies!stock_actual_insumo_id_fkey(name)')
     .eq('branch_id', branchId);
   return (data ?? []).map((r: any) => ({ ...r, cantidad: r.quantity }));
 }
@@ -396,8 +395,7 @@ export async function fetchPrevCierreForInsumo(
   insumoId: string,
   periodo: string,
 ) {
-  const { data } = await supabase
-    .from('stock_cierre_mensual')
+  const { data } = await fromUntyped('stock_cierre_mensual')
     .select('stock_cierre_fisico')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
@@ -432,7 +430,7 @@ export async function upsertCierreMensual(record: Record<string, unknown>) {
 export async function fetchStockActualRow(branchId: string, insumoId: string) {
   const { data } = await supabase
     .from('stock_actual')
-    .select('quantity, unidad')
+    .select('quantity, unit')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .maybeSingle();

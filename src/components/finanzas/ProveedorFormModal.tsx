@@ -58,14 +58,14 @@ export function ProveedorFormModal({
   useEffect(() => {
     if (proveedor) {
       setForm({
-        razon_social: proveedor.razon_social,
+        razon_social: proveedor.business_name,
         cuit: proveedor.cuit || '',
         contacto: proveedor.contacto || '',
-        telefono: proveedor.telefono || '',
-        contacto_secundario: proveedor.contacto_secundario || '',
-        telefono_secundario: proveedor.telefono_secundario || '',
+        telefono: proveedor.phone || '',
+        contacto_secundario: proveedor.secondary_contact || '',
+        telefono_secundario: proveedor.secondary_phone || '',
         email: proveedor.email || '',
-        direccion: proveedor.direccion || '',
+        direccion: proveedor.address || '',
         ambito: proveedor.ambito as 'marca' | 'local',
         branch_id: proveedor.branch_id,
         permite_cuenta_corriente: proveedor.permite_cuenta_corriente || false,
