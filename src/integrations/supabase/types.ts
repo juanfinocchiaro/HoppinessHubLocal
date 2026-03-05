@@ -8748,7 +8748,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      asignar_llamador: {
+      assign_pager: {
         Args: { p_branch_id: string; p_pedido_id: string }
         Returns: number
       }
@@ -8777,8 +8777,8 @@ export type Database = {
         }
         Returns: string
       }
-      generar_numero_pedido: { Args: { p_branch_id: string }; Returns: number }
-      generar_shift_closure_desde_pos: {
+      generate_order_number: { Args: { p_branch_id: string }; Returns: number }
+      generate_shift_closure_from_pos: {
         Args: { p_branch_id: string; p_fecha: string; p_turno: string }
         Returns: string
       }
@@ -8848,6 +8848,10 @@ export type Database = {
       get_local_role_for_branch: {
         Args: { _branch_id: string; _user_id: string }
         Returns: string
+      }
+      get_next_invoice_number: {
+        Args: { _branch_id: string; _tipo: string }
+        Returns: number
       }
       get_rdo_financiero: {
         Args: { _branch_id: string; _periodo: string }
@@ -8923,7 +8927,7 @@ export type Database = {
         Args: { _branch_id: string; _role_key: string; _user_id: string }
         Returns: boolean
       }
-      insert_factura_completa: {
+      insert_complete_invoice: {
         Args: { p_factura: Json; p_items: Json }
         Returns: string
       }
@@ -8949,6 +8953,10 @@ export type Database = {
         Returns: boolean
       }
       is_financial_manager: { Args: { user_uuid: string }; Returns: boolean }
+      is_franchisee_or_accountant_for_branch: {
+        Args: { p_branch_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_franquiciado_or_contador_for_branch: {
         Args: { p_branch_id: string; p_user_id: string }
         Returns: boolean
@@ -8970,6 +8978,10 @@ export type Database = {
         Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
       }
+      is_partner_admin: {
+        Args: { _branch_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_socio_admin: {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
@@ -8979,7 +8991,6 @@ export type Database = {
         | { Args: { _user_id: string }; Returns: boolean }
       is_staff_member: { Args: { _user_id: string }; Returns: boolean }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
-      liberar_llamador: { Args: { p_pedido_id: string }; Returns: undefined }
       normalize_phone: { Args: { phone: string }; Returns: string }
       normalize_rdo_channel: {
         Args: { _canal_app: string; _canal_venta: string; _tipo: string }
@@ -8989,19 +9000,13 @@ export type Database = {
         Args: { _metodo: string }
         Returns: string
       }
-      obtener_proximo_numero_factura: {
-        Args: { _branch_id: string; _tipo: string }
-        Returns: number
-      }
-      recalcular_costo_item_carta: {
+      recalculate_all_costs: { Args: never; Returns: undefined }
+      recalculate_menu_item_cost: {
         Args: { _item_id: string }
         Returns: undefined
       }
-      recalcular_costo_preparacion: {
-        Args: { _prep_id: string }
-        Returns: number
-      }
-      recalcular_todos_los_costos: { Args: never; Returns: undefined }
+      recalculate_recipe_cost: { Args: { _prep_id: string }; Returns: number }
+      release_pager: { Args: { p_pedido_id: string }; Returns: undefined }
       shares_branch_as_manager: {
         Args: { _target_user_id: string; _viewer_id: string }
         Returns: boolean
