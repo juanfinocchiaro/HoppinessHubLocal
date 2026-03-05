@@ -144,7 +144,7 @@ export interface BranchClosureConfig {
   id: string;
   branch_id: string;
   config_id: string;
-  habilitado: boolean;
+  enabled: boolean;
 }
 
 // ==========================================

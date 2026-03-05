@@ -197,8 +197,8 @@ export async function fetchSaldoProveedor(branchId: string, proveedorId: string)
 
 export async function fetchSaldosProveedores(branchId: string) {
   const { data, error } = await supabase
-    .from('cuenta_corriente_proveedores')
-    .select('proveedor_id, total_pendiente, monto_vencido, facturas_pendientes')
+    .from('supplier_current_account')
+    .select('proveedor_id, total_pending, overdue_amount, pending_invoices')
     .eq('branch_id', branchId);
   if (error) throw error;
   return data || [];
