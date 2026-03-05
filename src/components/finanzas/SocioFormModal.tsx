@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useSocioMutations, type SocioFormData } from '@/hooks/useSocios';
 import type { Tables } from '@/integrations/supabase/types';
 
-type Socio = Tables<'socios'>;
+type Socio = Tables<'partners'>;
 
 interface Props {
   open: boolean;
