@@ -476,7 +476,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
           allPrinters,
           menuCategorias as {
             id: string;
-            nombre: string;
+            name: string;
             tipo_impresion: 'comanda' | 'vale' | 'no_imprimir';
           }[],
           branchInfo?.name ?? 'Hoppiness',

@@ -1981,7 +1981,7 @@ export type Database = {
           descripcion: string | null
           id: string
           is_active: boolean | null
-          nombre: string
+          name: string
           orden: number | null
           pedido_minimo: number | null
           tiempo_estimado_min: number | null
@@ -1995,7 +1995,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre: string
+          name: string
           orden?: number | null
           pedido_minimo?: number | null
           tiempo_estimado_min?: number | null
@@ -2009,7 +2009,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre?: string
+          name?: string
           orden?: number | null
           pedido_minimo?: number | null
           tiempo_estimado_min?: number | null
@@ -3315,7 +3315,7 @@ export type Database = {
           ingrediente_original_id: string | null
           is_active: boolean | null
           item_carta_id: string
-          nombre: string
+          name: string
           orden: number | null
           precio_extra: number | null
           receta_extra_id: string | null
@@ -3342,7 +3342,7 @@ export type Database = {
           ingrediente_original_id?: string | null
           is_active?: boolean | null
           item_carta_id: string
-          nombre: string
+          name: string
           orden?: number | null
           precio_extra?: number | null
           receta_extra_id?: string | null
@@ -3369,7 +3369,7 @@ export type Database = {
           ingrediente_original_id?: string | null
           is_active?: boolean | null
           item_carta_id?: string
-          nombre?: string
+          name?: string
           orden?: number | null
           precio_extra?: number | null
           receta_extra_id?: string | null
@@ -3836,7 +3836,7 @@ export type Database = {
           descripcion: string | null
           id: string
           is_active: boolean | null
-          nombre: string
+          name: string
           orden: number | null
           tipo_impresion: string
           updated_at: string | null
@@ -3847,7 +3847,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre: string
+          name: string
           orden?: number | null
           tipo_impresion?: string
           updated_at?: string | null
@@ -3858,7 +3858,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre?: string
+          name?: string
           orden?: number | null
           tipo_impresion?: string
           updated_at?: string | null
@@ -4044,7 +4044,7 @@ export type Database = {
           is_required: boolean
           item_carta_id: string
           max_selecciones: number | null
-          nombre: string
+          name: string
           orden: number
           updated_at: string
         }
@@ -4055,7 +4055,7 @@ export type Database = {
           is_required?: boolean
           item_carta_id: string
           max_selecciones?: number | null
-          nombre: string
+          name: string
           orden?: number
           updated_at?: string
         }
@@ -4066,7 +4066,7 @@ export type Database = {
           is_required?: boolean
           item_carta_id?: string
           max_selecciones?: number | null
-          nombre?: string
+          name?: string
           orden?: number
           updated_at?: string
         }
@@ -4150,7 +4150,7 @@ export type Database = {
           imagen_url: string | null
           is_active: boolean | null
           kitchen_station_id: string | null
-          nombre: string
+          name: string
           nombre_corto: string | null
           orden: number | null
           precio_base: number
@@ -4178,7 +4178,7 @@ export type Database = {
           imagen_url?: string | null
           is_active?: boolean | null
           kitchen_station_id?: string | null
-          nombre: string
+          name: string
           nombre_corto?: string | null
           orden?: number | null
           precio_base?: number
@@ -4206,7 +4206,7 @@ export type Database = {
           imagen_url?: string | null
           is_active?: boolean | null
           kitchen_station_id?: string | null
-          nombre?: string
+          name?: string
           nombre_corto?: string | null
           orden?: number | null
           precio_base?: number
@@ -4419,7 +4419,7 @@ export type Database = {
           estado: string | null
           id: string
           item_carta_id: string
-          nombre: string
+          name: string
           notas: string | null
           pedido_id: string
           precio_referencia: number | null
@@ -4438,7 +4438,7 @@ export type Database = {
           estado?: string | null
           id?: string
           item_carta_id: string
-          nombre: string
+          name: string
           notas?: string | null
           pedido_id: string
           precio_referencia?: number | null
@@ -4457,7 +4457,7 @@ export type Database = {
           estado?: string | null
           id?: string
           item_carta_id?: string
-          nombre?: string
+          name?: string
           notas?: string | null
           pedido_id?: string
           precio_referencia?: number | null
@@ -4956,7 +4956,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           limite_retiro_mensual: number | null
-          nombre: string
+          name: string
           porcentaje_participacion: number
           telefono: string | null
           updated_at: string | null
@@ -4974,7 +4974,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           limite_retiro_mensual?: number | null
-          nombre: string
+          name: string
           porcentaje_participacion: number
           telefono?: string | null
           updated_at?: string | null
@@ -4992,7 +4992,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           limite_retiro_mensual?: number | null
-          nombre?: string
+          name?: string
           porcentaje_participacion?: number
           telefono?: string | null
           updated_at?: string | null
@@ -5779,7 +5779,7 @@ export type Database = {
           hora_inicio: string | null
           id: string
           is_active: boolean
-          nombre: string
+          name: string
           producto_ids: string[] | null
           restriccion_pago: string
           tipo: string
@@ -5804,7 +5804,7 @@ export type Database = {
           hora_inicio?: string | null
           id?: string
           is_active?: boolean
-          nombre: string
+          name: string
           producto_ids?: string[] | null
           restriccion_pago?: string
           tipo: string
@@ -5829,7 +5829,7 @@ export type Database = {
           hora_inicio?: string | null
           id?: string
           is_active?: boolean
-          nombre?: string
+          name?: string
           producto_ids?: string[] | null
           restriccion_pago?: string
           tipo?: string
@@ -5989,7 +5989,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           is_active: boolean
-          nombre: string
+          name: string
           orden: number
           updated_at: string
         }
@@ -5998,7 +5998,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           is_active?: boolean
-          nombre: string
+          name: string
           orden?: number
           updated_at?: string
         }
@@ -6007,7 +6007,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           is_active?: boolean
-          nombre?: string
+          name?: string
           orden?: number
           updated_at?: string
         }
@@ -6120,7 +6120,7 @@ export type Database = {
           is_active: boolean | null
           is_interchangeable: boolean | null
           metodo_costeo: string | null
-          nombre: string
+          name: string
           precio_extra: number | null
           puede_ser_extra: boolean
           tipo: string
@@ -6138,7 +6138,7 @@ export type Database = {
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           metodo_costeo?: string | null
-          nombre: string
+          name: string
           precio_extra?: number | null
           puede_ser_extra?: boolean
           tipo?: string
@@ -6156,7 +6156,7 @@ export type Database = {
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           metodo_costeo?: string | null
-          nombre?: string
+          name?: string
           precio_extra?: number | null
           puede_ser_extra?: boolean
           tipo?: string
@@ -6668,7 +6668,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_calculated: boolean | null
-          nombre: string
+          name: string
           periodicidad: string | null
           proveedor_id: string | null
           rdo_category_code: string | null
@@ -6686,7 +6686,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_calculated?: boolean | null
-          nombre: string
+          name: string
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
@@ -6704,7 +6704,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_calculated?: boolean | null
-          nombre?: string
+          name?: string
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
@@ -7758,8 +7758,8 @@ export type Database = {
           margen_bruto: number | null
           margen_porcentaje: number | null
           motivo_control: string | null
+          name: string
           nivel_control: string
-          nombre: string
           precio_extra: number | null
           precio_maximo_sugerido: number | null
           precio_referencia: number | null
@@ -7792,8 +7792,8 @@ export type Database = {
           margen_bruto?: number | null
           margen_porcentaje?: number | null
           motivo_control?: string | null
+          name: string
           nivel_control?: string
-          nombre: string
           precio_extra?: number | null
           precio_maximo_sugerido?: number | null
           precio_referencia?: number | null
@@ -7826,8 +7826,8 @@ export type Database = {
           margen_bruto?: number | null
           margen_porcentaje?: number | null
           motivo_control?: string | null
+          name?: string
           nivel_control?: string
-          nombre?: string
           precio_extra?: number | null
           precio_maximo_sugerido?: number | null
           precio_referencia?: number | null
@@ -7896,7 +7896,7 @@ export type Database = {
           descripcion: string | null
           id: string
           is_active: boolean | null
-          nombre: string
+          name: string
           orden: number | null
           tipo: string
           updated_at: string | null
@@ -7907,7 +7907,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre: string
+          name: string
           orden?: number | null
           tipo: string
           updated_at?: string | null
@@ -7918,7 +7918,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           is_active?: boolean | null
-          nombre?: string
+          name?: string
           orden?: number | null
           tipo?: string
           updated_at?: string | null
@@ -8718,7 +8718,7 @@ export type Database = {
           disponible_webapp: boolean | null
           id: string | null
           imagen_url: string | null
-          nombre: string | null
+          name: string | null
           nombre_corto: string | null
           orden: number | null
           precio_base: number | null

@@ -17,7 +17,7 @@ import {
 
 interface MenuCategoria {
   id: string;
-  nombre: string;
+  name: string;
   tipo_impresion: 'comanda' | 'vale' | 'no_imprimir';
 }
 
@@ -151,18 +151,18 @@ export async function buildPrintJobs(
         if (getTipoImpresion(item) === 'vale') {
           for (let i = 0; i < item.cantidad; i++) {
             const data = generateVale(
-              item.nombre || 'Producto',
+              item.name || 'Producto',
               order.numero_pedido,
               order.created_at,
-              order.canal_venta || undefined,
+              order.canal_venta,
               order.numero_llamador,
               printer.paper_width,
             );
             jobs.push({
-              type: 'vale',
+              type: 'vale' as const,
               printerId: printer.id,
               dataBase64: data,
-              label: `Vale: ${item.nombre}`,
+              label: `Vale: ${item.name}`,
             });
           }
         }

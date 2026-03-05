@@ -222,7 +222,7 @@ export function usePrinting(branchId: string) {
     allPrinters: BranchPrinter[],
     categorias: {
       id: string;
-      nombre: string;
+      name: string;
       tipo_impresion: 'comanda' | 'vale' | 'no_imprimir';
     }[],
     branchName: string,

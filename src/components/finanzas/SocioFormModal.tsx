@@ -32,7 +32,7 @@ export function SocioFormModal({ open, onOpenChange, branchId, socio }: Props) {
   useEffect(() => {
     if (socio) {
       setForm({
-        nombre: socio.nombre,
+        nombre: socio.name || '',
         cuit: socio.cuit || '',
         email: socio.email || '',
         telefono: socio.telefono || '',

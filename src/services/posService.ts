@@ -96,12 +96,12 @@ export async function fetchPayments(pedidoId: string) {
 export async function fetchStockData(branchId: string) {
   const [insumosResult, stockResult, movimientosResult] = await Promise.all([
     fromUntyped('supplies')
-      .select(
-        'id, nombre, unidad_base, categoria_id, costo_por_unidad_base, categorias_insumo:categorias_insumo!insumos_categoria_id_fkey(nombre)',
+       .select(
+        'id, name, unidad_base, categoria_id, costo_por_unidad_base, categorias_insumo:categorias_insumo!insumos_categoria_id_fkey(name)',
       )
       .is('deleted_at', null)
       .neq('is_active', false)
-      .order('nombre'),
+      .order('name'),
     supabase.from('stock_actual').select('*').eq('branch_id', branchId),
     supabase
       .from('stock_movimientos')
@@ -273,8 +273,8 @@ export async function fetchReconciliationPayments(
 
 export async function fetchKitchenOrders(branchId: string) {
   const { data, error } = await fromUntyped('orders')
-    .select(
-      'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, order_items(id, nombre, cantidad, notas, estacion, estado, order_item_modifiers(id, descripcion, tipo, precio_extra))',
+     .select(
+      'id, numero_pedido, tipo_servicio, numero_llamador, canal_venta, cliente_nombre, cliente_user_id, created_at, estado, tiempo_listo, tiempo_inicio_prep, origen, order_items(id, name, cantidad, notas, estacion, estado, order_item_modifiers(id, descripcion, tipo, precio_extra))',
     )
     .eq('branch_id', branchId)
     .in('estado', ['pendiente', 'confirmado', 'en_preparacion', 'listo'])
@@ -302,8 +302,8 @@ export function removeSupabaseChannel(channel: ReturnType<typeof supabase.channe
 
 export async function fetchOrderHistory(branchId: string, fromDate: string) {
   const { data, error } = await fromUntyped('orders')
-    .select(
-      'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, order_items(id, nombre, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), order_payments(id, metodo, monto), issued_invoices(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
+     .select(
+      'id, numero_pedido, numero_llamador, created_at, canal_venta, tipo_servicio, canal_app, cliente_nombre, cliente_telefono, cliente_direccion, estado, subtotal, descuento, total, order_items(id, name, cantidad, precio_unitario, subtotal, notas, categoria_carta_id), order_payments(id, metodo, monto), issued_invoices(id, tipo_comprobante, punto_venta, numero_comprobante, cae, cae_vencimiento, neto, iva, total, fecha_emision, receptor_cuit, receptor_razon_social, receptor_condicion_iva, anulada, factura_asociada_id)',
     )
     .eq('branch_id', branchId)
     .gte('created_at', fromDate)
@@ -378,14 +378,14 @@ export async function fetchCierreAnterior(branchId: string, periodo: string) {
 
 export async function fetchStockActualWithNames(branchId: string) {
   const { data } = await fromUntyped('stock_actual')
-    .select('insumo_id, cantidad, unidad, insumos:supplies!stock_actual_insumo_id_fkey(nombre)')
+    .select('insumo_id, cantidad, unidad, insumos:supplies!stock_actual_insumo_id_fkey(name)')
     .eq('branch_id', branchId);
   return (data as any[]) ?? [];
 }
 
 export async function fetchInsumosById(ids: string[]) {
   const { data } = await fromUntyped('supplies')
-    .select('id, nombre, unidad_base')
+    .select('id, name, unidad_base')
     .in('id', ids);
   return data ?? [];
 }
@@ -440,7 +440,7 @@ export async function fetchStockActualRow(branchId: string, insumoId: string) {
 
 export async function fetchInsumoCostInfo(insumoId: string) {
   const { data } = await fromUntyped('supplies')
-    .select('categoria_pl, costo_por_unidad_base, nombre')
+    .select('categoria_pl, costo_por_unidad_base, name')
     .eq('id', insumoId)
     .single();
   return data;
@@ -545,7 +545,7 @@ export async function lookupProfileByPhone(phoneVariants: string[]) {
 export async function fetchMenuCategoriesByName(pattern: string) {
   const { data } = await fromUntyped('menu_categories')
     .select('id')
-    .ilike('nombre', pattern);
+    .ilike('name', pattern);
   return data ?? [];
 }
 
@@ -615,7 +615,7 @@ const WEBAPP_SELECT = `
   id, numero_pedido, tipo_servicio, cliente_nombre,
   cliente_telefono, cliente_direccion, cliente_user_id, canal_venta, total, estado,
   created_at, webapp_tracking_code,
-  order_items(id, nombre, cantidad, precio_unitario, subtotal)
+  order_items(id, name, cantidad, precio_unitario, subtotal)
 `;
 
 export async function fetchWebappPendingOrders(branchId: string) {
@@ -694,8 +694,8 @@ export async function fetchItemExtraAssignments(itemId: string) {
     .eq('item_carta_id', itemId);
   if (asignaciones && (asignaciones as any[]).length > 0) {
     const extraIds = (asignaciones as any[]).map((a: any) => a.extra_id);
-    const { data: extras } = await fromUntyped('menu_items')
-      .select('id, nombre, precio_base, is_active')
+     const { data: extras } = await fromUntyped('menu_items')
+      .select('id, name, precio_base, is_active')
       .in('id', extraIds)
       .eq('is_active', true)
       .is('deleted_at', null);
@@ -707,7 +707,7 @@ export async function fetchItemExtraAssignments(itemId: string) {
       orden: i,
       preparaciones: {
         id: e.id,
-        nombre: e.nombre,
+        nombre: e.name,
         costo_calculado: 0,
         precio_extra: e.precio_base,
         puede_ser_extra: true,
@@ -715,9 +715,9 @@ export async function fetchItemExtraAssignments(itemId: string) {
       insumos: null,
     }));
   }
-  const { data } = await fromUntyped('menu_item_extras')
+   const { data } = await fromUntyped('menu_item_extras')
     .select(
-      '*, recipes:recipes(id, nombre, costo_calculado, precio_extra, puede_ser_extra), supplies:supplies(id, nombre, costo_por_unidad_base, precio_extra, puede_ser_extra)',
+      '*, recipes:recipes(id, name, costo_calculado, precio_extra, puede_ser_extra), supplies:supplies(id, name, costo_por_unidad_base, precio_extra, puede_ser_extra)',
     )
     .eq('item_carta_id', itemId)
     .order('orden');
@@ -726,7 +726,7 @@ export async function fetchItemExtraAssignments(itemId: string) {
 
 export async function fetchItemRemovibles(itemId: string) {
   const { data } = await fromUntyped('removable_items')
-    .select('*, supplies:supplies(id, nombre), recipes:recipes(id, nombre)')
+    .select('*, supplies:supplies(id, name), recipes:recipes(id, name)')
     .eq('item_carta_id', itemId)
     .eq('is_active', true);
   return (data as any[]) ?? [];
@@ -864,10 +864,10 @@ export function subscribeToChatMessages(pedidoId: string, callback: () => void) 
 // ─── Menu Categorias (for printing) ───
 
 export async function fetchMenuCategoriasPrint() {
-  const { data } = await fromUntyped('menu_categories')
-    .select('id, nombre, tipo_impresion')
+   const { data } = await fromUntyped('menu_categories')
+    .select('id, name, tipo_impresion')
     .eq('is_active', true);
-  return (data ?? []) as { id: string; nombre: string; tipo_impresion: string }[];
+  return (data ?? []) as { id: string; name: string; tipo_impresion: string }[];
 }
 
 // ─── Cancel Pedido ───
@@ -880,7 +880,7 @@ export async function cancelPedido(pedidoId: string) {
 
 export async function fetchDeliveryPedidos(branchId: string) {
   const { data } = await fromUntyped('orders')
-    .select('*, order_items(nombre, cantidad)')
+    .select('*, order_items(name, cantidad)')
     .eq('branch_id', branchId)
     .eq('tipo', 'delivery')
     .in('estado', ['listo', 'en_camino'])

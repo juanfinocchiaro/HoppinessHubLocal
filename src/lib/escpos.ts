@@ -287,7 +287,8 @@ function printMarketingFooter(b: EscPosBuilder): void {
 // ─── Types ───────────────────────────────────────────────────
 
 export interface PrintableItem {
-  nombre: string | null;
+  name?: string | null;
+  nombre?: string | null;
   cantidad: number;
   notas: string | null;
   estacion: string | null;

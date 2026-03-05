@@ -67,7 +67,7 @@ export function MovimientoSocioModal({ open, onOpenChange, branchId, socio }: Pr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Movimiento - {socio.nombre}</DialogTitle>
+          <DialogTitle>Movimiento - {socio.name}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
