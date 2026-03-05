@@ -99,7 +99,7 @@ export async function fetchBrandClosureConfig() {
     .from('brand_closure_config')
     .select('*')
     .eq('is_active', true)
-    .order('orden');
+    .order('sort_order');
 
   if (error) throw error;
 
