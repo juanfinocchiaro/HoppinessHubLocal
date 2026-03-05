@@ -128,7 +128,7 @@ function ClosureConfigPageContent() {
       tipo: 'extra',
       titulo: 'Extras',
       descripcion: 'Extras que se suman a la venta (Extra Carne, Extra Not Burger, etc.)',
-      items: configItems?.filter((i) => i.tipo === 'extra') || [],
+      items: configItems?.filter((i) => i.type === 'extra') || [],
     },
     {
       tipo: 'app_delivery',
