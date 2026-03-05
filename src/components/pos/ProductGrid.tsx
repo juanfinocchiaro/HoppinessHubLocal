@@ -16,7 +16,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 type ItemCarta = any;
 
 type MenuItemWithCategory = ItemCarta & {
-  menu_categorias: { id: string; nombre: string; orden: number | null } | null;
+  menu_categories: { id: string; nombre: string; orden: number | null } | null;
   rdo_categories: { code: string; name: string } | null;
 };
 
@@ -172,8 +172,8 @@ export function ProductGrid({
 
   const byCategory = useMemo(() => {
     const acc = allItems.reduce<Record<string, { items: GridItem[]; orden: number }>>((acc, item) => {
-      const cat = item.menu_categorias?.nombre ?? 'Sin categoría';
-      const orden = item.menu_categorias?.orden ?? 999;
+      const cat = item.menu_categories?.nombre ?? 'Sin categoría';
+      const orden = item.menu_categories?.orden ?? 999;
       if (!acc[cat]) acc[cat] = { items: [], orden };
       acc[cat].items.push(item);
       return acc;

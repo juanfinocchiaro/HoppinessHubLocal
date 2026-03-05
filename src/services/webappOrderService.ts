@@ -175,7 +175,7 @@ export function subscribeToChatMessages(
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'webapp_pedido_mensajes',
+        table: 'webapp_order_messages',
         filter: `pedido_id=eq.${pedidoId}`,
       },
       callback,

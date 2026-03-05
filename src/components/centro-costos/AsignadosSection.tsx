@@ -13,7 +13,7 @@ import { fromUntyped } from '@/lib/supabase-helpers';
 interface ItemCartaWithCategory {
   id: string;
   nombre: string;
-  menu_categorias?: { id: string; nombre: string; orden: number | null } | null;
+  menu_categories?: { id: string; nombre: string; orden: number | null } | null;
   [key: string]: any;
 }
 
@@ -42,9 +42,9 @@ export function AsignadosInline({ item }: { item: any }) {
                 className="flex items-center gap-2 text-sm border rounded-lg px-3 py-2"
               >
                 <span className="flex-1">{prod.nombre}</span>
-                {prod.menu_categorias && (
+                {prod.menu_categories && (
                   <Badge variant="outline" className="text-xs">
-                    {prod.menu_categorias.nombre}
+                    {prod.menu_categories.nombre}
                   </Badge>
                 )}
               </div>

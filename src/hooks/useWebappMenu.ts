@@ -42,9 +42,9 @@ export function useWebappMenuItems(branchId: string | undefined) {
       return visibleItems.map((item: Record<string, unknown>) => ({
         ...item,
         categoria_nombre:
-          (item.menu_categorias as Record<string, unknown> | null)?.nombre ?? null,
+          (item.menu_categories as Record<string, unknown> | null)?.nombre ?? null,
         categoria_orden:
-          (item.menu_categorias as Record<string, unknown> | null)?.orden ?? 999,
+          (item.menu_categories as Record<string, unknown> | null)?.orden ?? 999,
       })) as WebappMenuItem[];
     },
     enabled: !!branchId,

@@ -45,7 +45,7 @@ export function enrich(items: ItemCartaRow[]): EI[] {
     return {
       id: it.id,
       nombre: it.nombre,
-      cat: it.menu_categorias?.nombre || 'Sin categoría',
+      cat: it.menu_categories?.nombre || 'Sin categoría',
       catId: it.categoria_carta_id || '_none',
       costo: c,
       precio: p,

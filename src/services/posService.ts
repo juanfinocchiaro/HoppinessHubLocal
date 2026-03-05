@@ -689,7 +689,7 @@ export async function rejectWebappOrder(orderId: string) {
 // ─── Item Extras / Removibles Prefetch ───
 
 export async function fetchItemExtraAssignments(itemId: string) {
-  const { data: asignaciones } = await fromUntyped('item_extra_asignaciones')
+  const { data: asignaciones } = await fromUntyped('extra_assignments')
     .select('extra_id')
     .eq('item_carta_id', itemId);
   if (asignaciones && (asignaciones as any[]).length > 0) {
@@ -725,7 +725,7 @@ export async function fetchItemExtraAssignments(itemId: string) {
 }
 
 export async function fetchItemRemovibles(itemId: string) {
-  const { data } = await fromUntyped('item_removibles')
+  const { data } = await fromUntyped('removable_items')
     .select('*, supplies:supplies(id, nombre), recipes:recipes(id, nombre)')
     .eq('item_carta_id', itemId)
     .eq('is_active', true);
@@ -823,7 +823,7 @@ export async function fetchShiftAnalysisOrders(branchId: string, since: string) 
 // ─── Order Chat ───
 
 export async function fetchOrderChatMessages(pedidoId: string) {
-  const { data, error } = await fromUntyped('webapp_pedido_mensajes')
+  const { data, error } = await fromUntyped('webapp_order_messages')
     .select('id, sender_type, sender_nombre, mensaje, leido, created_at')
     .eq('pedido_id', pedidoId)
     .order('created_at', { ascending: true });
@@ -832,13 +832,13 @@ export async function fetchOrderChatMessages(pedidoId: string) {
 }
 
 export async function insertOrderChatMessage(message: Record<string, unknown>) {
-  const { error } = await fromUntyped('webapp_pedido_mensajes')
+  const { error } = await fromUntyped('webapp_order_messages')
     .insert(message as never);
   if (error) throw error;
 }
 
 export async function markChatMessagesRead(pedidoId: string) {
-  await fromUntyped('webapp_pedido_mensajes')
+  await fromUntyped('webapp_order_messages')
     .update({ leido: true } as never)
     .eq('pedido_id', pedidoId)
     .eq('sender_type', 'cliente')
@@ -853,7 +853,7 @@ export function subscribeToChatMessages(pedidoId: string, callback: () => void) 
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'webapp_pedido_mensajes',
+        table: 'webapp_order_messages',
         filter: `pedido_id=eq.${pedidoId}`,
       },
       callback,

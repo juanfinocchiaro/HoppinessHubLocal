@@ -31,9 +31,9 @@ export function useBranchWebappAvailability(branchId: string | undefined) {
   return useQuery({
     queryKey: ['branch-webapp-availability', branchId],
     queryFn: async () => {
-      const { data: items, error: itemsErr } = await fromUntyped('items_carta')
+      const { data: items, error: itemsErr } = await fromUntyped('menu_items')
         .select(
-          'id, nombre, tipo, orden, disponible_webapp, menu_categorias:categoria_carta_id(nombre, orden)',
+          'id, nombre, tipo, orden, disponible_webapp, menu_categories:categoria_carta_id(nombre, orden)',
         )
         .eq('is_active', true)
         .is('deleted_at', null)
@@ -54,8 +54,8 @@ export function useBranchWebappAvailability(branchId: string | undefined) {
           return {
             itemId: item.id,
             nombre: item.nombre,
-            categoriaNombre: item.menu_categorias?.nombre ?? 'Sin categoría',
-            categoriaOrden: item.menu_categorias?.orden ?? 999,
+            categoriaNombre: item.menu_categories?.nombre ?? 'Sin categoría',
+            categoriaOrden: item.menu_categories?.orden ?? 999,
             productoOrden: item.orden ?? 999,
             marcaDisponibleWebapp: item.disponible_webapp !== false,
             localDisponibleWebapp: (av as any)?.available_webapp ?? true,

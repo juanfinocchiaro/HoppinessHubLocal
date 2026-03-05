@@ -241,7 +241,7 @@ export async function uploadFacturaPdf(facturaId: string, file: File) {
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
 
-  const { error: dbError } = await fromUntyped('facturas_proveedores')
+  const { error: dbError } = await fromUntyped('supplier_invoices')
     .update({ factura_pdf_url: urlData.publicUrl })
     .eq('id', facturaId);
   if (dbError) throw dbError;

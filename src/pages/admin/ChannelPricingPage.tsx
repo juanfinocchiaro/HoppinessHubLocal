@@ -98,11 +98,11 @@ export default function ChannelPricingPage() {
       : menuItems.filter(
           (i) =>
             i.nombre.toLowerCase().includes(q) ||
-            (i as any).menu_categorias?.nombre?.toLowerCase().includes(q),
+            (i as any).menu_categories?.nombre?.toLowerCase().includes(q),
         );
     return [...items].sort((a, b) => {
-      const catA = (a as any).menu_categorias?.orden ?? 999;
-      const catB = (b as any).menu_categorias?.orden ?? 999;
+      const catA = (a as any).menu_categories?.orden ?? 999;
+      const catB = (b as any).menu_categories?.orden ?? 999;
       if (catA !== catB) return catA - catB;
       return ((a as any).orden ?? 999) - ((b as any).orden ?? 999);
     });
@@ -111,8 +111,8 @@ export default function ChannelPricingPage() {
   const byCategory = useMemo(() => {
     const acc: Record<string, { items: typeof sortedItems; orden: number }> = {};
     for (const item of sortedItems) {
-      const cat = (item as any).menu_categorias?.nombre ?? 'Sin categoría';
-      const orden = (item as any).menu_categorias?.orden ?? 999;
+      const cat = (item as any).menu_categories?.nombre ?? 'Sin categoría';
+      const orden = (item as any).menu_categories?.orden ?? 999;
       if (!acc[cat]) acc[cat] = { items: [], orden };
       acc[cat].items.push(item);
     }

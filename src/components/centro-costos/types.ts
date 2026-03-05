@@ -3,7 +3,7 @@ import type { useItemCartaMutations } from '@/hooks/useItemsCarta';
 import type { useGruposOpcionalesMutations } from '@/hooks/useGruposOpcionales';
 
 export type ItemCartaRow = any & {
-  menu_categorias: { id: string; nombre: string; orden: number | null } | null;
+  menu_categories: { id: string; nombre: string; orden: number | null } | null;
   rdo_categories: { code: string; name: string } | null;
 };
 

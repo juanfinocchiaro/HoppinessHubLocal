@@ -3,7 +3,7 @@ import { fromUntyped } from '@/lib/supabase-helpers';
 // ── Promociones ─────────────────────────────────────────────────────
 
 export async function fetchPromociones() {
-  const { data, error } = await fromUntyped('promociones')
+  const { data, error } = await fromUntyped('promotions')
     .select('*')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
@@ -12,7 +12,7 @@ export async function fetchPromociones() {
 }
 
 export async function fetchActivePromociones() {
-  const { data, error } = await fromUntyped('promociones')
+  const { data, error } = await fromUntyped('promotions')
     .select('*')
     .eq('activa', true)
     .is('deleted_at', null);
@@ -21,23 +21,23 @@ export async function fetchActivePromociones() {
 }
 
 export async function fetchPromocionItemsWithCarta(promoId: string) {
-  const { data, error } = await fromUntyped('promocion_items')
-    .select('*, items_carta!inner(nombre, imagen_url, precio_base)')
+  const { data, error } = await fromUntyped('promotion_items')
+    .select('*, menu_items!inner(nombre, imagen_url, precio_base)')
     .eq('promocion_id', promoId);
   if (error) throw error;
   return data || [];
 }
 
 export async function fetchPromoItemsByPromoIds(promoIds: string[]) {
-  const { data, error } = await fromUntyped('promocion_items')
-    .select('*, items_carta!inner(nombre, imagen_url, precio_base)')
+  const { data, error } = await fromUntyped('promotion_items')
+    .select('*, menu_items!inner(nombre, imagen_url, precio_base)')
     .in('promocion_id', promoIds);
   if (error) throw error;
   return data || [];
 }
 
 export async function fetchPreconfigExtras(promoItemIds: string[]) {
-  const { data, error } = await fromUntyped('promocion_item_extras')
+  const { data, error } = await fromUntyped('promotion_item_extras')
     .select('promocion_item_id, extra_item_carta_id, cantidad')
     .in('promocion_item_id', promoItemIds);
   if (error) throw error;
@@ -56,7 +56,7 @@ export async function createPromocion(
   payload: Record<string, unknown>,
   userId?: string,
 ) {
-  const { data, error } = await fromUntyped('promociones')
+  const { data, error } = await fromUntyped('promotions')
     .insert({ ...payload, created_by: userId })
     .select()
     .single();
@@ -65,21 +65,21 @@ export async function createPromocion(
 }
 
 export async function updatePromocion(id: string, payload: Record<string, unknown>) {
-  const { error } = await fromUntyped('promociones')
+  const { error } = await fromUntyped('promotions')
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function deletePromocionItems(promoId: string) {
-  await fromUntyped('promocion_items').delete().eq('promocion_id', promoId);
+  await fromUntyped('promotion_items').delete().eq('promocion_id', promoId);
 }
 
 export async function insertPromocionItems(
   promoId: string,
   items: { item_carta_id: string; precio_promo: number }[],
 ) {
-  const { data, error } = await fromUntyped('promocion_items')
+  const { data, error } = await fromUntyped('promotion_items')
     .insert(
       items.map((i) => ({
         item_carta_id: i.item_carta_id,
@@ -96,19 +96,19 @@ export async function insertPreconfigExtras(
   rows: { promocion_item_id: string; extra_item_carta_id: string; cantidad: number }[],
 ) {
   if (rows.length === 0) return;
-  const { error } = await fromUntyped('promocion_item_extras').insert(rows);
+  const { error } = await fromUntyped('promotion_item_extras').insert(rows);
   if (error) throw error;
 }
 
 export async function togglePromocionActive(id: string, activa: boolean) {
-  const { error } = await fromUntyped('promociones')
+  const { error } = await fromUntyped('promotions')
     .update({ activa, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeletePromocion(id: string) {
-  const { error } = await fromUntyped('promociones')
+  const { error } = await fromUntyped('promotions')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -117,7 +117,7 @@ export async function softDeletePromocion(id: string) {
 // ── Códigos Descuento ───────────────────────────────────────────────
 
 export async function fetchCodigosDescuento() {
-  const { data, error } = await fromUntyped('codigos_descuento')
+  const { data, error } = await fromUntyped('discount_codes')
     .select('*')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
@@ -126,7 +126,7 @@ export async function fetchCodigosDescuento() {
 }
 
 export async function findCodigoDescuento(codigo: string) {
-  const { data, error } = await fromUntyped('codigos_descuento')
+  const { data, error } = await fromUntyped('discount_codes')
     .select('*')
     .ilike('codigo', codigo.trim())
     .eq('activo', true)
@@ -137,7 +137,7 @@ export async function findCodigoDescuento(codigo: string) {
 }
 
 export async function countCodigoUsageByUser(codigoId: string, userId: string) {
-  const { count } = await fromUntyped('codigos_descuento_usos')
+  const { count } = await fromUntyped('discount_code_uses')
     .select('id', { count: 'exact', head: true })
     .eq('codigo_id', codigoId)
     .eq('user_id', userId);
@@ -150,19 +150,19 @@ export async function registerCodeUsage(params: {
   pedidoId?: string;
   montoDescontado: number;
 }) {
-  await fromUntyped('codigos_descuento_usos').insert({
+  await fromUntyped('discount_code_uses').insert({
     codigo_id: params.codigoId,
     user_id: params.userId || null,
     pedido_id: params.pedidoId || null,
     monto_descontado: params.montoDescontado,
   } as any);
 
-  const { data } = await fromUntyped('codigos_descuento')
+  const { data } = await fromUntyped('discount_codes')
     .select('usos_actuales')
     .eq('id', params.codigoId)
     .single();
   if (data) {
-    await fromUntyped('codigos_descuento')
+    await fromUntyped('discount_codes')
       .update({
         usos_actuales: ((data as any).usos_actuales as number) + 1,
       } as any)
@@ -174,7 +174,7 @@ export async function createCodigoDescuento(
   payload: Record<string, unknown>,
   userId?: string,
 ) {
-  const { data, error } = await fromUntyped('codigos_descuento')
+  const { data, error } = await fromUntyped('discount_codes')
     .insert({ ...payload, created_by: userId })
     .select()
     .single();
@@ -186,14 +186,14 @@ export async function updateCodigoDescuento(
   id: string,
   payload: Record<string, unknown>,
 ) {
-  const { error } = await fromUntyped('codigos_descuento')
+  const { error } = await fromUntyped('discount_codes')
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
 export async function softDeleteCodigoDescuento(id: string) {
-  const { error } = await fromUntyped('codigos_descuento')
+  const { error } = await fromUntyped('discount_codes')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
@@ -315,9 +315,9 @@ export async function fetchPromoDiscountItems(
     .select(
       'precio_unitario, precio_referencia, cantidad, subtotal, pedido_id, orders!inner(branch_id, created_at)',
     )
-    .gte('pedidos.created_at', startDate)
-    .lt('pedidos.created_at', endDate)
-    .eq('pedidos.branch_id', branchId);
+    .gte('orders.created_at', startDate)
+    .lt('orders.created_at', endDate)
+    .eq('orders.branch_id', branchId);
   if (error) throw error;
   return data || [];
 }
