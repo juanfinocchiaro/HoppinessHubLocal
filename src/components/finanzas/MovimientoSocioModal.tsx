@@ -19,7 +19,7 @@ import {
 import { getCurrentPeriodo } from '@/types/compra';
 import type { Tables } from '@/integrations/supabase/types';
 
-type Socio = Tables<'socios'>;
+type Socio = Tables<'partners'>;
 
 interface Props {
   open: boolean;

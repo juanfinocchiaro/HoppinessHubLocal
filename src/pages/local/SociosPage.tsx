@@ -19,7 +19,7 @@ import { MovimientoSocioModal } from '@/components/finanzas/MovimientoSocioModal
 import { EmptyState } from '@/components/ui/states';
 import type { Tables } from '@/integrations/supabase/types';
 
-type Socio = Tables<'socios'>;
+type Socio = Tables<'partners'>;
 
 export default function SociosPage() {
   const { branchId } = useParams<{ branchId: string }>();
