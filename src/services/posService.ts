@@ -138,7 +138,7 @@ export async function upsertStockActual(
   const { error } = await supabase
     .from('stock_actual')
     .upsert(
-      { branch_id: branchId, insumo_id: insumoId, quantity: cantidad, unidad },
+      { branch_id: branchId, insumo_id: insumoId, quantity: cantidad, unit: unidad },
       { onConflict: 'branch_id,insumo_id' },
     );
   if (error) throw error;
