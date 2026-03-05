@@ -304,7 +304,7 @@ export async function fetchRdoMovimientosByCategory(
 }
 
 export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: string) {
-  await fromUntyped('rdo_movimientos')
+  await fromUntyped('rdo_movements')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
     .eq('period', data.periodo)
