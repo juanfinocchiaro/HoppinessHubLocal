@@ -277,8 +277,7 @@ export async function fetchRdoUnifiedReport(
 // ── RDO Movimientos ─────────────────────────────────────────────────
 
 export async function fetchRdoMovimientos(branchId: string, periodo: string) {
-  const { data, error } = await supabase
-    .from('rdo_movimientos')
+  const { data, error } = await fromUntyped('rdo_movements')
     .select('*')
     .eq('branch_id', branchId)
     .eq('period', periodo)
@@ -293,8 +292,7 @@ export async function fetchRdoMovimientosByCategory(
   periodo: string,
   categoryCode: string,
 ) {
-  const { data, error } = await supabase
-    .from('rdo_movimientos')
+  const { data, error } = await fromUntyped('rdo_movements')
     .select('*')
     .eq('branch_id', branchId)
     .eq('period', periodo)
@@ -306,7 +304,7 @@ export async function fetchRdoMovimientosByCategory(
 }
 
 export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: string) {
-  await fromUntyped('rdo_movimientos')
+  await fromUntyped('rdo_movements')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
     .eq('period', data.periodo)
@@ -317,7 +315,7 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
 
   if (data.monto === 0) return null;
 
-  const { data: result, error } = await fromUntyped('rdo_movimientos')
+  const { data: result, error } = await fromUntyped('rdo_movements')
     .insert([
       {
         branch_id: data.branch_id,
@@ -785,7 +783,7 @@ export async function fetchFiscalBranchData(
     supabase.from('branches').select('name, address').eq('id', branchId).single(),
     supabase
       .from('afip_config')
-      .select('cuit, punto_venta, fiscal_address, business_name, activity_start_date')
+      .select('cuit, point_of_sale, fiscal_address, business_name, activity_start_date')
       .eq('branch_id', branchId)
       .single(),
   ]);
@@ -794,7 +792,7 @@ export async function fetchFiscalBranchData(
     name: branchRes.data.name,
     cuit: afipRes.data.cuit || '',
     address: afipRes.data.fiscal_address || branchRes.data.address || '',
-    punto_venta: afipRes.data.punto_venta || 0,
+    punto_venta: (afipRes.data as any).point_of_sale || 0,
     razon_social: afipRes.data.business_name || branchRes.data.name || '',
     iibb: afipRes.data.cuit || '',
     condicion_iva: 'IVA Responsable Inscripto',

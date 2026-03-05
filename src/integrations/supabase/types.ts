@@ -34,8 +34,8 @@ export type Database = {
           last_invoice_number_b: number | null
           last_invoice_number_c: number | null
           last_verification: string | null
+          point_of_sale: number | null
           private_key_enc: string | null
-          punto_venta: number | null
           updated_at: string
         }
         Insert: {
@@ -57,8 +57,8 @@ export type Database = {
           last_invoice_number_b?: number | null
           last_invoice_number_c?: number | null
           last_verification?: string | null
+          point_of_sale?: number | null
           private_key_enc?: string | null
-          punto_venta?: number | null
           updated_at?: string
         }
         Update: {
@@ -80,8 +80,8 @@ export type Database = {
           last_invoice_number_b?: number | null
           last_invoice_number_c?: number | null
           last_verification?: string | null
+          point_of_sale?: number | null
           private_key_enc?: string | null
-          punto_venta?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -805,14 +805,14 @@ export type Database = {
         Row: {
           amount: number
           branch_id: string
-          canon_liquidacion_id: string
+          canon_settlement_id: string
           created_at: string | null
           created_by: string | null
-          datos_pago: Json | null
           deleted_at: string | null
           id: string
           is_verified: boolean
           notes: string | null
+          payment_data: Json | null
           payment_date: string
           payment_method: string
           reference: string | null
@@ -823,14 +823,14 @@ export type Database = {
         Insert: {
           amount: number
           branch_id: string
-          canon_liquidacion_id: string
+          canon_settlement_id: string
           created_at?: string | null
           created_by?: string | null
-          datos_pago?: Json | null
           deleted_at?: string | null
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_data?: Json | null
           payment_date: string
           payment_method: string
           reference?: string | null
@@ -841,14 +841,14 @@ export type Database = {
         Update: {
           amount?: number
           branch_id?: string
-          canon_liquidacion_id?: string
+          canon_settlement_id?: string
           created_at?: string | null
           created_by?: string | null
-          datos_pago?: Json | null
           deleted_at?: string | null
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_data?: Json | null
           payment_date?: string
           payment_method?: string
           reference?: string | null
@@ -857,6 +857,13 @@ export type Database = {
           verified_notes?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "canon_payments_canon_settlement_id_fkey"
+            columns: ["canon_settlement_id"]
+            isOneToOne: false
+            referencedRelation: "canon_settlements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pagos_canon_branch_id_fkey"
             columns: ["branch_id"]
@@ -869,13 +876,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_canon_canon_liquidacion_id_fkey"
-            columns: ["canon_liquidacion_id"]
-            isOneToOne: false
-            referencedRelation: "canon_settlements"
             referencedColumns: ["id"]
           },
         ]
@@ -894,6 +894,7 @@ export type Database = {
           id: string
           marketing_amount: number
           marketing_percentage: number | null
+          monthly_sales_id: string | null
           notes: string | null
           online_total: number
           pending_balance: number | null
@@ -903,7 +904,6 @@ export type Database = {
           suggested_transfer_payment: number | null
           total_canon: number
           updated_at: string | null
-          ventas_id: string | null
         }
         Insert: {
           branch_id: string
@@ -918,6 +918,7 @@ export type Database = {
           id?: string
           marketing_amount: number
           marketing_percentage?: number | null
+          monthly_sales_id?: string | null
           notes?: string | null
           online_total: number
           pending_balance?: number | null
@@ -927,7 +928,6 @@ export type Database = {
           suggested_transfer_payment?: number | null
           total_canon: number
           updated_at?: string | null
-          ventas_id?: string | null
         }
         Update: {
           branch_id?: string
@@ -942,6 +942,7 @@ export type Database = {
           id?: string
           marketing_amount?: number
           marketing_percentage?: number | null
+          monthly_sales_id?: string | null
           notes?: string | null
           online_total?: number
           pending_balance?: number | null
@@ -951,7 +952,6 @@ export type Database = {
           suggested_transfer_payment?: number | null
           total_canon?: number
           updated_at?: string | null
-          ventas_id?: string | null
         }
         Relationships: [
           {
@@ -969,8 +969,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "canon_liquidaciones_ventas_id_fkey"
-            columns: ["ventas_id"]
+            foreignKeyName: "canon_settlements_monthly_sales_id_fkey"
+            columns: ["monthly_sales_id"]
             isOneToOne: false
             referencedRelation: "branch_monthly_sales"
             referencedColumns: ["id"]
@@ -2074,18 +2074,18 @@ export type Database = {
           code: string
           created_at: string | null
           created_by: string | null
+          current_uses: number
           deleted_at: string | null
           end_date: string
           id: string
           is_active: boolean
+          max_uses: number | null
           min_order_amount: number | null
+          single_use_per_user: boolean
           start_date: string
           type: string
           updated_at: string | null
-          uso_unico_por_usuario: boolean
-          usos_actuales: number
-          usos_maximos: number | null
-          valor: number
+          value: number
         }
         Insert: {
           branch_ids?: string[] | null
@@ -2093,18 +2093,18 @@ export type Database = {
           code: string
           created_at?: string | null
           created_by?: string | null
+          current_uses?: number
           deleted_at?: string | null
           end_date?: string
           id?: string
           is_active?: boolean
+          max_uses?: number | null
           min_order_amount?: number | null
+          single_use_per_user?: boolean
           start_date?: string
           type: string
           updated_at?: string | null
-          uso_unico_por_usuario?: boolean
-          usos_actuales?: number
-          usos_maximos?: number | null
-          valor?: number
+          value?: number
         }
         Update: {
           branch_ids?: string[] | null
@@ -2112,18 +2112,18 @@ export type Database = {
           code?: string
           created_at?: string | null
           created_by?: string | null
+          current_uses?: number
           deleted_at?: string | null
           end_date?: string
           id?: string
           is_active?: boolean
+          max_uses?: number | null
           min_order_amount?: number | null
+          single_use_per_user?: boolean
           start_date?: string
           type?: string
           updated_at?: string | null
-          uso_unico_por_usuario?: boolean
-          usos_actuales?: number
-          usos_maximos?: number | null
-          valor?: number
+          value?: number
         }
         Relationships: []
       }
@@ -2436,11 +2436,10 @@ export type Database = {
       }
       expenses: {
         Row: {
-          adjuntos: Json | null
-          afecta_caja: boolean | null
+          affects_register: boolean | null
           amount: number
+          attachments: Json | null
           branch_id: string
-          categoria_principal: string
           concept: string
           created_at: string | null
           created_by: string | null
@@ -2448,8 +2447,8 @@ export type Database = {
           deleted_at: string | null
           details: Json | null
           due_date: string | null
-          gasto_relacionado_id: string | null
           id: string
+          main_category: string
           notes: string | null
           payment_date: string | null
           payment_method: string | null
@@ -2459,18 +2458,18 @@ export type Database = {
           proveedor_id: string | null
           rdo_category_code: string | null
           rdo_section: string | null
+          related_expense_id: string | null
           shift_id: string | null
           status: string | null
-          subcategoria: string | null
+          subcategory: string | null
           transfer_cost: number | null
           updated_at: string | null
         }
         Insert: {
-          adjuntos?: Json | null
-          afecta_caja?: boolean | null
+          affects_register?: boolean | null
           amount: number
+          attachments?: Json | null
           branch_id: string
-          categoria_principal: string
           concept: string
           created_at?: string | null
           created_by?: string | null
@@ -2478,8 +2477,8 @@ export type Database = {
           deleted_at?: string | null
           details?: Json | null
           due_date?: string | null
-          gasto_relacionado_id?: string | null
           id?: string
+          main_category: string
           notes?: string | null
           payment_date?: string | null
           payment_method?: string | null
@@ -2489,18 +2488,18 @@ export type Database = {
           proveedor_id?: string | null
           rdo_category_code?: string | null
           rdo_section?: string | null
+          related_expense_id?: string | null
           shift_id?: string | null
           status?: string | null
-          subcategoria?: string | null
+          subcategory?: string | null
           transfer_cost?: number | null
           updated_at?: string | null
         }
         Update: {
-          adjuntos?: Json | null
-          afecta_caja?: boolean | null
+          affects_register?: boolean | null
           amount?: number
+          attachments?: Json | null
           branch_id?: string
-          categoria_principal?: string
           concept?: string
           created_at?: string | null
           created_by?: string | null
@@ -2508,8 +2507,8 @@ export type Database = {
           deleted_at?: string | null
           details?: Json | null
           due_date?: string | null
-          gasto_relacionado_id?: string | null
           id?: string
+          main_category?: string
           notes?: string | null
           payment_date?: string | null
           payment_method?: string | null
@@ -2519,9 +2518,10 @@ export type Database = {
           proveedor_id?: string | null
           rdo_category_code?: string | null
           rdo_section?: string | null
+          related_expense_id?: string | null
           shift_id?: string | null
           status?: string | null
-          subcategoria?: string | null
+          subcategory?: string | null
           transfer_cost?: number | null
           updated_at?: string | null
         }
@@ -2542,7 +2542,7 @@ export type Database = {
           },
           {
             foreignKeyName: "gastos_gasto_relacionado_id_fkey"
-            columns: ["gasto_relacionado_id"]
+            columns: ["related_expense_id"]
             isOneToOne: false
             referencedRelation: "expenses"
             referencedColumns: ["id"]
@@ -2969,17 +2969,17 @@ export type Database = {
           branch_id: string
           created_at: string
           created_by: string | null
-          cuotas_pagadas: number | null
-          cuotas_total: number | null
           date: string
           deleted_at: string | null
           description: string
           id: string
+          installments_paid: number | null
           investment_type: string
           notes: string | null
           period: string
           status: string
           total_amount: number
+          total_installments: number | null
           updated_at: string
           vida_util_meses: number | null
         }
@@ -2987,17 +2987,17 @@ export type Database = {
           branch_id: string
           created_at?: string
           created_by?: string | null
-          cuotas_pagadas?: number | null
-          cuotas_total?: number | null
           date: string
           deleted_at?: string | null
           description: string
           id?: string
+          installments_paid?: number | null
           investment_type: string
           notes?: string | null
           period: string
           status?: string
           total_amount: number
+          total_installments?: number | null
           updated_at?: string
           vida_util_meses?: number | null
         }
@@ -3005,17 +3005,17 @@ export type Database = {
           branch_id?: string
           created_at?: string
           created_by?: string | null
-          cuotas_pagadas?: number | null
-          cuotas_total?: number | null
           date?: string
           deleted_at?: string | null
           description?: string
           id?: string
+          installments_paid?: number | null
           investment_type?: string
           notes?: string | null
           period?: string
           status?: string
           total_amount?: number
+          total_installments?: number | null
           updated_at?: string
           vida_util_meses?: number | null
         }
@@ -3038,7 +3038,7 @@ export type Database = {
       }
       invoice_items: {
         Row: {
-          afecta_costo_base: boolean | null
+          affects_base_cost: boolean | null
           alicuota_iva: number | null
           created_at: string | null
           descuento_porcentaje: number | null
@@ -3061,7 +3061,7 @@ export type Database = {
           vat_amount: number | null
         }
         Insert: {
-          afecta_costo_base?: boolean | null
+          affects_base_cost?: boolean | null
           alicuota_iva?: number | null
           created_at?: string | null
           descuento_porcentaje?: number | null
@@ -3084,7 +3084,7 @@ export type Database = {
           vat_amount?: number | null
         }
         Update: {
-          afecta_costo_base?: boolean | null
+          affects_base_cost?: boolean | null
           alicuota_iva?: number | null
           created_at?: string | null
           descuento_porcentaje?: number | null
@@ -3204,7 +3204,7 @@ export type Database = {
           moneda: string
           neto: number
           pedido_id: string | null
-          punto_venta: number
+          point_of_sale: number
           receipt_number: number
           receipt_type: string
           receptor_condicion_iva: string | null
@@ -3228,7 +3228,7 @@ export type Database = {
           moneda?: string
           neto?: number
           pedido_id?: string | null
-          punto_venta: number
+          point_of_sale: number
           receipt_number: number
           receipt_type: string
           receptor_condicion_iva?: string | null
@@ -3252,7 +3252,7 @@ export type Database = {
           moneda?: string
           neto?: number
           pedido_id?: string | null
-          punto_venta?: number
+          point_of_sale?: number
           receipt_number?: number
           receipt_type?: string
           receptor_condicion_iva?: string | null
@@ -5782,7 +5782,7 @@ export type Database = {
           type: string
           updated_at: string | null
           user_type: string
-          valor: number
+          value: number
         }
         Insert: {
           aplica_a?: string
@@ -5807,7 +5807,7 @@ export type Database = {
           type: string
           updated_at?: string | null
           user_type?: string
-          valor?: number
+          value?: number
         }
         Update: {
           aplica_a?: string
@@ -5832,7 +5832,7 @@ export type Database = {
           type?: string
           updated_at?: string | null
           user_type?: string
-          valor?: number
+          value?: number
         }
         Relationships: []
       }
@@ -5907,7 +5907,7 @@ export type Database = {
           },
         ]
       }
-      rdo_movimientos: {
+      rdo_movements: {
         Row: {
           amount: number
           branch_id: string
@@ -6107,55 +6107,55 @@ export type Database = {
       recipes: {
         Row: {
           calculated_cost: number | null
+          can_be_extra: boolean
           categoria_preparacion_id: string | null
           costing_method: string | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
           extra_price: number | null
-          fc_objetivo_extra: number | null
+          extra_target_fc: number | null
           id: string
           is_active: boolean | null
           is_interchangeable: boolean | null
           manual_cost: number | null
           name: string
-          puede_ser_extra: boolean
           type: string
           updated_at: string | null
         }
         Insert: {
           calculated_cost?: number | null
+          can_be_extra?: boolean
           categoria_preparacion_id?: string | null
           costing_method?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           manual_cost?: number | null
           name: string
-          puede_ser_extra?: boolean
           type?: string
           updated_at?: string | null
         }
         Update: {
           calculated_cost?: number | null
+          can_be_extra?: boolean
           categoria_preparacion_id?: string | null
           costing_method?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           manual_cost?: number | null
           name?: string
-          puede_ser_extra?: boolean
           type?: string
           updated_at?: string | null
         }
@@ -6174,10 +6174,10 @@ export type Database = {
           apertura_at: string
           branch_id: string
           cajero_id: string
+          cash_counted: number | null
           cierre_at: string | null
           diferencia: number | null
           diferencia_motivo: string | null
-          efectivo_contado: number | null
           fondo_apertura: number
           id: string
           retiros_efectivo: number | null
@@ -6193,10 +6193,10 @@ export type Database = {
           apertura_at?: string
           branch_id: string
           cajero_id: string
+          cash_counted?: number | null
           cierre_at?: string | null
           diferencia?: number | null
           diferencia_motivo?: string | null
-          efectivo_contado?: number | null
           fondo_apertura: number
           id?: string
           retiros_efectivo?: number | null
@@ -6212,10 +6212,10 @@ export type Database = {
           apertura_at?: string
           branch_id?: string
           cajero_id?: string
+          cash_counted?: number | null
           cierre_at?: string | null
           diferencia?: number | null
           diferencia_motivo?: string | null
-          efectivo_contado?: number | null
           fondo_apertura?: number
           id?: string
           retiros_efectivo?: number | null
@@ -6670,7 +6670,7 @@ export type Database = {
           periodicidad: string | null
           proveedor_id: string | null
           rdo_category_code: string | null
-          subcategoria: string | null
+          subcategory: string | null
           type: string
           updated_at: string | null
         }
@@ -6688,7 +6688,7 @@ export type Database = {
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
-          subcategoria?: string | null
+          subcategory?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -6706,7 +6706,7 @@ export type Database = {
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
-          subcategoria?: string | null
+          subcategory?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -7218,14 +7218,14 @@ export type Database = {
           },
         ]
       }
-      stock_movimientos: {
+      stock_movements: {
         Row: {
           branch_id: string
           created_at: string | null
           created_by: string | null
           id: string
           insumo_id: string
-          nota: string | null
+          note: string | null
           pedido_id: string | null
           quantity: number
           quantity_after: number
@@ -7240,7 +7240,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           insumo_id: string
-          nota?: string | null
+          note?: string | null
           pedido_id?: string | null
           quantity: number
           quantity_after: number
@@ -7255,7 +7255,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           insumo_id?: string
-          nota?: string | null
+          note?: string | null
           pedido_id?: string | null
           quantity?: number
           quantity_after?: number
@@ -7527,12 +7527,12 @@ export type Database = {
           branch_id: string
           created_at: string | null
           created_by: string | null
-          datos_pago: Json | null
           deleted_at: string | null
           id: string
           invoice_id: string | null
           is_verified: boolean
           notes: string | null
+          payment_data: Json | null
           payment_date: string
           payment_due_date: string | null
           payment_method: string
@@ -7547,12 +7547,12 @@ export type Database = {
           branch_id: string
           created_at?: string | null
           created_by?: string | null
-          datos_pago?: Json | null
           deleted_at?: string | null
           id?: string
           invoice_id?: string | null
           is_verified?: boolean
           notes?: string | null
+          payment_data?: Json | null
           payment_date: string
           payment_due_date?: string | null
           payment_method: string
@@ -7567,12 +7567,12 @@ export type Database = {
           branch_id?: string
           created_at?: string | null
           created_by?: string | null
-          datos_pago?: Json | null
           deleted_at?: string | null
           id?: string
           invoice_id?: string | null
           is_verified?: boolean
           notes?: string | null
+          payment_data?: Json | null
           payment_date?: string
           payment_due_date?: string | null
           payment_method?: string
@@ -7742,6 +7742,7 @@ export type Database = {
         Row: {
           base_unit: string
           base_unit_cost: number | null
+          can_be_extra: boolean
           categoria_id: string | null
           control_reason: string | null
           creado_por: string | null
@@ -7751,7 +7752,7 @@ export type Database = {
           description: string | null
           especificacion: Json | null
           extra_price: number | null
-          fc_objetivo_extra: number | null
+          extra_target_fc: number | null
           id: string
           is_active: boolean | null
           item_type: string
@@ -7763,7 +7764,6 @@ export type Database = {
           pl_category: string | null
           proveedor_obligatorio_id: string | null
           proveedor_sugerido_id: string | null
-          puede_ser_extra: boolean
           purchase_unit: string | null
           purchase_unit_content: number | null
           purchase_unit_price: number | null
@@ -7776,6 +7776,7 @@ export type Database = {
         Insert: {
           base_unit: string
           base_unit_cost?: number | null
+          can_be_extra?: boolean
           categoria_id?: string | null
           control_reason?: string | null
           creado_por?: string | null
@@ -7785,7 +7786,7 @@ export type Database = {
           description?: string | null
           especificacion?: Json | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           item_type?: string
@@ -7797,7 +7798,6 @@ export type Database = {
           pl_category?: string | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
           purchase_unit?: string | null
           purchase_unit_content?: number | null
           purchase_unit_price?: number | null
@@ -7810,6 +7810,7 @@ export type Database = {
         Update: {
           base_unit?: string
           base_unit_cost?: number | null
+          can_be_extra?: boolean
           categoria_id?: string | null
           control_reason?: string | null
           creado_por?: string | null
@@ -7819,7 +7820,7 @@ export type Database = {
           description?: string | null
           especificacion?: Json | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           item_type?: string
@@ -7831,7 +7832,6 @@ export type Database = {
           pl_category?: string | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
           purchase_unit?: string | null
           purchase_unit_content?: number | null
           purchase_unit_price?: number | null

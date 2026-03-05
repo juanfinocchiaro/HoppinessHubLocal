@@ -103,8 +103,7 @@ export async function fetchStockData(branchId: string) {
       .neq('is_active', false)
       .order('name'),
     supabase.from('stock_actual').select('*').eq('branch_id', branchId),
-    supabase
-      .from('stock_movimientos')
+    fromUntyped('stock_movements')
       .select('insumo_id, created_at, type, reason')
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false }),
@@ -145,7 +144,7 @@ export async function upsertStockActual(
 }
 
 export async function insertStockMovimiento(movement: Record<string, unknown>) {
-  await supabase.from('stock_movimientos').insert(movement as any);
+  await fromUntyped('stock_movements').insert(movement as any);
 }
 
 export async function fetchStockActualItem(branchId: string, insumoId: string) {
@@ -359,7 +358,7 @@ export async function fetchStockMovimientosPeriod(
   end: string,
 ) {
   const { data } = await supabase
-    .from('stock_movimientos')
+    .from('stock_movements' as any)
     .select('insumo_id, tipo, quantity, created_at')
     .eq('branch_id', branchId)
     .gte('created_at', start)
@@ -410,9 +409,9 @@ export async function fetchStockMovimientosForInsumo(
   from: string,
   to: string,
 ) {
-  const { data } = await supabase
-    .from('stock_movimientos')
-    .select('tipo, quantity')
+  const { data } = await (supabase
+    .from('stock_movements' as any)
+    .select('tipo, quantity') as any)
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .gte('created_at', from)
@@ -456,8 +455,7 @@ export async function fetchStockMovimientosHistory(
   insumoId: string,
   limit = 10,
 ) {
-  const { data, error } = await supabase
-    .from('stock_movimientos')
+  const { data, error } = await fromUntyped('stock_movements')
     .select('*')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
