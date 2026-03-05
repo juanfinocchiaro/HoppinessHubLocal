@@ -87,9 +87,9 @@ function toClosureConfigItem(row: any): ClosureConfigItem {
     id: row.id,
     tipo: row.tipo as ConfigTipo,
     clave: row.clave,
-    etiqueta: row.etiqueta,
+    label: row.label ?? row.etiqueta,
     categoria_padre: row.categoria_padre,
-    orden: row.orden,
+    sort_order: row.sort_order ?? row.orden,
     is_active: row.is_active,
   };
 }
