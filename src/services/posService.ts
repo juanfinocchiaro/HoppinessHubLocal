@@ -409,9 +409,9 @@ export async function fetchStockMovimientosForInsumo(
   from: string,
   to: string,
 ) {
-  const { data } = await supabase
-    .from('stock_movimientos')
-    .select('tipo, quantity')
+  const { data } = await (supabase
+    .from('stock_movements' as any)
+    .select('tipo, quantity') as any)
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .gte('created_at', from)
