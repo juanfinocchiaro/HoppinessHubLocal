@@ -189,19 +189,19 @@ export type Database = {
         Row: {
           branch_id: string
           config_id: string
-          habilitado: boolean | null
+          enabled: boolean | null
           id: string
         }
         Insert: {
           branch_id: string
           config_id: string
-          habilitado?: boolean | null
+          enabled?: boolean | null
           id?: string
         }
         Update: {
           branch_id?: string
           config_id?: string
-          habilitado?: boolean | null
+          enabled?: boolean | null
           id?: string
         }
         Relationships: [
@@ -2078,7 +2078,7 @@ export type Database = {
           end_date: string
           id: string
           is_active: boolean
-          monto_minimo_pedido: number | null
+          min_order_amount: number | null
           start_date: string
           type: string
           updated_at: string | null
@@ -2097,7 +2097,7 @@ export type Database = {
           end_date?: string
           id?: string
           is_active?: boolean
-          monto_minimo_pedido?: number | null
+          min_order_amount?: number | null
           start_date?: string
           type: string
           updated_at?: string | null
@@ -2116,7 +2116,7 @@ export type Database = {
           end_date?: string
           id?: string
           is_active?: boolean
-          monto_minimo_pedido?: number | null
+          min_order_amount?: number | null
           start_date?: string
           type?: string
           updated_at?: string | null
@@ -2551,7 +2551,7 @@ export type Database = {
             foreignKeyName: "gastos_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -3118,7 +3118,7 @@ export type Database = {
             foreignKeyName: "items_factura_factura_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
+            referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
@@ -3168,7 +3168,7 @@ export type Database = {
             foreignKeyName: "pago_factura_factura_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
+            referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
@@ -4672,7 +4672,7 @@ export type Database = {
           promised_time: string | null
           propina: number
           ready_at_time: string | null
-          requiere_factura: boolean | null
+          requires_invoice: boolean | null
           service_type: string | null
           status: string
           subtotal: number
@@ -4722,7 +4722,7 @@ export type Database = {
           promised_time?: string | null
           propina?: number
           ready_at_time?: string | null
-          requiere_factura?: boolean | null
+          requires_invoice?: boolean | null
           service_type?: string | null
           status?: string
           subtotal: number
@@ -4772,7 +4772,7 @@ export type Database = {
           promised_time?: string | null
           propina?: number
           ready_at_time?: string | null
-          requiere_factura?: boolean | null
+          requires_invoice?: boolean | null
           service_type?: string | null
           status?: string
           subtotal?: number
@@ -4928,7 +4928,7 @@ export type Database = {
             foreignKeyName: "movimientos_socio_socio_id_fkey"
             columns: ["socio_id"]
             isOneToOne: false
-            referencedRelation: "balance_socios"
+            referencedRelation: "partner_balance"
             referencedColumns: ["socio_id"]
           },
           {
@@ -6715,7 +6715,7 @@ export type Database = {
             foreignKeyName: "conceptos_servicio_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7283,7 +7283,7 @@ export type Database = {
             foreignKeyName: "stock_movimientos_factura_proveedor_id_fkey"
             columns: ["supplier_invoice_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
+            referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
@@ -7369,7 +7369,7 @@ export type Database = {
             foreignKeyName: "proveedor_condiciones_local_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7394,6 +7394,7 @@ export type Database = {
           imp_internos: number | null
           invoice_date: string
           invoice_number: string
+          invoice_total: number | null
           invoice_type: string | null
           invoice_url: string | null
           iva: number | null
@@ -7414,7 +7415,6 @@ export type Database = {
           subtotal_neto: number | null
           total: number
           total_descuentos: number | null
-          total_factura: number | null
           type: string | null
           updated_at: string | null
         }
@@ -7430,6 +7430,7 @@ export type Database = {
           imp_internos?: number | null
           invoice_date: string
           invoice_number: string
+          invoice_total?: number | null
           invoice_type?: string | null
           invoice_url?: string | null
           iva?: number | null
@@ -7450,7 +7451,6 @@ export type Database = {
           subtotal_neto?: number | null
           total?: number
           total_descuentos?: number | null
-          total_factura?: number | null
           type?: string | null
           updated_at?: string | null
         }
@@ -7466,6 +7466,7 @@ export type Database = {
           imp_internos?: number | null
           invoice_date?: string
           invoice_number?: string
+          invoice_total?: number | null
           invoice_type?: string | null
           invoice_url?: string | null
           iva?: number | null
@@ -7486,7 +7487,6 @@ export type Database = {
           subtotal_neto?: number | null
           total?: number
           total_descuentos?: number | null
-          total_factura?: number | null
           type?: string | null
           updated_at?: string | null
         }
@@ -7509,7 +7509,7 @@ export type Database = {
             foreignKeyName: "facturas_proveedores_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7601,7 +7601,7 @@ export type Database = {
             foreignKeyName: "pagos_proveedores_factura_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
+            referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
@@ -7615,7 +7615,7 @@ export type Database = {
             foreignKeyName: "pagos_proveedores_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7637,7 +7637,7 @@ export type Database = {
           branch_id: string | null
           business_name: string
           cbu: string | null
-          contacto: string | null
+          contact: string | null
           created_at: string | null
           created_by: string | null
           cuit: string | null
@@ -7668,7 +7668,7 @@ export type Database = {
           branch_id?: string | null
           business_name: string
           cbu?: string | null
-          contacto?: string | null
+          contact?: string | null
           created_at?: string | null
           created_by?: string | null
           cuit?: string | null
@@ -7699,7 +7699,7 @@ export type Database = {
           branch_id?: string | null
           business_name?: string
           cbu?: string | null
-          contacto?: string | null
+          contact?: string | null
           created_at?: string | null
           created_by?: string | null
           cuit?: string | null
@@ -7853,7 +7853,7 @@ export type Database = {
             foreignKeyName: "insumos_proveedor_obligatorio_id_fkey"
             columns: ["proveedor_obligatorio_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7867,7 +7867,7 @@ export type Database = {
             foreignKeyName: "insumos_proveedor_sugerido_id_fkey"
             columns: ["proveedor_sugerido_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_proveedores"
+            referencedRelation: "supplier_current_account"
             referencedColumns: ["proveedor_id"]
           },
           {
@@ -7972,7 +7972,7 @@ export type Database = {
             foreignKeyName: "insumos_costos_historial_factura_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
-            referencedRelation: "cuenta_corriente_marca"
+            referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
@@ -8410,38 +8410,6 @@ export type Database = {
       }
     }
     Views: {
-      balance_socios: {
-        Row: {
-          branch_id: string | null
-          branch_name: string | null
-          current_balance: number | null
-          movement_count: number | null
-          name: string | null
-          ownership_percentage: number | null
-          socio_id: string | null
-          total_aportes: number | null
-          total_devoluciones: number | null
-          total_prestamos_dados: number | null
-          total_retiros: number | null
-          total_utilidades: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "socios_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "socios_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       branches_public: {
         Row: {
           address: string | null
@@ -8499,7 +8467,7 @@ export type Database = {
         }
         Relationships: []
       }
-      cuenta_corriente_marca: {
+      brand_current_account: {
         Row: {
           branch_id: string | null
           branch_name: string | null
@@ -8530,22 +8498,37 @@ export type Database = {
           },
         ]
       }
-      cuenta_corriente_proveedores: {
+      partner_balance: {
         Row: {
           branch_id: string | null
-          business_name: string | null
-          cuit: string | null
-          invoice_count: number | null
-          next_due_date: string | null
-          overdue_amount: number | null
-          overdue_invoices: number | null
-          pending_invoices: number | null
-          proveedor_id: string | null
-          total_invoiced: number | null
-          total_paid: number | null
-          total_pending: number | null
+          branch_name: string | null
+          current_balance: number | null
+          movement_count: number | null
+          name: string | null
+          ownership_percentage: number | null
+          socio_id: string | null
+          total_aportes: number | null
+          total_devoluciones: number | null
+          total_prestamos_dados: number | null
+          total_retiros: number | null
+          total_utilidades: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "socios_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "socios_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles_public: {
         Row: {
@@ -8704,6 +8687,23 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      supplier_current_account: {
+        Row: {
+          branch_id: string | null
+          business_name: string | null
+          cuit: string | null
+          invoice_count: number | null
+          next_due_date: string | null
+          overdue_amount: number | null
+          overdue_invoices: number | null
+          pending_invoices: number | null
+          proveedor_id: string | null
+          total_invoiced: number | null
+          total_paid: number | null
+          total_pending: number | null
+        }
+        Relationships: []
       }
       webapp_menu_items: {
         Row: {
