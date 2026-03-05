@@ -744,35 +744,35 @@ export type Database = {
       brand_closure_config: {
         Row: {
           categoria_padre: string | null
-          clave: string
           created_at: string | null
           id: string
           is_active: boolean | null
+          key: string
           label: string
           sort_order: number | null
-          tipo: string
+          type: string
           updated_at: string | null
         }
         Insert: {
           categoria_padre?: string | null
-          clave: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          key: string
           label: string
           sort_order?: number | null
-          tipo: string
+          type: string
           updated_at?: string | null
         }
         Update: {
           categoria_padre?: string | null
-          clave?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          key?: string
           label?: string
           sort_order?: number | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -890,7 +890,6 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           due_date: string | null
-          estado: string | null
           fc_total: number
           ft_total: number
           id: string
@@ -901,6 +900,7 @@ export type Database = {
           pago_vt_sugerido: number | null
           pending_balance: number | null
           period: string
+          status: string | null
           total_canon: number
           updated_at: string | null
           ventas_id: string | null
@@ -914,7 +914,6 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           due_date?: string | null
-          estado?: string | null
           fc_total: number
           ft_total: number
           id?: string
@@ -925,6 +924,7 @@ export type Database = {
           pago_vt_sugerido?: number | null
           pending_balance?: number | null
           period: string
+          status?: string | null
           total_canon: number
           updated_at?: string | null
           ventas_id?: string | null
@@ -938,7 +938,6 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           due_date?: string | null
-          estado?: string | null
           fc_total?: number
           ft_total?: number
           id?: string
@@ -949,6 +948,7 @@ export type Database = {
           pago_vt_sugerido?: number | null
           pending_balance?: number | null
           period?: string
+          status?: string | null
           total_canon?: number
           updated_at?: string | null
           ventas_id?: string | null
@@ -2036,24 +2036,24 @@ export type Database = {
         Row: {
           code_id: string
           created_at: string | null
+          discount_amount: number
           id: string
-          monto_descontado: number
           pedido_id: string | null
           user_id: string | null
         }
         Insert: {
           code_id: string
           created_at?: string | null
+          discount_amount?: number
           id?: string
-          monto_descontado?: number
           pedido_id?: string | null
           user_id?: string | null
         }
         Update: {
           code_id?: string
           created_at?: string | null
+          discount_amount?: number
           id?: string
-          monto_descontado?: number
           pedido_id?: string | null
           user_id?: string | null
         }
@@ -2080,7 +2080,7 @@ export type Database = {
           is_active: boolean
           monto_minimo_pedido: number | null
           start_date: string
-          tipo: string
+          type: string
           updated_at: string | null
           uso_unico_por_usuario: boolean
           usos_actuales: number
@@ -2099,7 +2099,7 @@ export type Database = {
           is_active?: boolean
           monto_minimo_pedido?: number | null
           start_date?: string
-          tipo: string
+          type: string
           updated_at?: string | null
           uso_unico_por_usuario?: boolean
           usos_actuales?: number
@@ -2118,7 +2118,7 @@ export type Database = {
           is_active?: boolean
           monto_minimo_pedido?: number | null
           start_date?: string
-          tipo?: string
+          type?: string
           updated_at?: string | null
           uso_unico_por_usuario?: boolean
           usos_actuales?: number
@@ -2448,7 +2448,6 @@ export type Database = {
           deleted_at: string | null
           details: Json | null
           due_date: string | null
-          estado: string | null
           gasto_relacionado_id: string | null
           id: string
           notes: string | null
@@ -2461,6 +2460,7 @@ export type Database = {
           rdo_category_code: string | null
           rdo_section: string | null
           shift_id: string | null
+          status: string | null
           subcategoria: string | null
           transfer_cost: number | null
           updated_at: string | null
@@ -2478,7 +2478,6 @@ export type Database = {
           deleted_at?: string | null
           details?: Json | null
           due_date?: string | null
-          estado?: string | null
           gasto_relacionado_id?: string | null
           id?: string
           notes?: string | null
@@ -2491,6 +2490,7 @@ export type Database = {
           rdo_category_code?: string | null
           rdo_section?: string | null
           shift_id?: string | null
+          status?: string | null
           subcategoria?: string | null
           transfer_cost?: number | null
           updated_at?: string | null
@@ -2508,7 +2508,6 @@ export type Database = {
           deleted_at?: string | null
           details?: Json | null
           due_date?: string | null
-          estado?: string | null
           gasto_relacionado_id?: string | null
           id?: string
           notes?: string | null
@@ -2521,6 +2520,7 @@ export type Database = {
           rdo_category_code?: string | null
           rdo_section?: string | null
           shift_id?: string | null
+          status?: string | null
           subcategoria?: string | null
           transfer_cost?: number | null
           updated_at?: string | null
@@ -2640,8 +2640,8 @@ export type Database = {
           tabla: string
           timestamp: string | null
           user_agent: string | null
+          user_email: string | null
           user_id: string | null
-          usuario_email: string | null
         }
         Insert: {
           campos_modificados?: string[] | null
@@ -2655,8 +2655,8 @@ export type Database = {
           tabla: string
           timestamp?: string | null
           user_agent?: string | null
+          user_email?: string | null
           user_id?: string | null
-          usuario_email?: string | null
         }
         Update: {
           campos_modificados?: string[] | null
@@ -2670,8 +2670,8 @@ export type Database = {
           tabla?: string
           timestamp?: string | null
           user_agent?: string | null
+          user_email?: string | null
           user_id?: string | null
-          usuario_email?: string | null
         }
         Relationships: []
       }
@@ -2974,12 +2974,12 @@ export type Database = {
           date: string
           deleted_at: string | null
           description: string
-          estado: string
           id: string
           investment_type: string
-          monto_total: number
           notes: string | null
           period: string
+          status: string
+          total_amount: number
           updated_at: string
           vida_util_meses: number | null
         }
@@ -2992,12 +2992,12 @@ export type Database = {
           date: string
           deleted_at?: string | null
           description: string
-          estado?: string
           id?: string
           investment_type: string
-          monto_total: number
           notes?: string | null
           period: string
+          status?: string
+          total_amount: number
           updated_at?: string
           vida_util_meses?: number | null
         }
@@ -3010,12 +3010,12 @@ export type Database = {
           date?: string
           deleted_at?: string | null
           description?: string
-          estado?: string
           id?: string
           investment_type?: string
-          monto_total?: number
           notes?: string | null
           period?: string
+          status?: string
+          total_amount?: number
           updated_at?: string
           vida_util_meses?: number | null
         }
@@ -3057,7 +3057,7 @@ export type Database = {
           rdo_category_code: string | null
           service_concept_id: string | null
           subtotal: number
-          unidad: string | null
+          unit: string | null
           unit_price: number
         }
         Insert: {
@@ -3080,7 +3080,7 @@ export type Database = {
           rdo_category_code?: string | null
           service_concept_id?: string | null
           subtotal: number
-          unidad?: string | null
+          unit?: string | null
           unit_price: number
         }
         Update: {
@@ -3103,7 +3103,7 @@ export type Database = {
           rdo_category_code?: string | null
           service_concept_id?: string | null
           subtotal?: number
-          unidad?: string | null
+          unit?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -3146,21 +3146,21 @@ export type Database = {
       }
       invoice_payment_links: {
         Row: {
+          applied_amount: number
           id: string
           invoice_id: string
-          monto_aplicado: number
           pago_id: string
         }
         Insert: {
+          applied_amount: number
           id?: string
           invoice_id: string
-          monto_aplicado: number
           pago_id: string
         }
         Update: {
+          applied_amount?: number
           id?: string
           invoice_id?: string
-          monto_aplicado?: number
           pago_id?: string
         }
         Relationships: [
@@ -3323,7 +3323,7 @@ export type Database = {
           saving_quantity: number | null
           saving_unit: string | null
           sort_order: number | null
-          tipo: string
+          type: string
           updated_at: string | null
         }
         Insert: {
@@ -3350,7 +3350,7 @@ export type Database = {
           saving_quantity?: number | null
           saving_unit?: string | null
           sort_order?: number | null
-          tipo: string
+          type: string
           updated_at?: string | null
         }
         Update: {
@@ -3377,7 +3377,7 @@ export type Database = {
           saving_quantity?: number | null
           saving_unit?: string | null
           sort_order?: number | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -3606,43 +3606,43 @@ export type Database = {
         Row: {
           branch_id: string
           categoria_pl: string
+          consumed_amount: number
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
           details: Json | null
           id: string
-          monto_consumido: number
           notes: string | null
           period: string
-          tipo: string | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           branch_id: string
           categoria_pl: string
+          consumed_amount: number
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
           details?: Json | null
           id?: string
-          monto_consumido: number
           notes?: string | null
           period: string
-          tipo?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           branch_id?: string
           categoria_pl?: string
+          consumed_amount?: number
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
           details?: Json | null
           id?: string
-          monto_consumido?: number
           notes?: string | null
           period?: string
-          tipo?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3836,33 +3836,33 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_visible_menu: boolean
           name: string
           print_type: string
           sort_order: number | null
           updated_at: string | null
-          visible_en_carta: boolean
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_visible_menu?: boolean
           name: string
           print_type?: string
           sort_order?: number | null
           updated_at?: string | null
-          visible_en_carta?: boolean
         }
         Update: {
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_visible_menu?: boolean
           name?: string
           print_type?: string
           sort_order?: number | null
           updated_at?: string | null
-          visible_en_carta?: boolean
         }
         Relationships: []
       }
@@ -4157,8 +4157,8 @@ export type Database = {
           reference_price: number | null
           short_name: string | null
           sort_order: number | null
-          tipo: string
           total_cost: number | null
+          type: string
           updated_at: string | null
         }
         Insert: {
@@ -4185,8 +4185,8 @@ export type Database = {
           reference_price?: number | null
           short_name?: string | null
           sort_order?: number | null
-          tipo?: string
           total_cost?: number | null
+          type?: string
           updated_at?: string | null
         }
         Update: {
@@ -4213,8 +4213,8 @@ export type Database = {
           reference_price?: number | null
           short_name?: string | null
           sort_order?: number | null
-          tipo?: string
           total_cost?: number | null
+          type?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -4266,9 +4266,9 @@ export type Database = {
           device_name: string | null
           device_operating_mode: string | null
           id: string
+          last_test: string | null
+          last_test_ok: boolean | null
           public_key: string
-          ultimo_test: string | null
-          ultimo_test_ok: boolean | null
           updated_at: string
           webhook_secret: string | null
         }
@@ -4282,9 +4282,9 @@ export type Database = {
           device_name?: string | null
           device_operating_mode?: string | null
           id?: string
+          last_test?: string | null
+          last_test_ok?: boolean | null
           public_key?: string
-          ultimo_test?: string | null
-          ultimo_test_ok?: boolean | null
           updated_at?: string
           webhook_secret?: string | null
         }
@@ -4298,9 +4298,9 @@ export type Database = {
           device_name?: string | null
           device_operating_mode?: string | null
           id?: string
+          last_test?: string | null
+          last_test_ok?: boolean | null
           public_key?: string
-          ultimo_test?: string | null
-          ultimo_test_ok?: boolean | null
           updated_at?: string
           webhook_secret?: string | null
         }
@@ -4373,7 +4373,7 @@ export type Database = {
           extra_price: number | null
           id: string
           pedido_item_id: string
-          tipo: string
+          type: string
         }
         Insert: {
           created_at?: string | null
@@ -4381,7 +4381,7 @@ export type Database = {
           extra_price?: number | null
           id?: string
           pedido_item_id: string
-          tipo: string
+          type: string
         }
         Update: {
           created_at?: string | null
@@ -4389,7 +4389,7 @@ export type Database = {
           extra_price?: number | null
           id?: string
           pedido_item_id?: string
-          tipo?: string
+          type?: string
         }
         Relationships: [
           {
@@ -4415,16 +4415,16 @@ export type Database = {
           categoria_carta_id: string | null
           created_at: string | null
           estacion: string
-          estado: string | null
           id: string
           item_carta_id: string
           name: string
-          notas: string | null
+          notes: string | null
           pedido_id: string
           promocion_id: string | null
           promocion_item_id: string | null
           quantity: number
           reference_price: number | null
+          status: string | null
           subtotal: number
           unit_price: number
         }
@@ -4434,16 +4434,16 @@ export type Database = {
           categoria_carta_id?: string | null
           created_at?: string | null
           estacion: string
-          estado?: string | null
           id?: string
           item_carta_id: string
           name: string
-          notas?: string | null
+          notes?: string | null
           pedido_id: string
           promocion_id?: string | null
           promocion_item_id?: string | null
           quantity?: number
           reference_price?: number | null
+          status?: string | null
           subtotal: number
           unit_price: number
         }
@@ -4453,16 +4453,16 @@ export type Database = {
           categoria_carta_id?: string | null
           created_at?: string | null
           estacion?: string
-          estado?: string | null
           id?: string
           item_carta_id?: string
           name?: string
-          notas?: string | null
+          notes?: string | null
           pedido_id?: string
           promocion_id?: string | null
           promocion_item_id?: string | null
           quantity?: number
           reference_price?: number | null
+          status?: string | null
           subtotal?: number
           unit_price?: number
         }
@@ -4572,9 +4572,9 @@ export type Database = {
           created_by: string | null
           id: string
           method: string
-          monto_recibido: number | null
           mp_payment_id: string | null
           pedido_id: string
+          received_amount: number | null
           tarjeta_marca: string | null
           tarjeta_ultimos_4: string | null
           transferencia_referencia: string | null
@@ -4588,9 +4588,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           method: string
-          monto_recibido?: number | null
           mp_payment_id?: string | null
           pedido_id: string
+          received_amount?: number | null
           tarjeta_marca?: string | null
           tarjeta_ultimos_4?: string | null
           transferencia_referencia?: string | null
@@ -4604,9 +4604,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           method?: string
-          monto_recibido?: number | null
           mp_payment_id?: string | null
           pedido_id?: string
+          received_amount?: number | null
           tarjeta_marca?: string | null
           tarjeta_ultimos_4?: string | null
           transferencia_referencia?: string | null
@@ -4655,7 +4655,6 @@ export type Database = {
           delivery_zone_id: string | null
           descuento: number | null
           descuento_motivo: string | null
-          estado: string
           id: string
           invoice_business_name: string | null
           invoice_cae: string | null
@@ -4675,9 +4674,10 @@ export type Database = {
           ready_at_time: string | null
           requiere_factura: boolean | null
           service_type: string | null
+          status: string
           subtotal: number
-          tipo: string
           total: number
+          type: string
           webapp_tracking_code: string | null
         }
         Insert: {
@@ -4705,7 +4705,6 @@ export type Database = {
           delivery_zone_id?: string | null
           descuento?: number | null
           descuento_motivo?: string | null
-          estado?: string
           id?: string
           invoice_business_name?: string | null
           invoice_cae?: string | null
@@ -4725,9 +4724,10 @@ export type Database = {
           ready_at_time?: string | null
           requiere_factura?: boolean | null
           service_type?: string | null
+          status?: string
           subtotal: number
-          tipo: string
           total: number
+          type: string
           webapp_tracking_code?: string | null
         }
         Update: {
@@ -4755,7 +4755,6 @@ export type Database = {
           delivery_zone_id?: string | null
           descuento?: number | null
           descuento_motivo?: string | null
-          estado?: string
           id?: string
           invoice_business_name?: string | null
           invoice_cae?: string | null
@@ -4775,9 +4774,10 @@ export type Database = {
           ready_at_time?: string | null
           requiere_factura?: boolean | null
           service_type?: string | null
+          status?: string
           subtotal?: number
-          tipo?: string
           total?: number
+          type?: string
           webapp_tracking_code?: string | null
         }
         Relationships: [
@@ -4875,7 +4875,7 @@ export type Database = {
           period: string | null
           resultado_periodo: number | null
           socio_id: string
-          tipo: string
+          type: string
         }
         Insert: {
           amount: number
@@ -4891,7 +4891,7 @@ export type Database = {
           period?: string | null
           resultado_periodo?: number | null
           socio_id: string
-          tipo: string
+          type: string
         }
         Update: {
           amount?: number
@@ -4907,7 +4907,7 @@ export type Database = {
           period?: string | null
           resultado_periodo?: number | null
           socio_id?: string
-          tipo?: string
+          type?: string
         }
         Relationships: [
           {
@@ -5209,7 +5209,7 @@ export type Database = {
           created_at: string
           id: string
           item_carta_id: string
-          precio: number
+          price: number
           price_list_id: string
           updated_at: string
         }
@@ -5217,7 +5217,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_carta_id: string
-          precio: number
+          price: number
           price_list_id: string
           updated_at?: string
         }
@@ -5225,7 +5225,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_carta_id?: string
-          precio?: number
+          price?: number
           price_list_id?: string
           updated_at?: string
         }
@@ -5604,9 +5604,9 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           distribuciones: Json
+          distributable_amount: number
           distribution_date: string
           id: string
-          monto_distribuible: number
           notes: string | null
           otras_reservas: number | null
           period: string
@@ -5621,9 +5621,9 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           distribuciones: Json
+          distributable_amount: number
           distribution_date: string
           id?: string
-          monto_distribuible: number
           notes?: string | null
           otras_reservas?: number | null
           period: string
@@ -5638,9 +5638,9 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           distribuciones?: Json
+          distributable_amount?: number
           distribution_date?: string
           id?: string
-          monto_distribuible?: number
           notes?: string | null
           otras_reservas?: number | null
           period?: string
@@ -5779,7 +5779,7 @@ export type Database = {
           producto_ids: string[] | null
           restriccion_pago: string
           start_date: string | null
-          tipo: string
+          type: string
           updated_at: string | null
           user_type: string
           valor: number
@@ -5804,7 +5804,7 @@ export type Database = {
           producto_ids?: string[] | null
           restriccion_pago?: string
           start_date?: string | null
-          tipo: string
+          type: string
           updated_at?: string | null
           user_type?: string
           valor?: number
@@ -5829,7 +5829,7 @@ export type Database = {
           producto_ids?: string[] | null
           restriccion_pago?: string
           start_date?: string | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
           user_type?: string
           valor?: number
@@ -6120,7 +6120,7 @@ export type Database = {
           manual_cost: number | null
           name: string
           puede_ser_extra: boolean
-          tipo: string
+          type: string
           updated_at: string | null
         }
         Insert: {
@@ -6138,7 +6138,7 @@ export type Database = {
           manual_cost?: number | null
           name: string
           puede_ser_extra?: boolean
-          tipo?: string
+          type?: string
           updated_at?: string | null
         }
         Update: {
@@ -6156,7 +6156,7 @@ export type Database = {
           manual_cost?: number | null
           name?: string
           puede_ser_extra?: boolean
-          tipo?: string
+          type?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -6178,10 +6178,10 @@ export type Database = {
           diferencia: number | null
           diferencia_motivo: string | null
           efectivo_contado: number | null
-          estado: string | null
           fondo_apertura: number
           id: string
           retiros_efectivo: number | null
+          status: string | null
           total_efectivo: number | null
           total_mercadopago: number | null
           total_tarjeta_credito: number | null
@@ -6197,10 +6197,10 @@ export type Database = {
           diferencia?: number | null
           diferencia_motivo?: string | null
           efectivo_contado?: number | null
-          estado?: string | null
           fondo_apertura: number
           id?: string
           retiros_efectivo?: number | null
+          status?: string | null
           total_efectivo?: number | null
           total_mercadopago?: number | null
           total_tarjeta_credito?: number | null
@@ -6216,10 +6216,10 @@ export type Database = {
           diferencia?: number | null
           diferencia_motivo?: string | null
           efectivo_contado?: number | null
-          estado?: string | null
           fondo_apertura?: number
           id?: string
           retiros_efectivo?: number | null
+          status?: string | null
           total_efectivo?: number | null
           total_mercadopago?: number | null
           total_tarjeta_credito?: number | null
@@ -6665,14 +6665,14 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_calculated: boolean | null
+          is_visible_local: boolean
           name: string
           periodicidad: string | null
           proveedor_id: string | null
           rdo_category_code: string | null
           subcategoria: string | null
-          tipo: string
+          type: string
           updated_at: string | null
-          visible_local: boolean
         }
         Insert: {
           categoria_gasto?: string | null
@@ -6683,14 +6683,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_calculated?: boolean | null
+          is_visible_local?: boolean
           name: string
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
           subcategoria?: string | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
-          visible_local?: boolean
         }
         Update: {
           categoria_gasto?: string | null
@@ -6701,14 +6701,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_calculated?: boolean | null
+          is_visible_local?: boolean
           name?: string
           periodicidad?: string | null
           proveedor_id?: string | null
           rdo_category_code?: string | null
           subcategoria?: string | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
-          visible_local?: boolean
         }
         Relationships: [
           {
@@ -6738,7 +6738,7 @@ export type Database = {
         Row: {
           arqueo_caja: Json | null
           branch_id: string
-          cerrado_at: string
+          closed_at: string
           closed_by: string
           date: string
           diferencia_apps: number | null
@@ -6747,7 +6747,7 @@ export type Database = {
           hamburguesas: Json
           id: string
           invoicing_difference: number
-          notas: string | null
+          notes: string | null
           shift: string
           source: string | null
           tiene_alerta_apps: boolean | null
@@ -6767,7 +6767,7 @@ export type Database = {
         Insert: {
           arqueo_caja?: Json | null
           branch_id: string
-          cerrado_at?: string
+          closed_at?: string
           closed_by: string
           date: string
           diferencia_apps?: number | null
@@ -6776,7 +6776,7 @@ export type Database = {
           hamburguesas?: Json
           id?: string
           invoicing_difference?: number
-          notas?: string | null
+          notes?: string | null
           shift: string
           source?: string | null
           tiene_alerta_apps?: boolean | null
@@ -6796,7 +6796,7 @@ export type Database = {
         Update: {
           arqueo_caja?: Json | null
           branch_id?: string
-          cerrado_at?: string
+          closed_at?: string
           closed_by?: string
           date?: string
           diferencia_apps?: number | null
@@ -6805,7 +6805,7 @@ export type Database = {
           hamburguesas?: Json
           id?: string
           invoicing_difference?: number
-          notas?: string | null
+          notes?: string | null
           shift?: string
           source?: string | null
           tiene_alerta_apps?: boolean | null
@@ -7232,7 +7232,7 @@ export type Database = {
           quantity_before: number
           reason: string | null
           supplier_invoice_id: string | null
-          tipo: string
+          type: string
         }
         Insert: {
           branch_id: string
@@ -7247,7 +7247,7 @@ export type Database = {
           quantity_before: number
           reason?: string | null
           supplier_invoice_id?: string | null
-          tipo: string
+          type: string
         }
         Update: {
           branch_id?: string
@@ -7262,7 +7262,7 @@ export type Database = {
           quantity_before?: number
           reason?: string | null
           supplier_invoice_id?: string | null
-          tipo?: string
+          type?: string
         }
         Relationships: [
           {
@@ -7412,10 +7412,10 @@ export type Database = {
           subtotal: number
           subtotal_bruto: number | null
           subtotal_neto: number | null
-          tipo: string | null
           total: number
           total_descuentos: number | null
           total_factura: number | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -7448,10 +7448,10 @@ export type Database = {
           subtotal?: number
           subtotal_bruto?: number | null
           subtotal_neto?: number | null
-          tipo?: string | null
           total?: number
           total_descuentos?: number | null
           total_factura?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -7484,10 +7484,10 @@ export type Database = {
           subtotal?: number
           subtotal_bruto?: number | null
           subtotal_neto?: number | null
-          tipo?: string | null
           total?: number
           total_descuentos?: number | null
           total_factura?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -7629,6 +7629,7 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          account_number: string | null
           address: string | null
           alias_cbu: string | null
           ambito: string
@@ -7648,18 +7649,18 @@ export type Database = {
           is_active: boolean | null
           medios_pago_aceptados: Json | null
           notes: string | null
-          numero_cuenta: string | null
           permite_cuenta_corriente: boolean | null
           phone: string | null
           rdo_categories_default: string[] | null
           secondary_contact: string | null
           secondary_phone: string | null
+          special_type: string | null
           supplier_type: string[] | null
-          tipo_especial: string | null
           titular_cuenta: string | null
           updated_at: string | null
         }
         Insert: {
+          account_number?: string | null
           address?: string | null
           alias_cbu?: string | null
           ambito?: string
@@ -7679,18 +7680,18 @@ export type Database = {
           is_active?: boolean | null
           medios_pago_aceptados?: Json | null
           notes?: string | null
-          numero_cuenta?: string | null
           permite_cuenta_corriente?: boolean | null
           phone?: string | null
           rdo_categories_default?: string[] | null
           secondary_contact?: string | null
           secondary_phone?: string | null
+          special_type?: string | null
           supplier_type?: string[] | null
-          tipo_especial?: string | null
           titular_cuenta?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_number?: string | null
           address?: string | null
           alias_cbu?: string | null
           ambito?: string
@@ -7710,14 +7711,13 @@ export type Database = {
           is_active?: boolean | null
           medios_pago_aceptados?: Json | null
           notes?: string | null
-          numero_cuenta?: string | null
           permite_cuenta_corriente?: boolean | null
           phone?: string | null
           rdo_categories_default?: string[] | null
           secondary_contact?: string | null
           secondary_phone?: string | null
+          special_type?: string | null
           supplier_type?: string[] | null
-          tipo_especial?: string | null
           titular_cuenta?: string | null
           updated_at?: string | null
         }
@@ -7744,6 +7744,7 @@ export type Database = {
           base_unit_cost: number | null
           categoria_id: string | null
           categoria_pl: string | null
+          control_reason: string | null
           creado_por: string | null
           created_at: string | null
           default_alicuota_iva: number | null
@@ -7754,23 +7755,22 @@ export type Database = {
           fc_objetivo_extra: number | null
           id: string
           is_active: boolean | null
+          item_type: string
           margen_bruto: number | null
           margen_porcentaje: number | null
-          motivo_control: string | null
+          max_suggested_price: number | null
           name: string
           nivel_control: string
-          precio_maximo_sugerido: number | null
-          precio_referencia: number | null
-          precio_venta: number | null
           proveedor_obligatorio_id: string | null
           proveedor_sugerido_id: string | null
           puede_ser_extra: boolean
+          purchase_unit: string | null
+          purchase_unit_content: number | null
+          purchase_unit_price: number | null
           rdo_category_code: string | null
-          tipo_item: string
+          reference_price: number | null
+          sale_price: number | null
           tracks_stock: boolean
-          unidad_compra: string | null
-          unidad_compra_contenido: number | null
-          unidad_compra_precio: number | null
           updated_at: string | null
         }
         Insert: {
@@ -7778,6 +7778,7 @@ export type Database = {
           base_unit_cost?: number | null
           categoria_id?: string | null
           categoria_pl?: string | null
+          control_reason?: string | null
           creado_por?: string | null
           created_at?: string | null
           default_alicuota_iva?: number | null
@@ -7788,23 +7789,22 @@ export type Database = {
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
+          item_type?: string
           margen_bruto?: number | null
           margen_porcentaje?: number | null
-          motivo_control?: string | null
+          max_suggested_price?: number | null
           name: string
           nivel_control?: string
-          precio_maximo_sugerido?: number | null
-          precio_referencia?: number | null
-          precio_venta?: number | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
           puede_ser_extra?: boolean
+          purchase_unit?: string | null
+          purchase_unit_content?: number | null
+          purchase_unit_price?: number | null
           rdo_category_code?: string | null
-          tipo_item?: string
+          reference_price?: number | null
+          sale_price?: number | null
           tracks_stock?: boolean
-          unidad_compra?: string | null
-          unidad_compra_contenido?: number | null
-          unidad_compra_precio?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -7812,6 +7812,7 @@ export type Database = {
           base_unit_cost?: number | null
           categoria_id?: string | null
           categoria_pl?: string | null
+          control_reason?: string | null
           creado_por?: string | null
           created_at?: string | null
           default_alicuota_iva?: number | null
@@ -7822,23 +7823,22 @@ export type Database = {
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
+          item_type?: string
           margen_bruto?: number | null
           margen_porcentaje?: number | null
-          motivo_control?: string | null
+          max_suggested_price?: number | null
           name?: string
           nivel_control?: string
-          precio_maximo_sugerido?: number | null
-          precio_referencia?: number | null
-          precio_venta?: number | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
           puede_ser_extra?: boolean
+          purchase_unit?: string | null
+          purchase_unit_content?: number | null
+          purchase_unit_price?: number | null
           rdo_category_code?: string | null
-          tipo_item?: string
+          reference_price?: number | null
+          sale_price?: number | null
           tracks_stock?: boolean
-          unidad_compra?: string | null
-          unidad_compra_contenido?: number | null
-          unidad_compra_precio?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -7895,7 +7895,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           sort_order: number | null
-          tipo: string
+          type: string
           updated_at: string | null
         }
         Insert: {
@@ -7906,7 +7906,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           sort_order?: number | null
-          tipo: string
+          type: string
           updated_at?: string | null
         }
         Update: {
@@ -7917,7 +7917,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           sort_order?: number | null
-          tipo?: string
+          type?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -7925,32 +7925,32 @@ export type Database = {
       supply_cost_history: {
         Row: {
           branch_id: string | null
-          costo_anterior: number | null
-          costo_nuevo: number
           created_at: string | null
-          factura_id: string | null
           id: string
           insumo_id: string
+          invoice_id: string | null
+          new_cost: number
+          previous_cost: number | null
           reason: string | null
         }
         Insert: {
           branch_id?: string | null
-          costo_anterior?: number | null
-          costo_nuevo: number
           created_at?: string | null
-          factura_id?: string | null
           id?: string
           insumo_id: string
+          invoice_id?: string | null
+          new_cost: number
+          previous_cost?: number | null
           reason?: string | null
         }
         Update: {
           branch_id?: string | null
-          costo_anterior?: number | null
-          costo_nuevo?: number
           created_at?: string | null
-          factura_id?: string | null
           id?: string
           insumo_id?: string
+          invoice_id?: string | null
+          new_cost?: number
+          previous_cost?: number | null
           reason?: string | null
         }
         Relationships: [
@@ -7970,14 +7970,14 @@ export type Database = {
           },
           {
             foreignKeyName: "insumos_costos_historial_factura_id_fkey"
-            columns: ["factura_id"]
+            columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "cuenta_corriente_marca"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "insumos_costos_historial_factura_id_fkey"
-            columns: ["factura_id"]
+            columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "supplier_invoices"
             referencedColumns: ["id"]
@@ -8171,18 +8171,18 @@ export type Database = {
           delivery_habilitado: boolean
           delivery_pedido_minimo: number | null
           delivery_radio_km: number | null
-          estado: string
+          estimated_delivery_time_min: number | null
+          estimated_pickup_time_min: number | null
           horarios: Json | null
           id: string
-          mensaje_pausa: string | null
+          pause_message: string | null
           prep_time_comer_aca: number | null
           prep_time_delivery: number | null
           prep_time_retiro: number | null
           recepcion_modo: string
           retiro_habilitado: boolean
           service_schedules: Json | null
-          tiempo_estimado_delivery_min: number | null
-          tiempo_estimado_retiro_min: number | null
+          status: string
           updated_at: string
           webapp_activa: boolean
         }
@@ -8196,18 +8196,18 @@ export type Database = {
           delivery_habilitado?: boolean
           delivery_pedido_minimo?: number | null
           delivery_radio_km?: number | null
-          estado?: string
+          estimated_delivery_time_min?: number | null
+          estimated_pickup_time_min?: number | null
           horarios?: Json | null
           id?: string
-          mensaje_pausa?: string | null
+          pause_message?: string | null
           prep_time_comer_aca?: number | null
           prep_time_delivery?: number | null
           prep_time_retiro?: number | null
           recepcion_modo?: string
           retiro_habilitado?: boolean
           service_schedules?: Json | null
-          tiempo_estimado_delivery_min?: number | null
-          tiempo_estimado_retiro_min?: number | null
+          status?: string
           updated_at?: string
           webapp_activa?: boolean
         }
@@ -8221,18 +8221,18 @@ export type Database = {
           delivery_habilitado?: boolean
           delivery_pedido_minimo?: number | null
           delivery_radio_km?: number | null
-          estado?: string
+          estimated_delivery_time_min?: number | null
+          estimated_pickup_time_min?: number | null
           horarios?: Json | null
           id?: string
-          mensaje_pausa?: string | null
+          pause_message?: string | null
           prep_time_comer_aca?: number | null
           prep_time_delivery?: number | null
           prep_time_retiro?: number | null
           recepcion_modo?: string
           retiro_habilitado?: boolean
           service_schedules?: Json | null
-          tiempo_estimado_delivery_min?: number | null
-          tiempo_estimado_retiro_min?: number | null
+          status?: string
           updated_at?: string
           webapp_activa?: boolean
         }
@@ -8259,7 +8259,7 @@ export type Database = {
           created_at: string | null
           id: string
           leido: boolean | null
-          mensaje: string
+          message: string
           pedido_id: string
           sender_id: string | null
           sender_nombre: string
@@ -8270,7 +8270,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           leido?: boolean | null
-          mensaje: string
+          message: string
           pedido_id: string
           sender_id?: string | null
           sender_nombre: string
@@ -8281,7 +8281,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           leido?: boolean | null
-          mensaje?: string
+          message?: string
           pedido_id?: string
           sender_id?: string | null
           sender_nombre?: string
@@ -8413,11 +8413,11 @@ export type Database = {
       balance_socios: {
         Row: {
           branch_id: string | null
-          branch_nombre: string | null
+          branch_name: string | null
+          current_balance: number | null
           movement_count: number | null
-          nombre: string | null
+          name: string | null
           ownership_percentage: number | null
-          saldo_actual: number | null
           socio_id: string | null
           total_aportes: number | null
           total_devoluciones: number | null
@@ -8502,13 +8502,13 @@ export type Database = {
       cuenta_corriente_marca: {
         Row: {
           branch_id: string | null
-          detalle: string | null
+          branch_name: string | null
+          canon_amount: number | null
+          details: string | null
           due_date: string | null
           id: string | null
           invoice_date: string | null
           invoice_number: string | null
-          local_nombre: string | null
-          monto_canon: number | null
           payment_status: string | null
           pending_balance: number | null
           period: string | null
@@ -8536,14 +8536,14 @@ export type Database = {
           business_name: string | null
           cuit: string | null
           invoice_count: number | null
-          monto_vencido: number | null
+          next_due_date: string | null
+          overdue_amount: number | null
           overdue_invoices: number | null
           pending_invoices: number | null
           proveedor_id: string | null
-          proximo_vencimiento: string | null
-          total_facturado: number | null
-          total_pagado: number | null
-          total_pendiente: number | null
+          total_invoiced: number | null
+          total_paid: number | null
+          total_pending: number | null
         }
         Relationships: []
       }
@@ -8711,15 +8711,15 @@ export type Database = {
           available_webapp: boolean | null
           base_price: number | null
           categoria_carta_id: string | null
-          categoria_nombre: string | null
-          categoria_orden: number | null
+          category_name: string | null
+          category_sort_order: number | null
           description: string | null
           id: string | null
           image_url: string | null
           name: string | null
           short_name: string | null
           sort_order: number | null
-          tipo: string | null
+          type: string | null
         }
         Relationships: [
           {
@@ -9068,16 +9068,16 @@ export type Database = {
     }
     Enums: {
       communication_type: "info" | "warning" | "urgent" | "celebration"
-      order_area: "salon" | "mostrador" | "delivery"
+      order_area: "dine_in" | "counter" | "delivery"
       order_type: "takeaway" | "delivery" | "dine_in"
       payment_method:
-        | "efectivo"
-        | "tarjeta_debito"
-        | "tarjeta_credito"
+        | "cash"
+        | "debit_card"
+        | "credit_card"
         | "mercadopago_qr"
         | "mercadopago_link"
-        | "transferencia"
-        | "vales"
+        | "transfer"
+        | "vouchers"
       payment_origin: "cash" | "mercadopago" | "bank_transfer" | "credit_card"
       permission_scope: "local" | "brand"
       receipt_type: "OFFICIAL" | "INTERNAL"
@@ -9093,11 +9093,11 @@ export type Database = {
       supplier_control_type: "brand_only" | "brand_preferred" | "free"
       transaction_type: "income" | "expense"
       work_position_type:
-        | "cajero"
-        | "cocinero"
+        | "cashier"
+        | "cook"
         | "barista"
         | "runner"
-        | "lavacopas"
+        | "dishwasher"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -9226,16 +9226,16 @@ export const Constants = {
   public: {
     Enums: {
       communication_type: ["info", "warning", "urgent", "celebration"],
-      order_area: ["salon", "mostrador", "delivery"],
+      order_area: ["dine_in", "counter", "delivery"],
       order_type: ["takeaway", "delivery", "dine_in"],
       payment_method: [
-        "efectivo",
-        "tarjeta_debito",
-        "tarjeta_credito",
+        "cash",
+        "debit_card",
+        "credit_card",
         "mercadopago_qr",
         "mercadopago_link",
-        "transferencia",
-        "vales",
+        "transfer",
+        "vouchers",
       ],
       payment_origin: ["cash", "mercadopago", "bank_transfer", "credit_card"],
       permission_scope: ["local", "brand"],
@@ -9253,11 +9253,11 @@ export const Constants = {
       supplier_control_type: ["brand_only", "brand_preferred", "free"],
       transaction_type: ["income", "expense"],
       work_position_type: [
-        "cajero",
-        "cocinero",
+        "cashier",
+        "cook",
         "barista",
         "runner",
-        "lavacopas",
+        "dishwasher",
       ],
     },
   },
