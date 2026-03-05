@@ -16,72 +16,72 @@ export type Database = {
     Tables: {
       afip_config: {
         Row: {
+          activity_start_date: string | null
           branch_id: string
+          business_name: string | null
           certificado_crt: string | null
-          clave_privada_enc: string | null
+          certificate_status: string
+          connection_status: string
           created_at: string
           csr_pem: string | null
           cuit: string | null
-          direccion_fiscal: string | null
-          estado_certificado: string
-          estado_conexion: string
+          fiscal_address: string | null
           id: string
-          inicio_actividades: string | null
+          invoicing_rules: Json
           is_production: boolean
+          last_error: string | null
+          last_invoice_number_a: number | null
+          last_invoice_number_b: number | null
+          last_invoice_number_c: number | null
+          last_verification: string | null
+          private_key_enc: string | null
           punto_venta: number | null
-          razon_social: string | null
-          reglas_facturacion: Json
-          ultima_verificacion: string | null
-          ultimo_error: string | null
-          ultimo_nro_factura_a: number | null
-          ultimo_nro_factura_b: number | null
-          ultimo_nro_factura_c: number | null
           updated_at: string
         }
         Insert: {
+          activity_start_date?: string | null
           branch_id: string
+          business_name?: string | null
           certificado_crt?: string | null
-          clave_privada_enc?: string | null
+          certificate_status?: string
+          connection_status?: string
           created_at?: string
           csr_pem?: string | null
           cuit?: string | null
-          direccion_fiscal?: string | null
-          estado_certificado?: string
-          estado_conexion?: string
+          fiscal_address?: string | null
           id?: string
-          inicio_actividades?: string | null
+          invoicing_rules?: Json
           is_production?: boolean
+          last_error?: string | null
+          last_invoice_number_a?: number | null
+          last_invoice_number_b?: number | null
+          last_invoice_number_c?: number | null
+          last_verification?: string | null
+          private_key_enc?: string | null
           punto_venta?: number | null
-          razon_social?: string | null
-          reglas_facturacion?: Json
-          ultima_verificacion?: string | null
-          ultimo_error?: string | null
-          ultimo_nro_factura_a?: number | null
-          ultimo_nro_factura_b?: number | null
-          ultimo_nro_factura_c?: number | null
           updated_at?: string
         }
         Update: {
+          activity_start_date?: string | null
           branch_id?: string
+          business_name?: string | null
           certificado_crt?: string | null
-          clave_privada_enc?: string | null
+          certificate_status?: string
+          connection_status?: string
           created_at?: string
           csr_pem?: string | null
           cuit?: string | null
-          direccion_fiscal?: string | null
-          estado_certificado?: string
-          estado_conexion?: string
+          fiscal_address?: string | null
           id?: string
-          inicio_actividades?: string | null
+          invoicing_rules?: Json
           is_production?: boolean
+          last_error?: string | null
+          last_invoice_number_a?: number | null
+          last_invoice_number_b?: number | null
+          last_invoice_number_c?: number | null
+          last_verification?: string | null
+          private_key_enc?: string | null
           punto_venta?: number | null
-          razon_social?: string | null
-          reglas_facturacion?: Json
-          ultima_verificacion?: string | null
-          ultimo_error?: string | null
-          ultimo_nro_factura_a?: number | null
-          ultimo_nro_factura_b?: number | null
-          ultimo_nro_factura_c?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -471,54 +471,54 @@ export type Database = {
       branch_monthly_sales: {
         Row: {
           branch_id: string
-          cargado_por: string | null
+          cash: number | null
+          cash_percentage: number | null
           created_at: string | null
           deleted_at: string | null
-          efectivo: number | null
           fc_total: number
           fecha_carga: string | null
           ft_total: number
-          fuente: string
           id: string
+          loaded_by: string | null
           notes: string | null
-          periodo: string
-          porcentaje_ft: number | null
+          period: string
+          source: string
+          total_sales: number | null
           updated_at: string | null
-          venta_total: number | null
         }
         Insert: {
           branch_id: string
-          cargado_por?: string | null
+          cash?: number | null
+          cash_percentage?: number | null
           created_at?: string | null
           deleted_at?: string | null
-          efectivo?: number | null
           fc_total: number
           fecha_carga?: string | null
           ft_total: number
-          fuente?: string
           id?: string
+          loaded_by?: string | null
           notes?: string | null
-          periodo: string
-          porcentaje_ft?: number | null
+          period: string
+          source?: string
+          total_sales?: number | null
           updated_at?: string | null
-          venta_total?: number | null
         }
         Update: {
           branch_id?: string
-          cargado_por?: string | null
+          cash?: number | null
+          cash_percentage?: number | null
           created_at?: string | null
           deleted_at?: string | null
-          efectivo?: number | null
           fc_total?: number
           fecha_carga?: string | null
           ft_total?: number
-          fuente?: string
           id?: string
+          loaded_by?: string | null
           notes?: string | null
-          periodo?: string
-          porcentaje_ft?: number | null
+          period?: string
+          source?: string
+          total_sales?: number | null
           updated_at?: string | null
-          venta_total?: number | null
         }
         Relationships: [
           {
@@ -746,10 +746,10 @@ export type Database = {
           categoria_padre: string | null
           clave: string
           created_at: string | null
-          etiqueta: string
           id: string
           is_active: boolean | null
-          orden: number | null
+          label: string
+          sort_order: number | null
           tipo: string
           updated_at: string | null
         }
@@ -757,10 +757,10 @@ export type Database = {
           categoria_padre?: string | null
           clave: string
           created_at?: string | null
-          etiqueta: string
           id?: string
           is_active?: boolean | null
-          orden?: number | null
+          label: string
+          sort_order?: number | null
           tipo: string
           updated_at?: string | null
         }
@@ -768,10 +768,10 @@ export type Database = {
           categoria_padre?: string | null
           clave?: string
           created_at?: string | null
-          etiqueta?: string
           id?: string
           is_active?: boolean | null
-          orden?: number | null
+          label?: string
+          sort_order?: number | null
           tipo?: string
           updated_at?: string | null
         }
@@ -810,12 +810,12 @@ export type Database = {
           created_by: string | null
           datos_pago: Json | null
           deleted_at: string | null
-          fecha_pago: string
           id: string
           is_verified: boolean
           notes: string | null
+          payment_date: string
           payment_method: string
-          referencia: string | null
+          reference: string | null
           verificado_at: string | null
           verificado_notas: string | null
           verificado_por: string | null
@@ -828,12 +828,12 @@ export type Database = {
           created_by?: string | null
           datos_pago?: Json | null
           deleted_at?: string | null
-          fecha_pago: string
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_date: string
           payment_method: string
-          referencia?: string | null
+          reference?: string | null
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -846,12 +846,12 @@ export type Database = {
           created_by?: string | null
           datos_pago?: Json | null
           deleted_at?: string | null
-          fecha_pago?: string
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_date?: string
           payment_method?: string
-          referencia?: string | null
+          reference?: string | null
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -885,12 +885,13 @@ export type Database = {
           branch_id: string
           canon_monto: number
           canon_porcentaje: number | null
+          cash_percentage: number | null
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
+          due_date: string | null
           estado: string | null
           fc_total: number
-          fecha_vencimiento: string | null
           ft_total: number
           id: string
           marketing_monto: number
@@ -898,9 +899,8 @@ export type Database = {
           notes: string | null
           pago_ft_sugerido: number | null
           pago_vt_sugerido: number | null
-          periodo: string
-          porcentaje_ft: number | null
-          saldo_pendiente: number | null
+          pending_balance: number | null
+          period: string
           total_canon: number
           updated_at: string | null
           ventas_id: string | null
@@ -909,12 +909,13 @@ export type Database = {
           branch_id: string
           canon_monto: number
           canon_porcentaje?: number | null
+          cash_percentage?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
+          due_date?: string | null
           estado?: string | null
           fc_total: number
-          fecha_vencimiento?: string | null
           ft_total: number
           id?: string
           marketing_monto: number
@@ -922,9 +923,8 @@ export type Database = {
           notes?: string | null
           pago_ft_sugerido?: number | null
           pago_vt_sugerido?: number | null
-          periodo: string
-          porcentaje_ft?: number | null
-          saldo_pendiente?: number | null
+          pending_balance?: number | null
+          period: string
           total_canon: number
           updated_at?: string | null
           ventas_id?: string | null
@@ -933,12 +933,13 @@ export type Database = {
           branch_id?: string
           canon_monto?: number
           canon_porcentaje?: number | null
+          cash_percentage?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
+          due_date?: string | null
           estado?: string | null
           fc_total?: number
-          fecha_vencimiento?: string | null
           ft_total?: number
           id?: string
           marketing_monto?: number
@@ -946,9 +947,8 @@ export type Database = {
           notes?: string | null
           pago_ft_sugerido?: number | null
           pago_vt_sugerido?: number | null
-          periodo?: string
-          porcentaje_ft?: number | null
-          saldo_pendiente?: number | null
+          pending_balance?: number | null
+          period?: string
           total_canon?: number
           updated_at?: string | null
           ventas_id?: string | null
@@ -1788,44 +1788,44 @@ export type Database = {
       }
       customer_addresses: {
         Row: {
-          ciudad: string | null
+          address: string
+          city: string | null
           created_at: string | null
-          direccion: string
-          etiqueta: string
+          floor: string | null
           id: string
           is_primary: boolean | null
-          latitud: number | null
-          longitud: number | null
-          piso: string | null
-          referencia: string | null
+          label: string
+          latitude: number | null
+          longitude: number | null
+          reference: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          ciudad?: string | null
+          address: string
+          city?: string | null
           created_at?: string | null
-          direccion: string
-          etiqueta?: string
+          floor?: string | null
           id?: string
           is_primary?: boolean | null
-          latitud?: number | null
-          longitud?: number | null
-          piso?: string | null
-          referencia?: string | null
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          reference?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          ciudad?: string | null
+          address?: string
+          city?: string | null
           created_at?: string | null
-          direccion?: string
-          etiqueta?: string
+          floor?: string | null
           id?: string
           is_primary?: boolean | null
-          latitud?: number | null
-          longitud?: number | null
-          piso?: string | null
-          referencia?: string | null
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          reference?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -1982,8 +1982,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
-          orden: number | null
           pedido_minimo: number | null
+          sort_order: number | null
           tiempo_estimado_min: number | null
           updated_at: string | null
         }
@@ -1996,8 +1996,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
-          orden?: number | null
           pedido_minimo?: number | null
+          sort_order?: number | null
           tiempo_estimado_min?: number | null
           updated_at?: string | null
         }
@@ -2010,8 +2010,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
-          orden?: number | null
           pedido_minimo?: number | null
+          sort_order?: number | null
           tiempo_estimado_min?: number | null
           updated_at?: string | null
         }
@@ -2441,21 +2441,21 @@ export type Database = {
           amount: number
           branch_id: string
           categoria_principal: string
-          concepto: string
+          concept: string
           costo_transferencia: number | null
           created_at: string | null
           created_by: string | null
+          date: string
           deleted_at: string | null
-          detalle: Json | null
+          details: Json | null
+          due_date: string | null
           estado: string | null
-          fecha: string
-          fecha_pago: string | null
-          fecha_vencimiento: string | null
           gasto_relacionado_id: string | null
           id: string
           notes: string | null
+          payment_date: string | null
           payment_method: string | null
-          periodo: string
+          period: string
           proveedor_id: string | null
           rdo_category_code: string | null
           rdo_section: string | null
@@ -2471,21 +2471,21 @@ export type Database = {
           amount: number
           branch_id: string
           categoria_principal: string
-          concepto: string
+          concept: string
           costo_transferencia?: number | null
           created_at?: string | null
           created_by?: string | null
+          date: string
           deleted_at?: string | null
-          detalle?: Json | null
+          details?: Json | null
+          due_date?: string | null
           estado?: string | null
-          fecha: string
-          fecha_pago?: string | null
-          fecha_vencimiento?: string | null
           gasto_relacionado_id?: string | null
           id?: string
           notes?: string | null
+          payment_date?: string | null
           payment_method?: string | null
-          periodo: string
+          period: string
           proveedor_id?: string | null
           rdo_category_code?: string | null
           rdo_section?: string | null
@@ -2501,21 +2501,21 @@ export type Database = {
           amount?: number
           branch_id?: string
           categoria_principal?: string
-          concepto?: string
+          concept?: string
           costo_transferencia?: number | null
           created_at?: string | null
           created_by?: string | null
+          date?: string
           deleted_at?: string | null
-          detalle?: Json | null
+          details?: Json | null
+          due_date?: string | null
           estado?: string | null
-          fecha?: string
-          fecha_pago?: string | null
-          fecha_vencimiento?: string | null
           gasto_relacionado_id?: string | null
           id?: string
           notes?: string | null
+          payment_date?: string | null
           payment_method?: string | null
-          periodo?: string
+          period?: string
           proveedor_id?: string | null
           rdo_category_code?: string | null
           rdo_section?: string | null
@@ -2640,8 +2640,8 @@ export type Database = {
           tabla: string
           timestamp: string | null
           user_agent: string | null
+          user_id: string | null
           usuario_email: string | null
-          usuario_id: string | null
         }
         Insert: {
           campos_modificados?: string[] | null
@@ -2655,8 +2655,8 @@ export type Database = {
           tabla: string
           timestamp?: string | null
           user_agent?: string | null
+          user_id?: string | null
           usuario_email?: string | null
-          usuario_id?: string | null
         }
         Update: {
           campos_modificados?: string[] | null
@@ -2670,8 +2670,8 @@ export type Database = {
           tabla?: string
           timestamp?: string | null
           user_agent?: string | null
+          user_id?: string | null
           usuario_email?: string | null
-          usuario_id?: string | null
         }
         Relationships: []
       }
@@ -2971,14 +2971,14 @@ export type Database = {
           created_by: string | null
           cuotas_pagadas: number | null
           cuotas_total: number | null
+          date: string
           deleted_at: string | null
           description: string
           estado: string
-          fecha: string
           id: string
           monto_total: number
           notes: string | null
-          periodo: string
+          period: string
           tipo_inversion: string
           updated_at: string
           vida_util_meses: number | null
@@ -2989,14 +2989,14 @@ export type Database = {
           created_by?: string | null
           cuotas_pagadas?: number | null
           cuotas_total?: number | null
+          date: string
           deleted_at?: string | null
           description: string
           estado?: string
-          fecha: string
           id?: string
           monto_total: number
           notes?: string | null
-          periodo: string
+          period: string
           tipo_inversion: string
           updated_at?: string
           vida_util_meses?: number | null
@@ -3007,14 +3007,14 @@ export type Database = {
           created_by?: string | null
           cuotas_pagadas?: number | null
           cuotas_total?: number | null
+          date?: string
           deleted_at?: string | null
           description?: string
           estado?: string
-          fecha?: string
           id?: string
           monto_total?: number
           notes?: string | null
-          periodo?: string
+          period?: string
           tipo_inversion?: string
           updated_at?: string
           vida_util_meses?: number | null
@@ -3052,13 +3052,13 @@ export type Database = {
           notes: string | null
           precio_bruto: number | null
           precio_neto: number | null
-          precio_unitario: number
           precio_unitario_bruto: number | null
           quantity: number
           rdo_category_code: string | null
           subtotal: number
           tipo_item: string
           unidad: string | null
+          unit_price: number
         }
         Insert: {
           afecta_costo_base?: boolean | null
@@ -3075,13 +3075,13 @@ export type Database = {
           notes?: string | null
           precio_bruto?: number | null
           precio_neto?: number | null
-          precio_unitario: number
           precio_unitario_bruto?: number | null
           quantity?: number
           rdo_category_code?: string | null
           subtotal: number
           tipo_item?: string
           unidad?: string | null
+          unit_price: number
         }
         Update: {
           afecta_costo_base?: boolean | null
@@ -3098,13 +3098,13 @@ export type Database = {
           notes?: string | null
           precio_bruto?: number | null
           precio_neto?: number | null
-          precio_unitario?: number
           precio_unitario_bruto?: number | null
           quantity?: number
           rdo_category_code?: string | null
           subtotal?: number
           tipo_item?: string
           unidad?: string | null
+          unit_price?: number
         }
         Relationships: [
           {
@@ -3300,14 +3300,14 @@ export type Database = {
       }
       item_modifiers: {
         Row: {
-          cantidad_ahorro: number | null
-          cantidad_extra: number | null
           cantidad_nuevo: number | null
-          costo_ahorro: number | null
-          costo_extra: number | null
           created_at: string | null
           diferencia_costo: number | null
           diferencia_precio: number | null
+          extra_cost: number | null
+          extra_price: number | null
+          extra_quantity: number | null
+          extra_unit: string | null
           id: string
           ingrediente_extra_id: string | null
           ingrediente_id: string | null
@@ -3316,25 +3316,25 @@ export type Database = {
           is_active: boolean | null
           item_carta_id: string
           name: string
-          orden: number | null
-          precio_extra: number | null
           receta_extra_id: string | null
           receta_id: string | null
+          saving_cost: number | null
+          saving_quantity: number | null
+          saving_unit: string | null
+          sort_order: number | null
           tipo: string
-          unidad_ahorro: string | null
-          unidad_extra: string | null
           unidad_nuevo: string | null
           updated_at: string | null
         }
         Insert: {
-          cantidad_ahorro?: number | null
-          cantidad_extra?: number | null
           cantidad_nuevo?: number | null
-          costo_ahorro?: number | null
-          costo_extra?: number | null
           created_at?: string | null
           diferencia_costo?: number | null
           diferencia_precio?: number | null
+          extra_cost?: number | null
+          extra_price?: number | null
+          extra_quantity?: number | null
+          extra_unit?: string | null
           id?: string
           ingrediente_extra_id?: string | null
           ingrediente_id?: string | null
@@ -3343,25 +3343,25 @@ export type Database = {
           is_active?: boolean | null
           item_carta_id: string
           name: string
-          orden?: number | null
-          precio_extra?: number | null
           receta_extra_id?: string | null
           receta_id?: string | null
+          saving_cost?: number | null
+          saving_quantity?: number | null
+          saving_unit?: string | null
+          sort_order?: number | null
           tipo: string
-          unidad_ahorro?: string | null
-          unidad_extra?: string | null
           unidad_nuevo?: string | null
           updated_at?: string | null
         }
         Update: {
-          cantidad_ahorro?: number | null
-          cantidad_extra?: number | null
           cantidad_nuevo?: number | null
-          costo_ahorro?: number | null
-          costo_extra?: number | null
           created_at?: string | null
           diferencia_costo?: number | null
           diferencia_precio?: number | null
+          extra_cost?: number | null
+          extra_price?: number | null
+          extra_quantity?: number | null
+          extra_unit?: string | null
           id?: string
           ingrediente_extra_id?: string | null
           ingrediente_id?: string | null
@@ -3370,13 +3370,13 @@ export type Database = {
           is_active?: boolean | null
           item_carta_id?: string
           name?: string
-          orden?: number | null
-          precio_extra?: number | null
           receta_extra_id?: string | null
           receta_id?: string | null
+          saving_cost?: number | null
+          saving_quantity?: number | null
+          saving_unit?: string | null
+          sort_order?: number | null
           tipo?: string
-          unidad_ahorro?: string | null
-          unidad_extra?: string | null
           unidad_nuevo?: string | null
           updated_at?: string | null
         }
@@ -3609,11 +3609,11 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
-          detalle: Json | null
+          details: Json | null
           id: string
           monto_consumido: number
           notes: string | null
-          periodo: string
+          period: string
           tipo: string | null
           updated_at: string | null
         }
@@ -3623,11 +3623,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
-          detalle?: Json | null
+          details?: Json | null
           id?: string
           monto_consumido: number
           notes?: string | null
-          periodo: string
+          period: string
           tipo?: string | null
           updated_at?: string | null
         }
@@ -3637,11 +3637,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
-          detalle?: Json | null
+          details?: Json | null
           id?: string
           monto_consumido?: number
           notes?: string | null
-          periodo?: string
+          period?: string
           tipo?: string | null
           updated_at?: string | null
         }
@@ -3837,7 +3837,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
-          orden: number | null
+          sort_order: number | null
           tipo_impresion: string
           updated_at: string | null
           visible_en_carta: boolean
@@ -3848,7 +3848,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
-          orden?: number | null
+          sort_order?: number | null
           tipo_impresion?: string
           updated_at?: string | null
           visible_en_carta?: boolean
@@ -3859,7 +3859,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
-          orden?: number | null
+          sort_order?: number | null
           tipo_impresion?: string
           updated_at?: string | null
           visible_en_carta?: boolean
@@ -3873,9 +3873,9 @@ export type Database = {
           insumo_id: string | null
           is_removable: boolean
           item_carta_id: string
-          orden: number | null
           preparacion_id: string | null
           quantity: number
+          sort_order: number | null
         }
         Insert: {
           created_at?: string | null
@@ -3883,9 +3883,9 @@ export type Database = {
           insumo_id?: string | null
           is_removable?: boolean
           item_carta_id: string
-          orden?: number | null
           preparacion_id?: string | null
           quantity?: number
+          sort_order?: number | null
         }
         Update: {
           created_at?: string | null
@@ -3893,9 +3893,9 @@ export type Database = {
           insumo_id?: string | null
           is_removable?: boolean
           item_carta_id?: string
-          orden?: number | null
           preparacion_id?: string | null
           quantity?: number
+          sort_order?: number | null
         }
         Relationships: [
           {
@@ -3934,24 +3934,24 @@ export type Database = {
           id: string
           insumo_id: string | null
           item_carta_id: string
-          orden: number
           preparacion_id: string | null
+          sort_order: number
         }
         Insert: {
           created_at?: string
           id?: string
           insumo_id?: string | null
           item_carta_id: string
-          orden?: number
           preparacion_id?: string | null
+          sort_order?: number
         }
         Update: {
           created_at?: string
           id?: string
           insumo_id?: string | null
           item_carta_id?: string
-          orden?: number
           preparacion_id?: string | null
+          sort_order?: number
         }
         Relationships: [
           {
@@ -4045,7 +4045,7 @@ export type Database = {
           item_carta_id: string
           max_selecciones: number | null
           name: string
-          orden: number
+          sort_order: number
           updated_at: string
         }
         Insert: {
@@ -4056,7 +4056,7 @@ export type Database = {
           item_carta_id: string
           max_selecciones?: number | null
           name: string
-          orden?: number
+          sort_order?: number
           updated_at?: string
         }
         Update: {
@@ -4067,7 +4067,7 @@ export type Database = {
           item_carta_id?: string
           max_selecciones?: number | null
           name?: string
-          orden?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: [
@@ -4092,28 +4092,28 @@ export type Database = {
           created_at: string | null
           id: string
           item_carta_id: string
-          motivo: string | null
-          precio_anterior: number | null
-          precio_nuevo: number
-          usuario_id: string | null
+          new_price: number
+          previous_price: number | null
+          reason: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           item_carta_id: string
-          motivo?: string | null
-          precio_anterior?: number | null
-          precio_nuevo: number
-          usuario_id?: string | null
+          new_price: number
+          previous_price?: number | null
+          reason?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           item_carta_id?: string
-          motivo?: string | null
-          precio_anterior?: number | null
-          precio_nuevo?: number
-          usuario_id?: string | null
+          new_price?: number
+          previous_price?: number | null
+          reason?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -4134,6 +4134,7 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          base_price: number
           categoria_carta_id: string | null
           closure_category: string | null
           composicion_ref_insumo_id: string | null
@@ -4147,21 +4148,21 @@ export type Database = {
           fc_actual: number | null
           fc_objetivo: number | null
           id: string
-          imagen_url: string | null
+          image_url: string | null
           is_active: boolean | null
           kitchen_station_id: string | null
           name: string
-          nombre_corto: string | null
-          orden: number | null
-          precio_base: number
           precio_promo: number | null
           precio_referencia: number | null
           promo_etiqueta: string | null
           rdo_category_code: string | null
+          short_name: string | null
+          sort_order: number | null
           tipo: string
           updated_at: string | null
         }
         Insert: {
+          base_price?: number
           categoria_carta_id?: string | null
           closure_category?: string | null
           composicion_ref_insumo_id?: string | null
@@ -4175,21 +4176,21 @@ export type Database = {
           fc_actual?: number | null
           fc_objetivo?: number | null
           id?: string
-          imagen_url?: string | null
+          image_url?: string | null
           is_active?: boolean | null
           kitchen_station_id?: string | null
           name: string
-          nombre_corto?: string | null
-          orden?: number | null
-          precio_base?: number
           precio_promo?: number | null
           precio_referencia?: number | null
           promo_etiqueta?: string | null
           rdo_category_code?: string | null
+          short_name?: string | null
+          sort_order?: number | null
           tipo?: string
           updated_at?: string | null
         }
         Update: {
+          base_price?: number
           categoria_carta_id?: string | null
           closure_category?: string | null
           composicion_ref_insumo_id?: string | null
@@ -4203,17 +4204,16 @@ export type Database = {
           fc_actual?: number | null
           fc_objetivo?: number | null
           id?: string
-          imagen_url?: string | null
+          image_url?: string | null
           is_active?: boolean | null
           kitchen_station_id?: string | null
           name?: string
-          nombre_corto?: string | null
-          orden?: number | null
-          precio_base?: number
           precio_promo?: number | null
           precio_referencia?: number | null
           promo_etiqueta?: string | null
           rdo_category_code?: string | null
+          short_name?: string | null
+          sort_order?: number | null
           tipo?: string
           updated_at?: string | null
         }
@@ -4260,11 +4260,11 @@ export type Database = {
           access_token: string
           branch_id: string
           collector_id: string | null
+          connection_status: string
           created_at: string
           device_id: string | null
           device_name: string | null
           device_operating_mode: string | null
-          estado_conexion: string
           id: string
           public_key: string
           ultimo_test: string | null
@@ -4276,11 +4276,11 @@ export type Database = {
           access_token?: string
           branch_id: string
           collector_id?: string | null
+          connection_status?: string
           created_at?: string
           device_id?: string | null
           device_name?: string | null
           device_operating_mode?: string | null
-          estado_conexion?: string
           id?: string
           public_key?: string
           ultimo_test?: string | null
@@ -4292,11 +4292,11 @@ export type Database = {
           access_token?: string
           branch_id?: string
           collector_id?: string | null
+          connection_status?: string
           created_at?: string
           device_id?: string | null
           device_name?: string | null
           device_operating_mode?: string | null
-          estado_conexion?: string
           id?: string
           public_key?: string
           ultimo_test?: string | null
@@ -4370,25 +4370,25 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string
+          extra_price: number | null
           id: string
           pedido_item_id: string
-          precio_extra: number | null
           tipo: string
         }
         Insert: {
           created_at?: string | null
           description: string
+          extra_price?: number | null
           id?: string
           pedido_item_id: string
-          precio_extra?: number | null
           tipo: string
         }
         Update: {
           created_at?: string | null
           description?: string
+          extra_price?: number | null
           id?: string
           pedido_item_id?: string
-          precio_extra?: number | null
           tipo?: string
         }
         Relationships: [
@@ -4422,11 +4422,11 @@ export type Database = {
           notas: string | null
           pedido_id: string
           precio_referencia: number | null
-          precio_unitario: number
           promocion_id: string | null
           promocion_item_id: string | null
           quantity: number
           subtotal: number
+          unit_price: number
         }
         Insert: {
           articulo_id?: string | null
@@ -4441,11 +4441,11 @@ export type Database = {
           notas?: string | null
           pedido_id: string
           precio_referencia?: number | null
-          precio_unitario: number
           promocion_id?: string | null
           promocion_item_id?: string | null
           quantity?: number
           subtotal: number
+          unit_price: number
         }
         Update: {
           articulo_id?: string | null
@@ -4460,11 +4460,11 @@ export type Database = {
           notas?: string | null
           pedido_id?: string
           precio_referencia?: number | null
-          precio_unitario?: number
           promocion_id?: string | null
           promocion_item_id?: string | null
           quantity?: number
           subtotal?: number
+          unit_price?: number
         }
         Relationships: [
           {
@@ -4523,28 +4523,28 @@ export type Database = {
           created_at: string
           editado_por: string
           id: string
-          motivo: string
           pagos_antes: Json
           pagos_despues: Json
           pedido_id: string
+          reason: string
         }
         Insert: {
           created_at?: string
           editado_por: string
           id?: string
-          motivo: string
           pagos_antes: Json
           pagos_despues: Json
           pedido_id: string
+          reason: string
         }
         Update: {
           created_at?: string
           editado_por?: string
           id?: string
-          motivo?: string
           pagos_antes?: Json
           pagos_despues?: Json
           pedido_id?: string
+          reason?: string
         }
         Relationships: [
           {
@@ -4571,7 +4571,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
-          metodo: string
+          method: string
           monto_recibido: number | null
           mp_payment_id: string | null
           pedido_id: string
@@ -4587,7 +4587,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
-          metodo: string
+          method: string
           monto_recibido?: number | null
           mp_payment_id?: string | null
           pedido_id: string
@@ -4603,7 +4603,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
-          metodo?: string
+          method?: string
           monto_recibido?: number | null
           mp_payment_id?: string | null
           pedido_id?: string
@@ -4656,10 +4656,10 @@ export type Database = {
           estado: string
           factura_cae: string | null
           factura_cuit: string | null
-          factura_numero: string | null
           factura_razon_social: string | null
           factura_vencimiento_cae: string | null
           id: string
+          invoice_number: string | null
           mp_payment_intent_id: string | null
           numero_llamador: number | null
           numero_pedido: number
@@ -4707,10 +4707,10 @@ export type Database = {
           estado?: string
           factura_cae?: string | null
           factura_cuit?: string | null
-          factura_numero?: string | null
           factura_razon_social?: string | null
           factura_vencimiento_cae?: string | null
           id?: string
+          invoice_number?: string | null
           mp_payment_intent_id?: string | null
           numero_llamador?: number | null
           numero_pedido: number
@@ -4758,10 +4758,10 @@ export type Database = {
           estado?: string
           factura_cae?: string | null
           factura_cuit?: string | null
-          factura_numero?: string | null
           factura_razon_social?: string | null
           factura_vencimiento_cae?: string | null
           id?: string
+          invoice_number?: string | null
           mp_payment_intent_id?: string | null
           numero_llamador?: number | null
           numero_pedido?: number
@@ -4869,14 +4869,14 @@ export type Database = {
           branch_id: string
           created_at: string | null
           created_by: string | null
+          cumulative_balance: number | null
+          date: string
           deleted_at: string | null
-          detalle: Json | null
-          fecha: string
+          details: Json | null
           id: string
           notes: string | null
-          periodo: string | null
+          period: string | null
           resultado_periodo: number | null
-          saldo_acumulado: number | null
           socio_id: string
           tipo: string
         }
@@ -4885,14 +4885,14 @@ export type Database = {
           branch_id: string
           created_at?: string | null
           created_by?: string | null
+          cumulative_balance?: number | null
+          date: string
           deleted_at?: string | null
-          detalle?: Json | null
-          fecha: string
+          details?: Json | null
           id?: string
           notes?: string | null
-          periodo?: string | null
+          period?: string | null
           resultado_periodo?: number | null
-          saldo_acumulado?: number | null
           socio_id: string
           tipo: string
         }
@@ -4901,14 +4901,14 @@ export type Database = {
           branch_id?: string
           created_at?: string | null
           created_by?: string | null
+          cumulative_balance?: number | null
+          date?: string
           deleted_at?: string | null
-          detalle?: Json | null
-          fecha?: string
+          details?: Json | null
           id?: string
           notes?: string | null
-          periodo?: string | null
+          period?: string | null
           resultado_periodo?: number | null
-          saldo_acumulado?: number | null
           socio_id?: string
           tipo?: string
         }
@@ -4957,8 +4957,8 @@ export type Database = {
           is_active: boolean | null
           limite_retiro_mensual: number | null
           name: string
-          porcentaje_participacion: number
-          telefono: string | null
+          ownership_percentage: number
+          phone: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -4975,8 +4975,8 @@ export type Database = {
           is_active?: boolean | null
           limite_retiro_mensual?: number | null
           name: string
-          porcentaje_participacion: number
-          telefono?: string | null
+          ownership_percentage: number
+          phone?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -4993,8 +4993,8 @@ export type Database = {
           is_active?: boolean | null
           limite_retiro_mensual?: number | null
           name?: string
-          porcentaje_participacion?: number
-          telefono?: string | null
+          ownership_percentage?: number
+          phone?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -5613,7 +5613,7 @@ export type Database = {
           monto_distribuible: number
           notes: string | null
           otras_reservas: number | null
-          periodo: string
+          period: string
           procesado: boolean | null
           reserva_legal: number | null
           resultado_neto: number
@@ -5630,7 +5630,7 @@ export type Database = {
           monto_distribuible: number
           notes?: string | null
           otras_reservas?: number | null
-          periodo: string
+          period: string
           procesado?: boolean | null
           reserva_legal?: number | null
           resultado_neto: number
@@ -5647,7 +5647,7 @@ export type Database = {
           monto_distribuible?: number
           notes?: string | null
           otras_reservas?: number | null
-          periodo?: string
+          period?: string
           procesado?: boolean | null
           reserva_legal?: number | null
           resultado_neto?: number
@@ -5921,7 +5921,7 @@ export type Database = {
           description: string | null
           id: string
           origen: string
-          periodo: string
+          period: string
           rdo_category_code: string
           source_id: string | null
           source_table: string | null
@@ -5937,7 +5937,7 @@ export type Database = {
           description?: string | null
           id?: string
           origen: string
-          periodo: string
+          period: string
           rdo_category_code: string
           source_id?: string | null
           source_table?: string | null
@@ -5953,7 +5953,7 @@ export type Database = {
           description?: string | null
           id?: string
           origen?: string
-          periodo?: string
+          period?: string
           rdo_category_code?: string
           source_id?: string | null
           source_table?: string | null
@@ -5990,7 +5990,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          orden: number
+          sort_order: number
           updated_at: string
         }
         Insert: {
@@ -5999,7 +5999,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          orden?: number
+          sort_order?: number
           updated_at?: string
         }
         Update: {
@@ -6008,7 +6008,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          orden?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -6018,31 +6018,31 @@ export type Database = {
           created_at: string | null
           id: string
           insumo_id: string | null
-          orden: number | null
           preparacion_id: string
           quantity: number
+          sort_order: number | null
           sub_preparacion_id: string | null
-          unidad: string
+          unit: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           insumo_id?: string | null
-          orden?: number | null
           preparacion_id: string
           quantity: number
+          sort_order?: number | null
           sub_preparacion_id?: string | null
-          unidad?: string
+          unit?: string
         }
         Update: {
           created_at?: string | null
           id?: string
           insumo_id?: string | null
-          orden?: number | null
           preparacion_id?: string
           quantity?: number
+          sort_order?: number | null
           sub_preparacion_id?: string | null
-          unidad?: string
+          unit?: string
         }
         Relationships: [
           {
@@ -6073,22 +6073,22 @@ export type Database = {
           created_at: string | null
           id: string
           insumo_id: string
-          orden: number | null
           preparacion_id: string
+          sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           insumo_id: string
-          orden?: number | null
           preparacion_id: string
+          sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           insumo_id?: string
-          orden?: number | null
           preparacion_id?: string
+          sort_order?: number | null
         }
         Relationships: [
           {
@@ -6109,55 +6109,55 @@ export type Database = {
       }
       recipes: {
         Row: {
+          calculated_cost: number | null
           categoria_preparacion_id: string | null
-          costo_calculado: number | null
-          costo_manual: number | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
+          extra_price: number | null
           fc_objetivo_extra: number | null
           id: string
           is_active: boolean | null
           is_interchangeable: boolean | null
+          manual_cost: number | null
           metodo_costeo: string | null
           name: string
-          precio_extra: number | null
           puede_ser_extra: boolean
           tipo: string
           updated_at: string | null
         }
         Insert: {
+          calculated_cost?: number | null
           categoria_preparacion_id?: string | null
-          costo_calculado?: number | null
-          costo_manual?: number | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
+          extra_price?: number | null
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
+          manual_cost?: number | null
           metodo_costeo?: string | null
           name: string
-          precio_extra?: number | null
           puede_ser_extra?: boolean
           tipo?: string
           updated_at?: string | null
         }
         Update: {
+          calculated_cost?: number | null
           categoria_preparacion_id?: string | null
-          costo_calculado?: number | null
-          costo_manual?: number | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
+          extra_price?: number | null
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
+          manual_cost?: number | null
           metodo_costeo?: string | null
           name?: string
-          precio_extra?: number | null
           puede_ser_extra?: boolean
           tipo?: string
           updated_at?: string | null
@@ -6350,29 +6350,29 @@ export type Database = {
       removable_items: {
         Row: {
           created_at: string | null
+          display_name: string | null
           id: string
           insumo_id: string | null
           is_active: boolean | null
           item_carta_id: string
-          nombre_display: string | null
           preparacion_id: string | null
         }
         Insert: {
           created_at?: string | null
+          display_name?: string | null
           id?: string
           insumo_id?: string | null
           is_active?: boolean | null
           item_carta_id: string
-          nombre_display?: string | null
           preparacion_id?: string | null
         }
         Update: {
           created_at?: string | null
+          display_name?: string | null
           id?: string
           insumo_id?: string | null
           is_active?: boolean | null
           item_carta_id?: string
-          nombre_display?: string | null
           preparacion_id?: string | null
         }
         Relationships: [
@@ -6562,9 +6562,9 @@ export type Database = {
           adjustment_value: number | null
           code: string
           created_at: string | null
-          es_base: boolean | null
           id: string
           is_active: boolean | null
+          is_base: boolean | null
           name: string
           sort_order: number | null
           updated_at: string | null
@@ -6574,9 +6574,9 @@ export type Database = {
           adjustment_value?: number | null
           code: string
           created_at?: string | null
-          es_base?: boolean | null
           id?: string
           is_active?: boolean | null
+          is_base?: boolean | null
           name: string
           sort_order?: number | null
           updated_at?: string | null
@@ -6586,9 +6586,9 @@ export type Database = {
           adjustment_value?: number | null
           code?: string
           created_at?: string | null
-          es_base?: boolean | null
           id?: string
           is_active?: boolean | null
+          is_base?: boolean | null
           name?: string
           sort_order?: number | null
           updated_at?: string | null
@@ -6742,16 +6742,17 @@ export type Database = {
           arqueo_caja: Json | null
           branch_id: string
           cerrado_at: string
-          cerrado_por: string
+          closed_by: string
+          date: string
           diferencia_apps: number | null
           diferencia_posnet: number | null
           facturacion_diferencia: number
           facturacion_esperada: number
-          fecha: string
-          fuente: string | null
           hamburguesas: Json
           id: string
           notas: string | null
+          shift: string
+          source: string | null
           tiene_alerta_apps: boolean | null
           tiene_alerta_caja: boolean | null
           tiene_alerta_facturacion: boolean
@@ -6761,7 +6762,6 @@ export type Database = {
           total_facturado: number
           total_hamburguesas: number
           total_vendido: number
-          turno: string
           updated_at: string | null
           updated_by: string | null
           ventas_apps: Json
@@ -6771,16 +6771,17 @@ export type Database = {
           arqueo_caja?: Json | null
           branch_id: string
           cerrado_at?: string
-          cerrado_por: string
+          closed_by: string
+          date: string
           diferencia_apps?: number | null
           diferencia_posnet?: number | null
           facturacion_diferencia?: number
           facturacion_esperada?: number
-          fecha: string
-          fuente?: string | null
           hamburguesas?: Json
           id?: string
           notas?: string | null
+          shift: string
+          source?: string | null
           tiene_alerta_apps?: boolean | null
           tiene_alerta_caja?: boolean | null
           tiene_alerta_facturacion?: boolean
@@ -6790,7 +6791,6 @@ export type Database = {
           total_facturado?: number
           total_hamburguesas?: number
           total_vendido?: number
-          turno: string
           updated_at?: string | null
           updated_by?: string | null
           ventas_apps?: Json
@@ -6800,16 +6800,17 @@ export type Database = {
           arqueo_caja?: Json | null
           branch_id?: string
           cerrado_at?: string
-          cerrado_por?: string
+          closed_by?: string
+          date?: string
           diferencia_apps?: number | null
           diferencia_posnet?: number | null
           facturacion_diferencia?: number
           facturacion_esperada?: number
-          fecha?: string
-          fuente?: string | null
           hamburguesas?: Json
           id?: string
           notas?: string | null
+          shift?: string
+          source?: string | null
           tiene_alerta_apps?: boolean | null
           tiene_alerta_caja?: boolean | null
           tiene_alerta_facturacion?: boolean
@@ -6819,7 +6820,6 @@ export type Database = {
           total_facturado?: number
           total_hamburguesas?: number
           total_vendido?: number
-          turno?: string
           updated_at?: string | null
           updated_by?: string | null
           ventas_apps?: Json
@@ -7001,7 +7001,7 @@ export type Database = {
           stock_critico_local: number | null
           stock_minimo: number | null
           stock_minimo_local: number | null
-          unidad: string
+          unit: string
           updated_at: string | null
         }
         Insert: {
@@ -7013,7 +7013,7 @@ export type Database = {
           stock_critico_local?: number | null
           stock_minimo?: number | null
           stock_minimo_local?: number | null
-          unidad: string
+          unit: string
           updated_at?: string | null
         }
         Update: {
@@ -7025,7 +7025,7 @@ export type Database = {
           stock_critico_local?: number | null
           stock_minimo?: number | null
           stock_minimo_local?: number | null
-          unidad?: string
+          unit?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -7062,7 +7062,7 @@ export type Database = {
           id: string
           insumo_id: string
           merma: number
-          periodo: string
+          period: string
           stock_apertura: number
           stock_cierre_fisico: number
           stock_esperado: number
@@ -7076,7 +7076,7 @@ export type Database = {
           id?: string
           insumo_id: string
           merma?: number
-          periodo: string
+          period: string
           stock_apertura?: number
           stock_cierre_fisico: number
           stock_esperado?: number
@@ -7090,7 +7090,7 @@ export type Database = {
           id?: string
           insumo_id?: string
           merma?: number
-          periodo?: string
+          period?: string
           stock_apertura?: number
           stock_cierre_fisico?: number
           stock_esperado?: number
@@ -7173,10 +7173,10 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           created_by: string | null
-          fecha: string
+          date: string
           id: string
           nota_general: string | null
-          periodo: string | null
+          period: string | null
           resumen: Json | null
           status: string
         }
@@ -7185,10 +7185,10 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
-          fecha: string
+          date: string
           id?: string
           nota_general?: string | null
-          periodo?: string | null
+          period?: string | null
           resumen?: Json | null
           status?: string
         }
@@ -7197,10 +7197,10 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
-          fecha?: string
+          date?: string
           id?: string
           nota_general?: string | null
-          periodo?: string | null
+          period?: string | null
           resumen?: Json | null
           status?: string
         }
@@ -7229,12 +7229,12 @@ export type Database = {
           factura_proveedor_id: string | null
           id: string
           insumo_id: string
-          motivo: string | null
           nota: string | null
           pedido_id: string | null
           quantity: number
           quantity_after: number
           quantity_before: number
+          reason: string | null
           tipo: string
         }
         Insert: {
@@ -7244,12 +7244,12 @@ export type Database = {
           factura_proveedor_id?: string | null
           id?: string
           insumo_id: string
-          motivo?: string | null
           nota?: string | null
           pedido_id?: string | null
           quantity: number
           quantity_after: number
           quantity_before: number
+          reason?: string | null
           tipo: string
         }
         Update: {
@@ -7259,12 +7259,12 @@ export type Database = {
           factura_proveedor_id?: string | null
           id?: string
           insumo_id?: string
-          motivo?: string | null
           nota?: string | null
           pedido_id?: string | null
           quantity?: number
           quantity_after?: number
           quantity_before?: number
+          reason?: string | null
           tipo?: string
         }
         Relationships: [
@@ -7387,31 +7387,31 @@ export type Database = {
       supplier_invoices: {
         Row: {
           branch_id: string
-          condicion_pago: string | null
           costo_real: number | null
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
+          due_date: string | null
           estado_pago: string | null
-          factura_fecha: string
-          factura_numero: string
-          factura_tipo: string | null
+          extraordinary_reason: string | null
           factura_url: string | null
-          fecha_vencimiento: string | null
           id: string
           imp_internos: number | null
+          invoice_date: string
+          invoice_number: string
+          invoice_type: string | null
           iva: number | null
           iva_105: number | null
           iva_21: number | null
-          motivo_extraordinaria: string | null
           notes: string | null
           otros_impuestos: number | null
+          payment_terms: string | null
+          pending_balance: number | null
           perc_iva: number | null
           perc_municipal: number | null
           perc_provincial: number | null
-          periodo: string
+          period: string
           proveedor_id: string
-          saldo_pendiente: number | null
           subtotal: number
           subtotal_bruto: number | null
           subtotal_neto: number | null
@@ -7423,31 +7423,31 @@ export type Database = {
         }
         Insert: {
           branch_id: string
-          condicion_pago?: string | null
           costo_real?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
+          due_date?: string | null
           estado_pago?: string | null
-          factura_fecha: string
-          factura_numero: string
-          factura_tipo?: string | null
+          extraordinary_reason?: string | null
           factura_url?: string | null
-          fecha_vencimiento?: string | null
           id?: string
           imp_internos?: number | null
+          invoice_date: string
+          invoice_number: string
+          invoice_type?: string | null
           iva?: number | null
           iva_105?: number | null
           iva_21?: number | null
-          motivo_extraordinaria?: string | null
           notes?: string | null
           otros_impuestos?: number | null
+          payment_terms?: string | null
+          pending_balance?: number | null
           perc_iva?: number | null
           perc_municipal?: number | null
           perc_provincial?: number | null
-          periodo: string
+          period: string
           proveedor_id: string
-          saldo_pendiente?: number | null
           subtotal?: number
           subtotal_bruto?: number | null
           subtotal_neto?: number | null
@@ -7459,31 +7459,31 @@ export type Database = {
         }
         Update: {
           branch_id?: string
-          condicion_pago?: string | null
           costo_real?: number | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
+          due_date?: string | null
           estado_pago?: string | null
-          factura_fecha?: string
-          factura_numero?: string
-          factura_tipo?: string | null
+          extraordinary_reason?: string | null
           factura_url?: string | null
-          fecha_vencimiento?: string | null
           id?: string
           imp_internos?: number | null
+          invoice_date?: string
+          invoice_number?: string
+          invoice_type?: string | null
           iva?: number | null
           iva_105?: number | null
           iva_21?: number | null
-          motivo_extraordinaria?: string | null
           notes?: string | null
           otros_impuestos?: number | null
+          payment_terms?: string | null
+          pending_balance?: number | null
           perc_iva?: number | null
           perc_municipal?: number | null
           perc_provincial?: number | null
-          periodo?: string
+          period?: string
           proveedor_id?: string
-          saldo_pendiente?: number | null
           subtotal?: number
           subtotal_bruto?: number | null
           subtotal_neto?: number | null
@@ -7533,14 +7533,14 @@ export type Database = {
           datos_pago: Json | null
           deleted_at: string | null
           factura_id: string | null
-          fecha_pago: string
-          fecha_vencimiento_pago: string | null
           id: string
           is_verified: boolean
           notes: string | null
+          payment_date: string
+          payment_due_date: string | null
           payment_method: string
           proveedor_id: string
-          referencia: string | null
+          reference: string | null
           verificado_at: string | null
           verificado_notas: string | null
           verificado_por: string | null
@@ -7553,14 +7553,14 @@ export type Database = {
           datos_pago?: Json | null
           deleted_at?: string | null
           factura_id?: string | null
-          fecha_pago: string
-          fecha_vencimiento_pago?: string | null
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_date: string
+          payment_due_date?: string | null
           payment_method: string
           proveedor_id: string
-          referencia?: string | null
+          reference?: string | null
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -7573,14 +7573,14 @@ export type Database = {
           datos_pago?: Json | null
           deleted_at?: string | null
           factura_id?: string | null
-          fecha_pago?: string
-          fecha_vencimiento_pago?: string | null
           id?: string
           is_verified?: boolean
           notes?: string | null
+          payment_date?: string
+          payment_due_date?: string | null
           payment_method?: string
           proveedor_id?: string
-          referencia?: string | null
+          reference?: string | null
           verificado_at?: string | null
           verificado_notas?: string | null
           verificado_por?: string | null
@@ -7632,20 +7632,20 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          address: string | null
           alias_cbu: string | null
           ambito: string
           banco: string | null
           branch_id: string | null
+          business_name: string
           cbu: string | null
           contacto: string | null
-          contacto_secundario: string | null
           created_at: string | null
           created_by: string | null
           cuit: string | null
           deleted_at: string | null
           descuento_pago_contado: number | null
           dias_pago_habitual: number | null
-          direccion: string | null
           email: string | null
           id: string
           is_active: boolean | null
@@ -7653,30 +7653,30 @@ export type Database = {
           notes: string | null
           numero_cuenta: string | null
           permite_cuenta_corriente: boolean | null
-          razon_social: string
+          phone: string | null
           rdo_categories_default: string[] | null
-          telefono: string | null
-          telefono_secundario: string | null
+          secondary_contact: string | null
+          secondary_phone: string | null
           tipo_especial: string | null
           tipo_proveedor: string[] | null
           titular_cuenta: string | null
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           alias_cbu?: string | null
           ambito?: string
           banco?: string | null
           branch_id?: string | null
+          business_name: string
           cbu?: string | null
           contacto?: string | null
-          contacto_secundario?: string | null
           created_at?: string | null
           created_by?: string | null
           cuit?: string | null
           deleted_at?: string | null
           descuento_pago_contado?: number | null
           dias_pago_habitual?: number | null
-          direccion?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -7684,30 +7684,30 @@ export type Database = {
           notes?: string | null
           numero_cuenta?: string | null
           permite_cuenta_corriente?: boolean | null
-          razon_social: string
+          phone?: string | null
           rdo_categories_default?: string[] | null
-          telefono?: string | null
-          telefono_secundario?: string | null
+          secondary_contact?: string | null
+          secondary_phone?: string | null
           tipo_especial?: string | null
           tipo_proveedor?: string[] | null
           titular_cuenta?: string | null
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           alias_cbu?: string | null
           ambito?: string
           banco?: string | null
           branch_id?: string | null
+          business_name?: string
           cbu?: string | null
           contacto?: string | null
-          contacto_secundario?: string | null
           created_at?: string | null
           created_by?: string | null
           cuit?: string | null
           deleted_at?: string | null
           descuento_pago_contado?: number | null
           dias_pago_habitual?: number | null
-          direccion?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -7715,10 +7715,10 @@ export type Database = {
           notes?: string | null
           numero_cuenta?: string | null
           permite_cuenta_corriente?: boolean | null
-          razon_social?: string
+          phone?: string | null
           rdo_categories_default?: string[] | null
-          telefono?: string | null
-          telefono_secundario?: string | null
+          secondary_contact?: string | null
+          secondary_phone?: string | null
           tipo_especial?: string | null
           tipo_proveedor?: string[] | null
           titular_cuenta?: string | null
@@ -7743,15 +7743,17 @@ export type Database = {
       }
       supplies: {
         Row: {
+          base_unit: string
+          base_unit_cost: number | null
           categoria_id: string | null
           categoria_pl: string | null
-          costo_por_unidad_base: number | null
           creado_por: string | null
           created_at: string | null
           default_alicuota_iva: number | null
           deleted_at: string | null
           description: string | null
           especificacion: Json | null
+          extra_price: number | null
           fc_objetivo_extra: number | null
           id: string
           is_active: boolean | null
@@ -7760,7 +7762,6 @@ export type Database = {
           motivo_control: string | null
           name: string
           nivel_control: string
-          precio_extra: number | null
           precio_maximo_sugerido: number | null
           precio_referencia: number | null
           precio_venta: number | null
@@ -7770,22 +7771,23 @@ export type Database = {
           rdo_category_code: string | null
           tipo_item: string
           tracks_stock: boolean
-          unidad_base: string
           unidad_compra: string | null
           unidad_compra_contenido: number | null
           unidad_compra_precio: number | null
           updated_at: string | null
         }
         Insert: {
+          base_unit: string
+          base_unit_cost?: number | null
           categoria_id?: string | null
           categoria_pl?: string | null
-          costo_por_unidad_base?: number | null
           creado_por?: string | null
           created_at?: string | null
           default_alicuota_iva?: number | null
           deleted_at?: string | null
           description?: string | null
           especificacion?: Json | null
+          extra_price?: number | null
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
@@ -7794,7 +7796,6 @@ export type Database = {
           motivo_control?: string | null
           name: string
           nivel_control?: string
-          precio_extra?: number | null
           precio_maximo_sugerido?: number | null
           precio_referencia?: number | null
           precio_venta?: number | null
@@ -7804,22 +7805,23 @@ export type Database = {
           rdo_category_code?: string | null
           tipo_item?: string
           tracks_stock?: boolean
-          unidad_base: string
           unidad_compra?: string | null
           unidad_compra_contenido?: number | null
           unidad_compra_precio?: number | null
           updated_at?: string | null
         }
         Update: {
+          base_unit?: string
+          base_unit_cost?: number | null
           categoria_id?: string | null
           categoria_pl?: string | null
-          costo_por_unidad_base?: number | null
           creado_por?: string | null
           created_at?: string | null
           default_alicuota_iva?: number | null
           deleted_at?: string | null
           description?: string | null
           especificacion?: Json | null
+          extra_price?: number | null
           fc_objetivo_extra?: number | null
           id?: string
           is_active?: boolean | null
@@ -7828,7 +7830,6 @@ export type Database = {
           motivo_control?: string | null
           name?: string
           nivel_control?: string
-          precio_extra?: number | null
           precio_maximo_sugerido?: number | null
           precio_referencia?: number | null
           precio_venta?: number | null
@@ -7838,7 +7839,6 @@ export type Database = {
           rdo_category_code?: string | null
           tipo_item?: string
           tracks_stock?: boolean
-          unidad_base?: string
           unidad_compra?: string | null
           unidad_compra_contenido?: number | null
           unidad_compra_precio?: number | null
@@ -7897,7 +7897,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
-          orden: number | null
+          sort_order: number | null
           tipo: string
           updated_at: string | null
         }
@@ -7908,7 +7908,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
-          orden?: number | null
+          sort_order?: number | null
           tipo: string
           updated_at?: string | null
         }
@@ -7919,7 +7919,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
-          orden?: number | null
+          sort_order?: number | null
           tipo?: string
           updated_at?: string | null
         }
@@ -7934,7 +7934,7 @@ export type Database = {
           factura_id: string | null
           id: string
           insumo_id: string
-          motivo: string | null
+          reason: string | null
         }
         Insert: {
           branch_id?: string | null
@@ -7944,7 +7944,7 @@ export type Database = {
           factura_id?: string | null
           id?: string
           insumo_id: string
-          motivo?: string | null
+          reason?: string | null
         }
         Update: {
           branch_id?: string | null
@@ -7954,7 +7954,7 @@ export type Database = {
           factura_id?: string | null
           id?: string
           insumo_id?: string
-          motivo?: string | null
+          reason?: string | null
         }
         Relationships: [
           {
@@ -8419,7 +8419,7 @@ export type Database = {
           branch_nombre: string | null
           cantidad_movimientos: number | null
           nombre: string | null
-          porcentaje_participacion: number | null
+          ownership_percentage: number | null
           saldo_actual: number | null
           socio_id: string | null
           total_aportes: number | null
@@ -8506,15 +8506,15 @@ export type Database = {
         Row: {
           branch_id: string | null
           detalle: string | null
+          due_date: string | null
           estado_pago: string | null
-          factura_fecha: string | null
-          factura_numero: string | null
-          fecha_vencimiento: string | null
           id: string | null
+          invoice_date: string | null
+          invoice_number: string | null
           local_nombre: string | null
           monto_canon: number | null
-          periodo: string | null
-          saldo_pendiente: number | null
+          pending_balance: number | null
+          period: string | null
         }
         Relationships: [
           {
@@ -8536,6 +8536,7 @@ export type Database = {
       cuenta_corriente_proveedores: {
         Row: {
           branch_id: string | null
+          business_name: string | null
           cantidad_facturas: number | null
           cuit: string | null
           facturas_pendientes: number | null
@@ -8543,7 +8544,6 @@ export type Database = {
           monto_vencido: number | null
           proveedor_id: string | null
           proximo_vencimiento: string | null
-          razon_social: string | null
           total_facturado: number | null
           total_pagado: number | null
           total_pendiente: number | null
@@ -8680,7 +8680,7 @@ export type Database = {
       rdo_report_data: {
         Row: {
           branch_id: string | null
-          periodo: string | null
+          period: string | null
           rdo_category_code: string | null
           total: number | null
         }
@@ -8710,6 +8710,7 @@ export type Database = {
       }
       webapp_menu_items: {
         Row: {
+          base_price: number | null
           categoria_carta_id: string | null
           categoria_nombre: string | null
           categoria_orden: number | null
@@ -8717,11 +8718,10 @@ export type Database = {
           disponible_delivery: boolean | null
           disponible_webapp: boolean | null
           id: string | null
-          imagen_url: string | null
+          image_url: string | null
           name: string | null
-          nombre_corto: string | null
-          orden: number | null
-          precio_base: number | null
+          short_name: string | null
+          sort_order: number | null
           tipo: string | null
         }
         Relationships: [
