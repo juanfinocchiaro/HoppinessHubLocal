@@ -395,8 +395,7 @@ export async function fetchPrevCierreForInsumo(
   insumoId: string,
   periodo: string,
 ) {
-  const { data } = await supabase
-    .from('stock_cierre_mensual')
+  const { data } = await fromUntyped('stock_cierre_mensual')
     .select('stock_cierre_fisico')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
