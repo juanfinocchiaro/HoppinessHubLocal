@@ -18,7 +18,7 @@ export async function fetchOrders(branchId: string) {
 }
 
 export async function generateOrderNumber(branchId: string): Promise<number> {
-  const { data, error } = await supabase.rpc('generar_numero_pedido', {
+  const { data, error } = await supabase.rpc('generate_order_number', {
     p_branch_id: branchId,
   });
   if (error) throw error;

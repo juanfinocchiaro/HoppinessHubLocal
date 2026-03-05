@@ -336,7 +336,7 @@ export async function cambiarPrecioItemCarta(params: {
 // ── Recalcular costo (RPC helper) ───────────────────────────────────
 
 export async function recalcularCostoItemCarta(itemId: string) {
-  const { error } = await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
+  const { error } = await supabase.rpc('recalculate_menu_item_cost', { _item_id: itemId });
   if (error) throw error;
 }
 

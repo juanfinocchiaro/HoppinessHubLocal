@@ -238,7 +238,7 @@ export async function insertFacturaCompleta(
     precio_unitario_bruto: item.precio_unitario_bruto ?? null,
   }));
 
-  const { data: facturaId, error } = await supabase.rpc('insert_factura_completa', {
+  const { data: facturaId, error } = await supabase.rpc('insert_complete_invoice', {
     p_factura: facturaPayload,
     p_items: itemsPayload,
   });
