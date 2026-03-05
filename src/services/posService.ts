@@ -358,7 +358,7 @@ export async function fetchStockMovimientosPeriod(
   end: string,
 ) {
   const { data } = await supabase
-    .from('stock_movimientos')
+    .from('stock_movements' as any)
     .select('insumo_id, tipo, quantity, created_at')
     .eq('branch_id', branchId)
     .gte('created_at', start)
