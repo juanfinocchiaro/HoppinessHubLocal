@@ -124,7 +124,7 @@ export function CargadorRdoUnificado({ branchId, branchName }: Props) {
     const map = new Map<string, number>();
     for (const m of movimientos) {
       const current = map.get(m.rdo_category_code) || 0;
-      map.set(m.rdo_category_code, current + Number(m.monto));
+      map.set(m.rdo_category_code, current + Number(m.amount ?? (m as any).monto ?? 0));
     }
     return map;
   }, [movimientos]);

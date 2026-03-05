@@ -138,7 +138,7 @@ export async function upsertStockActual(
   const { error } = await supabase
     .from('stock_actual')
     .upsert(
-      { branch_id: branchId, insumo_id: insumoId, cantidad, unidad },
+      { branch_id: branchId, insumo_id: insumoId, quantity: cantidad, unidad },
       { onConflict: 'branch_id,insumo_id' },
     );
   if (error) throw error;
@@ -151,11 +151,11 @@ export async function insertStockMovimiento(movement: Record<string, unknown>) {
 export async function fetchStockActualItem(branchId: string, insumoId: string) {
   const { data } = await supabase
     .from('stock_actual')
-    .select('cantidad')
+    .select('quantity')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .maybeSingle();
-  return data;
+  return data ? { ...data, cantidad: data.quantity } : data;
 }
 
 export async function getAuthUser() {
@@ -360,11 +360,11 @@ export async function fetchStockMovimientosPeriod(
 ) {
   const { data } = await supabase
     .from('stock_movimientos')
-    .select('insumo_id, tipo, cantidad, created_at')
+    .select('insumo_id, tipo, quantity, created_at')
     .eq('branch_id', branchId)
     .gte('created_at', start)
     .lt('created_at', end);
-  return data ?? [];
+  return (data ?? []).map((m: any) => ({ ...m, cantidad: m.quantity }));
 }
 
 export async function fetchCierreAnterior(branchId: string, periodo: string) {
@@ -377,10 +377,11 @@ export async function fetchCierreAnterior(branchId: string, periodo: string) {
 }
 
 export async function fetchStockActualWithNames(branchId: string) {
-  const { data } = await fromUntyped('stock_actual')
-    .select('insumo_id, cantidad, unidad, insumos:supplies!stock_actual_insumo_id_fkey(name)')
+  const { data } = await supabase
+    .from('stock_actual')
+    .select('insumo_id, quantity, unidad, insumos:supplies!stock_actual_insumo_id_fkey(name)')
     .eq('branch_id', branchId);
-  return (data as any[]) ?? [];
+  return (data ?? []).map((r: any) => ({ ...r, cantidad: r.quantity }));
 }
 
 export async function fetchInsumosById(ids: string[]) {
@@ -413,12 +414,12 @@ export async function fetchStockMovimientosForInsumo(
 ) {
   const { data } = await supabase
     .from('stock_movimientos')
-    .select('tipo, cantidad')
+    .select('tipo, quantity')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .gte('created_at', from)
     .lt('created_at', to);
-  return data ?? [];
+  return (data ?? []).map((m: any) => ({ ...m, cantidad: m.quantity }));
 }
 
 export async function upsertCierreMensual(record: Record<string, unknown>) {
@@ -431,11 +432,11 @@ export async function upsertCierreMensual(record: Record<string, unknown>) {
 export async function fetchStockActualRow(branchId: string, insumoId: string) {
   const { data } = await supabase
     .from('stock_actual')
-    .select('cantidad, unidad')
+    .select('quantity, unidad')
     .eq('branch_id', branchId)
     .eq('insumo_id', insumoId)
     .maybeSingle();
-  return data;
+  return data ? { ...data, cantidad: data.quantity } : data;
 }
 
 export async function fetchInsumoCostInfo(insumoId: string) {

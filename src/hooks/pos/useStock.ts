@@ -76,7 +76,7 @@ export function useStockCompleto(branchId: string) {
 
       const items: StockItem[] = insumos.map((ins) => {
         const sa = stockMap.get(ins.id);
-        const cantidad = sa ? Number(sa.cantidad) : 0;
+        const cantidad = sa ? Number((sa as any).quantity ?? (sa as any).cantidad ?? 0) : 0;
         const cat = ins.categorias_insumo as { name?: string } | null;
         return {
           insumo_id: ins.id,
@@ -138,6 +138,9 @@ export function useStockInicialMasivo(branchId: string) {
           insumo_id: it.insumo_id,
           tipo: 'stock_inicial',
           cantidad: it.cantidad,
+          quantity: it.cantidad,
+          quantity_before: 0,
+          quantity_after: it.cantidad,
           cantidad_anterior: 0,
           cantidad_nueva: it.cantidad,
           motivo: 'Carga inicial de stock',
@@ -159,16 +162,16 @@ export function useAjusteInline(branchId: string) {
     mutationFn: async (p: { insumo_id: string; cantidad_nueva: number; motivo: string; nota?: string }) => {
       const unidad = await fetchInsumoUnit(p.insumo_id);
       const row = await fetchStockActualItem(branchId, p.insumo_id);
-      const cantidadAnterior = Number(row?.cantidad ?? 0);
+      const cantidadAnterior = Number((row as any)?.cantidad ?? (row as any)?.quantity ?? 0);
 
       await upsertStockActual(branchId, p.insumo_id, p.cantidad_nueva, unidad);
       await insertStockMovimiento({
         branch_id: branchId,
         insumo_id: p.insumo_id,
         tipo: 'ajuste',
-        cantidad: Math.abs(p.cantidad_nueva - cantidadAnterior),
-        cantidad_anterior: cantidadAnterior,
-        cantidad_nueva: p.cantidad_nueva,
+        quantity: Math.abs(p.cantidad_nueva - cantidadAnterior),
+        quantity_before: cantidadAnterior,
+        quantity_after: p.cantidad_nueva,
         motivo: p.motivo || 'Ajuste manual',
         nota: p.nota || null,
       });
@@ -243,8 +246,8 @@ export function useStockConteo(branchId: string) {
           await upsertStockActual(branchId, it.insumo_id, it.stock_real, unidad);
           await insertStockMovimiento({
             branch_id: branchId, insumo_id: it.insumo_id, tipo: 'conteo_fisico',
-            cantidad: Math.abs(it.stock_real - it.stock_teorico),
-            cantidad_anterior: it.stock_teorico, cantidad_nueva: it.stock_real,
+            quantity: Math.abs(it.stock_real - it.stock_teorico),
+            quantity_before: it.stock_teorico, quantity_after: it.stock_real,
             motivo: 'Conteo físico',
           });
         }
@@ -290,7 +293,7 @@ export function useUpdateUmbrales(branchId: string) {
       } else {
         const unidad = await fetchInsumoUnit(p.insumo_id);
         await insertStockActualRecord({
-          branch_id: branchId, insumo_id: p.insumo_id, cantidad: 0, unidad,
+          branch_id: branchId, insumo_id: p.insumo_id, quantity: 0, unidad,
           stock_minimo_local: p.stock_minimo_local, stock_critico_local: p.stock_critico_local,
         });
       }

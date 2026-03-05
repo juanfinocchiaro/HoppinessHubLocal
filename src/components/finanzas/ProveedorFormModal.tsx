@@ -76,7 +76,7 @@ export function ProveedorFormModal({
         cbu: proveedor.cbu || '',
         alias_cbu: proveedor.alias_cbu || '',
         titular_cuenta: proveedor.titular_cuenta || '',
-        observaciones: proveedor.observaciones || '',
+        observaciones: (proveedor as any).notes || (proveedor as any).observaciones || '',
       });
     } else if (defaultBranchId) {
       // Creating from local panel: pre-set as local provider

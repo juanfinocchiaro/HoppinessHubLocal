@@ -153,7 +153,7 @@ export function useSaveCierreMensual(branchId: string) {
           merma,
         });
         const actualRow = await fetchStockActualRow(branchId, it.insumo_id);
-        const cantidadAnterior = Number(actualRow?.cantidad ?? 0);
+        const cantidadAnterior = Number((actualRow as any)?.cantidad ?? (actualRow as any)?.quantity ?? 0);
         await upsertStockActual(
           branchId,
           it.insumo_id,
@@ -165,9 +165,9 @@ export function useSaveCierreMensual(branchId: string) {
             branch_id: branchId,
             insumo_id: it.insumo_id,
             tipo: 'merma',
-            cantidad: merma,
-            cantidad_anterior: cantidadAnterior,
-            cantidad_nueva: it.stock_cierre_fisico,
+            quantity: merma,
+            quantity_before: cantidadAnterior,
+            quantity_after: it.stock_cierre_fisico,
             motivo: `Cierre mensual ${p.periodo}`,
           });
           const insumo = await fetchInsumoCostInfo(it.insumo_id);

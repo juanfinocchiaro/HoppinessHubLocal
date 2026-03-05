@@ -36,7 +36,7 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
       marketing_monto: data.marketing_monto,
       total_canon: data.total_canon,
       fecha_vencimiento: data.fecha_vencimiento,
-      observaciones: data.observaciones,
+      notes: data.observaciones,
       created_by: userId,
     })
     .select()
@@ -68,7 +68,7 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
 
   const { data: pagos, error } = await fromUntyped('supplier_payments')
     .select(
-      'id, fecha_pago, monto, medio_pago, referencia, observaciones, is_verified, verificado_por, verificado_at, verificado_notas, created_at',
+      'id, fecha_pago, amount, payment_method, referencia, notes, is_verified, verificado_por, verificado_at, verificado_notas, created_at',
     )
     .eq('factura_id', factura.id)
     .is('deleted_at', null)
@@ -82,11 +82,11 @@ export async function createPagoCanon(data: PagoCanonFormData, userId?: string) 
     .insert({
       canon_liquidacion_id: data.canon_liquidacion_id,
       branch_id: data.branch_id,
-      monto: data.monto,
+      amount: data.monto,
       fecha_pago: data.fecha_pago,
-      medio_pago: data.medio_pago,
+      payment_method: data.medio_pago,
       referencia: data.referencia,
-      observaciones: data.observaciones,
+      notes: data.observaciones,
       created_by: userId,
     })
     .select()
@@ -209,7 +209,7 @@ export async function insertFacturaCompleta(
     tipo: data.tipo || 'normal',
     motivo_extraordinaria: data.motivo_extraordinaria || null,
     periodo: data.periodo,
-    observaciones: data.observaciones || null,
+    notes: data.observaciones || null,
     created_by: userId || null,
     subtotal_bruto: data.subtotal_bruto ?? null,
     total_descuentos: data.total_descuentos ?? 0,
@@ -282,12 +282,12 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
     .insert({
       proveedor_id: data.proveedor_id,
       branch_id: data.branch_id,
-      monto: data.monto,
+      amount: data.monto,
       fecha_pago: data.fecha_pago,
-      medio_pago: data.medio_pago,
+      payment_method: data.medio_pago,
       referencia: data.referencia || null,
       fecha_vencimiento_pago: data.fecha_vencimiento_pago || null,
-      observaciones: data.observaciones || null,
+      notes: data.observaciones || null,
       created_by: userId,
     } as any)
     .select()

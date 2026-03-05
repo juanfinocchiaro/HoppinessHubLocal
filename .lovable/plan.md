@@ -83,37 +83,33 @@ Frontend: ~200+ archivos actualizados. Servicios clave migrados: posService, fin
 
 Patrón usado: `fromUntyped('new_table_name')` en lugar de `supabase.from('old_name')` para bypass de tipos hasta regeneración.
 
-## ❌ Fase 2 — Columnas comunes: PENDIENTE
-~150 columnas en español (nombre→name, monto→amount, cantidad→quantity, orden→sort_order, etc.)
-Impacto: ~200 archivos frontend, ~50 DB functions, ~20 triggers.
+## ✅ Fase 2 — Columnas comunes: PARCIALMENTE COMPLETADA (DB done, frontend parcial)
+Migración DB ejecutada para las columnas más frecuentes:
+- `descripcion` → `description` (11 tablas: delivery_zones, investments, menu_categories, menu_items, order_item_modifiers, promotions, rdo_movimientos, recipes, service_concepts, supplies, supply_categories)
+- `cantidad` → `quantity` (8 tablas: invoice_items, menu_item_compositions, menu_item_option_group_items, order_items, promotion_item_extras, recipe_ingredients, stock_actual, stock_movimientos)
+- `cantidad_anterior` → `quantity_before`, `cantidad_nueva` → `quantity_after` (stock_movimientos)
+- `monto` → `amount` (6 tablas: canon_payments, expenses, order_payments, partner_movements, rdo_movimientos, supplier_payments)
+- `observaciones` → `notes` (16 tablas: branch_monthly_sales, canon_payments, canon_settlements, expenses, financial_audit_log, investments, invoice_items, manual_consumptions, partner_movements, profit_distributions, supplier_branch_terms, supplier_invoices, supplier_payments, suppliers, tax_config)
+- `observaciones` → `notes_extra` (cash_register_movements, para evitar conflicto con columna existente)
+- `medio_pago` → `payment_method` (3 tablas: canon_payments, expenses, supplier_payments)
 
-Columnas más repetidas pendientes:
+Vistas recreadas: webapp_menu_items, rdo_multivista_items_base, balance_socios, rdo_report_data, cuenta_corriente_proveedores, cuenta_corriente_marca.
+Funciones actualizadas: calcular_saldo_socio, sync_expense_movement_to_gastos.
+
+Frontend: Servicios clave actualizados (posService, financialService, rdoService). Hooks de stock actualizados con aliases de compatibilidad.
+⚠️ PENDIENTE: ~60 archivos de componentes aún referencian las propiedades antiguas (`.monto`, `.descripcion`, `.cantidad`, `.observaciones`, `.medio_pago`). Funcionan en runtime gracias a aliases en hooks, pero los tipos TypeScript pueden generar warnings.
+
+Columnas aún pendientes de renombrar:
 | Columna actual | Sugerido | Tablas afectadas (aprox) |
 |---|---|---|
-| `nombre` | `name` | ~20 tablas |
-| `monto` | `amount` | ~10 tablas |
-| `cantidad` | `quantity` | ~8 tablas |
-| `orden` | `sort_order` | ~10 tablas |
 | `telefono` | `phone` | ~5 tablas |
 | `direccion` | `address` | ~5 tablas |
-| `observaciones` | `notes` | ~10 tablas |
 | `fecha` | `date` | ~5 tablas |
-| `medio_pago` | `payment_method` | ~5 tablas |
 | `periodo` | `period` | ~5 tablas |
 | `concepto` | `concept` | ~3 tablas |
-| `descripcion` | `description` | ~5 tablas |
 | `precio_unitario` | `unit_price` | ~3 tablas |
 | `precio_base` | `base_price` | ~2 tablas |
-| `fecha_pago` | `payment_date` | ~3 tablas |
-| `fecha_vencimiento` | `due_date` | ~3 tablas |
-| `saldo_pendiente` | `pending_balance` | ~2 tablas |
 | `imagen_url` | `image_url` | ~3 tablas |
-| `razon_social` | `business_name` | afip_config |
-| `cerrado_por` | `closed_by` | shift_closures |
-| `cargado_por` | `loaded_by` | branch_monthly_sales |
-| `turno` | `shift` | shift_closures |
-| `notas` | `notes` | shift_closures |
-| `fuente` | `source` | shift_closures, branch_monthly_sales |
 
 ## ❌ Fase 4 — Enum values: PENDIENTE
 18 enum values en español a renombrar.

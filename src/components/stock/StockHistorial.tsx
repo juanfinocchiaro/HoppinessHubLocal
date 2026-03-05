@@ -35,7 +35,7 @@ export function StockHistorial({ branchId, insumoId }: StockHistorialProps) {
           </Badge>
           <span className="flex-1 truncate text-muted-foreground">{m.motivo || m.nota || '-'}</span>
           <span className="font-mono tabular-nums">
-            {Number(m.cantidad_anterior).toFixed(1)} → {Number(m.cantidad_nueva).toFixed(1)}
+            {Number(m.quantity_before ?? (m as any).cantidad_anterior).toFixed(1)} → {Number(m.quantity_after ?? (m as any).cantidad_nueva).toFixed(1)}
           </span>
         </div>
       ))}
