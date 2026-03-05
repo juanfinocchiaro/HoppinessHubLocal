@@ -330,7 +330,7 @@ export async function cambiarPrecioItemCarta(params: {
     });
   if (errHist) throw errHist;
 
-  await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
+  await supabase.rpc('recalculate_menu_item_cost', { _item_id: itemId });
 }
 
 // ── Recalcular costo (RPC helper) ───────────────────────────────────
