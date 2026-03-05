@@ -115,7 +115,7 @@ export function BrandDailySalesTable() {
                 ((h.extras?.extra_carne || 0) +
                   (h.extras?.extra_not_burger || 0) +
                   (h.extras?.extra_not_chicken || 0)),
-              hasAlert: acc.hasAlert || c.tiene_alerta_facturacion,
+              hasAlert: acc.hasAlert || c.has_invoicing_alert,
             };
           },
           {

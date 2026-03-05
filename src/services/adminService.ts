@@ -101,9 +101,9 @@ export async function fetchBrandMonthlyStats(firstDay: string, lastDay: string) 
   const [closuresRes, clockRes] = await Promise.all([
     supabase
       .from('shift_closures')
-      .select('branch_id, total_facturado, total_hamburguesas')
-      .gte('fecha', firstDay)
-      .lte('fecha', lastDay),
+      .select('branch_id, total_invoiced, total_burgers')
+      .gte('date', firstDay)
+      .lte('date', lastDay),
     supabase
       .from('clock_entries')
       .select('user_id, branch_id, entry_type, created_at, schedule_id')

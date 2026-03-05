@@ -51,8 +51,8 @@ export default function BrandHome() {
       let globalHamburguesas = 0;
 
       closures.forEach((closure) => {
-        globalRevenue += Number(closure.total_facturado || 0);
-        globalHamburguesas += Number(closure.total_hamburguesas || 0);
+        globalRevenue += Number(closure.total_invoiced || 0);
+        globalHamburguesas += Number(closure.total_burgers || 0);
       });
 
       const clockEntries = monthlyStats.clockEntries;
