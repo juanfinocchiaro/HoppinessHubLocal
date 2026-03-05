@@ -306,29 +306,27 @@ export async function fetchRdoMovimientosByCategory(
 }
 
 export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: string) {
-  await supabase
-    .from('rdo_movimientos')
+  await fromUntyped('rdo_movimientos')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
     .eq('period', data.periodo)
     .eq('rdo_category_code', data.rdo_category_code)
-    .eq('origen', data.origen)
+    .eq('source', data.origen)
     .is('source_id', null)
     .is('deleted_at', null);
 
   if (data.monto === 0) return null;
 
-  const { data: result, error } = await supabase
-    .from('rdo_movimientos')
+  const { data: result, error } = await fromUntyped('rdo_movimientos')
     .insert([
       {
         branch_id: data.branch_id,
         period: data.periodo,
         rdo_category_code: data.rdo_category_code,
-        origen: data.origen,
+        source: data.origen,
         amount: data.monto,
         description: data.descripcion,
-        datos_extra: data.datos_extra as any,
+        extra_data: data.datos_extra as any,
         created_by: userId,
       },
     ])
