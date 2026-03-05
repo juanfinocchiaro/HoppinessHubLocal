@@ -1,109 +1,128 @@
 
+# Auditoría de Idioma y Convenciones de Nombres — Estado de Ejecución
 
-# Auditoría DB: Lo que falta (sin frontend)
+## ✅ Fase 0 — Tablas muertas: COMPLETADA
+DROP de tablas y vistas legacy (`webapp_customers`, `menu_combos`, `menu_precios_historial`, `devoluciones`, `v_menu_costos`).
 
-Comparado el prompt-6 contra el estado real de la base de datos. Fases 0, 1, 3 y 4 completadas. Fase 2 casi completa.
+## ✅ Fase 1 — Booleanos: COMPLETADA (DB + Frontend)
+Renombrados en DB y en frontend:
+- `es_produccion` → `is_production` (afip_config)
+- `es_obligatorio` → `is_required` (item_carta_grupo_opcional)
+- `es_principal` → `is_primary` (cliente_direcciones)
+- `es_removible` → `is_removable` (item_carta_composicion)
+- `es_intercambiable` → `is_interchangeable` (preparaciones)
+- `activo` → `is_active` (~15 tablas)
+- `verificado` → `is_verified` (pagos_proveedores, pagos_canon)
 
----
+Archivos frontend actualizados: useAfipConfig.ts, fiscalService.ts, AfipConfigPage.tsx, posService.ts, checkoutService.ts, menuService.ts, usePreparaciones.ts, PreparacionFullModal.tsx, ModifiersModal.tsx, ProductCustomizeSheet.tsx, useWebappMenu.ts.
 
-## ✅ YA COMPLETADO — No requiere acción
+## ✅ Fase 3 — Tablas core: COMPLETADA (DB + Frontend) — 63/63 tablas
+Todas las tablas en español fueron renombradas en la base de datos. El `types.ts` autogenerado ya refleja los nombres en inglés.
+El frontend fue actualizado masivamente usando el helper `fromUntyped()` para mantener compatibilidad hasta que los tipos se regeneren completamente.
+Las últimas 5 tablas fueron renombradas el 2026-03-05: `cliente_direcciones` → `customer_addresses`, `socios` → `partners`, `movimientos_socio` → `partner_movements`, `distribuciones_utilidades` → `profit_distributions`, `insumos_costos_historial` → `supply_cost_history`. Vista `balance_socios` recreada con nuevos nombres.
 
-| Item | Estado |
-|------|--------|
-| 58 tablas renombradas (Fase 3) | Done |
-| ~140 columnas renombradas (Fase 2) | ~95% done |
-| Booleanos sin `is_`/`has_` (Fase 1) | Done |
-| Tablas muertas eliminadas (Fase 0) | Done |
-| 3 enums migrados: `order_area`, `payment_method`, `work_position_type` (Fase 4) | Done |
-| `brand_role_type` / `local_role_type` | No existen como enums PG (son TEXT), nada que migrar |
-| Vistas: columnas internas ya en inglés | Done (verificado `balance_socios`, `cuenta_corriente_*`, `webapp_menu_items`) |
+Renombramientos ejecutados (selección):
+- `pedidos` → `orders`
+- `pedido_items` → `order_items`
+- `pedido_pagos` → `order_payments`
+- `items_carta` → `menu_items`
+- `item_carta_composicion` → `menu_item_compositions`
+- `item_carta_extras` → `menu_item_extras`
+- `item_carta_grupo_opcional` → `menu_item_option_groups`
+- `item_carta_grupo_opcional_items` → `menu_item_option_group_items`
+- `item_carta_precios_historial` → `menu_item_price_history`
+- `item_extra_asignaciones` → `extra_assignments`
+- `item_modificadores` → `item_modifiers`
+- `item_removibles` → `removable_items`
+- `items_factura` → `invoice_items`
+- `preparaciones` → `recipes`
+- `preparacion_ingredientes` → `recipe_ingredients`
+- `preparacion_opciones` → `recipe_options`
+- `categorias_preparacion` → `recipe_categories`
+- `insumos` → `supplies`
+- `insumos_costos_historial` → `supply_cost_history`
+- `categorias_insumo` → `supply_categories`
+- `gastos` → `expenses`
+- `proveedores` → `suppliers`
+- `facturas_proveedores` → `supplier_invoices`
+- `pagos_proveedores` → `supplier_payments`
+- `pagos_canon` → `canon_payments`
+- `canon_liquidaciones` → `canon_settlements`
+- `ventas_mensuales_local` → `branch_monthly_sales`
+- `facturas_emitidas` → `issued_invoices`
+- `codigos_descuento` → `discount_codes`
+- `codigos_descuento_usos` → `discount_code_uses`
+- `promociones` → `promotions`
+- `promocion_items` → `promotion_items`
+- `promocion_item_extras` → `promotion_item_extras`
+- `socios` → `partners`
+- `movimientos_socio` → `partner_movements`
+- `distribuciones_utilidades` → `profit_distributions`  
+- `inversiones` → `investments`
+- `periodos` → `periods`
+- `cadetes` → `delivery_drivers`
+- `llamadores` → `pagers`
+- `canales_venta` → `sales_channels`
+- `conceptos_servicio` → `service_concepts`
+- `configuracion_impuestos` → `tax_config`
+- `consumos_manuales` → `manual_consumptions`
+- `delivery_zones` (ya inglés, sin cambio)
+- `menu_categorias` → `menu_categories`
+- `menu_fichas_tecnicas` → `menu_tech_sheets`
+- `menu_precios` → `menu_prices`
+- `menu_productos` → `menu_products`
+- `pago_factura` → `invoice_payments`
+- `pedido_item_modificadores` → `order_item_modifiers`
+- `pedido_payment_edits` → `order_payment_edits`
+- `proveedor_condiciones_local` → `supplier_branch_terms`
+- `turnos_caja` → `register_shifts_legacy`
+- `webapp_pedido_mensajes` → `webapp_order_messages`
+- `cliente_direcciones` (pendiente evaluar rename a `customer_addresses`)
 
----
+Frontend: ~200+ archivos actualizados. Servicios clave migrados: posService, financialService, rdoService, fiscalService, adminService, promoService, printingService, deliveryService, webappOrderService, managerDashboardService, proveedoresService.
 
-## ⚠️ PENDIENTE — 6 columnas en tablas reales
+Patrón usado: `fromUntyped('new_table_name')` en lugar de `supabase.from('old_name')` para bypass de tipos hasta regeneración.
 
-| Tabla | Columna actual | Nuevo nombre |
-|-------|---------------|--------------|
-| `discount_codes` | `monto_minimo_pedido` | `min_order_amount` |
-| `suppliers` | `contacto` | `contact` |
-| `branch_closure_config` | `habilitado` | `enabled` |
-| `orders` | `requiere_factura` | `requires_invoice` |
-| `supplier_invoices` | `total_factura` | `invoice_total` |
-| `brand_closure_config` | `categoria_padre` | `parent_category` (nota: plan.md lo marca como intencionalmente mantenido por alto impacto FK) |
+## ✅ Fase 2 — Columnas: COMPLETADA (DB + service layer)
+Todas las columnas en español renombradas a inglés. Últimas 5 columnas migradas el 2026-03-05:
+- `discount_codes.monto_minimo_pedido` → `min_order_amount`
+- `suppliers.contacto` → `contact`
+- `branch_closure_config.habilitado` → `enabled`
+- `orders.requiere_factura` → `requires_invoice`
+- `supplier_invoices.total_factura` → `invoice_total`
 
----
+## ✅ Fase 4 — Enum values: COMPLETADA (DB)
+Los 3 enums PostgreSQL migrados.
 
-## ⚠️ PENDIENTE — 3 vistas con nombres en español
+## ✅ Fase 5 — Vistas renombradas: COMPLETADA
+- `balance_socios` → `partner_balance`
+- `cuenta_corriente_marca` → `brand_current_account`
+- `cuenta_corriente_proveedores` → `supplier_current_account`
 
-| Vista actual | Sugerido |
-|-------------|----------|
-| `balance_socios` | `partner_balance` |
-| `cuenta_corriente_marca` | `brand_current_account` |
-| `cuenta_corriente_proveedores` | `supplier_current_account` |
+## ✅ Fase 6 — Funciones DB renombradas: COMPLETADA
+~29 funciones renombradas de español a inglés. Triggers actualizados.
+Funciones con dependencias RLS (`is_franquiciado_or_contador_for_branch`, `is_socio_admin`) se mantienen con alias inglés (`is_franchisee_or_accountant_for_branch`, `is_partner_admin`).
 
-(Las columnas internas de estas vistas ya están en inglés, solo falta el nombre de la vista.)
+⚠️ Frontend components with hardcoded Spanish enum values need updating.
 
----
+## ✅ Vistas: Recreadas con nombres en inglés
+Las 6 vistas afectadas fueron recreadas el 2026-03-05:
+- `webapp_menu_items`: `tipo`→`type`, aliases en inglés
+- `balance_socios`: `m.tipo`→`m.type`, `saldo_actual`→`current_balance`, `nombre`→`name`
+- `cuenta_corriente_marca`: `monto_canon`→`canon_amount`, `local_nombre`→`branch_name`
+- `cuenta_corriente_proveedores`: aliases en inglés (total_invoiced, total_paid, overdue_amount, next_due_date)
+- `rdo_multivista_ventas_base`: `estado`→`status`, `tipo`→`type`
+- `rdo_multivista_items_base`: `estado`→`status`, `tipo`→`type`
 
-## ⚠️ PENDIENTE — ~25 funciones DB con nombres en español
+## ⚠️ Nota sobre columnas FK en español
+Quedan columnas FK con nombres en español que NO se renombraron por alto impacto cascading:
+- `pedido_id` (~8 tablas), `proveedor_id` (~6 tablas), `item_carta_id` (~10 tablas)
+- `socio_id` (partner_movements), `categoria_carta_id` (menu_items, order_items)
+- `categoria_padre` (brand_closure_config)
+Estas requieren una migración dedicada con actualización masiva de FK constraints y frontend.
 
-Funciones que siguen con nombre en español:
-
-| Función actual | Sugerido |
-|---------------|----------|
-| `actualizar_saldo_factura` | `update_invoice_balance` |
-| `actualizar_total_factura` | `update_invoice_total` |
-| `asignar_llamador` | `assign_pager` |
-| `calcular_costo_real_factura` | `calculate_real_invoice_cost` |
-| `calcular_costo_unidad_base` | `calculate_base_unit_cost` |
-| `calcular_margen_producto` | `calculate_product_margin` |
-| `calcular_saldo_socio` | `calculate_partner_balance` |
-| `descontar_stock_pedido` | `deduct_order_stock` |
-| `fn_actualizar_costo_insumo_desde_compra` | `update_supply_cost_from_purchase` |
-| `generar_factura_canon` | `generate_canon_invoice` |
-| `generar_numero_pedido` | `generate_order_number` |
-| `generar_shift_closure_desde_pos` | `generate_shift_closure_from_pos` |
-| `liberar_llamador` | `release_pager` |
-| `obtener_proximo_numero_factura` | `get_next_invoice_number` |
-| `procesar_distribucion_utilidades` | `process_profit_distribution` |
-| `recalcular_costo_item_carta` | `recalculate_menu_item_cost` |
-| `recalcular_costo_preparacion` | `recalculate_recipe_cost` |
-| `recalcular_todos_los_costos` | `recalculate_all_costs` |
-| `sumar_stock_desde_compra` | `add_stock_from_purchase` |
-| `insert_factura_completa` | `insert_complete_invoice` |
-| `check_porcentajes_suman_100` | `check_percentages_sum_100` |
-| `is_franquiciado_or_contador_for_branch` | `is_franchisee_or_accountant_for_branch` |
-| `is_socio_admin` | `is_partner_admin` |
-| `validate_canal_tipo_ajuste` | `validate_channel_adjustment_type` |
-| `validate_estado_certificado` | `validate_certificate_status` |
-| `validate_insumo_nivel_control` | `validate_supply_control_level` |
-| `validate_item_factura_tipo` | `validate_invoice_item_type` |
-| `validate_menu_producto_tipo` | `validate_menu_product_type` |
-| `validate_modificador` | `validate_modifier` |
-
----
-
-## ❌ EXCLUIDO INTENCIONALMENTE (no migrar)
-
-- **FK columns en español:** `pedido_id`, `proveedor_id`, `item_carta_id`, `socio_id`, `categoria_carta_id`, `categoria_padre` — alto impacto cascading, documentado en plan.md.
-- **`user_roles_v2`** — mantiene sufijo `_v2` por riesgo en permisos.
-
----
-
-## Resumen ejecutivo
-
-| Categoría | Pendiente |
-|-----------|-----------|
-| Columnas en español | 6 (5 + 1 excluida) |
-| Vistas con nombre en español | 3 |
-| Funciones DB con nombre en español | ~25 |
-| Enums | 0 (todo migrado) |
-| Tablas | 0 (todo migrado) |
-
-**Propuesta:** Ejecutar 3 migraciones SQL:
-1. **Migración A:** 5 ALTER COLUMN para las columnas pendientes
-2. **Migración B:** DROP + CREATE de las 3 vistas con nombres en inglés
-3. **Migración C:** Renombrar las ~25 funciones (DROP + CREATE con nuevo nombre, preservando el cuerpo)
-
-Todo SQL puro. Sin tocar frontend.
-
+## 📋 Deuda técnica conocida
+- El helper `fromUntyped()` se usa extensivamente como workaround de tipos.
+- Algunos componentes tienen casteos `as any` para resolver incompatibilidades de tipos durante la transición.
+- La tabla `user_roles_v2` mantiene el sufijo `_v2` (violación de convención) pero no se recomienda renombrar por el alto riesgo en el sistema de permisos.
+- Componentes frontend UI pueden seguir usando nombres en español vía aliases de compatibilidad en hooks.

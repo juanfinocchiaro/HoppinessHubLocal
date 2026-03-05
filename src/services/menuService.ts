@@ -170,7 +170,7 @@ export async function savePreparacionIngredientes(
     if (error) throw error;
   }
 
-  await supabase.rpc('recalcular_costo_preparacion', { _prep_id: preparacion_id });
+  await supabase.rpc('recalculate_recipe_cost', { _prep_id: preparacion_id });
 }
 
 export async function savePreparacionOpciones(
@@ -192,7 +192,7 @@ export async function savePreparacionOpciones(
     if (error) throw error;
   }
 
-  await supabase.rpc('recalcular_costo_preparacion', { _prep_id: preparacion_id });
+  await supabase.rpc('recalculate_recipe_cost', { _prep_id: preparacion_id });
 }
 
 // ── Items Carta ────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ export async function saveItemCartaComposicion(
     if (error) throw error;
   }
 
-  await supabase.rpc('recalcular_costo_item_carta', { _item_id: item_carta_id });
+  await supabase.rpc('recalculate_menu_item_cost', { _item_id: item_carta_id });
 }
 
 export async function cambiarPrecioItemCarta(params: {
@@ -330,13 +330,13 @@ export async function cambiarPrecioItemCarta(params: {
     });
   if (errHist) throw errHist;
 
-  await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
+  await supabase.rpc('recalculate_menu_item_cost', { _item_id: itemId });
 }
 
 // ── Recalcular costo (RPC helper) ───────────────────────────────────
 
 export async function recalcularCostoItemCarta(itemId: string) {
-  const { error } = await supabase.rpc('recalcular_costo_item_carta', { _item_id: itemId });
+  const { error } = await supabase.rpc('recalculate_menu_item_cost', { _item_id: itemId });
   if (error) throw error;
 }
 

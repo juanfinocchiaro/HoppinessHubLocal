@@ -60,7 +60,7 @@ export function ProveedorFormModal({
       setForm({
         razon_social: proveedor.business_name,
         cuit: proveedor.cuit || '',
-        contacto: proveedor.contacto || '',
+        contacto: proveedor.contact || '',
         telefono: proveedor.phone || '',
         contacto_secundario: proveedor.secondary_contact || '',
         telefono_secundario: proveedor.secondary_phone || '',

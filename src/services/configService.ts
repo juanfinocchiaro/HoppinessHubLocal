@@ -159,7 +159,7 @@ export async function fetchBranchClosureConfig(branchId: string) {
   (branchConfig || []).forEach((bc) => {
     const raw = bc.brand_closure_config as any;
     if (raw && raw.type === 'app_delivery') {
-      enabledApps.set(raw.key, bc.habilitado);
+      enabledApps.set(raw.key, bc.enabled);
     }
   });
 
