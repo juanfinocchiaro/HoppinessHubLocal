@@ -84,12 +84,21 @@ Frontend: ~200+ archivos actualizados. Servicios clave migrados: posService, fin
 Patrón usado: `fromUntyped('new_table_name')` en lugar de `supabase.from('old_name')` para bypass de tipos hasta regeneración.
 
 ## ✅ Fase 2 — Columnas: COMPLETADA (DB + service layer)
-Todas las columnas en español renombradas a inglés. Últimas 5 columnas migradas el 2026-03-05:
+Todas las columnas en español renombradas a inglés. Últimas columnas migradas el 2026-03-05:
 - `discount_codes.monto_minimo_pedido` → `min_order_amount`
 - `suppliers.contacto` → `contact`
 - `branch_closure_config.habilitado` → `enabled`
 - `orders.requiere_factura` → `requires_invoice`
 - `supplier_invoices.total_factura` → `invoice_total`
+- `orders.cliente_nombre` → `customer_name`, `cliente_telefono` → `customer_phone`, `cliente_direccion` → `customer_address`, `origen` → `source`
+- `canon_settlements`: `canon_porcentaje` → `canon_percentage`, `canon_monto` → `canon_amount`, `marketing_porcentaje` → `marketing_percentage`, `marketing_monto` → `marketing_amount`, `pago_vt_sugerido` → `suggested_transfer_payment`, `pago_ft_sugerido` → `suggested_cash_payment`, `fc_total` → `online_total`, `ft_total` → `cash_total`
+- `branch_monthly_sales`: `fc_total` → `online_total`, `ft_total` → `cash_total`
+- `rdo_movimientos`: `origen` → `source`, `datos_extra` → `extra_data`
+- `invoice_items`: `categoria_pl` → `pl_category`, `descuento_monto` → `discount_amount`, `iva_monto` → `vat_amount`
+- `manual_consumptions`: `categoria_pl` → `pl_category`
+- `supplies`: `categoria_pl` → `pl_category`
+- `item_modifiers`: `diferencia_precio` → `price_difference`
+- `webapp_order_messages`: `sender_nombre` → `sender_name`
 
 ## ✅ Fase 4 — Enum values: COMPLETADA (DB)
 Los 3 enums PostgreSQL migrados.
@@ -98,10 +107,19 @@ Los 3 enums PostgreSQL migrados.
 - `balance_socios` → `partner_balance`
 - `cuenta_corriente_marca` → `brand_current_account`
 - `cuenta_corriente_proveedores` → `supplier_current_account`
+- `rdo_multivista_ventas_base`: columnas internas renombradas (`pedido_id` → `order_id`, `canal` → `channel`)
+- `rdo_multivista_items_base`: columnas internas renombradas (`producto_nombre` → `product_name`, `categoria_nombre` → `category_name`, `producto_id` → `product_id`, `categoria_id` → `category_id`, `ventas` → `sales`, `canal` → `channel`, `pedido_id` → `order_id`)
 
 ## ✅ Fase 6 — Funciones DB renombradas: COMPLETADA
 ~29 funciones renombradas de español a inglés. Triggers actualizados.
 Funciones con dependencias RLS (`is_franquiciado_or_contador_for_branch`, `is_socio_admin`) se mantienen con alias inglés (`is_franchisee_or_accountant_for_branch`, `is_partner_admin`).
+
+Funciones rotas corregidas el 2026-03-05:
+- `sync_canon_liquidacion` → `sync_canon_settlement` (body actualizado a tablas/columnas inglés)
+- `sync_factura_to_canon` → `sync_invoice_to_canon`
+- `sync_item_factura_to_rdo` → `sync_invoice_item_to_rdo`
+- `update_canon_saldo` → `update_canon_balance`
+- `set_canon_payment_unverified` (body actualizado)
 
 ⚠️ Frontend components with hardcoded Spanish enum values need updating.
 
