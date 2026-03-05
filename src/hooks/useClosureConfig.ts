@@ -58,5 +58,5 @@ export function useEnabledApps(branchId: string) {
 
   if (!config) return [];
 
-  return config.brandApps.filter((app) => config.enabledApps.get(app.clave) !== false);
+  return config.brandApps.filter((app) => config.enabledApps.get(app.key) !== false);
 }

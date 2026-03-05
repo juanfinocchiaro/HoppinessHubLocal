@@ -105,7 +105,7 @@ export async function fetchStockData(branchId: string) {
     supabase.from('stock_actual').select('*').eq('branch_id', branchId),
     supabase
       .from('stock_movimientos')
-      .select('insumo_id, created_at, tipo, reason')
+      .select('insumo_id, created_at, type, reason')
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false }),
   ]);
