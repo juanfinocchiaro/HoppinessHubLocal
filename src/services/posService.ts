@@ -379,7 +379,7 @@ export async function fetchCierreAnterior(branchId: string, periodo: string) {
 export async function fetchStockActualWithNames(branchId: string) {
   const { data } = await supabase
     .from('stock_actual')
-    .select('insumo_id, quantity, unidad, insumos:supplies!stock_actual_insumo_id_fkey(name)')
+    .select('insumo_id, quantity, unit, insumos:supplies!stock_actual_insumo_id_fkey(name)')
     .eq('branch_id', branchId);
   return (data ?? []).map((r: any) => ({ ...r, cantidad: r.quantity }));
 }
