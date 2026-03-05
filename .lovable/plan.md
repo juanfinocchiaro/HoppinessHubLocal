@@ -100,8 +100,8 @@ Todas las columnas en español renombradas a inglés. Últimas columnas migradas
 - `item_modifiers`: `diferencia_precio` → `price_difference`
 - `webapp_order_messages`: `sender_nombre` → `sender_name`
 
-Batch final el 2026-03-05 (prompt-8):
-- `stock_movements` (antes `stock_movimientos`): `nota` → `note`
+Batch prompt-8 (2026-03-05):
+- `stock_movements`: `nota` → `note`
 - `discount_codes`: `valor` → `value`, `usos_maximos` → `max_uses`, `usos_actuales` → `current_uses`, `uso_unico_por_usuario` → `single_use_per_user`
 - `promotions`: `valor` → `value`
 - `expenses`: `adjuntos` → `attachments`, `afecta_caja` → `affects_register`, `categoria_principal` → `main_category`, `subcategoria` → `subcategory`, `gasto_relacionado_id` → `related_expense_id`
@@ -116,6 +116,13 @@ Batch final el 2026-03-05 (prompt-8):
 - `supplies`: `puede_ser_extra` → `can_be_extra`, `fc_objetivo_extra` → `extra_target_fc`
 - `invoice_items`: `afecta_costo_base` → `affects_base_cost`
 - `register_shifts_legacy`: `efectivo_contado` → `cash_counted`
+
+Batch prompt-9 (2026-03-05):
+- `shift_closures`: `hamburguesas` → `burgers`, `ventas_local` → `local_sales`, `ventas_apps` → `app_sales`, `total_facturado` → `total_invoiced`, `total_hamburguesas` → `total_burgers`, `total_vendido` → `total_sold`, `total_efectivo` → `total_cash`, `tiene_alerta_facturacion` → `has_invoicing_alert`, `tiene_alerta_posnet` → `has_posnet_alert`, `tiene_alerta_apps` → `has_apps_alert`, `tiene_alerta_caja` → `has_register_alert`, `arqueo_caja` → `register_reconciliation`, `diferencia_posnet` → `posnet_difference`, `diferencia_apps` → `apps_difference`
+- `register_shifts_legacy`: `cajero_id` → `cashier_id`, `apertura_at` → `opened_at`, `fondo_apertura` → `opening_fund`, `cierre_at` → `closed_at`, `total_efectivo` → `total_cash`, `total_tarjeta_debito` → `total_debit`, `total_tarjeta_credito` → `total_credit`, `total_transferencia` → `total_transfer`, `total_ventas` → `total_sales`, `diferencia` → `difference`, `diferencia_motivo` → `difference_reason`, `retiros_efectivo` → `cash_withdrawals`
+- `cash_register_movements`: `categoria_gasto` → `expense_category`, `notes_extra` → `extra_notes`
+- `service_concepts`: `categoria_gasto` → `expense_category`
+- `item_modifiers`: `diferencia_costo` → `cost_difference`
 
 ## ✅ Fase 3 — Tablas core: COMPLETADA (DB + Frontend) — 65/65 tablas
 Todas las tablas en español fueron renombradas en la base de datos. El `types.ts` autogenerado ya refleja los nombres en inglés.
@@ -140,23 +147,45 @@ Los 3 enums PostgreSQL migrados.
 Funciones corregidas/renombradas el 2026-03-05 (prompt-8):
 - `sync_gasto_to_rdo` → `sync_expense_to_rdo` (body usa `rdo_movements`, `expenses` con columnas inglés)
 - `sync_consumo_to_rdo` → `sync_consumption_to_rdo` (body usa `rdo_movements`, `manual_consumptions` con columnas inglés)
-- `sync_expense_movement_to_gastos` → `sync_expense_movement` (body usa `expenses.main_category`, `approval_status`)
+- `sync_expense_movement_to_gastos` → `sync_expense_movement` (body actualizado prompt-9: usa `expense_category`, `extra_notes`)
 - Triggers actualizados: `trg_sync_expense_rdo`, `trg_sync_consumption_rdo`, `trg_sync_expense_movement`
 
-RLS aliases mantenidos (referenciados por 9+ policies):
-- `is_franquiciado_or_contador_for_branch` (3 RLS policies)
-- `is_socio_admin` (6 RLS policies)
+## ✅ Fase 7 — RLS Policies renombradas: COMPLETADA (prompt-9, 2026-03-05)
+~30 RLS policies renombradas de español a inglés:
+- `gastos_*` → `expenses_*` (4 policies on `expenses`)
+- `items_factura_*` → `invoice_items_*` (4 policies on `invoice_items`)
+- `pago_factura_*` → `invoice_payment_links_*` (3 policies on `invoice_payment_links`)
+- `franquiciado_afip_config` → `franchisee_afip_config` (on `afip_config`)
+- `franquiciado_insert_facturas` → `franchisee_insert_invoices` (on `issued_invoices`)
+- `branch_access_facturas` → `branch_access_invoices` (on `issued_invoices`)
+- `superadmin_all_facturas` → `superadmin_all_invoices` (on `issued_invoices`)
+- `movimientos_socio_*` → `partner_movements_*` (2 on `partner_movements`)
+- `socios_*` → `partners_*` (3 on `partners`)
+- `Staff can manage pedido_*` → `Staff can manage order_*` (on `order_item_modifiers`, `order_items`)
+- `Staff * pedido_pagos*` → `Staff * order_payments*` (4 on `order_payments`)
+- `Staff * pedidos*` → `Staff * orders*` (4 on `orders`)
+- `Staff can manage stock_movimientos` → `Staff can manage stock_movements` (on `stock_movements`)
+- `facturas_*` → `supplier_invoices_*` (3 on `supplier_invoices`)
+- `Staff insert cash_register_shifts_with_fichaje` → `Staff insert cash_register_shifts_with_clock` (on `cash_register_shifts`)
+- `distribuciones_select` → `profit_distributions_select` (on `profit_distributions`)
+- `periodos_update` → `periods_update` (on `periods`)
+
+All policies updated to use `is_franchisee_or_accountant_for_branch` and `is_partner_admin` instead of legacy aliases.
+
+## ✅ Fase 8 — Legacy function aliases: DROPPED (prompt-9, 2026-03-05)
+- `is_franquiciado_or_contador_for_branch` — DROPPED (was alias of `is_franchisee_or_accountant_for_branch`)
+- `is_socio_admin` — DROPPED (was alias of `is_partner_admin`)
 
 ## ⚠️ Nota sobre columnas FK en español
 Quedan columnas FK con nombres en español que NO se renombraron por alto impacto cascading:
 - `pedido_id` (~8 tablas), `proveedor_id` (~6 tablas), `item_carta_id` (~10 tablas)
 - `insumo_id` (~10 tablas), `socio_id` (partner_movements), `categoria_carta_id` (menu_items, order_items)
-- `categoria_padre` (brand_closure_config), `concepto_servicio_id`, `categoria_gasto` (cash_register_movements)
+- `categoria_padre` (brand_closure_config), `concepto_servicio_id`, `categoria_gasto` (cash_register_movements — now renamed to `expense_category`)
 Estas requieren una migración dedicada con actualización masiva de FK constraints y frontend.
 
 ## 📋 Deuda técnica conocida
 - El helper `fromUntyped()` se usa extensivamente como workaround de tipos.
 - Algunos componentes tienen casteos `as any` para resolver incompatibilidades de tipos durante la transición.
 - La tabla `user_roles_v2` mantiene el sufijo `_v2` (violación de convención) pero no se recomienda renombrar por el alto riesgo en el sistema de permisos.
-- Componentes frontend UI pueden seguir usando nombres en español vía aliases de compatibilidad en hooks.
-- `cash_register_movements` mantiene `categoria_gasto` y `notes_extra` en español (columnas referenciadas por función `sync_expense_movement`).
+- Componentes frontend UI pueden seguir usando nombres en español vía aliases de compatibilidad en hooks (ej: `parseShiftClosure` mapea `burgers` → `hamburguesas` para la interfaz TS).
+- Frontend components (`CajaExpensesList`, `ConceptoServicioFormModal`, etc.) still reference old column names via local interfaces — requires frontend update pass.
