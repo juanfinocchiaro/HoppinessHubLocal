@@ -323,7 +323,7 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
     .insert([
       {
         branch_id: data.branch_id,
-        periodo: data.periodo,
+        period: data.periodo,
         rdo_category_code: data.rdo_category_code,
         origen: data.origen,
         amount: data.monto,
