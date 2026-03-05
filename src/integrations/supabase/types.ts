@@ -8957,10 +8957,6 @@ export type Database = {
         Args: { p_branch_id: string; p_user_id: string }
         Returns: boolean
       }
-      is_franquiciado_or_contador_for_branch: {
-        Args: { p_branch_id: string; p_user_id: string }
-        Returns: boolean
-      }
       is_hr_for_branch: {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
@@ -8979,10 +8975,6 @@ export type Database = {
         Returns: boolean
       }
       is_partner_admin: {
-        Args: { _branch_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_socio_admin: {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
       }
