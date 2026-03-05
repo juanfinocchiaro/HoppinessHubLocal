@@ -310,7 +310,7 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
     .from('rdo_movimientos')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
-    .eq('periodo', data.periodo)
+    .eq('period', data.periodo)
     .eq('rdo_category_code', data.rdo_category_code)
     .eq('origen', data.origen)
     .is('source_id', null)
