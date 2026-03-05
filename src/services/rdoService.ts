@@ -277,8 +277,7 @@ export async function fetchRdoUnifiedReport(
 // ── RDO Movimientos ─────────────────────────────────────────────────
 
 export async function fetchRdoMovimientos(branchId: string, periodo: string) {
-  const { data, error } = await supabase
-    .from('rdo_movimientos')
+  const { data, error } = await fromUntyped('rdo_movements')
     .select('*')
     .eq('branch_id', branchId)
     .eq('period', periodo)
