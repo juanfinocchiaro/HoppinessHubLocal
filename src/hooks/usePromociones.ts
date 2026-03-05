@@ -89,7 +89,7 @@ export function usePromocionItems(promoId: string | undefined) {
         item_carta_id: d.item_carta_id as string,
         precio_promo: Number(d.precio_promo),
         created_at: d.created_at as string,
-        item_nombre: (d.menu_items as Record<string, unknown>)?.nombre as string | undefined,
+        item_nombre: ((d.menu_items as Record<string, unknown>)?.name ?? (d.menu_items as Record<string, unknown>)?.nombre) as string | undefined,
         item_imagen: (d.menu_items as Record<string, unknown>)?.imagen_url as string | null | undefined,
         precio_base: (d.menu_items as Record<string, unknown>)?.precio_base
           ? Number((d.menu_items as Record<string, unknown>).precio_base)
@@ -104,7 +104,7 @@ export function usePromocionItems(promoId: string | undefined) {
             ...new Set(extrasData.map((e) => e.extra_item_carta_id as string)),
           ];
           const extraInfo = await fetchItemsCartaPriceInfo(extraCartaIds);
-          const nameMap = new Map(extraInfo.map((n: Record<string, unknown>) => [n.id, n.nombre]));
+          const nameMap = new Map(extraInfo.map((n: Record<string, unknown>) => [n.id, n.name ?? n.nombre]));
           const priceMap = new Map(
             extraInfo.map((n: Record<string, unknown>) => [n.id, Number(n.precio_base ?? 0)]),
           );
@@ -202,7 +202,7 @@ export function useActivePromoItems(branchId: string | undefined, canal?: string
           ];
           const extraInfo = await fetchItemsCartaPriceInfo(extraItemIds);
           const nameMap = new Map(
-            extraInfo.map((n: Record<string, unknown>) => [n.id, n.nombre]),
+            extraInfo.map((n: Record<string, unknown>) => [n.id, n.name ?? n.nombre]),
           );
           const priceMap = new Map(
             extraInfo.map((n: Record<string, unknown>) => [n.id, Number(n.precio_base ?? 0)]),
@@ -227,7 +227,7 @@ export function useActivePromoItems(branchId: string | undefined, canal?: string
         item_carta_id: d.item_carta_id as string,
         precio_promo: Number(d.precio_promo),
         created_at: d.created_at as string,
-        item_nombre: (d.menu_items as Record<string, unknown>)?.nombre as string | undefined,
+        item_nombre: ((d.menu_items as Record<string, unknown>)?.name ?? (d.menu_items as Record<string, unknown>)?.nombre) as string | undefined,
         item_imagen: (d.menu_items as Record<string, unknown>)?.imagen_url as string | null | undefined,
         precio_base: (d.menu_items as Record<string, unknown>)?.precio_base
           ? Number((d.menu_items as Record<string, unknown>).precio_base)

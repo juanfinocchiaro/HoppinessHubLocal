@@ -64,7 +64,19 @@ export function useInsumos() {
 
   return useQuery({
     queryKey: ['insumos'],
-    queryFn: fetchInsumosSvc,
+    queryFn: async () => {
+      const data = await fetchInsumosSvc();
+      return (data || []).map((ins: any) => ({
+        ...ins,
+        nombre: ins.name ?? ins.nombre,
+        supply_categories: ins.supply_categories
+          ? { ...ins.supply_categories, nombre: ins.supply_categories.name ?? ins.supply_categories.nombre }
+          : ins.supply_categories,
+        categorias_insumo: ins.categorias_insumo
+          ? { ...ins.categorias_insumo, nombre: ins.categorias_insumo.name ?? ins.categorias_insumo.nombre }
+          : ins.categorias_insumo,
+      }));
+    },
     enabled: !!user,
   });
 }

@@ -22,7 +22,7 @@ export async function fetchActivePromociones() {
 
 export async function fetchPromocionItemsWithCarta(promoId: string) {
   const { data, error } = await fromUntyped('promotion_items')
-    .select('*, menu_items!inner(nombre, imagen_url, precio_base)')
+    .select('*, menu_items!inner(name, imagen_url, precio_base)')
     .eq('promocion_id', promoId);
   if (error) throw error;
   return data || [];
@@ -30,7 +30,7 @@ export async function fetchPromocionItemsWithCarta(promoId: string) {
 
 export async function fetchPromoItemsByPromoIds(promoIds: string[]) {
   const { data, error } = await fromUntyped('promotion_items')
-    .select('*, menu_items!inner(nombre, imagen_url, precio_base)')
+    .select('*, menu_items!inner(name, imagen_url, precio_base)')
     .in('promocion_id', promoIds);
   if (error) throw error;
   return data || [];
@@ -46,7 +46,7 @@ export async function fetchPreconfigExtras(promoItemIds: string[]) {
 
 export async function fetchItemsCartaPriceInfo(ids: string[]) {
   const { data, error } = await fromUntyped('menu_items')
-    .select('id, nombre, precio_base')
+    .select('id, name, precio_base')
     .in('id', ids);
   if (error) throw error;
   return data || [];
@@ -227,7 +227,7 @@ export async function fetchAllPriceListItems(priceListIds: string[]) {
 export async function fetchItemsCartaForPricing() {
   const { data, error } = await fromUntyped('menu_items')
     .select(
-      'id, nombre, orden, precio_base, is_active, categoria_carta_id, menu_categories(id, nombre, orden)',
+      'id, name, orden, precio_base, is_active, categoria_carta_id, menu_categories(id, name, orden)',
     )
     .eq('is_active', true)
     .order('orden');

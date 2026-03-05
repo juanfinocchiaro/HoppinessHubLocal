@@ -138,7 +138,16 @@ export function useAllPriceListItems(priceListIds: string[]) {
 export function useMenuItemsForPricing() {
   return useQuery({
     queryKey: ['menu-items-all'],
-    queryFn: fetchItemsCartaForPricing,
+    queryFn: async () => {
+      const data = await fetchItemsCartaForPricing();
+      return (data || []).map((it: any) => ({
+        ...it,
+        nombre: it.name ?? it.nombre,
+        menu_categories: it.menu_categories
+          ? { ...it.menu_categories, nombre: it.menu_categories.name ?? it.menu_categories.nombre }
+          : it.menu_categories,
+      }));
+    },
   });
 }
 

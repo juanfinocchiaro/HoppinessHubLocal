@@ -18,6 +18,15 @@ export function useItemsCarta(branchId?: string) {
     refetchOnMount: 'always',
     staleTime: 0,
     queryFn: async () => {
+      const addCompat = (items: any[]) =>
+        (items || []).map((it: any) => ({
+          ...it,
+          nombre: it.name ?? it.nombre,
+          menu_categories: it.menu_categories
+            ? { ...it.menu_categories, nombre: it.menu_categories.name ?? it.menu_categories.nombre }
+            : it.menu_categories,
+        }));
+
       if (branchId) {
         const availability = await fetchBranchItemAvailability(branchId);
         const data = await fetchItemsCartaSvc();
@@ -26,14 +35,16 @@ export function useItemsCarta(branchId?: string) {
           (availability || []).map((row: any) => [row.item_carta_id, row]),
         );
 
-        return (data || []).filter((item: any) => {
-          const row = availabilityMap.get(item.id);
-          if (!row) return true;
-          return !!(row as any).available && !!(row as any).available_salon && !(row as any).out_of_stock;
-        });
+        return addCompat(
+          (data || []).filter((item: any) => {
+            const row = availabilityMap.get(item.id);
+            if (!row) return true;
+            return !!(row as any).available && !!(row as any).available_salon && !(row as any).out_of_stock;
+          }),
+        );
       }
 
-      return fetchItemsCartaSvc();
+      return addCompat(await fetchItemsCartaSvc());
     },
   });
 }
@@ -43,7 +54,14 @@ export function useItemCartaComposicion(itemId: string | undefined) {
     queryKey: ['item-carta-composicion', itemId],
     queryFn: async () => {
       if (!itemId) return [];
-      return fetchItemCartaComposicion(itemId);
+      const data = await fetchItemCartaComposicion(itemId);
+      return (data || []).map((comp: any) => ({
+        ...comp,
+        recipes: comp.recipes ? { ...comp.recipes, nombre: comp.recipes.name ?? comp.recipes.nombre } : comp.recipes,
+        supplies: comp.supplies ? { ...comp.supplies, nombre: comp.supplies.name ?? comp.supplies.nombre } : comp.supplies,
+        preparaciones: comp.preparaciones ? { ...comp.preparaciones, nombre: comp.preparaciones.name ?? comp.preparaciones.nombre } : comp.preparaciones,
+        insumos: comp.insumos ? { ...comp.insumos, nombre: comp.insumos.name ?? comp.insumos.nombre } : comp.insumos,
+      }));
     },
     enabled: !!itemId,
   });

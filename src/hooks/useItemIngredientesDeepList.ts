@@ -56,7 +56,7 @@ export function useItemIngredientesDeepList(itemId: string | undefined) {
             const insumos = (ing as Record<string, unknown>).insumos as Record<string, unknown>;
             insumoItems.push({
               insumo_id: (insumos.id as string) || ing.insumo_id,
-              nombre: (insumos.nombre as string) || 'Desconocido',
+              nombre: (insumos.name as string) || 'Desconocido',
               cantidad: ing.cantidad,
               unidad: ing.unidad || (insumos.unidad_base as string) || 'un',
               costo_por_unidad_base: (insumos.costo_por_unidad_base as number) || 0,
@@ -68,13 +68,13 @@ export function useItemIngredientesDeepList(itemId: string | undefined) {
             const subPrep = (ing as Record<string, unknown>).sub_prep as Record<string, unknown>;
             subPrepItems.push({
               preparacion_id: (subPrep.id as string) || ing.sub_preparacion_id,
-              nombre: (subPrep.nombre as string) || 'Desconocido',
+              nombre: (subPrep.name as string) || 'Desconocido',
               receta_origen: prepNombre,
               receta_origen_id: prepId,
             });
             await fetchPrepIngredients(
               (subPrep.id as string) || ing.sub_preparacion_id,
-              (subPrep.nombre as string) || 'Desconocido',
+              (subPrep.name as string) || 'Desconocido',
               depth + 1,
             );
           }
@@ -93,7 +93,7 @@ export function useItemIngredientesDeepList(itemId: string | undefined) {
       for (const comp of composicion || []) {
         if (comp.preparacion_id && (comp as Record<string, unknown>).preparaciones) {
           const prep = (comp as Record<string, unknown>).preparaciones as Record<string, unknown>;
-          await fetchPrepIngredients(prep.id as string, prep.nombre as string, 0);
+          await fetchPrepIngredients(prep.id as string, prep.name as string, 0);
         }
 
         if (comp.insumo_id && (comp as Record<string, unknown>).insumos) {
@@ -101,7 +101,7 @@ export function useItemIngredientesDeepList(itemId: string | undefined) {
           const directGroup = groups.find((g) => g.receta_id === '__direct__');
           const ingredient: DeepIngredient = {
             insumo_id: ins.id as string,
-            nombre: ins.nombre as string,
+            nombre: ins.name as string,
             cantidad: comp.cantidad,
             unidad: (ins.unidad_base as string) || 'un',
             costo_por_unidad_base: (ins.costo_por_unidad_base as number) || 0,

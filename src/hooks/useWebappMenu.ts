@@ -42,7 +42,7 @@ export function useWebappMenuItems(branchId: string | undefined) {
       return visibleItems.map((item: Record<string, unknown>) => ({
         ...item,
         categoria_nombre:
-          (item.menu_categories as Record<string, unknown> | null)?.nombre ?? null,
+          (item.menu_categories as Record<string, unknown> | null)?.name ?? null,
         categoria_orden:
           (item.menu_categories as Record<string, unknown> | null)?.orden ?? 999,
       })) as WebappMenuItem[];
@@ -75,7 +75,7 @@ export function useWebappItemOptionalGroups(itemId: string | undefined) {
 
       return groups.map((g: Record<string, unknown>) => ({
         id: g.id,
-        nombre: g.nombre,
+        nombre: g.name,
         is_required: g.is_required ?? false,
         max_selecciones: g.max_selecciones,
         opciones: (options as Array<Record<string, unknown>>)
@@ -83,8 +83,8 @@ export function useWebappItemOptionalGroups(itemId: string | undefined) {
           .map((o: Record<string, unknown>) => ({
             id: o.id,
             nombre:
-              (o.insumos as Record<string, unknown> | null)?.nombre ||
-              (o.preparaciones as Record<string, unknown> | null)?.nombre ||
+              (o.insumos as Record<string, unknown> | null)?.name ||
+              (o.preparaciones as Record<string, unknown> | null)?.name ||
               'Opción',
             precio_extra: (o.costo_unitario as number) ?? 0,
           })),
@@ -103,7 +103,7 @@ export function useWebappItemExtras(itemId: string | undefined) {
 
       return extras.map((e: Record<string, unknown>) => ({
         id: e.id,
-        nombre: e.nombre,
+        nombre: e.name,
         precio: e.precio_base,
         imagen_url: e.imagen_url,
       }));
@@ -122,8 +122,8 @@ export function useWebappItemRemovables(itemId: string | undefined) {
         ...r,
         nombre:
           (r.nombre_display as string) ||
-          (r.insumos as Record<string, unknown> | null)?.nombre ||
-          (r.preparaciones as Record<string, unknown> | null)?.nombre ||
+          (r.insumos as Record<string, unknown> | null)?.name ||
+          (r.preparaciones as Record<string, unknown> | null)?.name ||
           'Ingrediente',
       }));
     },

@@ -73,7 +73,7 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
         return stockActual.map(
           (r: any) => ({
             insumo_id: r.insumo_id,
-            insumo_nombre: r.insumos?.nombre ?? r.insumo_id,
+            insumo_nombre: r.insumos?.name ?? r.insumo_id,
             unidad: r.unidad,
             stock_apertura: 0,
             compras: 0,
@@ -88,7 +88,7 @@ export function useStockCierrePeriod(branchId: string, periodo: string | null) {
       const insumoInfo = new Map(
         insumos.map((i: any) => [
           i.id,
-          { nombre: i.nombre ?? i.id, unidad: i.unidad_base ?? 'un' },
+          { nombre: i.name ?? i.id, unidad: i.unidad_base ?? 'un' },
         ]),
       );
 
@@ -192,7 +192,7 @@ export function useSaveCierreMensual(branchId: string) {
               categoria_pl: catPl,
               monto_consumido: Math.round(montoConsumo * 100) / 100,
               tipo: 'calculado',
-              observaciones: `Cierre stock ${p.periodo}: ${insumo?.nombre ?? it.insumo_id}`,
+              observaciones: `Cierre stock ${p.periodo}: ${insumo?.name ?? it.insumo_id}`,
             });
           }
         }

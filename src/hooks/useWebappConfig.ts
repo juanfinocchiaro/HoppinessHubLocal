@@ -53,8 +53,8 @@ export function useBranchWebappAvailability(branchId: string | undefined) {
           const av = availabilityMap.get(item.id);
           return {
             itemId: item.id,
-            nombre: item.nombre,
-            categoriaNombre: item.menu_categories?.nombre ?? 'Sin categoría',
+            nombre: item.name,
+            categoriaNombre: item.menu_categories?.name ?? 'Sin categoría',
             categoriaOrden: item.menu_categories?.orden ?? 999,
             productoOrden: item.orden ?? 999,
             marcaDisponibleWebapp: item.disponible_webapp !== false,

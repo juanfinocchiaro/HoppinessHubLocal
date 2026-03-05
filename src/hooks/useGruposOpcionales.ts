@@ -36,7 +36,18 @@ export function useGruposOpcionales(itemId: string | undefined) {
     queryKey: ['grupos-opcionales', itemId],
     queryFn: async () => {
       if (!itemId) return [];
-      return (await fetchGruposOpcionales(itemId)) as unknown as GrupoOpcional[];
+      const raw = await fetchGruposOpcionales(itemId);
+      return ((raw || []) as any[]).map((g: any) => ({
+        ...g,
+        nombre: g.name ?? g.nombre,
+        items: (g.items || []).map((gi: any) => ({
+          ...gi,
+          insumos: gi.insumos ? { ...gi.insumos, nombre: gi.insumos.name ?? gi.insumos.nombre } : gi.insumos,
+          preparaciones: gi.preparaciones ? { ...gi.preparaciones, nombre: gi.preparaciones.name ?? gi.preparaciones.nombre } : gi.preparaciones,
+          supplies: gi.supplies ? { ...gi.supplies, nombre: gi.supplies.name ?? gi.supplies.nombre } : gi.supplies,
+          recipes: gi.recipes ? { ...gi.recipes, nombre: gi.recipes.name ?? gi.recipes.nombre } : gi.recipes,
+        })),
+      })) as unknown as GrupoOpcional[];
     },
     enabled: !!itemId,
   });

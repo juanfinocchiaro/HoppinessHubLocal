@@ -91,7 +91,7 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
         ...d,
         cantidad: d.cantidad,
         extra_id: (existing as Record<string, unknown>)?.id as string || null,
-        extra_nombre: ((existing as Record<string, unknown>)?.nombre as string) || `Extra ${d.nombre}`,
+        extra_nombre: ((existing as Record<string, unknown>)?.name as string) || `Extra ${d.nombre}`,
         extra_precio: ((existing as Record<string, unknown>)?.precio_base as number) || 0,
         activo: existing ? asigSet.has((existing as Record<string, unknown>).id) : false,
       };

@@ -14,7 +14,10 @@ import {
 export function usePreparaciones() {
   return useQuery({
     queryKey: ['preparaciones'],
-    queryFn: fetchPreparacionesSvc,
+    queryFn: async () => {
+      const data = await fetchPreparacionesSvc();
+      return (data || []).map((p: any) => ({ ...p, nombre: p.name ?? p.nombre }));
+    },
   });
 }
 
@@ -23,7 +26,14 @@ export function usePreparacionIngredientes(preparacionId: string | undefined) {
     queryKey: ['preparacion-ingredientes', preparacionId],
     queryFn: async () => {
       if (!preparacionId) return [];
-      return fetchPreparacionIngredientes(preparacionId);
+      const data = await fetchPreparacionIngredientes(preparacionId);
+      return (data || []).map((ing: any) => ({
+        ...ing,
+        insumos: ing.insumos ? { ...ing.insumos, nombre: ing.insumos.name ?? ing.insumos.nombre } : ing.insumos,
+        preparaciones: ing.preparaciones ? { ...ing.preparaciones, nombre: ing.preparaciones.name ?? ing.preparaciones.nombre } : ing.preparaciones,
+        supplies: ing.supplies ? { ...ing.supplies, nombre: ing.supplies.name ?? ing.supplies.nombre } : ing.supplies,
+        recipes: ing.recipes ? { ...ing.recipes, nombre: ing.recipes.name ?? ing.recipes.nombre } : ing.recipes,
+      }));
     },
     enabled: !!preparacionId,
   });
@@ -34,7 +44,12 @@ export function usePreparacionOpciones(preparacionId: string | undefined) {
     queryKey: ['preparacion-opciones', preparacionId],
     queryFn: async () => {
       if (!preparacionId) return [];
-      return fetchPreparacionOpciones(preparacionId);
+      const data = await fetchPreparacionOpciones(preparacionId);
+      return (data || []).map((opt: any) => ({
+        ...opt,
+        insumos: opt.insumos ? { ...opt.insumos, nombre: opt.insumos.name ?? opt.insumos.nombre } : opt.insumos,
+        supplies: opt.supplies ? { ...opt.supplies, nombre: opt.supplies.name ?? opt.supplies.nombre } : opt.supplies,
+      }));
     },
     enabled: !!preparacionId,
   });

@@ -14,8 +14,10 @@ export async function fetchCategoriasInsumo() {
 }
 
 export async function createCategoriaInsumo(payload: CategoriaInsumoFormData) {
+  const dbPayload = { ...payload, name: payload.nombre } as any;
+  delete dbPayload.nombre;
   const { data, error } = await fromUntyped('supply_categories')
-    .insert(payload)
+    .insert(dbPayload)
     .select()
     .single();
   if (error) throw error;
@@ -26,8 +28,10 @@ export async function updateCategoriaInsumo(
   id: string,
   payload: Partial<CategoriaInsumoFormData>,
 ) {
+  const dbPayload = { ...payload } as any;
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
   const { error } = await fromUntyped('supply_categories')
-    .update(payload)
+    .update(dbPayload)
     .eq('id', id);
   if (error) throw error;
 }
@@ -44,18 +48,20 @@ export async function softDeleteCategoriaInsumo(id: string) {
 export async function fetchInsumos() {
   const { data, error } = await fromUntyped('supplies')
     .select(
-      '*, supply_categories(nombre, tipo), rdo_categories!supplies_rdo_category_code_fkey(code, name), proveedor_obligatorio:suppliers!supplies_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:suppliers!supplies_proveedor_sugerido_id_fkey(id, razon_social)',
+      '*, supply_categories(name, tipo), rdo_categories!supplies_rdo_category_code_fkey(code, name), proveedor_obligatorio:suppliers!supplies_proveedor_obligatorio_id_fkey(id, razon_social), proveedor_sugerido:suppliers!supplies_proveedor_sugerido_id_fkey(id, razon_social)',
     )
     .is('deleted_at', null)
     .neq('is_active', false)
-    .order('nombre');
+    .order('name');
   if (error) throw error;
   return data;
 }
 
 export async function createInsumo(payload: InsumoFormData) {
+  const dbPayload = { ...payload, name: payload.nombre } as any;
+  delete dbPayload.nombre;
   const { data, error } = await fromUntyped('supplies')
-    .insert(payload)
+    .insert(dbPayload)
     .select()
     .single();
   if (error) throw error;
@@ -63,7 +69,9 @@ export async function createInsumo(payload: InsumoFormData) {
 }
 
 export async function updateInsumo(id: string, payload: Partial<InsumoFormData>) {
-  const { error } = await fromUntyped('supplies').update(payload).eq('id', id);
+  const dbPayload = { ...payload } as any;
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
+  const { error } = await fromUntyped('supplies').update(dbPayload).eq('id', id);
   if (error) throw error;
   return payload;
 }
@@ -82,7 +90,7 @@ export async function fetchPreparaciones() {
     .select('*')
     .eq('is_active', true)
     .is('deleted_at', null)
-    .order('nombre');
+    .order('name');
   if (error) throw error;
   return data;
 }
@@ -90,7 +98,7 @@ export async function fetchPreparaciones() {
 export async function fetchPreparacionIngredientes(preparacionId: string) {
   const { data, error } = await fromUntyped('recipe_ingredients')
     .select(
-      `*, supplies(id, nombre, unidad_base, costo_por_unidad_base), recipes!recipe_ingredients_sub_preparacion_id_fkey(id, nombre, costo_calculado)`,
+      `*, supplies(id, name, unidad_base, costo_por_unidad_base), recipes!recipe_ingredients_sub_preparacion_id_fkey(id, name, costo_calculado)`,
     )
     .eq('preparacion_id', preparacionId)
     .order('orden');
@@ -100,7 +108,7 @@ export async function fetchPreparacionIngredientes(preparacionId: string) {
 
 export async function fetchPreparacionOpciones(preparacionId: string) {
   const { data, error } = await fromUntyped('recipe_options')
-    .select(`*, supplies(id, nombre, costo_por_unidad_base)`)
+    .select(`*, supplies(id, name, costo_por_unidad_base)`)
     .eq('preparacion_id', preparacionId)
     .order('orden');
   if (error) throw error;
@@ -114,8 +122,10 @@ export async function createPreparacion(payload: {
   is_interchangeable?: boolean;
   metodo_costeo?: string;
 }) {
+  const dbPayload = { ...payload, name: payload.nombre } as any;
+  delete dbPayload.nombre;
   const { data, error } = await fromUntyped('recipes')
-    .insert(payload)
+    .insert(dbPayload)
     .select()
     .single();
   if (error) throw error;
@@ -123,8 +133,10 @@ export async function createPreparacion(payload: {
 }
 
 export async function updatePreparacion(id: string, payload: any) {
+  const dbPayload = { ...payload, updated_at: new Date().toISOString() };
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
   const { error } = await fromUntyped('recipes')
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(dbPayload)
     .eq('id', id);
   if (error) throw error;
 }
@@ -187,7 +199,7 @@ export async function savePreparacionOpciones(
 
 const ITEMS_CARTA_SELECT = `
   *,
-  menu_categories:categoria_carta_id(id, nombre, orden),
+  menu_categories:categoria_carta_id(id, name, orden),
   rdo_categories:rdo_category_code(code, name)
 `;
 
@@ -214,8 +226,8 @@ export async function fetchItemCartaComposicion(itemId: string) {
     .select(
       `
       *,
-      recipes(id, nombre, costo_calculado, tipo),
-      supplies(id, nombre, costo_por_unidad_base, unidad_base)
+      recipes(id, name, costo_calculado, tipo),
+      supplies(id, name, costo_por_unidad_base, unidad_base)
     `,
     )
     .eq('item_carta_id', itemId)
@@ -244,8 +256,10 @@ export async function createItemCarta(payload: {
   disponible_delivery?: boolean;
   tipo?: string;
 }) {
+  const dbPayload = { ...payload, name: payload.nombre } as any;
+  delete dbPayload.nombre;
   const { data, error } = await fromUntyped('menu_items')
-    .insert(payload)
+    .insert(dbPayload)
     .select()
     .single();
   if (error) throw error;
@@ -253,8 +267,10 @@ export async function createItemCarta(payload: {
 }
 
 export async function updateItemCarta(id: string, payload: any) {
+  const dbPayload = { ...payload };
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
   const { error } = await fromUntyped('menu_items')
-    .update({ ...payload })
+    .update(dbPayload)
     .eq('id', id);
   if (error) throw error;
 }
@@ -342,7 +358,7 @@ export async function createMenuCategoria(payload: {
 }) {
   const { data, error } = await fromUntyped('menu_categories')
     .insert({
-      nombre: payload.nombre,
+      name: payload.nombre,
       descripcion: payload.descripcion || null,
       orden: payload.orden || 99,
     })
@@ -356,8 +372,10 @@ export async function updateMenuCategoria(
   id: string,
   payload: { nombre?: string; descripcion?: string; orden?: number },
 ) {
+  const dbPayload: any = { ...payload, updated_at: new Date().toISOString() };
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
   const { error } = await fromUntyped('menu_categories')
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(dbPayload)
     .eq('id', id);
   if (error) throw error;
 }
@@ -403,8 +421,8 @@ export async function fetchGruposOpcionales(itemId: string) {
       *,
       items:menu_item_option_group_items(
         *,
-        supplies(id, nombre, costo_por_unidad_base),
-        recipes(id, nombre, costo_calculado)
+        supplies(id, name, costo_por_unidad_base),
+        recipes(id, name, costo_calculado)
       )
     `,
     )
@@ -419,8 +437,10 @@ export async function createGrupoOpcional(params: {
   nombre: string;
   orden: number;
 }) {
+  const dbParams = { ...params, name: params.nombre } as any;
+  delete dbParams.nombre;
   const { data, error } = await fromUntyped('menu_item_option_groups')
-    .insert(params)
+    .insert(dbParams)
     .select()
     .single();
   if (error) throw error;
@@ -428,8 +448,10 @@ export async function createGrupoOpcional(params: {
 }
 
 export async function updateGrupoOpcional(id: string, data: { nombre?: string }) {
+  const dbData: any = { ...data };
+  if (dbData.nombre !== undefined) { dbData.name = dbData.nombre; delete dbData.nombre; }
   const { error } = await fromUntyped('menu_item_option_groups')
-    .update(data as Record<string, unknown>)
+    .update(dbData as Record<string, unknown>)
     .eq('id', id);
   if (error) throw error;
 }
@@ -476,7 +498,7 @@ export async function updateGrupoOpcionalCosto(grupo_id: string, costo_promedio:
 export async function fetchExtrasCategoryId(): Promise<string | null> {
   const { data, error } = await fromUntyped('menu_categories')
     .select('id')
-    .ilike('nombre', '%extras%')
+    .ilike('name', '%extras%')
     .limit(1)
     .maybeSingle();
   if (error) throw error;
@@ -519,7 +541,7 @@ export async function createExtraItemCarta(params: {
 }) {
   const { data, error } = await fromUntyped('menu_items')
     .insert({
-      nombre: params.nombre,
+      name: params.nombre,
       tipo: 'extra',
       categoria_carta_id: params.catId,
       precio_base: 0,
@@ -588,7 +610,7 @@ export async function fetchExtraAssignmentsByItem(itemId: string) {
 
 export async function fetchExtraAssignmentsWithJoin(itemId: string) {
   const { data, error } = await fromUntyped('extra_assignments')
-    .select('*, extra:extra_id(id, nombre, precio_base, costo_total, tipo)')
+    .select('*, extra:extra_id(id, name, precio_base, costo_total, tipo)')
     .eq('item_carta_id', itemId);
   if (error) throw error;
   return data || [];
@@ -604,7 +626,7 @@ export async function fetchExtraAssignmentsForExtra(extraId: string) {
 
 export async function fetchActiveExtrasByIds(extraIds: string[]) {
   const { data, error } = await fromUntyped('menu_items')
-    .select('id, nombre, precio_base, is_active')
+    .select('id, name, precio_base, is_active')
     .in('id', extraIds)
     .eq('is_active', true)
     .is('deleted_at', null);
@@ -641,7 +663,7 @@ export async function updatePrecioExtra(
 
 export async function fetchItemRemovibles(itemId: string) {
   const { data, error } = await fromUntyped('removable_items')
-    .select('*, supplies(id, nombre), recipes(id, nombre)')
+    .select('*, supplies(id, name), recipes(id, name)')
     .eq('item_carta_id', itemId)
     .eq('is_active', true);
   if (error) throw error;
@@ -763,11 +785,11 @@ export async function fetchWebappMenuItems(branchId: string) {
   const query = fromUntyped('menu_items')
     .select(
       `
-      id, nombre, nombre_corto, descripcion, imagen_url,
+      id, name, nombre_corto, descripcion, imagen_url,
       precio_base, precio_promo, promo_etiqueta,
       categoria_carta_id, orden, disponible_delivery,
       disponible_webapp, tipo,
-      menu_categories:categoria_carta_id(id, nombre, orden)
+      menu_categories:categoria_carta_id(id, name, orden)
     `,
     )
     .eq('is_active', true)
@@ -794,7 +816,7 @@ export async function fetchWebappMenuItems(branchId: string) {
 
 export async function fetchWebappItemOptionalGroups(itemId: string) {
   const { data: groups, error: gErr } = await fromUntyped('menu_item_option_groups')
-    .select('id, nombre, is_required, max_selecciones, orden')
+    .select('id, name, is_required, max_selecciones, orden')
     .eq('item_carta_id', itemId)
     .order('orden');
   if (gErr) throw gErr;
@@ -805,7 +827,7 @@ export async function fetchWebappItemOptionalGroups(itemId: string) {
   );
   const { data: options, error: oErr } = await fromUntyped('menu_item_option_group_items')
     .select(
-      'id, grupo_id, insumo_id, preparacion_id, costo_unitario, supplies(id, nombre), recipes(id, nombre)',
+      'id, grupo_id, insumo_id, preparacion_id, costo_unitario, supplies(id, name), recipes(id, name)',
     )
     .in('grupo_id', groupIds);
   if (oErr) throw oErr;
@@ -822,7 +844,7 @@ export async function fetchWebappItemExtras(itemId: string) {
   if (extraIds.length === 0) return [];
 
   const { data, error } = await fromUntyped('menu_items')
-    .select('id, nombre, precio_base, imagen_url')
+    .select('id, name, precio_base, imagen_url')
     .in('id', extraIds)
     .eq('is_active', true)
     .is('deleted_at', null);
@@ -833,7 +855,7 @@ export async function fetchWebappItemExtras(itemId: string) {
 export async function fetchWebappItemRemovables(itemId: string) {
   const { data, error } = await fromUntyped('removable_items')
     .select(
-      'id, nombre_display, activo, insumo_id, preparacion_id, supplies(id, nombre), recipes(id, nombre)',
+      'id, nombre_display, activo, insumo_id, preparacion_id, supplies(id, name), recipes(id, name)',
     )
     .eq('item_carta_id', itemId)
     .eq('activo', true);
@@ -854,8 +876,9 @@ export async function fetchCategoriasPreparacion() {
 }
 
 export async function createCategoriaPreparacion(payload: { nombre: string; orden: number }) {
+  const dbPayload = { name: payload.nombre, orden: payload.orden };
   const { data, error } = await fromUntyped('recipe_categories')
-    .insert(payload)
+    .insert(dbPayload)
     .select()
     .single();
   if (error) throw error;
@@ -866,8 +889,10 @@ export async function updateCategoriaPreparacion(
   id: string,
   payload: Record<string, unknown>,
 ) {
+  const dbPayload: any = { ...payload, updated_at: new Date().toISOString() };
+  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
   const { error } = await fromUntyped('recipe_categories')
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(dbPayload)
     .eq('id', id);
   if (error) throw error;
 }
@@ -919,8 +944,8 @@ export async function fetchPrepIngredientesForDeepList(prepId: string) {
     .select(
       `
       *,
-      supplies(id, nombre, costo_por_unidad_base, unidad_base),
-      sub_prep:recipes!recipe_ingredients_sub_preparacion_id_fkey(id, nombre)
+      supplies(id, name, costo_por_unidad_base, unidad_base),
+      sub_prep:recipes!recipe_ingredients_sub_preparacion_id_fkey(id, name)
     `,
     )
     .eq('preparacion_id', prepId)

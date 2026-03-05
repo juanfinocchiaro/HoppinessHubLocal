@@ -77,12 +77,12 @@ export function useStockCompleto(branchId: string) {
       const items: StockItem[] = insumos.map((ins) => {
         const sa = stockMap.get(ins.id);
         const cantidad = sa ? Number(sa.cantidad) : 0;
-        const cat = ins.categorias_insumo as { nombre?: string } | null;
+        const cat = ins.categorias_insumo as { name?: string } | null;
         return {
           insumo_id: ins.id,
-          nombre: ins.nombre,
+          nombre: ins.name,
           unidad: ins.unidad_base ?? 'un',
-          categoria: cat?.nombre ?? null,
+          categoria: cat?.name ?? null,
           cantidad,
           stock_minimo: sa?.stock_minimo != null ? Number(sa.stock_minimo) : null,
           stock_critico: sa?.stock_critico != null ? Number(sa.stock_critico) : null,

@@ -778,8 +778,8 @@ export async function fetchPromoItemsWithExtras(promoId: string) {
 
     if (extrasData && (extrasData as any[]).length > 0) {
       const extraItemIds = [...new Set((extrasData as any[]).map((e: any) => e.extra_item_carta_id as string))];
-      const { data: extraInfo } = await fromUntyped('menu_items').select('id, nombre, precio_base').in('id', extraItemIds);
-      const infoMap = new Map((extraInfo as any[] || []).map((n: any) => [n.id, { nombre: n.nombre, precio: Number(n.precio_base ?? 0) }]));
+      const { data: extraInfo } = await fromUntyped('menu_items').select('id, name, precio_base').in('id', extraItemIds);
+      const infoMap = new Map((extraInfo as any[] || []).map((n: any) => [n.id, { nombre: n.name, precio: Number(n.precio_base ?? 0) }]));
 
       for (const e of extrasData as any[]) {
         const info = infoMap.get(e.extra_item_carta_id as string);
@@ -796,10 +796,10 @@ export async function fetchPromoItemsWithExtras(promoId: string) {
   }
 
   return ((data as any[]) || []).map((d: any) => {
-    const ic = d.menu_items as { nombre: string; imagen_url?: string | null; precio_base: number } | null;
+    const ic = d.menu_items as { name: string; imagen_url?: string | null; precio_base: number } | null;
     return {
       item_carta_id: d.item_carta_id as string,
-      nombre: ic?.nombre || '',
+      nombre: ic?.name || '',
       imagen_url: ic?.imagen_url,
       precio_base: Number(ic?.precio_base || 0),
       precio_promo: Number(d.precio_promo),

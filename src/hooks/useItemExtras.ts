@@ -51,7 +51,7 @@ export function useItemExtras(itemId: string | undefined) {
         orden: i,
         preparaciones: {
           id: e.id as string,
-          nombre: e.nombre as string,
+          nombre: e.name as string,
           costo_calculado: 0,
           precio_extra: e.precio_base as number,
           puede_ser_extra: true,
