@@ -97,7 +97,7 @@ export async function fetchStockData(branchId: string) {
   const [insumosResult, stockResult, movimientosResult] = await Promise.all([
     fromUntyped('supplies')
        .select(
-        'id, name, base_unit, categoria_id, base_unit_cost, supply_categories:supply_categories!supplies_categoria_id_fkey(name)',
+        'id, name, base_unit, categoria_id, base_unit_cost, supply_categories:supply_categories!insumos_categoria_id_fkey(name)',
       )
       .is('deleted_at', null)
       .neq('is_active', false)

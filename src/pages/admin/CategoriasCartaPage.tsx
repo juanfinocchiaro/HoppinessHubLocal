@@ -154,8 +154,8 @@ function SortableCategory({
             </div>
           ) : (
             <>
-              <span className="font-medium">{cat.nombre}</span>
-              <TipoImpresionBadge tipo={cat.tipo_impresion || 'comanda'} />
+              <span className="font-medium">{cat.name}</span>
+              <TipoImpresionBadge tipo={cat.print_type || 'comanda'} />
             </>
           )}
         </div>
@@ -166,8 +166,8 @@ function SortableCategory({
               size="sm"
               onClick={() => {
                 setEditingId(cat.id);
-                setEditingNombre(cat.nombre);
-                setEditingTipoImpresion(cat.tipo_impresion || 'comanda');
+                setEditingNombre(cat.name);
+                setEditingTipoImpresion(cat.print_type || 'comanda');
               }}
             >
               <Pencil className="w-4 h-4" />
@@ -202,9 +202,9 @@ export default function CategoriasCartaPage() {
   const handleCreate = async () => {
     if (!newNombre.trim()) return;
     await create.mutateAsync({
-      nombre: newNombre.trim(),
-      orden: (categorias?.length || 0) + 1,
-      tipo_impresion: newTipoImpresion,
+      name: newNombre.trim(),
+      sort_order: (categorias?.length || 0) + 1,
+      print_type: newTipoImpresion,
     } as any);
     setNewNombre('');
     setNewTipoImpresion('comanda');
@@ -215,13 +215,13 @@ export default function CategoriasCartaPage() {
     if (!editingId || !editingNombre.trim()) return;
     await update.mutateAsync({
       id: editingId,
-      data: { nombre: editingNombre.trim(), tipo_impresion: editingTipoImpresion } as any,
+      data: { name: editingNombre.trim(), print_type: editingTipoImpresion } as any,
     });
     setEditingId(null);
   };
 
   const handleTipoChange = async (id: string, tipo: TipoImpresion) => {
-    await update.mutateAsync({ id, data: { tipo_impresion: tipo } as any });
+    await update.mutateAsync({ id, data: { print_type: tipo } as any });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -369,7 +369,7 @@ export default function CategoriasCartaPage() {
         open={!!deleting}
         onOpenChange={() => setDeleting(null)}
         title="Eliminar categoría"
-        description={`¿Eliminar "${deleting?.nombre}"? Los items de esta categoría quedarán sin categoría.`}
+        description={`¿Eliminar "${deleting?.name}"? Los items de esta categoría quedarán sin categoría.`}
         confirmLabel="Eliminar"
         variant="destructive"
         onConfirm={async () => {

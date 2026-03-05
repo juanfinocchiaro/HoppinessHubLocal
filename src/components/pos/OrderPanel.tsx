@@ -96,19 +96,19 @@ export function OrderPanel({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{it.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {it.reference_price && it.reference_price > it.unit_price ? (
+                      {it.reference_price && it.reference_price > (it.unit_price ?? 0) ? (
                         <>
                           <span className="line-through mr-1">
-                            $ {it.reference_price.toLocaleString('es-AR')}
+                            $ {(it.reference_price ?? 0).toLocaleString('es-AR')}
                           </span>
                           <span className="text-destructive font-semibold">
-                            $ {it.unit_price.toLocaleString('es-AR')}
+                            $ {(it.unit_price ?? 0).toLocaleString('es-AR')}
                           </span>
                           <span className="ml-1"> × {it.quantity}</span>
                         </>
                       ) : (
                         <>
-                          $ {it.unit_price.toLocaleString('es-AR')} × {it.quantity}
+                          $ {(it.unit_price ?? 0).toLocaleString('es-AR')} × {it.quantity}
                         </>
                       )}
                     </p>

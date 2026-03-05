@@ -26,19 +26,19 @@ export function ItemRow({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{item.name}</p>
           <p className="text-xs text-muted-foreground">
-            {item.reference_price && item.reference_price > item.unit_price ? (
+            {item.reference_price && item.reference_price > (item.unit_price ?? 0) ? (
               <>
                 <span className="line-through mr-1">
-                  $ {item.reference_price.toLocaleString('es-AR')}
+                  $ {(item.reference_price ?? 0).toLocaleString('es-AR')}
                 </span>
                 <span className="text-destructive font-semibold">
-                  $ {item.unit_price.toLocaleString('es-AR')}
+                  $ {(item.unit_price ?? 0).toLocaleString('es-AR')}
                 </span>
                 <span className="ml-1"> × {item.quantity}</span>
               </>
             ) : (
               <>
-                $ {item.unit_price.toLocaleString('es-AR')} × {item.quantity}
+                $ {(item.unit_price ?? 0).toLocaleString('es-AR')} × {item.quantity}
               </>
             )}
           </p>

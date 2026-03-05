@@ -52,7 +52,7 @@ export async function softDeleteCategoriaInsumo(id: string) {
 export async function fetchInsumos() {
   const { data, error } = await fromUntyped('supplies')
     .select(
-      '*, supply_categories(name, type), rdo_categories!supplies_rdo_category_code_fkey(code, name), proveedor_obligatorio:suppliers!supplies_proveedor_obligatorio_id_fkey(id, business_name), proveedor_sugerido:suppliers!supplies_proveedor_sugerido_id_fkey(id, business_name)',
+      '*, supply_categories(name, type), rdo_categories!insumos_rdo_category_code_fkey(code, name), proveedor_obligatorio:suppliers!insumos_proveedor_obligatorio_id_fkey(id, business_name), proveedor_sugerido:suppliers!insumos_proveedor_sugerido_id_fkey(id, business_name)',
     )
     .is('deleted_at', null)
     .neq('is_active', false)
@@ -128,7 +128,7 @@ export async function fetchPreparaciones() {
 export async function fetchPreparacionIngredientes(preparacionId: string) {
   const { data, error } = await fromUntyped('recipe_ingredients')
     .select(
-      `*, supplies(id, name, base_unit, base_unit_cost), recipes!recipe_ingredients_sub_preparacion_id_fkey(id, name, calculated_cost)`,
+      `*, supplies(id, name, base_unit, base_unit_cost), recipes!preparacion_ingredientes_sub_preparacion_id_fkey(id, name, calculated_cost)`,
     )
     .eq('preparacion_id', preparacionId)
     .order('sort_order');
@@ -415,15 +415,17 @@ export async function fetchMenuCategorias() {
 }
 
 export async function createMenuCategoria(payload: {
-  nombre: string;
-  descripcion?: string | null;
-  orden?: number;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+  print_type?: string;
 }) {
   const { data, error } = await fromUntyped('menu_categories')
     .insert({
-      name: payload.nombre,
-      description: payload.descripcion || null,
-      sort_order: payload.orden || 99,
+      name: payload.name,
+      description: payload.description || null,
+      sort_order: payload.sort_order || 99,
+      print_type: payload.print_type || 'comanda',
     })
     .select()
     .single();
@@ -433,22 +435,18 @@ export async function createMenuCategoria(payload: {
 
 export async function updateMenuCategoria(
   id: string,
-  payload: { nombre?: string; descripcion?: string; orden?: number },
+  payload: { name?: string; description?: string; sort_order?: number; print_type?: string },
 ) {
-  const dbPayload: any = { ...payload, updated_at: new Date().toISOString() };
-  if (dbPayload.nombre !== undefined) { dbPayload.name = dbPayload.nombre; delete dbPayload.nombre; }
-  if (dbPayload.orden !== undefined) { dbPayload.sort_order = dbPayload.orden; delete dbPayload.orden; }
-  if (dbPayload.descripcion !== undefined) { dbPayload.description = dbPayload.descripcion; delete dbPayload.descripcion; }
   const { error } = await fromUntyped('menu_categories')
-    .update(dbPayload)
+    .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
 
-export async function reorderMenuCategorias(items: { id: string; orden: number }[]) {
+export async function reorderMenuCategorias(items: { id: string; sort_order: number }[]) {
   for (const item of items) {
     const { error } = await fromUntyped('menu_categories')
-      .update({ sort_order: item.orden, updated_at: new Date().toISOString() })
+      .update({ sort_order: item.sort_order, updated_at: new Date().toISOString() })
       .eq('id', item.id);
     if (error) throw error;
   }
@@ -1015,7 +1013,7 @@ export async function fetchPrepIngredientesForDeepList(prepId: string) {
       `
       *,
       supplies(id, name, base_unit_cost, base_unit),
-      sub_prep:recipes!recipe_ingredients_sub_preparacion_id_fkey(id, name)
+      sub_prep:recipes!preparacion_ingredientes_sub_preparacion_id_fkey(id, name)
     `,
     )
     .eq('preparacion_id', prepId)

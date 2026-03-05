@@ -22,7 +22,7 @@ export function useMenuCategoriaMutations() {
   const queryClient = useQueryClient();
 
   const create = useMutation({
-    mutationFn: (data: { name: string; descripcion?: string; sort_order?: number }) =>
+    mutationFn: (data: { name: string; description?: string; sort_order?: number; print_type?: string }) =>
       createMenuCategoria(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-categorias'] });
@@ -37,7 +37,7 @@ export function useMenuCategoriaMutations() {
       data,
     }: {
       id: string;
-      data: { name?: string; descripcion?: string; sort_order?: number };
+      data: { name?: string; description?: string; sort_order?: number; print_type?: string };
     }) => updateMenuCategoria(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-categorias'] });

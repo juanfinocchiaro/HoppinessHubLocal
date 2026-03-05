@@ -42,8 +42,8 @@ export function PromoCard({ promo, isEditing, onEdit, onDuplicate, onDelete, onT
               <div key={item.id} className="flex items-center gap-1 flex-wrap">
                 <span className="font-medium text-foreground/80">{buildItemLabel(item)}</span>
                 <span className="text-muted-foreground/60">→</span>
-                <span className="line-through text-muted-foreground/50">${item.base_price?.toLocaleString('es-AR')}</span>
-                <span className="font-semibold text-green-600">${item.precio_promo.toLocaleString('es-AR')}</span>
+                <span className="line-through text-muted-foreground/50">${(item.precio_base ?? 0).toLocaleString('es-AR')}</span>
+                <span className="font-semibold text-green-600">${(item.precio_promo ?? 0).toLocaleString('es-AR')}</span>
               </div>
             ))}
           </div>
