@@ -114,7 +114,7 @@ export async function fetchBrandClosureConfig() {
   (data || []).forEach((row) => {
     const item = toClosureConfigItem(row);
     config.all.push(item);
-    switch (item.tipo) {
+    switch (item.type) {
       case 'categoria_hamburguesa':
         config.categorias.push(item);
         break;
