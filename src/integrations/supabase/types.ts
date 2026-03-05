@@ -805,7 +805,7 @@ export type Database = {
         Row: {
           amount: number
           branch_id: string
-          canon_liquidacion_id: string
+          canon_settlement_id: string
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
@@ -823,7 +823,7 @@ export type Database = {
         Insert: {
           amount: number
           branch_id: string
-          canon_liquidacion_id: string
+          canon_settlement_id: string
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
@@ -841,7 +841,7 @@ export type Database = {
         Update: {
           amount?: number
           branch_id?: string
-          canon_liquidacion_id?: string
+          canon_settlement_id?: string
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
@@ -858,6 +858,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "canon_payments_canon_settlement_id_fkey"
+            columns: ["canon_settlement_id"]
+            isOneToOne: false
+            referencedRelation: "canon_settlements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pagos_canon_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
@@ -869,13 +876,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pagos_canon_canon_liquidacion_id_fkey"
-            columns: ["canon_liquidacion_id"]
-            isOneToOne: false
-            referencedRelation: "canon_settlements"
             referencedColumns: ["id"]
           },
         ]
@@ -894,6 +894,7 @@ export type Database = {
           id: string
           marketing_amount: number
           marketing_percentage: number | null
+          monthly_sales_id: string | null
           notes: string | null
           online_total: number
           pending_balance: number | null
@@ -903,7 +904,6 @@ export type Database = {
           suggested_transfer_payment: number | null
           total_canon: number
           updated_at: string | null
-          ventas_id: string | null
         }
         Insert: {
           branch_id: string
@@ -918,6 +918,7 @@ export type Database = {
           id?: string
           marketing_amount: number
           marketing_percentage?: number | null
+          monthly_sales_id?: string | null
           notes?: string | null
           online_total: number
           pending_balance?: number | null
@@ -927,7 +928,6 @@ export type Database = {
           suggested_transfer_payment?: number | null
           total_canon: number
           updated_at?: string | null
-          ventas_id?: string | null
         }
         Update: {
           branch_id?: string
@@ -942,6 +942,7 @@ export type Database = {
           id?: string
           marketing_amount?: number
           marketing_percentage?: number | null
+          monthly_sales_id?: string | null
           notes?: string | null
           online_total?: number
           pending_balance?: number | null
@@ -951,7 +952,6 @@ export type Database = {
           suggested_transfer_payment?: number | null
           total_canon?: number
           updated_at?: string | null
-          ventas_id?: string | null
         }
         Relationships: [
           {
@@ -969,8 +969,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "canon_liquidaciones_ventas_id_fkey"
-            columns: ["ventas_id"]
+            foreignKeyName: "canon_settlements_monthly_sales_id_fkey"
+            columns: ["monthly_sales_id"]
             isOneToOne: false
             referencedRelation: "branch_monthly_sales"
             referencedColumns: ["id"]
@@ -3038,7 +3038,7 @@ export type Database = {
       }
       invoice_items: {
         Row: {
-          afecta_costo_base: boolean | null
+          affects_base_cost: boolean | null
           alicuota_iva: number | null
           created_at: string | null
           descuento_porcentaje: number | null
@@ -3061,7 +3061,7 @@ export type Database = {
           vat_amount: number | null
         }
         Insert: {
-          afecta_costo_base?: boolean | null
+          affects_base_cost?: boolean | null
           alicuota_iva?: number | null
           created_at?: string | null
           descuento_porcentaje?: number | null
@@ -3084,7 +3084,7 @@ export type Database = {
           vat_amount?: number | null
         }
         Update: {
-          afecta_costo_base?: boolean | null
+          affects_base_cost?: boolean | null
           alicuota_iva?: number | null
           created_at?: string | null
           descuento_porcentaje?: number | null
@@ -6107,55 +6107,55 @@ export type Database = {
       recipes: {
         Row: {
           calculated_cost: number | null
+          can_be_extra: boolean
           categoria_preparacion_id: string | null
           costing_method: string | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
           extra_price: number | null
-          fc_objetivo_extra: number | null
+          extra_target_fc: number | null
           id: string
           is_active: boolean | null
           is_interchangeable: boolean | null
           manual_cost: number | null
           name: string
-          puede_ser_extra: boolean
           type: string
           updated_at: string | null
         }
         Insert: {
           calculated_cost?: number | null
+          can_be_extra?: boolean
           categoria_preparacion_id?: string | null
           costing_method?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           manual_cost?: number | null
           name: string
-          puede_ser_extra?: boolean
           type?: string
           updated_at?: string | null
         }
         Update: {
           calculated_cost?: number | null
+          can_be_extra?: boolean
           categoria_preparacion_id?: string | null
           costing_method?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           is_interchangeable?: boolean | null
           manual_cost?: number | null
           name?: string
-          puede_ser_extra?: boolean
           type?: string
           updated_at?: string | null
         }
@@ -6174,10 +6174,10 @@ export type Database = {
           apertura_at: string
           branch_id: string
           cajero_id: string
+          cash_counted: number | null
           cierre_at: string | null
           diferencia: number | null
           diferencia_motivo: string | null
-          efectivo_contado: number | null
           fondo_apertura: number
           id: string
           retiros_efectivo: number | null
@@ -6193,10 +6193,10 @@ export type Database = {
           apertura_at?: string
           branch_id: string
           cajero_id: string
+          cash_counted?: number | null
           cierre_at?: string | null
           diferencia?: number | null
           diferencia_motivo?: string | null
-          efectivo_contado?: number | null
           fondo_apertura: number
           id?: string
           retiros_efectivo?: number | null
@@ -6212,10 +6212,10 @@ export type Database = {
           apertura_at?: string
           branch_id?: string
           cajero_id?: string
+          cash_counted?: number | null
           cierre_at?: string | null
           diferencia?: number | null
           diferencia_motivo?: string | null
-          efectivo_contado?: number | null
           fondo_apertura?: number
           id?: string
           retiros_efectivo?: number | null
@@ -7742,6 +7742,7 @@ export type Database = {
         Row: {
           base_unit: string
           base_unit_cost: number | null
+          can_be_extra: boolean
           categoria_id: string | null
           control_reason: string | null
           creado_por: string | null
@@ -7751,7 +7752,7 @@ export type Database = {
           description: string | null
           especificacion: Json | null
           extra_price: number | null
-          fc_objetivo_extra: number | null
+          extra_target_fc: number | null
           id: string
           is_active: boolean | null
           item_type: string
@@ -7763,7 +7764,6 @@ export type Database = {
           pl_category: string | null
           proveedor_obligatorio_id: string | null
           proveedor_sugerido_id: string | null
-          puede_ser_extra: boolean
           purchase_unit: string | null
           purchase_unit_content: number | null
           purchase_unit_price: number | null
@@ -7776,6 +7776,7 @@ export type Database = {
         Insert: {
           base_unit: string
           base_unit_cost?: number | null
+          can_be_extra?: boolean
           categoria_id?: string | null
           control_reason?: string | null
           creado_por?: string | null
@@ -7785,7 +7786,7 @@ export type Database = {
           description?: string | null
           especificacion?: Json | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           item_type?: string
@@ -7797,7 +7798,6 @@ export type Database = {
           pl_category?: string | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
           purchase_unit?: string | null
           purchase_unit_content?: number | null
           purchase_unit_price?: number | null
@@ -7810,6 +7810,7 @@ export type Database = {
         Update: {
           base_unit?: string
           base_unit_cost?: number | null
+          can_be_extra?: boolean
           categoria_id?: string | null
           control_reason?: string | null
           creado_por?: string | null
@@ -7819,7 +7820,7 @@ export type Database = {
           description?: string | null
           especificacion?: Json | null
           extra_price?: number | null
-          fc_objetivo_extra?: number | null
+          extra_target_fc?: number | null
           id?: string
           is_active?: boolean | null
           item_type?: string
@@ -7831,7 +7832,6 @@ export type Database = {
           pl_category?: string | null
           proveedor_obligatorio_id?: string | null
           proveedor_sugerido_id?: string | null
-          puede_ser_extra?: boolean
           purchase_unit?: string | null
           purchase_unit_content?: number | null
           purchase_unit_price?: number | null
