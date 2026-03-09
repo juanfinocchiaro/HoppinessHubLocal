@@ -147,6 +147,15 @@ function POSPageContent({ branchId }: { branchId: string }) {
     });
   }, []);
 
+  const setQty = useCallback((index: number, qty: number) => {
+    setCart((prev) => {
+      const copy = [...prev];
+      const n = Math.max(1, qty);
+      copy[index] = { ...copy[index], quantity: n, subtotal: copy[index].unit_price * n };
+      return copy;
+    });
+  }, []);
+
   const removeItem = useCallback((index: number) => {
     setCart((prev) => prev.filter((_, i) => i !== index));
   }, []);
