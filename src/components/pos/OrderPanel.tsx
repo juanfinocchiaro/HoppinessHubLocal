@@ -18,10 +18,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Minus, Plus, Trash2, CreditCard, ShoppingBag, MessageSquare, X } from 'lucide-react';
 import type { CartItem } from '@/types/pos';
+import { EditableQty } from './EditableQty';
 
 interface OrderPanelProps {
   items: CartItem[];
   onUpdateQty: (index: number, delta: number) => void;
+  onSetQty?: (index: number, qty: number) => void;
   onRemove: (index: number) => void;
   onUpdateNotes?: (index: number, notes: string) => void;
   onCobrar: () => void;
