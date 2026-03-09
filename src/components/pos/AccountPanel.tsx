@@ -63,6 +63,7 @@ export function AccountPanel({
   items,
   payments,
   onUpdateQty,
+  onSetQty,
   onRemove,
   onUpdateNotes,
   onCancelOrder,
