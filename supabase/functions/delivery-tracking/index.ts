@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       const { data: pedido } = await supabase
         .from("pedidos")
         .select(
-          "numero_pedido, cliente_nombre, cliente_direccion, cliente_telefono, estado, branch_id",
+          "order_number, cliente_nombre, cliente_direccion, cliente_telefono, estado, branch_id",
         )
         .eq("id", tracking.pedido_id)
         .single();
