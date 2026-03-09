@@ -237,6 +237,7 @@ export function AccountPanel({
                     editingNoteIdx={editingNoteIdx}
                     setEditingNoteIdx={setEditingNoteIdx}
                     onUpdateQty={onUpdateQty}
+                    onSetQty={onSetQty}
                     onRemove={onRemove}
                     onUpdateNotes={onUpdateNotes}
                   />
