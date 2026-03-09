@@ -4,35 +4,35 @@ import type { LocalPayment, MetodoPago } from '@/types/pos';
 import { cn } from '@/lib/utils';
 
 const METODO_ICONS: Record<MetodoPago, React.ComponentType<{ className?: string }>> = {
-  efectivo: Banknote,
-  tarjeta_debito: CreditCard,
-  tarjeta_credito: CreditCard,
+  cash: Banknote,
+  debit_card: CreditCard,
+  credit_card: CreditCard,
   mercadopago_qr: QrCode,
-  transferencia: ArrowRightLeft,
+  transfer: ArrowRightLeft,
 };
 
 const METODO_LABELS: Record<MetodoPago, string> = {
-  efectivo: 'Efectivo',
-  tarjeta_debito: 'Débito',
-  tarjeta_credito: 'Crédito',
+  cash: 'Efectivo',
+  debit_card: 'Débito',
+  credit_card: 'Crédito',
   mercadopago_qr: 'QR MP',
-  transferencia: 'Transf.',
+  transfer: 'Transf.',
 };
 
 const PAYMENT_STYLES: Record<MetodoPago, string> = {
-  efectivo: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700',
-  tarjeta_debito: 'bg-blue-500/10 border-blue-500/20 text-blue-700',
-  tarjeta_credito: 'bg-violet-500/10 border-violet-500/20 text-violet-700',
+  cash: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700',
+  debit_card: 'bg-blue-500/10 border-blue-500/20 text-blue-700',
+  credit_card: 'bg-violet-500/10 border-violet-500/20 text-violet-700',
   mercadopago_qr: 'bg-sky-500/10 border-sky-500/20 text-sky-700',
-  transferencia: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700',
+  transfer: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700',
 };
 
 const PAYMENT_ICON_STYLES: Record<MetodoPago, string> = {
-  efectivo: 'text-emerald-600',
-  tarjeta_debito: 'text-blue-600',
-  tarjeta_credito: 'text-violet-600',
+  cash: 'text-emerald-600',
+  debit_card: 'text-blue-600',
+  credit_card: 'text-violet-600',
   mercadopago_qr: 'text-sky-600',
-  transferencia: 'text-indigo-600',
+  transfer: 'text-indigo-600',
 };
 
 export function PaymentRow({
