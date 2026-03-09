@@ -42,6 +42,7 @@ interface AccountPanelProps {
   items: CartItem[];
   payments: LocalPayment[];
   onUpdateQty: (index: number, delta: number) => void;
+  onSetQty?: (index: number, qty: number) => void;
   onRemove: (index: number) => void;
   onUpdateNotes?: (index: number, notes: string) => void;
   onCancelOrder?: () => void;
