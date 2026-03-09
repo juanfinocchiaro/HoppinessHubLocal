@@ -139,7 +139,11 @@ export function OrderPanel({
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </Button>
-                    <span className="text-sm font-medium w-6 text-center">{it.quantity}</span>
+                    {onSetQty ? (
+                      <EditableQty quantity={it.quantity} onSetQty={(qty) => onSetQty(idx, qty)} />
+                    ) : (
+                      <span className="text-sm font-medium w-6 text-center">{it.quantity}</span>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
