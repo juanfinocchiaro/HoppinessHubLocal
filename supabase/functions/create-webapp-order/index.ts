@@ -263,9 +263,9 @@ Deno.serve(async (req) => {
 
     const total = subtotal + costoDelivery;
 
-    // ── Generate numero_pedido ──────────────────────────────────
+    // ── Generate order_number ──────────────────────────────────
     const { data: numeroPedido, error: numErr } = await supabase.rpc(
-      "generar_numero_pedido",
+      "generate_order_number",
       { p_branch_id: body.branch_id },
     );
     if (numErr)
@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
     const { error: pedidoErr } = await supabase.from("pedidos").insert({
       id: pedidoId,
       branch_id: body.branch_id,
-      numero_pedido: numeroPedido as number,
+      order_number: numeroPedido as number,
       tipo: "webapp",
       estado: estadoInicial,
       canal_venta: "webapp",
@@ -446,7 +446,7 @@ Deno.serve(async (req) => {
     return json(200, {
       pedido_id: pedidoId,
       tracking_code: trackingCode,
-      numero_pedido: numeroPedido,
+      order_number: numeroPedido,
       estado: estadoInicial,
       tiempo_estimado_min: tiempoEstimado,
     });

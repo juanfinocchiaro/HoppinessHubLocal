@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       const { data: pedido } = await supabase
         .from("pedidos")
         .select(
-          "numero_pedido, cliente_nombre, cliente_direccion, cliente_telefono, estado, branch_id",
+          "order_number, cliente_nombre, cliente_direccion, cliente_telefono, estado, branch_id",
         )
         .eq("id", tracking.pedido_id)
         .single();
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       return json(200, {
         tracking_token: tracking.tracking_token,
         pedido: {
-          numero_pedido: pedido?.numero_pedido,
+          numero_pedido: pedido?.order_number,
           cliente_nombre: pedido?.cliente_nombre,
           cliente_direccion: pedido?.cliente_direccion,
           cliente_telefono: pedido?.cliente_telefono,
