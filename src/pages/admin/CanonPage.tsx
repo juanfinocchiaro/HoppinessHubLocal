@@ -333,7 +333,7 @@ export default function CanonPage() {
                                 )}
                               </TableCell>
                               <TableCell className="font-medium">
-                                {formatPeriodo(row.periodo)}
+                                {formatPeriodo(row.period)}
                               </TableCell>
                               <TableCell className="text-right font-mono">
                                 $ {Number(row.canon_monto).toLocaleString('es-AR')}
