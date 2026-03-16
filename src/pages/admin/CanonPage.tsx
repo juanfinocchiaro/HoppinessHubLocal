@@ -165,7 +165,7 @@ export default function CanonPage() {
     () =>
       liquidaciones?.filter((row: any) => {
         if (filtroEstado === 'todos') return true;
-        return row.estado === filtroEstado;
+        return row.status === filtroEstado;
       }) ?? [],
     [liquidaciones, filtroEstado],
   );
@@ -188,7 +188,7 @@ export default function CanonPage() {
       g.liquidaciones.push(row);
       g.totalCanon += Number(row.total_canon);
       g.totalSaldo += Number(row.pending_balance ?? 0);
-      if (row.estado !== 'pagado') g.hasPendientes = true;
+      if (row.status !== 'pagado') g.hasPendientes = true;
     }
     return Array.from(map.values()).sort((a, b) => a.branchName.localeCompare(b.branchName));
   }, [filtered]);
