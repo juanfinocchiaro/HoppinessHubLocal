@@ -165,7 +165,7 @@ export default function CanonPage() {
     () =>
       liquidaciones?.filter((row: any) => {
         if (filtroEstado === 'todos') return true;
-        return row.estado === filtroEstado;
+        return row.status === filtroEstado;
       }) ?? [],
     [liquidaciones, filtroEstado],
   );
@@ -188,12 +188,12 @@ export default function CanonPage() {
       g.liquidaciones.push(row);
       g.totalCanon += Number(row.total_canon);
       g.totalSaldo += Number(row.pending_balance ?? 0);
-      if (row.estado !== 'pagado') g.hasPendientes = true;
+      if (row.status !== 'pagado') g.hasPendientes = true;
     }
     return Array.from(map.values()).sort((a, b) => a.branchName.localeCompare(b.branchName));
   }, [filtered]);
 
-  const totalPendientes = liquidaciones?.filter((r: any) => r.estado !== 'pagado').length ?? 0;
+  const totalPendientes = liquidaciones?.filter((r: any) => r.status !== 'pagado').length ?? 0;
   const totalSaldoGlobal = branchGroups.reduce((s, g) => s + g.totalSaldo, 0);
 
   return (
@@ -333,24 +333,24 @@ export default function CanonPage() {
                                 )}
                               </TableCell>
                               <TableCell className="font-medium">
-                                {formatPeriodo(row.periodo)}
+                                {formatPeriodo(row.period)}
                               </TableCell>
                               <TableCell className="text-right font-mono">
-                                $ {Number(row.canon_monto).toLocaleString('es-AR')}
+                                $ {Number(row.canon_amount).toLocaleString('es-AR')}
                                 <span className="text-xs text-muted-foreground ml-1">
-                                  ({row.canon_porcentaje}%)
+                                  ({row.canon_percentage}%)
                                 </span>
                               </TableCell>
                               <TableCell className="text-right font-mono">
-                                $ {Number(row.marketing_monto).toLocaleString('es-AR')}
+                                $ {Number(row.marketing_amount).toLocaleString('es-AR')}
                                 <span className="text-xs text-muted-foreground ml-1">
-                                  ({row.marketing_porcentaje}%)
+                                  ({row.marketing_percentage}%)
                                 </span>
                               </TableCell>
                               <TableCell className="text-right font-mono font-semibold">
                                 $ {Number(row.total_canon).toLocaleString('es-AR')}
                               </TableCell>
-                              <TableCell>{estadoBadge(row.estado)}</TableCell>
+                              <TableCell>{estadoBadge(row.status)}</TableCell>
                               <TableCell className="text-right font-mono text-destructive">
                                 {Number(row.pending_balance) > 0
                                   ? `$ ${Number(row.pending_balance).toLocaleString('es-AR')}`
@@ -360,7 +360,7 @@ export default function CanonPage() {
                             {expandedRow === row.id && (
                               <TableRow key={`${row.id}-pagos`}>
                                 <TableCell colSpan={7} className="bg-muted/20 p-4">
-                                  <PagosDetalleRow branchId={row.branch_id} periodo={row.periodo} />
+                                  <PagosDetalleRow branchId={row.branch_id} periodo={row.period} />
                                 </TableCell>
                               </TableRow>
                             )}
