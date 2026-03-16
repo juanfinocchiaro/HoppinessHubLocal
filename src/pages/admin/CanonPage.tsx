@@ -342,9 +342,9 @@ export default function CanonPage() {
                                 </span>
                               </TableCell>
                               <TableCell className="text-right font-mono">
-                                $ {Number(row.marketing_monto).toLocaleString('es-AR')}
+                                $ {Number(row.marketing_amount).toLocaleString('es-AR')}
                                 <span className="text-xs text-muted-foreground ml-1">
-                                  ({row.marketing_porcentaje}%)
+                                  ({row.marketing_percentage}%)
                                 </span>
                               </TableCell>
                               <TableCell className="text-right font-mono font-semibold">
