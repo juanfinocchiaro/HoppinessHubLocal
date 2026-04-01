@@ -49,7 +49,7 @@ export function CategoriaFormModal({ open, onOpenChange, categoria }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async () => {
-    if (!form.nombre.trim()) return;
+    if (!form.name.trim()) return;
     if (isEdit) {
       await update.mutateAsync({ id: categoria!.id, data: form });
     } else {
