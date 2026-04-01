@@ -51,7 +51,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
   }, [composicionActual]);
 
   const addRow = () => {
-    setRows([...rows, { tipo: 'preparacion', preparacion_id: '', insumo_id: '', cantidad: 1, _label: '', _costo: 0 }]);
+    setRows([...rows, { tipo: 'preparacion', preparacion_id: '', insumo_id: '', quantity: 1, _label: '', _costo: 0 }]);
     setHasChanges(true);
   };
   const removeRow = (i: number) => { setRows(rows.filter((_, idx) => idx !== i)); setHasChanges(true); };
