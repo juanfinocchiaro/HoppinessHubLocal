@@ -46,7 +46,7 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
   }, [item, open]);
 
   const submit = async () => {
-    if (!form.name || !form.base_price) return;
+    if (!form.nombre || !form.precio_base) return;
     const p = { ...form, categoria_carta_id: form.categoria_carta_id || null, rdo_category_code: form.rdo_category_code || null };
     if (isEdit) await mutations.update.mutateAsync({ id: item.id, data: p });
     else await mutations.create.mutateAsync(p);
