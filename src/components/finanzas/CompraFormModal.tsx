@@ -164,14 +164,14 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
       if (field === 'tipo_item') {
         if (value === 'insumo') {
           item.concepto_servicio_id = undefined;
-          item.cantidad = 0;
+          item.quantity = 0;
           item.unidad = 'kg';
         } else {
           item.insumo_id = '';
-          item.cantidad = 1;
+          item.quantity = 1;
           item.unidad = '';
         }
-        item.precio_unitario = 0;
+        item.unit_price = 0;
         item.alicuota_iva = 21;
       }
 
@@ -183,7 +183,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
       }
 
       if (field === 'tipo_item' && value === 'servicio') {
-        item.cantidad = 1;
+        item.quantity = 1;
       }
 
       item = recalcIva(item);
