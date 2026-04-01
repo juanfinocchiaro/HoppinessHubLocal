@@ -20,8 +20,8 @@ interface GrupoEditItem {
   tipo: string;
   insumo_id: string;
   preparacion_id: string;
-  cantidad: number;
-  costo_unitario: number;
+  quantity: number;
+  unit_cost: number;
   _nombre: string;
 }
 
