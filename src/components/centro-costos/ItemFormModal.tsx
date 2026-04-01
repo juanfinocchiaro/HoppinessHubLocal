@@ -81,7 +81,7 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
           <FormSection title="Precio y CMV" icon={DollarSign}>
             <div className="grid grid-cols-2 gap-3">
               <FormRow label="Precio carta (con IVA)" required>
-                <Input type="number" value={form.base_price || ''} onChange={(e) => set('base_price', Number(e.target.value))} />
+                <Input type="number" value={form.precio_base || ''} onChange={(e) => set('precio_base', Number(e.target.value))} />
               </FormRow>
               <FormRow label="CMV Objetivo (%)" hint="Meta de food cost">
                 <Input type="number" value={form.fc_objetivo || ''} onChange={(e) => set('fc_objetivo', Number(e.target.value))} />
