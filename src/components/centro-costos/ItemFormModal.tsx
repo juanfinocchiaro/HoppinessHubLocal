@@ -59,7 +59,7 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
         <DialogHeader><DialogTitle>{isEdit ? 'Editar' : 'Nuevo'} Item de Carta</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <FormRow label="Nombre" required>
-            <Input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Ej: Argenta Burger" />
+            <Input value={form.nombre} onChange={(e) => set('nombre', e.target.value)} placeholder="Ej: Argenta Burger" />
           </FormRow>
           <div className="grid grid-cols-2 gap-3">
             <FormRow label="Nombre corto" hint="Para tickets">
