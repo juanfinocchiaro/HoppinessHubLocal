@@ -76,7 +76,7 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
             </FormRow>
           </div>
           <FormRow label="Descripción">
-            <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} />
+            <Textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} rows={2} />
           </FormRow>
           <FormSection title="Precio y CMV" icon={DollarSign}>
             <div className="grid grid-cols-2 gap-3">
