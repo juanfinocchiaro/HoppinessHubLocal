@@ -220,7 +220,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
     setEditing(true);
   };
   const removeItem = (i: number) => { setEditItems(editItems.filter((_, idx) => idx !== i)); setEditing(true); };
-  const promedio = editItems.length > 0 ? editItems.reduce((s, i) => s + i.cantidad * i.costo_unitario, 0) / editItems.length : 0;
+  const promedio = editItems.length > 0 ? editItems.reduce((s, i) => s + i.quantity * i.costo_unitario, 0) / editItems.length : 0;
 
   const handleSave = async () => {
     if (nombre !== grupo.name) await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { name: nombre } });
