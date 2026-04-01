@@ -121,8 +121,8 @@ export function PosHistoryView({ branchId, branchName, daysBack, setDaysBack }: 
           numero: `${String(factura.point_of_sale).padStart(5, '0')}-${String(factura.receipt_number).padStart(8, '0')}`,
           fecha: factura.issue_date,
           emisor: {
-            business_name: afipConfig?.business_name || '', cuit: afipConfig?.cuit || '',
-            iibb: afipExtra?.iibb || afipConfig?.cuit || '', tax_status: afipExtra?.tax_status || 'Responsable Inscripto',
+            razon_social: afipConfig?.business_name || '', cuit: afipConfig?.cuit || '',
+            iibb: afipExtra?.iibb || afipConfig?.cuit || '', condicion_iva: afipExtra?.tax_status || 'Responsable Inscripto',
             domicilio: afipConfig?.direccion_fiscal || '', inicio_actividades: afipConfig?.inicio_actividades || '',
           },
           receptor: {
