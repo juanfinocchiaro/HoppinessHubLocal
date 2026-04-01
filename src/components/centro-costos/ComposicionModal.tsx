@@ -200,7 +200,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
     if (grupo.items)
       setEditItems(grupo.items.map((gi: any) => ({
         tipo: (gi.preparacion_id ? 'preparacion' : 'insumo') as GrupoEditItem['tipo'],
-        insumo_id: gi.insumo_id || '', preparacion_id: gi.preparacion_id || '', cantidad: gi.quantity,
+        insumo_id: gi.insumo_id || '', preparacion_id: gi.preparacion_id || '', quantity: gi.quantity,
         costo_unitario: gi.unit_cost || gi.supplies?.base_unit_cost || gi.recipes?.calculated_cost || 0,
         _nombre: gi.supplies?.name || gi.recipes?.name || '',
       })));
