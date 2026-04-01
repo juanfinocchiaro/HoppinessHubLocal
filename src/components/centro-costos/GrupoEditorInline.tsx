@@ -43,8 +43,8 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
           tipo: gi.preparacion_id ? 'preparacion' : 'insumo',
           insumo_id: gi.insumo_id || '',
           preparacion_id: gi.preparacion_id || '',
-          cantidad: gi.quantity,
-          costo_unitario:
+          quantity: gi.quantity,
+          unit_cost:
             gi.unit_cost ||
             gi.supplies?.base_unit_cost ||
             gi.recipes?.calculated_cost ||
