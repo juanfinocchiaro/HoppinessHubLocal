@@ -41,7 +41,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
           tipo: (c.preparacion_id ? 'preparacion' : 'insumo') as ComposicionRow['tipo'],
           preparacion_id: c.preparacion_id || '',
           insumo_id: c.insumo_id || '',
-          cantidad: c.quantity,
+          quantity: c.quantity,
           _label: c.recipes?.name || c.supplies?.name || '',
           _costo: c.recipes?.calculated_cost || c.supplies?.base_unit_cost || 0,
         })),
