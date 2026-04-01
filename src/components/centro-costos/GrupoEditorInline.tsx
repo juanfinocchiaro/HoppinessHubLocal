@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Trash2, Plus, Save } from 'lucide-react';
-import type { GrupoOpcional, GrupoOpcionalItem } from '@/hooks/useGruposOpcionales';
+import type { GrupoOpcional } from '@/hooks/useGruposOpcionales';
 import type { useGruposOpcionalesMutations } from '@/hooks/useGruposOpcionales';
 import { formatCurrency } from '@/lib/formatters';
 
