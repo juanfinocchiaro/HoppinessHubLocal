@@ -57,7 +57,7 @@ export function CondicionesLocalModal({
         permite_cuenta_corriente: false,
         dias_pago_habitual: null,
         descuento_pago_contado: null,
-        observaciones: null,
+        notes: null,
       });
     }
   }, [existing, open]);
