@@ -64,15 +64,15 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
   const updateItem = (i: number, field: string, value: string | number) => {
     const next = [...editItems];
     next[i] = { ...next[i], [field]: value };
-    if (field === 'tipo') { next[i].insumo_id = ''; next[i].preparacion_id = ''; next[i].costo_unitario = 0; next[i]._nombre = ''; }
+    if (field === 'tipo') { next[i].insumo_id = ''; next[i].preparacion_id = ''; next[i].unit_cost = 0; next[i]._nombre = ''; }
     if (field === 'insumo_id') {
       const ins = insumos.find((x: any) => x.id === value);
-      next[i].costo_unitario = ins?.base_unit_cost || 0;
+      next[i].unit_cost = ins?.base_unit_cost || 0;
       next[i]._nombre = ins?.name || '';
     }
     if (field === 'preparacion_id') {
       const p = preparaciones.find((x: any) => x.id === value);
-      next[i].costo_unitario = p?.calculated_cost || 0;
+      next[i].unit_cost = p?.calculated_cost || 0;
       next[i]._nombre = p?.name || '';
     }
     setEditItems(next);
