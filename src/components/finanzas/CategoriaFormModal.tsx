@@ -23,7 +23,7 @@ interface Props {
 }
 
 const EMPTY: CategoriaInsumoFormData = {
-  nombre: '',
+  name: '',
   tipo: 'materia_prima',
 };
 
