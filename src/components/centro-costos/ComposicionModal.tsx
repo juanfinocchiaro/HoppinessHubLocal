@@ -207,7 +207,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
   }, [grupo.items]);
 
   const addItem = () => {
-    setEditItems([...editItems, { tipo: 'insumo', insumo_id: '', preparacion_id: '', cantidad: 1, costo_unitario: 0, _nombre: '' }]);
+    setEditItems([...editItems, { tipo: 'insumo', insumo_id: '', preparacion_id: '', quantity: 1, costo_unitario: 0, _nombre: '' }]);
     setEditing(true);
   };
   const updateItem = (i: number, field: string, value: string | number) => {
