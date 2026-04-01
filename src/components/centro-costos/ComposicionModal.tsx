@@ -83,7 +83,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
 
   const handleCreateGrupo = async () => {
     if (!grupoNuevoNombre.trim()) return;
-    await gruposMutations.createGrupo.mutateAsync({ item_carta_id: item.id, name: grupoNuevoNombre.trim(), orden: grupos?.length || 0 });
+    await gruposMutations.createGrupo.mutateAsync({ item_carta_id: item.id, nombre: grupoNuevoNombre.trim(), orden: grupos?.length || 0 });
     setGrupoNuevoNombre('');
     setShowNewGrupo(false);
   };
