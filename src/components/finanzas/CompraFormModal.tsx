@@ -413,7 +413,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
             const precioMax = selectedInsumo?.precio_maximo_sugerido
               ? Number(selectedInsumo.precio_maximo_sugerido)
               : null;
-            const isOverpriced = precioMax && item.precio_unitario > precioMax;
+            const isOverpriced = precioMax && item.unit_price > precioMax;
             const provObligatorio = selectedInsumo?.proveedor_obligatorio;
             const wrongProvider =
               nivel === 'obligatorio' &&
