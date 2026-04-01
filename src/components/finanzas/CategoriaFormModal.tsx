@@ -35,9 +35,9 @@ export function CategoriaFormModal({ open, onOpenChange, categoria }: Props) {
   useEffect(() => {
     if (categoria) {
       setForm({
-        nombre: categoria.nombre,
+        name: categoria.name || categoria.nombre,
         tipo: categoria.tipo,
-        descripcion: categoria.descripcion || undefined,
+        description: categoria.description || categoria.descripcion || undefined,
         orden: categoria.orden || undefined,
       });
     } else {
