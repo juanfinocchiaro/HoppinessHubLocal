@@ -136,8 +136,8 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
                         </Select>
                       ) : renderInsumoSelect(row, i)}
                     </div>
-                    <Input type="number" className="h-7 w-16 text-xs shrink-0" value={row.cantidad} onChange={(e) => updateRow(i, 'cantidad', Number(e.target.value))} />
-                    <span className="font-mono text-xs font-semibold w-20 text-right shrink-0">{fmt(row.cantidad * row._costo)}</span>
+                    <Input type="number" className="h-7 w-16 text-xs shrink-0" value={row.quantity} onChange={(e) => updateRow(i, 'quantity', Number(e.target.value))} />
+                    <span className="font-mono text-xs font-semibold w-20 text-right shrink-0">{fmt(row.quantity * row._costo)}</span>
                     <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeRow(i)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 ))}
