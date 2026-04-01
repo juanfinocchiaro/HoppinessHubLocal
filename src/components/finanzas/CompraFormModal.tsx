@@ -196,8 +196,8 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
   const totals = useMemo(() => {
     let subtotalNeto = 0;
     items.forEach((item) => {
-      const neto = Number(item.precio_unitario) || 0;
-      const qty = item.tipo_item === 'servicio' ? 1 : Number(item.cantidad) || 0;
+      const neto = Number(item.unit_price) || 0;
+      const qty = item.tipo_item === 'servicio' ? 1 : Number(item.quantity) || 0;
       subtotalNeto += neto * qty;
     });
     subtotalNeto = Math.round(subtotalNeto * 100) / 100;
