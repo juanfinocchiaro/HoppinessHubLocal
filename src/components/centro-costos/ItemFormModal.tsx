@@ -24,8 +24,8 @@ interface ItemFormModalProps {
 
 export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _cmvCats, mutations }: ItemFormModalProps) {
   const [form, setForm] = useState({
-    name: '', short_name: '', description: '', categoria_carta_id: '',
-    rdo_category_code: '', base_price: 0, fc_objetivo: 32, available_delivery: true,
+    nombre: '', short_name: '', descripcion: '', categoria_carta_id: '',
+    rdo_category_code: '', precio_base: 0, fc_objetivo: 32, disponible_delivery: true,
   });
   const set = (k: string, v: string | number | boolean) => setForm((p) => ({ ...p, [k]: v }));
   const isEdit = !!item;
@@ -33,20 +33,20 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
   useEffect(() => {
     if (item)
       setForm({
-        name: item.name, short_name: item.short_name || '', description: item.description || '',
+        nombre: item.name || item.nombre, short_name: item.short_name || '', descripcion: item.description || item.descripcion || '',
         categoria_carta_id: item.categoria_carta_id || '', rdo_category_code: item.rdo_category_code || '',
-        base_price: item.base_price, fc_objetivo: item.fc_objetivo || 32,
-        available_delivery: item.available_delivery ?? true,
+        precio_base: item.base_price || item.precio_base, fc_objetivo: item.fc_objetivo || 32,
+        disponible_delivery: item.available_delivery ?? item.disponible_delivery ?? true,
       });
     else
       setForm({
-        name: '', short_name: '', description: '', categoria_carta_id: '',
-        rdo_category_code: '', base_price: 0, fc_objetivo: 32, available_delivery: true,
+        nombre: '', short_name: '', descripcion: '', categoria_carta_id: '',
+        rdo_category_code: '', precio_base: 0, fc_objetivo: 32, disponible_delivery: true,
       });
   }, [item, open]);
 
   const submit = async () => {
-    if (!form.name || !form.base_price) return;
+    if (!form.nombre || !form.precio_base) return;
     const p = { ...form, categoria_carta_id: form.categoria_carta_id || null, rdo_category_code: form.rdo_category_code || null };
     if (isEdit) await mutations.update.mutateAsync({ id: item.id, data: p });
     else await mutations.create.mutateAsync(p);
@@ -59,7 +59,7 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
         <DialogHeader><DialogTitle>{isEdit ? 'Editar' : 'Nuevo'} Item de Carta</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <FormRow label="Nombre" required>
-            <Input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Ej: Argenta Burger" />
+            <Input value={form.nombre} onChange={(e) => set('nombre', e.target.value)} placeholder="Ej: Argenta Burger" />
           </FormRow>
           <div className="grid grid-cols-2 gap-3">
             <FormRow label="Nombre corto" hint="Para tickets">
@@ -76,24 +76,24 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
             </FormRow>
           </div>
           <FormRow label="Descripción">
-            <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} />
+            <Textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} rows={2} />
           </FormRow>
           <FormSection title="Precio y CMV" icon={DollarSign}>
             <div className="grid grid-cols-2 gap-3">
               <FormRow label="Precio carta (con IVA)" required>
-                <Input type="number" value={form.base_price || ''} onChange={(e) => set('base_price', Number(e.target.value))} />
+                <Input type="number" value={form.precio_base || ''} onChange={(e) => set('precio_base', Number(e.target.value))} />
               </FormRow>
               <FormRow label="CMV Objetivo (%)" hint="Meta de food cost">
                 <Input type="number" value={form.fc_objetivo || ''} onChange={(e) => set('fc_objetivo', Number(e.target.value))} />
               </FormRow>
             </div>
-            {form.base_price > 0 && (
-              <p className="text-xs text-muted-foreground">Precio neto (sin IVA): {fmt(form.base_price / IVA)}</p>
+            {form.precio_base > 0 && (
+              <p className="text-xs text-muted-foreground">Precio neto (sin IVA): {fmt(form.precio_base / IVA)}</p>
             )}
           </FormSection>
           <StickyActions>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <LoadingButton loading={mutations.create.isPending || mutations.update.isPending} onClick={submit} disabled={!form.name || !form.base_price}>
+            <LoadingButton loading={mutations.create.isPending || mutations.update.isPending} onClick={submit} disabled={!form.nombre || !form.precio_base}>
               {isEdit ? 'Guardar' : 'Crear Item'}
             </LoadingButton>
           </StickyActions>

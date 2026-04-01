@@ -47,8 +47,8 @@ export function MovimientoSocioModal({ open, onOpenChange, branchId, socio }: Pr
       socio_id: socio.id,
       tipo: form.tipo,
       amount: parseFloat(form.amount),
-      fecha: form.fecha,
-      periodo: form.periodo,
+      date: form.fecha,
+      period: form.periodo,
       notes: form.notes || undefined,
     };
 

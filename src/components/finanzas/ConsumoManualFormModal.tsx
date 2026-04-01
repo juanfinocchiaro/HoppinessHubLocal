@@ -64,11 +64,11 @@ export function ConsumoManualFormModal({ open, onOpenChange, branchId, consumo }
 
     const payload: ConsumoManualFormData = {
       branch_id: branchId,
-      periodo: form.periodo,
+      period: form.periodo,
       categoria_pl: form.categoria_pl,
       monto_consumido: parseFloat(form.monto_consumido),
       tipo: form.tipo,
-      observaciones: form.observaciones || undefined,
+      notes: form.observaciones || undefined,
     };
 
     if (isEdit) {

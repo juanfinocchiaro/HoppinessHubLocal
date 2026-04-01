@@ -39,10 +39,10 @@ export function ModificadoresTab({ itemId }: Props) {
     return deepGroups.flatMap((g) =>
       g.ingredientes.map((ing) => ({
         id: ing.insumo_id,
-        nombre: ing.name,
-        cantidad: ing.cantidad,
-        unidad: ing.unidad,
-        costo_por_unidad_base: ing.base_unit_cost,
+        name: ing.name,
+        quantity: ing.quantity,
+        unidad: ing.unit,
+        base_unit_cost: ing.base_unit_cost,
         _fromItem: true,
         _recetaOrigen: ing.receta_origen,
       })),

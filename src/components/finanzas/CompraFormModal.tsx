@@ -164,14 +164,14 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
       if (field === 'tipo_item') {
         if (value === 'insumo') {
           item.concepto_servicio_id = undefined;
-          item.cantidad = 0;
+          item.quantity = 0;
           item.unidad = 'kg';
         } else {
           item.insumo_id = '';
-          item.cantidad = 1;
+          item.quantity = 1;
           item.unidad = '';
         }
-        item.precio_unitario = 0;
+        item.unit_price = 0;
         item.alicuota_iva = 21;
       }
 
@@ -183,7 +183,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
       }
 
       if (field === 'tipo_item' && value === 'servicio') {
-        item.cantidad = 1;
+        item.quantity = 1;
       }
 
       item = recalcIva(item);
@@ -196,8 +196,8 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
   const totals = useMemo(() => {
     let subtotalNeto = 0;
     items.forEach((item) => {
-      const neto = Number(item.precio_unitario) || 0;
-      const qty = item.tipo_item === 'servicio' ? 1 : Number(item.cantidad) || 0;
+      const neto = Number(item.unit_price) || 0;
+      const qty = item.tipo_item === 'servicio' ? 1 : Number(item.quantity) || 0;
       subtotalNeto += neto * qty;
     });
     subtotalNeto = Math.round(subtotalNeto * 100) / 100;
@@ -269,8 +269,8 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
   // --- Determine if can submit ---
   const validItems = items.filter((i) =>
     i.tipo_item === 'insumo'
-      ? i.insumo_id && i.cantidad > 0
-      : i.concepto_servicio_id && i.precio_unitario > 0,
+      ? i.insumo_id && i.quantity > 0
+      : i.concepto_servicio_id && i.unit_price > 0,
   );
 
   const canSubmit = (() => {
@@ -413,7 +413,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
             const precioMax = selectedInsumo?.precio_maximo_sugerido
               ? Number(selectedInsumo.precio_maximo_sugerido)
               : null;
-            const isOverpriced = precioMax && item.precio_unitario > precioMax;
+            const isOverpriced = precioMax && item.unit_price > precioMax;
             const provObligatorio = selectedInsumo?.proveedor_obligatorio;
             const wrongProvider =
               nivel === 'obligatorio' &&
@@ -455,8 +455,8 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                       type="number"
                       step="0.01"
                       className="h-9"
-                      value={item.cantidad || ''}
-                      onChange={(e) => updateItem(idx, 'cantidad', parseFloat(e.target.value) || 0)}
+                      value={item.quantity || ''}
+                      onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div className="col-span-3">
@@ -482,9 +482,9 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                       type="number"
                       step="0.01"
                       className="h-9"
-                      value={item.precio_unitario || ''}
+                      value={item.unit_price || ''}
                       onChange={(e) =>
-                        updateItem(idx, 'precio_unitario', parseFloat(e.target.value) || 0)
+                        updateItem(idx, 'unit_price', parseFloat(e.target.value) || 0)
                       }
                     />
                   </div>
@@ -526,7 +526,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                         ⚠️ Este insumo solo puede comprarse a {provObligatorio.business_name}
                       </p>
                     )}
-                    {precioRef && item.precio_unitario > 0 && (
+                    {precioRef && item.unit_price > 0 && (
                       <p
                         className={`text-xs ${isOverpriced ? 'text-destructive' : 'text-muted-foreground'}`}
                       >
@@ -569,9 +569,9 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                   type="number"
                   step="0.01"
                   className="h-9"
-                  value={item.precio_unitario || ''}
+                  value={item.unit_price || ''}
                   onChange={(e) =>
-                    updateItem(idx, 'precio_unitario', parseFloat(e.target.value) || 0)
+                    updateItem(idx, 'unit_price', parseFloat(e.target.value) || 0)
                   }
                 />
               </div>

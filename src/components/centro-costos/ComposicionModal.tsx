@@ -41,7 +41,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
           tipo: (c.preparacion_id ? 'preparacion' : 'insumo') as ComposicionRow['tipo'],
           preparacion_id: c.preparacion_id || '',
           insumo_id: c.insumo_id || '',
-          cantidad: c.quantity,
+          quantity: c.quantity,
           _label: c.recipes?.name || c.supplies?.name || '',
           _costo: c.recipes?.calculated_cost || c.supplies?.base_unit_cost || 0,
         })),
@@ -51,7 +51,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
   }, [composicionActual]);
 
   const addRow = () => {
-    setRows([...rows, { tipo: 'preparacion', preparacion_id: '', insumo_id: '', cantidad: 1, _label: '', _costo: 0 }]);
+    setRows([...rows, { tipo: 'preparacion', preparacion_id: '', insumo_id: '', quantity: 1, _label: '', _costo: 0 }]);
     setHasChanges(true);
   };
   const removeRow = (i: number) => { setRows(rows.filter((_, idx) => idx !== i)); setHasChanges(true); };
@@ -65,7 +65,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
     setHasChanges(true);
   };
 
-  const costoFijo = rows.filter((r) => r.cantidad > 0).reduce((t, r) => t + r.cantidad * r._costo, 0);
+  const costoFijo = rows.filter((r) => r.quantity > 0).reduce((t, r) => t + r.quantity * r._costo, 0);
   const costoGrupos = (grupos || []).reduce((t: number, g: any) => t + (g.average_cost || 0), 0);
   const costoTotal = costoFijo + costoGrupos;
 
@@ -75,7 +75,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
       items: rows.filter((r) => r.preparacion_id || r.insumo_id).map((r) => ({
         preparacion_id: r.tipo === 'preparacion' ? r.preparacion_id : undefined,
         insumo_id: r.tipo === 'insumo' ? r.insumo_id : undefined,
-        cantidad: r.cantidad,
+        cantidad: r.quantity,
       })),
     });
     setHasChanges(false);
@@ -83,7 +83,7 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
 
   const handleCreateGrupo = async () => {
     if (!grupoNuevoNombre.trim()) return;
-    await gruposMutations.createGrupo.mutateAsync({ item_carta_id: item.id, name: grupoNuevoNombre.trim(), orden: grupos?.length || 0 });
+    await gruposMutations.createGrupo.mutateAsync({ item_carta_id: item.id, nombre: grupoNuevoNombre.trim(), orden: grupos?.length || 0 });
     setGrupoNuevoNombre('');
     setShowNewGrupo(false);
   };
@@ -136,8 +136,8 @@ export function ComposicionModal({ open, onOpenChange, item, preparaciones, insu
                         </Select>
                       ) : renderInsumoSelect(row, i)}
                     </div>
-                    <Input type="number" className="h-7 w-16 text-xs shrink-0" value={row.cantidad} onChange={(e) => updateRow(i, 'cantidad', Number(e.target.value))} />
-                    <span className="font-mono text-xs font-semibold w-20 text-right shrink-0">{fmt(row.cantidad * row._costo)}</span>
+                    <Input type="number" className="h-7 w-16 text-xs shrink-0" value={row.quantity} onChange={(e) => updateRow(i, 'quantity', Number(e.target.value))} />
+                    <span className="font-mono text-xs font-semibold w-20 text-right shrink-0">{fmt(row.quantity * row._costo)}</span>
                     <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeRow(i)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 ))}
@@ -200,14 +200,14 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
     if (grupo.items)
       setEditItems(grupo.items.map((gi: any) => ({
         tipo: (gi.preparacion_id ? 'preparacion' : 'insumo') as GrupoEditItem['tipo'],
-        insumo_id: gi.insumo_id || '', preparacion_id: gi.preparacion_id || '', cantidad: gi.quantity,
+        insumo_id: gi.insumo_id || '', preparacion_id: gi.preparacion_id || '', quantity: gi.quantity,
         costo_unitario: gi.unit_cost || gi.supplies?.base_unit_cost || gi.recipes?.calculated_cost || 0,
         _nombre: gi.supplies?.name || gi.recipes?.name || '',
       })));
   }, [grupo.items]);
 
   const addItem = () => {
-    setEditItems([...editItems, { tipo: 'insumo', insumo_id: '', preparacion_id: '', cantidad: 1, costo_unitario: 0, _nombre: '' }]);
+    setEditItems([...editItems, { tipo: 'insumo', insumo_id: '', preparacion_id: '', quantity: 1, costo_unitario: 0, _nombre: '' }]);
     setEditing(true);
   };
   const updateItem = (i: number, field: string, value: string | number) => {
@@ -220,7 +220,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
     setEditing(true);
   };
   const removeItem = (i: number) => { setEditItems(editItems.filter((_, idx) => idx !== i)); setEditing(true); };
-  const promedio = editItems.length > 0 ? editItems.reduce((s, i) => s + i.cantidad * i.costo_unitario, 0) / editItems.length : 0;
+  const promedio = editItems.length > 0 ? editItems.reduce((s, i) => s + i.quantity * i.costo_unitario, 0) / editItems.length : 0;
 
   const handleSave = async () => {
     if (nombre !== grupo.name) await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { name: nombre } });
@@ -228,7 +228,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
       grupo_id: grupo.id, item_carta_id: itemId,
       items: editItems.filter((i) => i.insumo_id || i.preparacion_id).map((i) => ({
         insumo_id: i.tipo === 'insumo' ? i.insumo_id : null, preparacion_id: i.tipo === 'preparacion' ? i.preparacion_id : null,
-        cantidad: i.cantidad, costo_unitario: i.costo_unitario,
+        quantity: i.quantity, unit_cost: i.costo_unitario,
       })),
     });
     setEditing(false);
@@ -284,8 +284,8 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
               );
             })()}
           </div>
-          <Input type="number" className="h-6 w-14 text-xs" value={ei.cantidad} onChange={(e) => updateItem(i, 'cantidad', Number(e.target.value))} />
-          <span className="font-mono text-xs w-16 text-right">{fmt(ei.cantidad * ei.costo_unitario)}</span>
+          <Input type="number" className="h-6 w-14 text-xs" value={ei.quantity} onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))} />
+          <span className="font-mono text-xs w-16 text-right">{fmt(ei.quantity * ei.costo_unitario)}</span>
           <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeItem(i)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
         </div>
       ))}

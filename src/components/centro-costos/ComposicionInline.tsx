@@ -211,7 +211,7 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
     if (!grupoNuevoNombre.trim()) return;
     await gruposMutations.createGrupo.mutateAsync({
       item_carta_id: item.id,
-      name: grupoNuevoNombre.trim(),
+      nombre: grupoNuevoNombre.trim(),
       orden: grupos?.length || 0,
     });
     setGrupoNuevoNombre('');
@@ -428,8 +428,8 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
                   nombreDisplay={existing?.display_name || ''}
                   onToggle={(v) => handleToggleRemoviblePrep(sp.preparacion_id, sp.name, v)}
                   onUpdateNombre={(nombre) =>
-                    removiblesMutations.updateNombreDisplay.mutate({
-                      id: existing?.id,
+                    removiblesMutations.updateDisplayName.mutate({
+                      id: existing?.id!,
                       display_name: nombre,
                     })
                   }
@@ -450,8 +450,8 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
                   nombreDisplay={existing?.display_name || ''}
                   onToggle={(v) => handleToggleRemovibleInsumo(ing.insumo_id, ing.name, v)}
                   onUpdateNombre={(nombre) =>
-                    removiblesMutations.updateNombreDisplay.mutate({
-                      id: existing?.id,
+                    removiblesMutations.updateDisplayName.mutate({
+                      id: existing?.id!,
                       display_name: nombre,
                     })
                   }

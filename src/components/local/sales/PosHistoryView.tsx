@@ -96,7 +96,7 @@ export function PosHistoryView({ branchId, branchName, daysBack, setDaysBack }: 
     referencia_app: (order as unknown as Record<string, unknown>).referencia_app as string | null ?? null,
     created_at: order.created_at,
     items: order.order_items.map((i) => ({
-      name: i.name, quantity: i.quantity, notas: i.notas, estacion: 'armado' as const,
+      name: i.name, quantity: i.quantity, notes: i.notas ?? i.notes ?? null, estacion: 'armado' as const,
       unit_price: i.unit_price, subtotal: i.subtotal, categoria_carta_id: i.categoria_carta_id,
     })),
     total: order.total, descuento: order.descuento || 0,
@@ -121,8 +121,8 @@ export function PosHistoryView({ branchId, branchName, daysBack, setDaysBack }: 
           numero: `${String(factura.point_of_sale).padStart(5, '0')}-${String(factura.receipt_number).padStart(8, '0')}`,
           fecha: factura.issue_date,
           emisor: {
-            business_name: afipConfig?.business_name || '', cuit: afipConfig?.cuit || '',
-            iibb: afipExtra?.iibb || afipConfig?.cuit || '', tax_status: afipExtra?.tax_status || 'Responsable Inscripto',
+            razon_social: afipConfig?.business_name || '', cuit: afipConfig?.cuit || '',
+            iibb: afipExtra?.iibb || afipConfig?.cuit || '', condicion_iva: afipExtra?.tax_status || 'Responsable Inscripto',
             domicilio: afipConfig?.direccion_fiscal || '', inicio_actividades: afipConfig?.inicio_actividades || '',
           },
           receptor: {
@@ -196,7 +196,7 @@ export function PosHistoryView({ branchId, branchName, daysBack, setDaysBack }: 
     try {
       const ncData = await invokeEmitirNotaCredito(activeInvoice.id, branchId);
       toast.success(`NC ${ncData.tipo} emitida: N° ${ncData.numero}`);
-      const items = order.order_items.map((i) => ({ description: i.name, quantity: i.quantity, unit_price: i.unit_price }));
+      const items = order.order_items.map((i) => ({ descripcion: i.name, cantidad: i.quantity, precio_unitario: i.unit_price }));
       await emitirFactura.mutateAsync({ branch_id: branchId, pedido_id: order.id, tipo_factura: data.tipo_factura, receptor_cuit: data.receptor_cuit || undefined, receptor_razon_social: data.receptor_razon_social || undefined, receptor_condicion_iva: data.receptor_condicion_iva || undefined, items, total: order.total });
       invalidateOrders();
       setChangingInvoiceOrder(null);

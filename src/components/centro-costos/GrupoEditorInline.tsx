@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Trash2, Plus, Save } from 'lucide-react';
-import type { GrupoOpcional, GrupoOpcionalItem } from '@/hooks/useGruposOpcionales';
+import type { GrupoOpcional } from '@/hooks/useGruposOpcionales';
 import type { useGruposOpcionalesMutations } from '@/hooks/useGruposOpcionales';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -20,8 +20,8 @@ interface GrupoEditItem {
   tipo: string;
   insumo_id: string;
   preparacion_id: string;
-  cantidad: number;
-  costo_unitario: number;
+  quantity: number;
+  unit_cost: number;
   _nombre: string;
 }
 
@@ -43,8 +43,8 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
           tipo: gi.preparacion_id ? 'preparacion' : 'insumo',
           insumo_id: gi.insumo_id || '',
           preparacion_id: gi.preparacion_id || '',
-          cantidad: gi.quantity,
-          costo_unitario:
+          quantity: gi.quantity,
+          unit_cost:
             gi.unit_cost ||
             gi.supplies?.base_unit_cost ||
             gi.recipes?.calculated_cost ||
@@ -57,22 +57,22 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
   const addItem = () => {
     setEditItems([
       ...editItems,
-      { tipo: 'insumo', insumo_id: '', preparacion_id: '', cantidad: 1, costo_unitario: 0, _nombre: '' },
+      { tipo: 'insumo', insumo_id: '', preparacion_id: '', quantity: 1, unit_cost: 0, _nombre: '' },
     ]);
     setEditing(true);
   };
   const updateItem = (i: number, field: string, value: string | number) => {
     const next = [...editItems];
     next[i] = { ...next[i], [field]: value };
-    if (field === 'tipo') { next[i].insumo_id = ''; next[i].preparacion_id = ''; next[i].costo_unitario = 0; next[i]._nombre = ''; }
+    if (field === 'tipo') { next[i].insumo_id = ''; next[i].preparacion_id = ''; next[i].unit_cost = 0; next[i]._nombre = ''; }
     if (field === 'insumo_id') {
       const ins = insumos.find((x: any) => x.id === value);
-      next[i].costo_unitario = ins?.base_unit_cost || 0;
+      next[i].unit_cost = ins?.base_unit_cost || 0;
       next[i]._nombre = ins?.name || '';
     }
     if (field === 'preparacion_id') {
       const p = preparaciones.find((x: any) => x.id === value);
-      next[i].costo_unitario = p?.calculated_cost || 0;
+      next[i].unit_cost = p?.calculated_cost || 0;
       next[i]._nombre = p?.name || '';
     }
     setEditItems(next);
@@ -80,7 +80,7 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
   };
   const removeItem = (i: number) => { setEditItems(editItems.filter((_, idx) => idx !== i)); setEditing(true); };
   const promedio = editItems.length > 0
-    ? editItems.reduce((s, i) => s + i.cantidad * i.costo_unitario, 0) / editItems.length
+    ? editItems.reduce((s, i) => s + i.quantity * i.unit_cost, 0) / editItems.length
     : 0;
 
   const handleSave = async () => {
@@ -91,7 +91,7 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
       items: editItems.filter((i) => i.insumo_id || i.preparacion_id).map((i) => ({
         insumo_id: i.tipo === 'insumo' ? i.insumo_id : null,
         preparacion_id: i.tipo === 'preparacion' ? i.preparacion_id : null,
-        cantidad: i.cantidad, costo_unitario: i.costo_unitario,
+        quantity: i.quantity, unit_cost: i.unit_cost,
       })),
     });
     setEditing(false);
@@ -149,8 +149,8 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
                   );
                 })()}
           </div>
-          <Input type="number" className="h-6 w-14 text-xs" value={ei.cantidad} onChange={(e) => updateItem(i, 'cantidad', Number(e.target.value))} />
-          <span className="font-mono text-xs w-16 text-right">{formatCurrency(ei.cantidad * ei.costo_unitario)}</span>
+          <Input type="number" className="h-6 w-14 text-xs" value={ei.quantity} onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))} />
+          <span className="font-mono text-xs w-16 text-right">{formatCurrency(ei.quantity * ei.unit_cost)}</span>
           <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeItem(i)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
         </div>
       ))}

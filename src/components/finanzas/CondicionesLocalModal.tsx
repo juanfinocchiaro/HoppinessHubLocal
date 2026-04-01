@@ -41,7 +41,7 @@ export function CondicionesLocalModal({
     permite_cuenta_corriente: false,
     dias_pago_habitual: null,
     descuento_pago_contado: null,
-    observaciones: null,
+    notes: null,
   });
 
   useEffect(() => {
@@ -50,14 +50,14 @@ export function CondicionesLocalModal({
         permite_cuenta_corriente: existing.permite_cuenta_corriente,
         dias_pago_habitual: existing.dias_pago_habitual,
         descuento_pago_contado: existing.descuento_pago_contado,
-        observaciones: existing.observaciones,
+        notes: existing.notes ?? (existing as any).observaciones ?? null,
       });
     } else {
       setForm({
         permite_cuenta_corriente: false,
         dias_pago_habitual: null,
         descuento_pago_contado: null,
-        observaciones: null,
+        notes: null,
       });
     }
   }, [existing, open]);
@@ -139,8 +139,8 @@ export function CondicionesLocalModal({
 
             <FormRow label="Observaciones">
               <Textarea
-                value={form.observaciones ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, observaciones: e.target.value || null }))}
+                value={form.notes ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value || null }))}
                 rows={2}
                 placeholder="Ej: Pago los viernes"
               />

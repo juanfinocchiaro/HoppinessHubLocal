@@ -23,7 +23,7 @@ interface Props {
 }
 
 const EMPTY: CategoriaInsumoFormData = {
-  nombre: '',
+  name: '',
   tipo: 'materia_prima',
 };
 
@@ -35,9 +35,9 @@ export function CategoriaFormModal({ open, onOpenChange, categoria }: Props) {
   useEffect(() => {
     if (categoria) {
       setForm({
-        nombre: categoria.nombre,
+        name: categoria.name || categoria.nombre,
         tipo: categoria.tipo,
-        descripcion: categoria.descripcion || undefined,
+        description: categoria.description || categoria.descripcion || undefined,
         orden: categoria.orden || undefined,
       });
     } else {
@@ -49,7 +49,7 @@ export function CategoriaFormModal({ open, onOpenChange, categoria }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async () => {
-    if (!form.nombre.trim()) return;
+    if (!form.name.trim()) return;
     if (isEdit) {
       await update.mutateAsync({ id: categoria!.id, data: form });
     } else {
@@ -69,7 +69,7 @@ export function CategoriaFormModal({ open, onOpenChange, categoria }: Props) {
         <div className="space-y-4">
           <FormLayout columns={1}>
             <FormRow label="Nombre" required>
-              <Input value={form.nombre} onChange={(e) => set('nombre', e.target.value)} />
+              <Input value={form.name} onChange={(e) => set('name', e.target.value)} />
             </FormRow>
             <FormRow label="Tipo" required>
               <Select value={form.tipo} onValueChange={(v) => set('tipo', v)}>
