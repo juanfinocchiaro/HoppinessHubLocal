@@ -87,8 +87,8 @@ export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _
                 <Input type="number" value={form.fc_objetivo || ''} onChange={(e) => set('fc_objetivo', Number(e.target.value))} />
               </FormRow>
             </div>
-            {form.base_price > 0 && (
-              <p className="text-xs text-muted-foreground">Precio neto (sin IVA): {fmt(form.base_price / IVA)}</p>
+            {form.precio_base > 0 && (
+              <p className="text-xs text-muted-foreground">Precio neto (sin IVA): {fmt(form.precio_base / IVA)}</p>
             )}
           </FormSection>
           <StickyActions>
