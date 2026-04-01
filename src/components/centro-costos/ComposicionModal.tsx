@@ -228,7 +228,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
       grupo_id: grupo.id, item_carta_id: itemId,
       items: editItems.filter((i) => i.insumo_id || i.preparacion_id).map((i) => ({
         insumo_id: i.tipo === 'insumo' ? i.insumo_id : null, preparacion_id: i.tipo === 'preparacion' ? i.preparacion_id : null,
-        cantidad: i.cantidad, costo_unitario: i.costo_unitario,
+        quantity: i.quantity, unit_cost: i.costo_unitario,
       })),
     });
     setEditing(false);
