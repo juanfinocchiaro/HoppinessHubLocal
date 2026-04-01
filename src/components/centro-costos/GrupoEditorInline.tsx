@@ -57,7 +57,7 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
   const addItem = () => {
     setEditItems([
       ...editItems,
-      { tipo: 'insumo', insumo_id: '', preparacion_id: '', cantidad: 1, costo_unitario: 0, _nombre: '' },
+      { tipo: 'insumo', insumo_id: '', preparacion_id: '', quantity: 1, unit_cost: 0, _nombre: '' },
     ]);
     setEditing(true);
   };
