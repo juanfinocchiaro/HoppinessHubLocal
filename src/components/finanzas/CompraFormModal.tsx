@@ -455,8 +455,8 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                       type="number"
                       step="0.01"
                       className="h-9"
-                      value={item.cantidad || ''}
-                      onChange={(e) => updateItem(idx, 'cantidad', parseFloat(e.target.value) || 0)}
+                      value={item.quantity || ''}
+                      onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div className="col-span-3">
