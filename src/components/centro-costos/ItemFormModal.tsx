@@ -24,8 +24,8 @@ interface ItemFormModalProps {
 
 export function ItemFormModal({ open, onOpenChange, item, categorias, cmvCats: _cmvCats, mutations }: ItemFormModalProps) {
   const [form, setForm] = useState({
-    name: '', short_name: '', description: '', categoria_carta_id: '',
-    rdo_category_code: '', base_price: 0, fc_objetivo: 32, available_delivery: true,
+    nombre: '', short_name: '', descripcion: '', categoria_carta_id: '',
+    rdo_category_code: '', precio_base: 0, fc_objetivo: 32, disponible_delivery: true,
   });
   const set = (k: string, v: string | number | boolean) => setForm((p) => ({ ...p, [k]: v }));
   const isEdit = !!item;
