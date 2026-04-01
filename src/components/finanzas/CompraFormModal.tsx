@@ -526,7 +526,7 @@ export function CompraFormModal({ open, onOpenChange, branchId }: Props) {
                         ⚠️ Este insumo solo puede comprarse a {provObligatorio.business_name}
                       </p>
                     )}
-                    {precioRef && item.precio_unitario > 0 && (
+                    {precioRef && item.unit_price > 0 && (
                       <p
                         className={`text-xs ${isOverpriced ? 'text-destructive' : 'text-muted-foreground'}`}
                       >
