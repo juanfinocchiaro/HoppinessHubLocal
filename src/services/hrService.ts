@@ -969,6 +969,49 @@ export async function validateClockPin(branchCode: string, pin: string) {
   return data;
 }
 
+export async function validateManagerOverridePin(
+  branchCode: string,
+  pin: string,
+): Promise<{ user_id: string; full_name: string } | null> {
+  // 1. Get branch by clock_code
+  const { data: branch, error: branchErr } = await supabase
+    .from('branches')
+    .select('id')
+    .eq('clock_code', branchCode)
+    .eq('is_active', true)
+    .single();
+
+  if (branchErr || !branch) return null;
+
+  // 2. Find user_role_assignments with matching clock_pin and manager role
+  const { data: assignments, error: assignErr } = await (supabase as any)
+    .from('user_role_assignments')
+    .select('user_id, branch_id, roles!inner(key)')
+    .eq('clock_pin', pin)
+    .eq('is_active', true)
+    .in('roles.key', ['encargado', 'franquiciado', 'superadmin']);
+
+  if (assignErr || !assignments?.length) return null;
+
+  // 3. Find one that matches this branch (or superadmin which is global)
+  const match = assignments.find(
+    (a: any) => a.roles?.key === 'superadmin' || a.branch_id === branch.id,
+  );
+  if (!match) return null;
+
+  // 4. Get full_name from profiles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', match.user_id)
+    .single();
+
+  return {
+    user_id: match.user_id,
+    full_name: profile?.full_name || 'Encargado',
+  };
+}
+
 export async function checkRegulationStatus(userId: string) {
   const { data: regulations, error: regError } = await supabase
     .from('regulations')

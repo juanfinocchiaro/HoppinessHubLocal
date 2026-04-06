@@ -17,6 +17,7 @@ interface ClockEntryRequest {
   gps_status?: string
   gps_message?: string
   photo_base64?: string
+  override_manager_name?: string
 }
 
 interface ValidatedUser {
