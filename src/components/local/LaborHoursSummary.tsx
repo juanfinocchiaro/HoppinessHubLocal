@@ -186,7 +186,6 @@ function EmployeeCard({
                   };
                   exportEmployeeExcel(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`, empFin);
                 }}>
-                }}>
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   Excel individual
                 </DropdownMenuItem>
