@@ -164,6 +164,7 @@ export function exportLaborExcel(
   stats: LaborStats,
   monthLabel: string,
   configInfo: { dailyLimit: number; lateTolerance: number },
+  filename?: string,
 ) {
   const wb = XLSX.utils.book_new();
 
