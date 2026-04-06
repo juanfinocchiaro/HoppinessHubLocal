@@ -82,8 +82,8 @@ export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConf
     }
   };
 
-  const pvStr = String(facturaOriginal.punto_venta).padStart(5, '0');
-  const numStr = String(facturaOriginal.numero_comprobante).padStart(8, '0');
+  const pvStr = String(facturaOriginal.point_of_sale).padStart(5, '0');
+  const numStr = String(facturaOriginal.receipt_number).padStart(8, '0');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
