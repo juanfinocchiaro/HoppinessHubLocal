@@ -117,10 +117,21 @@ export function DayOverviewBar({ rows, isToday }: Props) {
         </div>
       )}
 
+      {/* Vacation */}
+      {stats.vacationCount > 0 && (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-cyan-700 bg-cyan-50 border-cyan-200 dark:text-cyan-300 dark:bg-cyan-950/30 dark:border-cyan-800">
+          <span>🏖️ {stats.vacationCount} vacaciones</span>
+        </div>
+      )}
+
       {/* Off/Leave */}
-      {stats.offCount > 0 && (
+      {(stats.offCount > 0 || stats.leaveCount > 0) && (
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-muted-foreground bg-muted/50 border-border">
-          <span>{stats.offCount} franco/licencia</span>
+          <span>
+            {stats.offCount > 0 && `${stats.offCount} franco${stats.offCount !== 1 ? 's' : ''}`}
+            {stats.offCount > 0 && stats.leaveCount > 0 && ' · '}
+            {stats.leaveCount > 0 && `${stats.leaveCount} licencia`}
+          </span>
         </div>
       )}
 
