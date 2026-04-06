@@ -95,9 +95,10 @@ export function exportLaborPDF(
   monthLabel: string,
   configInfo: { dailyLimit: number; lateTolerance: number },
   filename?: string,
+  financialData?: FinancialDataMap,
 ) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const rows = buildRows(summaries);
+  const rows = buildRows(summaries, financialData);
 
   // Title
   doc.setFontSize(16);
