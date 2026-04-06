@@ -1,37 +1,47 @@
 ## Override de encargado en fichaje bloqueado por reglamento
 
-### Problema
-Cuando un empleado tiene el fichaje bloqueado por no firmar el reglamento, la encargada no puede desbloquearlo desde la pantalla pública `/fichaje/:branchCode`.
-
-### Solución
-Agregar botón "Autorizar como encargado" en el step `regulation-blocked`. Al presionarlo, se muestra un input de PIN. Si el PIN pertenece a un encargado/franquiciado de esa sucursal, se permite continuar al paso de cámara.
-
 ### Cambios
 
-#### 1. `src/services/hrService.ts` — nueva función
-```typescript
-export async function validateManagerOverridePin(branchCode: string, pin: string) {
-  // Buscar branch por clock_code, luego buscar en user_role_assignments
-  // un usuario con ese clock_pin + rol encargado/franquiciado en esa branch
-  // Retorna { user_id, full_name } o null
-}
-```
-Usa query a `branches` (por clock_code), luego `user_role_assignments` join `roles` (key in encargado, franquiciado, superadmin) join `profiles` (full_name), filtrando por `clock_pin = pin` y `branch_id` (o branch_id IS NULL para superadmin).
+#### 1. `src/services/hrService.ts` — nueva función después de línea 1010
+
+Agregar `validateManagerOverridePin(branchCode, pin)`:
+- Busca branch por `clock_code`
+- Query `user_role_assignments` con `clock_pin = pin`, join `roles` filtrando `key IN ('encargado', 'franquiciado', 'superadmin')`, `is_active = true`
+- Filtra por `branch_id` para roles de sucursal (superadmin no necesita branch)
+- Busca `full_name` en `profiles`
+- Retorna `{ user_id, full_name }` o `null`
 
 #### 2. `src/pages/FichajeEmpleado.tsx`
-- Agregar estado: `managerOverride` (boolean), `managerPin` (string), `managerName` (string), `showManagerPinInput` (boolean)
-- En step `regulation-blocked`: agregar botón "Autorizar como encargado"
-  - Al presionar: muestra input de PIN de 4 dígitos
-  - Al completar: llama `validateManagerOverridePin`
-  - Si válido: setManagerOverride(true), avanzar a step `camera`
-  - Si inválido: toast error
-- En `clockMutation`: pasar `override_manager_name` al edge function (solo para registro/auditoría, no bloquea)
+
+**Nuevos estados:**
+- `showManagerPinInput: boolean` (false)
+- `managerPin: string` ('')
+- `managerOverride: { name: string } | null` (null)
+- `managerValidating: boolean` (false)
+
+**En step `regulation-blocked` (líneas 357-368):**
+Después del Alert existente, agregar:
+- Separador con "ó"
+- Botón "Autorizar como encargado" → setShowManagerPinInput(true)
+- Si `showManagerPinInput`: Input PIN 4 dígitos con auto-submit
+- Al completar PIN: llamar `validateManagerOverridePin(branchCode, managerPin)`
+  - Si válido: setManagerOverride({ name }), avanzar a step `camera`, startCamera()
+  - Si inválido: toast.error("PIN de encargado incorrecto")
+
+**En clockMutation (línea 192):**
+Agregar al body: `override_manager_name: managerOverride?.name || undefined`
+
+**Import:** agregar `validateManagerOverridePin` a los imports de hrService, agregar `ShieldCheck` de lucide-react
 
 #### 3. `supabase/functions/register-clock-entry/index.ts`
-- Aceptar campo opcional `override_manager_name` en el body
-- Si presente, guardarlo en `manual_reason` del clock_entry (agregar al insert)
 
-### Archivos
-- `src/services/hrService.ts`
-- `src/pages/FichajeEmpleado.tsx`
-- `supabase/functions/register-clock-entry/index.ts`
+**En interface ClockEntryRequest (línea 10):**
+Agregar: `override_manager_name?: string`
+
+**En destructuring del body (línea 68):**
+Agregar `override_manager_name`
+
+**En insert clock_entry (línea 499):**
+Agregar: `manual_reason: override_manager_name ? \`Override encargado: ${override_manager_name} - reglamento pendiente\` : null`
+
+Desplegar edge function después de los cambios.
