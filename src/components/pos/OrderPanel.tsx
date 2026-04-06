@@ -156,7 +156,7 @@ export function OrderPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`h-8 w-8 ${it.notas ? 'text-primary' : 'text-muted-foreground'}`}
+                        className={`h-8 w-8 ${it.notes ? 'text-primary' : 'text-muted-foreground'}`}
                         onClick={() => setEditingNoteIdx(editingNoteIdx === idx ? null : idx)}
                       >
                         <MessageSquare className="h-3.5 w-3.5" />

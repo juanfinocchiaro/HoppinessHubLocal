@@ -114,12 +114,12 @@ export function useCreatePedido(branchId: string) {
 
       if (cfg) {
         if (cfg.numeroLlamador) insertPayload.caller_number = parseInt(cfg.numeroLlamador, 10);
-        if (cfg.clienteNombre) insertPayload.customer_name = cfg.clienteNombre;
-        if (cfg.clienteTelefono) {
-          const normalized = normalizePhone(cfg.clienteTelefono);
-          insertPayload.customer_phone = normalized || cfg.clienteTelefono;
+        if (cfg.customerName) insertPayload.customer_name = cfg.customerName;
+        if (cfg.customerPhone) {
+          const normalized = normalizePhone(cfg.customerPhone);
+          insertPayload.customer_phone = normalized || cfg.customerPhone;
         }
-        if (cfg.clienteDireccion) insertPayload.customer_address = cfg.clienteDireccion;
+        if (cfg.customerAddress) insertPayload.customer_address = cfg.customerAddress;
         if (cfg.clienteUserId) insertPayload.cliente_user_id = cfg.clienteUserId;
         insertPayload.canal_venta = cfg.canalVenta;
         insertPayload.service_type = cfg.tipoServicio;
@@ -131,8 +131,8 @@ export function useCreatePedido(branchId: string) {
 
       const pedido = await insertPedido(insertPayload);
 
-      if (cfg?.tipoServicio === "delivery" && cfg.clienteUserId && cfg.clienteDireccion?.trim()) {
-        saveClienteAddress(cfg.clienteUserId, cfg.clienteDireccion).catch(() => {});
+      if (cfg?.tipoServicio === "delivery" && cfg.clienteUserId && cfg.customerAddress?.trim()) {
+        saveClienteAddress(cfg.clienteUserId, cfg.customerAddress).catch(() => {});
       }
 
       const itemRows = params.items.map((it) => ({

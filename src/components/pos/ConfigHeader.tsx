@@ -16,7 +16,7 @@ export function ConfigHeader({ config, onEdit }: { config: OrderConfig; onEdit?:
     else if (config.canalApp === 'mp_delivery') parts.push('MP Delivery');
   }
 
-  const detail = config.numeroLlamador ? `#${config.numeroLlamador}` : config.clienteNombre || '';
+  const detail = config.numeroLlamador ? `#${config.numeroLlamador}` : config.customerName || '';
 
   const Icon = config.canalVenta === 'mostrador' ? Store : Bike;
 

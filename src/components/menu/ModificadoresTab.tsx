@@ -256,10 +256,10 @@ export function ModificadoresTab({ itemId }: Props) {
                     <Badge variant="outline" className="text-amber-600 border-amber-600/30">
                       GRUPO
                     </Badge>
-                    <span className="font-medium text-sm">{grupo.nombre}</span>
+                    <span className="font-medium text-sm">{grupo.name}</span>
                   </div>
                   <span className="font-mono text-sm">
-                    Prom: {formatCurrency(grupo.costo_promedio || 0)}
+                    Prom: {formatCurrency(grupo.average_cost || 0)}
                   </span>
                 </div>
                 {grupo.items && grupo.items.length > 0 && (
@@ -269,9 +269,9 @@ export function ModificadoresTab({ itemId }: Props) {
                         key={gi.id}
                         className="flex items-center justify-between text-xs text-muted-foreground"
                       >
-                        <span>{gi.insumos?.name || gi.preparaciones?.name || '—'}</span>
+                        <span>{gi.supplies?.name || gi.recipes?.name || '—'}</span>
                         <span className="font-mono">
-                          {formatCurrency(gi.cantidad * gi.costo_unitario)}
+                          {formatCurrency(gi.quantity * gi.unit_cost)}
                         </span>
                       </div>
                     ))}

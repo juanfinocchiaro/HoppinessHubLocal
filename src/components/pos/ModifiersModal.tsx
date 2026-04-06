@@ -99,7 +99,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
         if (!source) return null;
         return {
           id: e.id,
-          nombre: source.nombre,
+          nombre: source.name,
           precio: source.precio_extra ?? 0,
         };
       })
@@ -282,14 +282,14 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
       .filter((ex) => (selectedExtras[ex.id] || 0) > 0)
       .map((ex) => ({
         id: ex.id,
-        nombre: ex.nombre,
+        name: ex.nombre,
         precio: ex.precio,
-        cantidad: selectedExtras[ex.id],
+        quantity: selectedExtras[ex.id],
       }));
 
     const cartRemovibles: CartItemRemovible[] = removiblesList
       .filter((r: any) => selectedRemovibles[r.id])
-      .map((r: any) => ({ id: r.id, nombre: r.nombre }));
+      .map((r: any) => ({ id: r.id, name: r.nombre }));
 
     const cartOpcionales: CartItemOpcional[] = [];
     const notasParts: string[] = [];
@@ -303,7 +303,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
             grupoId: group.id,
             grupoNombre: group.nombre,
             itemId: sel.id,
-            nombre: sel.nombre,
+            name: sel.nombre,
           });
         }
         notasParts.push(`${group.nombre}: ${selected.map((s) => s.nombre).join(', ')}`);
@@ -315,18 +315,18 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
       for (const e of cartExtras) {
         const freeQty = preconfigQtyMap.get(e.id) ?? 0;
         if (freeQty > 0) {
-          const inclQty = Math.min(e.cantidad, freeQty);
-          parts.push(`+${inclQty} ${e.nombre} (incl.)`);
-          const extraQty = e.cantidad - inclQty;
-          if (extraQty > 0) parts.push(`+${extraQty} ${e.nombre}`);
+          const inclQty = Math.min(e.quantity, freeQty);
+          parts.push(`+${inclQty} ${e.name} (incl.)`);
+          const extraQty = e.quantity - inclQty;
+          if (extraQty > 0) parts.push(`+${extraQty} ${e.name}`);
         } else {
-          parts.push(`+${e.cantidad} ${e.nombre}`);
+          parts.push(`+${e.quantity} ${e.name}`);
         }
       }
       notasParts.push(parts.join(', '));
     }
     if (cartRemovibles.length > 0) {
-      notasParts.push(cartRemovibles.map((r) => r.nombre).join(', '));
+      notasParts.push(cartRemovibles.map((r) => r.name).join(', '));
     }
 
     const displayName = isPromo ? `${nombre} (PROMO)` : nombre;

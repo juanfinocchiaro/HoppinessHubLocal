@@ -96,7 +96,7 @@ export function PosHistoryView({ branchId, branchName, daysBack, setDaysBack }: 
     referencia_app: (order as unknown as Record<string, unknown>).referencia_app as string | null ?? null,
     created_at: order.created_at,
     items: order.order_items.map((i) => ({
-      name: i.name, quantity: i.quantity, notes: i.notas ?? i.notes ?? null, estacion: 'armado' as const,
+      name: i.name, quantity: i.quantity, notes: i.notes ?? null, estacion: 'armado' as const,
       unit_price: i.unit_price, subtotal: i.subtotal, categoria_carta_id: i.categoria_carta_id,
     })),
     total: order.total, descuento: order.descuento || 0,

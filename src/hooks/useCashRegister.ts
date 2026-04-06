@@ -297,7 +297,7 @@ export function useAddExpenseMovement(branchId: string) {
         userId,
         categoriaGasto,
         rdoCategoryCode,
-        notes,
+        observaciones: notes,
         estadoAprobacion,
       }),
     onSuccess: (_, v) => {

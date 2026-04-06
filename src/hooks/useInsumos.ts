@@ -79,9 +79,9 @@ export function useInsumoMutations() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
       const label =
-        variables.item_type === 'producto'
+        variables.tipo_item === 'producto'
           ? 'Producto'
-          : variables.item_type === 'ingrediente'
+          : variables.tipo_item === 'ingrediente'
             ? 'Ingrediente'
             : 'Insumo';
       toast.success(`${label} creado`);
@@ -94,7 +94,7 @@ export function useInsumoMutations() {
       updateInsumo(id, data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
-      const tipo = variables.data.item_type;
+      const tipo = variables.data.tipo_item;
       const label =
         tipo === 'producto' ? 'Producto' : tipo === 'ingrediente' ? 'Ingrediente' : 'Insumo';
       toast.success(`${label} actualizado`);

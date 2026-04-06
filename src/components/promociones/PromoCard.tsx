@@ -30,7 +30,7 @@ export function PromoCard({ promo, isEditing, onEdit, onDuplicate, onDelete, onT
         <div className="flex items-center gap-2 flex-wrap">
           {isEditing ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
           <h3 className="font-semibold text-sm truncate">{promo.name}</h3>
-          {!promo.activa && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Inactiva</Badge>}
+          {!promo.is_active && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Inactiva</Badge>}
           {discountLabel && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{discountLabel}</Badge>}
           {promo.restriccion_pago !== 'cualquiera' && (
             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{PAGO_LABELS[promo.restriccion_pago]}</Badge>
@@ -61,7 +61,7 @@ export function PromoCard({ promo, isEditing, onEdit, onDuplicate, onDelete, onT
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <Switch checked={promo.activa} onCheckedChange={onToggle} onClick={(e) => e.stopPropagation()} />
+        <Switch checked={promo.is_active} onCheckedChange={onToggle} onClick={(e) => e.stopPropagation()} />
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onDuplicate(); }} title="Duplicar"><Copy className="w-3.5 h-3.5" /></Button>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Eliminar"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
       </div>

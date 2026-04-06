@@ -232,7 +232,7 @@ export default function CategoriasCartaPage() {
     const newIndex = categorias.findIndex((c: any) => c.id === over.id);
     const reordered = arrayMove(categorias, oldIndex, newIndex);
 
-    await reorder.mutateAsync(reordered.map((c: any, i: number) => ({ id: c.id, orden: i + 1 })));
+    await reorder.mutateAsync(reordered.map((c: any, i: number) => ({ id: c.id, sort_order: i + 1 })));
   };
 
   if (isLoading) {

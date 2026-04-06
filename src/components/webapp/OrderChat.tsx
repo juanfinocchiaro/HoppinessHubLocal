@@ -120,8 +120,8 @@ export function OrderChat({
           {
             id: data.id,
             sender_type: 'cliente',
-            sender_nombre: clienteNombre || 'Cliente',
-            mensaje: text,
+            sender_name: clienteNombre || 'Cliente',
+            message: text,
             leido: false,
             created_at: data.created_at,
           },

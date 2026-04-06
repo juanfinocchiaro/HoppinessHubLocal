@@ -48,8 +48,8 @@ export function PromoFormFields({
   const itemsLabel = promoItems.length === 1 ? '1 producto' : `${promoItems.length} productos`;
   const hasOverrides = form.tipo === 'descuento_porcentaje' && form.valor > 0
     ? promoItems.some((it) => {
-        const extrasTotal = (it.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
-        const auto = Math.round((Number(it.precio_base) + extrasTotal) * (1 - form.valor / 100));
+         const extrasTotal = (it.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.quantity, 0);
+        const auto = Math.round((Number(it.base_price) + extrasTotal) * (1 - form.valor / 100));
         return Number(it.precio_promo) !== auto;
       })
     : false;
@@ -164,13 +164,13 @@ export function PromoFormFields({
             <select className="hidden"><option /></select>
             <input type="checkbox" className="hidden" />
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={form.activa} onChange={(e) => setForm((f) => ({ ...f, activa: e.target.checked }))} className="sr-only peer" />
+              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))} className="sr-only peer" />
             </label>
           </div>
         </div>
         <div className="space-y-1.5">
           <Label>Descripción (visible a clientes)</Label>
-          <Input value={form.description || ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Ej: 30% OFF pagando en efectivo" />
+          <Input value={form.descripcion || ''} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} placeholder="Ej: 30% OFF pagando en efectivo" />
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap"><Calendar className="w-3.5 h-3.5" /><span className="font-medium text-foreground/80">{summary}</span></div>
       </div>

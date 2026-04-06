@@ -206,12 +206,12 @@ function InversionFormModal({
       descripcion: form.descripcion,
       tipo_inversion: form.tipo_inversion,
       monto_total: parseFloat(form.monto_total),
-      fecha: form.fecha,
-      periodo,
+      date: form.fecha,
+      period: periodo,
       estado: form.estado,
       vida_util_meses: form.vida_util_meses ? parseInt(form.vida_util_meses) : null,
       cuotas_total: form.cuotas_total ? parseInt(form.cuotas_total) : null,
-      observaciones: form.observaciones || undefined,
+      notes: form.observaciones || undefined,
     };
 
     await onCreate.mutateAsync(payload);

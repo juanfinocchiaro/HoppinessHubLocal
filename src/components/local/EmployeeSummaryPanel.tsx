@@ -95,7 +95,7 @@ export function EmployeeSummaryPanel({
   const { data: workingTeam } = useCurrentlyWorkingTeam(branchId);
   const workingEntry = workingTeam?.find((m) => m.user_id === userId);
   const isWorking = !!workingEntry;
-  const workingSince = workingEntry
+  const _workingSince = workingEntry // eslint-disable-line @typescript-eslint/no-unused-vars
     ? format(new Date(workingEntry.check_in), 'HH:mm')
     : null;
   const workingMin = workingEntry?.minutesWorking ?? 0;
@@ -172,7 +172,7 @@ export function EmployeeSummaryPanel({
 
   // ── Mutation: quick close shift ──
   const closeMutation = useMutation({
-    mutationFn: async ({ entryId, time, date }: { entryId: string; time: string; date: string }) => {
+    mutationFn: async ({ entryId: _entryId, time, date }: { entryId: string; time: string; date: string }) => {
       if (!user) throw new Error('Sin sesión');
       const [y, mo, d] = date.split('-').map(Number);
       const [h, m] = time.split(':').map(Number);

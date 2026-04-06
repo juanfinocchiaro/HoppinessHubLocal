@@ -85,7 +85,7 @@ export function ItemRow({
             <Button
               variant="ghost"
               size="icon"
-              className={`h-8 w-8 ${item.notas ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`h-8 w-8 ${item.notes ? 'text-primary' : 'text-muted-foreground'}`}
               onClick={() => setEditingNoteIdx(editingNoteIdx === index ? null : index)}
             >
               <MessageSquare className="h-3.5 w-3.5" />

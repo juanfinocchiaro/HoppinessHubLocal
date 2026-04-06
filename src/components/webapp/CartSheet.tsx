@@ -261,7 +261,7 @@ export function CartSheet({
       | undefined;
     const pm = schedules?.[serviceKey]?.payment_methods;
     return {
-      efectivo: pm?.efectivo ?? defaults.efectivo,
+      cash: pm?.efectivo ?? defaults.efectivo,
       mercadopago: pm?.mercadopago ?? defaults.mercadopago,
     };
   }, [webappConfig, serviceKey]);
@@ -833,7 +833,7 @@ export function CartSheet({
                             onValueChange={(addrId) => {
                               const addr = savedAddresses.find((a) => a.id === addrId);
                               if (addr) {
-                                setAddress(addr.direccion);
+                                setAddress(addr.address);
                                 setPiso(addr.piso || '');
                                 setReferencia(addr.referencia || '');
                               }
@@ -845,7 +845,7 @@ export function CartSheet({
                             <SelectContent>
                               {savedAddresses.map((a) => (
                                 <SelectItem key={a.id} value={a.id}>
-                                  {a.etiqueta} — {a.direccion}
+                                  {a.etiqueta} — {a.address}
                                 </SelectItem>
                               ))}
                             </SelectContent>

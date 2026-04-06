@@ -296,7 +296,7 @@ export default function MenuCartaPage() {
 
   const handleCreate = async () => {
     if (!newNombre.trim()) return;
-    await create.mutateAsync({ name: newNombre.trim(), orden: (categorias?.length || 0) + 1 });
+    await create.mutateAsync({ name: newNombre.trim(), sort_order: (categorias?.length || 0) + 1 });
     setNewNombre('');
     setShowNew(false);
   };
@@ -313,7 +313,7 @@ export default function MenuCartaPage() {
     const oldIndex = categorias.findIndex((c) => c.id === active.id);
     const newIndex = categorias.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(categorias, oldIndex, newIndex);
-    await reorder.mutateAsync(reordered.map((c: any, i) => ({ id: c.id, orden: i + 1 })));
+    await reorder.mutateAsync(reordered.map((c: any, i) => ({ id: c.id, sort_order: i + 1 })));
   };
 
   if (isLoading) {

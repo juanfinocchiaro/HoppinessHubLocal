@@ -44,13 +44,19 @@ export default function PromocionesPage() {
     if (!itemSearch.trim()) return [];
     const q = itemSearch.toLowerCase();
     return menuItems
-      .filter((i) => i.name.toLowerCase().includes(q))
+      .filter((i) => (i as any).name?.toLowerCase().includes(q) || (i as any).nombre?.toLowerCase().includes(q))
       .filter((i) => !promoItems.some((pi) => pi.item_carta_id === i.id))
       .slice(0, 8);
   };
 
   const fetchPromoItems = async (promoId: string): Promise<PromoItemDraft[]> => {
-    return fetchPromoItemsWithExtras(promoId) as Promise<PromoItemDraft[]>;
+    return fetchPromoItemsWithExtras(promoId).then(items => items.map((i: any) => ({
+      ...i,
+      name: i.name || i.nombre,
+      base_price: i.base_price ?? i.precio_base,
+      image_url: i.image_url ?? i.imagen_url,
+      preconfigExtras: i.preconfigExtras?.map((e: any) => ({ ...e, name: e.name || e.nombre })),
+    }))) as Promise<PromoItemDraft[]>;
   };
 
   const openCreate = () => { setCreateForm(EMPTY_FORM); setCreatePromoItems([]); setCreateItemSearch(''); setCreatingNew(true); };
@@ -62,9 +68,9 @@ export default function PromocionesPage() {
   const openEdit = async (promo: Promocion) => {
     setOpenPromoIds((prev) => prev.includes(promo.id) ? prev : [...prev, promo.id]);
     if (promoDrafts[promo.id]) return;
-    setPromoDrafts((prev) => ({ ...prev, [promo.id]: { form: buildFormFromPromo(promo), promoItems: [], itemSearch: '', initialSignature: '', loading: true } }));
+    setPromoDrafts((prev) => ({ ...prev, [promo.id]: { form: buildFormFromPromo(promo as any), promoItems: [], itemSearch: '', initialSignature: '', loading: true } }));
     const loadedItems = await fetchPromoItems(promo.id);
-    const loadedForm = buildFormFromPromo(promo);
+    const loadedForm = buildFormFromPromo(promo as any);
     const initialSignature = getDraftSignature(loadedForm, loadedItems);
     setPromoDrafts((prev) => ({ ...prev, [promo.id]: { form: loadedForm, promoItems: loadedItems, itemSearch: '', initialSignature, loading: false } }));
     setCreatingNew(false);
@@ -79,22 +85,22 @@ export default function PromocionesPage() {
 
   const openDuplicate = async (promo: Promocion) => {
     const loadedItems = await fetchPromoItems(promo.id);
-    setCreateForm({ ...buildFormFromPromo(promo), name: `${promo.name} (Copia)` });
+    setCreateForm({ ...buildFormFromPromo(promo as any), name: `${promo.name} (Copia)` });
     setCreatePromoItems(loadedItems);
     setCreateItemSearch('');
     setCreatingNew(true);
   };
 
-  const addItem = (item: { id: string; name: string; base_price: number; image_url?: string | null }, setItems: Dispatch<SetStateAction<PromoItemDraft[]>>, setSearch: Dispatch<SetStateAction<string>>) => {
-    setItems((prev) => [...prev, { item_carta_id: item.id, nombre: item.name, imagen_url: item.image_url, precio_base: Number(item.base_price), precio_promo: Number(item.base_price) }]);
+  const addItem = (item: { id: string; name?: string; nombre?: string; base_price?: number; precio_base?: number; image_url?: string | null; imagen_url?: string | null }, setItems: Dispatch<SetStateAction<PromoItemDraft[]>>, setSearch: Dispatch<SetStateAction<string>>) => {
+    setItems((prev) => [...prev, { item_carta_id: item.id, name: item.name || (item as any).nombre || '', image_url: item.image_url ?? (item as any).imagen_url, base_price: Number(item.base_price ?? (item as any).precio_base ?? 0), precio_promo: Number(item.base_price ?? (item as any).precio_base ?? 0) }]);
     setSearch('');
   };
 
   const applyPercentageToAll = (form: PromocionFormData, setItems: Dispatch<SetStateAction<PromoItemDraft[]>>) => {
     if (form.tipo !== 'descuento_porcentaje' || form.valor <= 0) return;
     setItems((prev) => prev.map((i) => {
-      const extrasTotal = (i.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
-      return { ...i, precio_promo: Math.round((i.precio_base + extrasTotal) * (1 - form.valor / 100)) };
+      const extrasTotal = (i.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.quantity, 0);
+      return { ...i, precio_promo: Math.round((i.base_price + extrasTotal) * (1 - form.valor / 100)) };
     }));
   };
 
@@ -169,7 +175,7 @@ export default function PromocionesPage() {
       ) : (
         <PromosByDay promos={promos} openPromoIds={openPromoIds} renderInlineForm={renderInlineForm}
           onEdit={(promo) => { if (openPromoIds.includes(promo.id)) requestClosePromo(promo); else openEdit(promo); }}
-          onDuplicate={openDuplicate} onDelete={setDeleting} onToggle={(id, activa) => toggleActive.mutate({ id, activa })} />
+          onDuplicate={openDuplicate} onDelete={setDeleting} onToggle={(id, active) => toggleActive.mutate({ id, is_active: active })} />
       )}
 
       <Dialog open={creatingNew} onOpenChange={setCreatingNew}>

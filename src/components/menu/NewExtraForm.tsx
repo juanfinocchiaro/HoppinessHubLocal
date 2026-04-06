@@ -114,7 +114,7 @@ export function NewExtraForm({
                           key={`${group.receta_id}-${ing.insumo_id}`}
                           value={ing.insumo_id}
                         >
-                          {ing.nombre}
+                          {ing.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>

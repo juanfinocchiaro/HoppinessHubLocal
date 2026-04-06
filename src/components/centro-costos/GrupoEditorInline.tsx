@@ -85,7 +85,7 @@ export function GrupoEditorInline({ grupo, itemId, insumos, preparaciones, mutat
 
   const handleSave = async () => {
     if (nombre !== grupo.name)
-      await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { name: nombre } });
+      await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { nombre: nombre } });
     await mutations.saveGrupoItems.mutateAsync({
       grupo_id: grupo.id, item_carta_id: itemId,
       items: editItems.filter((i) => i.insumo_id || i.preparacion_id).map((i) => ({

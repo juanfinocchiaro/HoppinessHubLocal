@@ -50,7 +50,7 @@ export function getDraftSignature(form: PromocionFormData, promoItems: PromoItem
         preconfigExtras: (item.preconfigExtras || [])
           .map((extra) => ({
             extra_item_carta_id: extra.extra_item_carta_id,
-            cantidad: extra.cantidad,
+            cantidad: extra.quantity,
           }))
           .sort((a, b) => a.extra_item_carta_id.localeCompare(b.extra_item_carta_id)),
       }))
@@ -68,7 +68,7 @@ export function buildFormFromPromo(promo: {
 }): PromocionFormData {
   return {
     name: promo.name,
-    description: promo.description,
+    descripcion: promo.description,
     tipo: promo.tipo as PromocionFormData['tipo'],
     valor: promo.valor,
     restriccion_pago: promo.restriccion_pago as PromocionFormData['restriccion_pago'],
@@ -81,7 +81,7 @@ export function buildFormFromPromo(promo: {
     producto_ids: promo.producto_ids,
     categoria_ids: promo.categoria_ids,
     tipo_usuario: promo.tipo_usuario as PromocionFormData['tipo_usuario'],
-    activa: promo.activa,
+    is_active: promo.activa,
     branch_ids: promo.branch_ids,
     canales: promo.canales || ALL_CANALES,
   };

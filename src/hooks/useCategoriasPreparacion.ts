@@ -19,7 +19,7 @@ export function useCategoriaPreparacionMutations() {
   const qc = useQueryClient();
 
   const create = useMutation({
-    mutationFn: (data: { name: string; sort_order: number }) => createCategoriaPreparacion(data),
+    mutationFn: (data: { nombre: string; orden: number }) => createCategoriaPreparacion(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['categorias-preparacion'] });
       toast.success('Categoría creada');
@@ -38,7 +38,7 @@ export function useCategoriaPreparacionMutations() {
   });
 
   const reorder = useMutation({
-    mutationFn: (items: { id: string; sort_order: number }[]) => reorderCategoriasPreparacion(items),
+    mutationFn: (items: { id: string; orden: number }[]) => reorderCategoriasPreparacion(items),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categorias-preparacion'] }),
     onError: (e: Error) => toast.error(`Error: ${e.message}`),
   });

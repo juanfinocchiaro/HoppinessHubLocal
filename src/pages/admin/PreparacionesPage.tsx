@@ -94,7 +94,7 @@ export default function PreparacionesPage() {
   const handleCreateCat = async () => {
     if (!newCatNombre.trim()) return;
     await catMutations.create.mutateAsync({
-      name: newCatNombre.trim(),
+      nombre: newCatNombre.trim(),
       orden: (categorias?.length || 0) + 1,
     });
     setNewCatNombre('');

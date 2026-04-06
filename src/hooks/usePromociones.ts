@@ -272,7 +272,7 @@ export function usePromocionMutations() {
           rows.push({
             promocion_item_id: inserted.id,
             extra_item_carta_id: ex.extra_item_carta_id,
-            cantidad: ex.cantidad,
+            quantity: ex.cantidad,
           });
         }
       }

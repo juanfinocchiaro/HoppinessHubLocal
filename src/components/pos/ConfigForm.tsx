@@ -103,9 +103,9 @@ export function ConfigForm({
     setDeliveryAddress(result);
     setDeliveryCalc(null);
     if (result) {
-      onChange({ ...config, clienteDireccion: result.formatted_address });
+      onChange({ ...config, customerAddress: result.formatted_address });
     } else {
-      onChange({ ...config, clienteDireccion: '', costoDelivery: 0 });
+      onChange({ ...config, customerAddress: '', costoDelivery: 0 });
     }
   };
 
@@ -143,7 +143,7 @@ export function ConfigForm({
   }, [config.tipoServicio]);
 
   // —— Phone-based customer lookup ————————————————————————————————————————
-  const debouncedPhone = useDebounce(config.clienteTelefono, 600);
+  const debouncedPhone = useDebounce(config.customerPhone, 600);
   const [profileSuggestion, setProfileSuggestion] = useState<{
     id: string;
     full_name: string;
@@ -265,8 +265,8 @@ export function ConfigForm({
                     className="h-8 text-xs font-medium"
                     onClick={() => {
                       const updates: Partial<OrderConfig> = { numeroLlamador: String(num) };
-                      if (!config.clienteNombre || config.clienteNombre.startsWith('Llamador #')) {
-                        updates.clienteNombre = `Llamador #${num}`;
+                      if (!config.customerName || config.customerName.startsWith('Llamador #')) {
+                        updates.customerName = `Llamador #${num}`;
                       }
                       set(updates);
                     }}
@@ -280,14 +280,14 @@ export function ConfigForm({
                 <Input
                   placeholder="Nombre del cliente"
                   value={
-                    config.clienteNombre?.startsWith('Llamador #')
+                    config.customerName?.startsWith('Llamador #')
                       ? ''
-                      : (config.clienteNombre ?? '')
+                      : (config.customerName ?? '')
                   }
                   onChange={(e) => {
                     const v = e.target.value;
                     set({
-                      clienteNombre:
+                      customerName:
                         v || (config.numeroLlamador ? `Llamador #${config.numeroLlamador}` : ''),
                     });
                   }}
@@ -305,9 +305,9 @@ export function ConfigForm({
                 <div className="relative mt-1">
                   <Input
                     placeholder="Ej: 3511234567"
-                    value={config.clienteTelefono}
+                    value={config.customerPhone}
                     onChange={(e) => {
-                      set({ clienteTelefono: e.target.value, clienteUserId: undefined });
+                      set({ customerPhone: e.target.value, clienteUserId: undefined });
                       setProfileSuggestion(null);
                     }}
                     className="h-9 pr-8"
@@ -322,7 +322,7 @@ export function ConfigForm({
                     type="button"
                     onClick={() => {
                       set({
-                        clienteNombre: profileSuggestion.full_name,
+                        customerName: profileSuggestion.full_name,
                         clienteUserId: profileSuggestion.id,
                       });
                       setProfileSuggestion(null);
@@ -340,8 +340,8 @@ export function ConfigForm({
                 <Label className="text-xs">Nombre *</Label>
                 <Input
                   placeholder="Cliente"
-                  value={config.clienteNombre}
-                  onChange={(e) => set({ clienteNombre: e.target.value })}
+                  value={config.customerName}
+                  onChange={(e) => set({ customerName: e.target.value })}
                   className="h-9 mt-1"
                 />
               </div>
@@ -359,8 +359,8 @@ export function ConfigForm({
                     <Label className="text-xs">Dirección *</Label>
                     <Input
                       placeholder="Dirección de entrega"
-                      value={config.clienteDireccion}
-                      onChange={(e) => set({ clienteDireccion: e.target.value })}
+                      value={config.customerAddress}
+                      onChange={(e) => set({ customerAddress: e.target.value })}
                       className="h-9 mt-1"
                     />
                   </>

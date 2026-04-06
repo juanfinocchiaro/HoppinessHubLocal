@@ -80,7 +80,7 @@ export function WebappMenuView({
 
     const grouped: Record<string, { name: string; orden: number; items: WebappMenuItem[] }> = {};
     filtered.forEach((item) => {
-      const cat = item.categoria_name || 'Otros';
+      const cat = item.categoria_nombre || 'Otros';
       const orden = item.categoria_orden ?? 999;
       if (!grouped[cat]) grouped[cat] = { name: cat, orden, items: [] };
       grouped[cat].items.push(item);

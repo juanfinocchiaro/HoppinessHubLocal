@@ -46,7 +46,7 @@ const CONDICIONES_IVA = [
 export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConfirm }: Props) {
   const [loading, setLoading] = useState(false);
   const [tipoFactura, setTipoFactura] = useState<'A' | 'B'>(
-    (facturaOriginal.tipo_comprobante === 'A' ? 'A' : 'B') as 'A' | 'B',
+    (facturaOriginal.receipt_type === 'A' ? 'A' : 'B') as 'A' | 'B',
   );
   const [cuit, setCuit] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
@@ -54,7 +54,7 @@ export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConf
 
   useEffect(() => {
     if (open) {
-      setTipoFactura((facturaOriginal.tipo_comprobante === 'A' ? 'A' : 'B') as 'A' | 'B');
+      setTipoFactura((facturaOriginal.receipt_type === 'A' ? 'A' : 'B') as 'A' | 'B');
       setCuit('');
       setRazonSocial('');
       setCondicionIva('Consumidor Final');
@@ -82,8 +82,8 @@ export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConf
     }
   };
 
-  const pvStr = String(facturaOriginal.punto_venta).padStart(5, '0');
-  const numStr = String(facturaOriginal.numero_comprobante).padStart(8, '0');
+  const pvStr = String(facturaOriginal.point_of_sale).padStart(5, '0');
+  const numStr = String(facturaOriginal.receipt_number).padStart(8, '0');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,7 +96,7 @@ export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConf
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
             <p className="text-muted-foreground">Factura original:</p>
             <p className="font-medium">
-              {facturaOriginal.tipo_comprobante} {pvStr}-{numStr}
+              {facturaOriginal.receipt_type} {pvStr}-{numStr}
             </p>
             <p className="text-xs text-muted-foreground">
               Se emitirá una Nota de Crédito por esta factura y una nueva factura con los datos

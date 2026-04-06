@@ -119,8 +119,8 @@ export function BranchLanding({
 }: Props) {
   const [showWeek, setShowWeek] = useState(false);
   const resolvedBranchId = branchId || branch.id;
-  const isOpen = config.status === 'abierto';
-  const isPaused = config.status === 'pausado';
+  const isOpen = config.estado === 'abierto';
+  const isPaused = config.estado === 'pausado';
   const hasCoords = branch.latitude != null && branch.longitude != null;
   const mapsUrl = branch.google_place_id
     ? `https://www.google.com/maps/place/?q=place_id:${branch.google_place_id}`
@@ -410,8 +410,8 @@ export function BranchLanding({
           </div>
         ) : (
           <div className="w-full bg-card rounded-xl shadow-sm border p-6 text-center space-y-4">
-            {isPaused && config.pause_message && (
-              <p className="text-sm text-muted-foreground">{config.pause_message}</p>
+            {isPaused && config.mensaje_pausa && (
+              <p className="text-sm text-muted-foreground">{config.mensaje_pausa}</p>
             )}
             {!isPaused && (
               <p className="text-sm text-muted-foreground">

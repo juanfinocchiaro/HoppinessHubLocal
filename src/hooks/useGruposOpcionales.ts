@@ -69,7 +69,7 @@ export function useGruposOpcionalesMutations() {
     }: {
       id: string;
       item_carta_id: string;
-      data: { name?: string };
+      data: { nombre?: string };
     }) => updateGrupoOpcional(id, data),
     onSuccess: (_, vars) => invalidate(vars.item_carta_id),
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -102,7 +102,13 @@ export function useGruposOpcionalesMutations() {
         unit_cost: number;
       }[];
     }) => {
-      await saveGrupoOpcionalItems(grupo_id, items);
+      const serviceItems = items.map(i => ({
+        insumo_id: i.insumo_id,
+        preparacion_id: i.preparacion_id,
+        cantidad: i.quantity,
+        costo_unitario: i.unit_cost,
+      }));
+      await saveGrupoOpcionalItems(grupo_id, serviceItems);
 
       const avg =
         items.length > 0

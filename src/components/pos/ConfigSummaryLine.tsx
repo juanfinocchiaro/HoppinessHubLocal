@@ -30,14 +30,14 @@ export function ConfigSummaryLine({ config }: { config: OrderConfig }) {
   if ((config.costoDelivery ?? 0) > 0) {
     details.push(`Envío $${(config.costoDelivery ?? 0).toLocaleString('es-AR')}`);
   }
-  if (config.clienteNombre && !config.clienteNombre.startsWith('Llamador #')) {
-    details.push(config.clienteNombre);
-  } else if (config.clienteNombre) {
-    details.push(config.clienteNombre);
+  if (config.customerName && !config.customerName.startsWith('Llamador #')) {
+    details.push(config.customerName);
+  } else if (config.customerName) {
+    details.push(config.customerName);
   }
   if (config.canalVenta === 'mostrador') {
-    if (config.clienteTelefono) details.push(config.clienteTelefono);
-    if (config.clienteDireccion) details.push(config.clienteDireccion);
+    if (config.customerPhone) details.push(config.customerPhone);
+    if (config.customerAddress) details.push(config.customerAddress);
   }
   if (config.tipoFactura === 'A' && config.canalVenta === 'mostrador') {
     details.push('Fact. A');

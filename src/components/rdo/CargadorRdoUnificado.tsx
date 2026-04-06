@@ -292,11 +292,11 @@ function SectionEditModal({
         const amount = parseFloat(values[cat.code] || '0') || 0;
         const payload: RdoMovimientoFormData = {
           branch_id: branchId,
-          periodo,
+          period: periodo,
           rdo_category_code: cat.code,
           origen: section.origen,
           amount,
-          description: notes || undefined,
+          descripcion: notes || undefined,
         };
         await onSave.mutateAsync(payload);
       }

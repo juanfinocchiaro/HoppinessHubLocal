@@ -47,8 +47,8 @@ export function usePreparacionMutations() {
 
   const create = useMutation({
     mutationFn: (data: {
-      name: string;
-      description?: string;
+      nombre: string;
+      descripcion?: string;
       tipo: string;
       is_interchangeable?: boolean;
       metodo_costeo?: string;

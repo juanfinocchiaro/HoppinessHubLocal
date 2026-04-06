@@ -27,7 +27,7 @@ export function PromoItemRow({ item, discountPercent, onUpdate, onRemove }: Prom
   );
 
   const computeAutoPrice = (base: number, extras: PromoItemExtraDraft[], disc: number) => {
-    const extrasTotal = extras.reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
+    const extrasTotal = extras.reduce((s, e) => s + e.precio_extra * e.quantity, 0);
     return Math.round((base + extrasTotal) * (1 - disc / 100));
   };
 
@@ -37,19 +37,19 @@ export function PromoItemRow({ item, discountPercent, onUpdate, onRemove }: Prom
     if (existing.some((e) => e.extra_item_carta_id === extraId)) {
       next = existing.filter((e) => e.extra_item_carta_id !== extraId);
     } else {
-      next = [...existing, { extra_item_carta_id: extraId, nombre, cantidad: 1, precio_extra: precio }];
+      next = [...existing, { extra_item_carta_id: extraId, name: nombre, quantity: 1, precio_extra: precio }];
     }
     const newPrice = computeAutoPrice(item.base_price, next, discountPercent);
     onUpdate({ ...item, preconfigExtras: next.length > 0 ? next : undefined, precio_promo: newPrice });
   };
 
   const updateQty = (extraId: string, qty: number) => {
-    const next = (item.preconfigExtras || []).map((e) => e.extra_item_carta_id === extraId ? { ...e, cantidad: Math.max(1, qty) } : e);
+    const next = (item.preconfigExtras || []).map((e) => e.extra_item_carta_id === extraId ? { ...e, quantity: Math.max(1, qty) } : e);
     const newPrice = computeAutoPrice(item.base_price, next, discountPercent);
     onUpdate({ ...item, preconfigExtras: next, precio_promo: newPrice });
   };
 
-  const extrasSubtotal = (item.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
+  const extrasSubtotal = (item.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.quantity, 0);
   const baseWithExtras = item.base_price + extrasSubtotal;
   const autoPrice = discountPercent > 0 ? computeAutoPrice(item.base_price, item.preconfigExtras || [], discountPercent) : null;
   const effectivePercent = baseWithExtras > 0 ? Math.max(0, Math.min(100, Math.round((1 - item.precio_promo / baseWithExtras) * 1000) / 10)) : 0;
@@ -96,7 +96,7 @@ export function PromoItemRow({ item, discountPercent, onUpdate, onRemove }: Prom
                     <Checkbox checked={!!selected} onCheckedChange={() => toggleExtra(ex.id, ex.nombre, ex.precio)} />
                     <span className="truncate flex-1">{ex.nombre}</span>
                     <span className="text-muted-foreground shrink-0">${ex.precio.toLocaleString('es-AR')}</span>
-                    {selected && (<><span className="text-muted-foreground">×</span><Input type="number" min={1} max={10} value={selected.cantidad} onChange={(e) => updateQty(ex.id, Number(e.target.value) || 1)} className="h-6 w-14 text-xs text-center" /></>)}
+                    {selected && (<><span className="text-muted-foreground">×</span><Input type="number" min={1} max={10} value={selected.quantity} onChange={(e) => updateQty(ex.id, Number(e.target.value) || 1)} className="h-6 w-14 text-xs text-center" /></>)}
                   </div>
                 );
               })}

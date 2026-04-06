@@ -223,7 +223,7 @@ function GrupoEditor({ grupo, itemId, insumos, preparaciones, mutations }: {
   const promedio = editItems.length > 0 ? editItems.reduce((s, i) => s + i.quantity * i.costo_unitario, 0) / editItems.length : 0;
 
   const handleSave = async () => {
-    if (nombre !== grupo.name) await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { name: nombre } });
+    if (nombre !== grupo.name) await mutations.updateGrupo.mutateAsync({ id: grupo.id, item_carta_id: itemId, data: { nombre: nombre } });
     await mutations.saveGrupoItems.mutateAsync({
       grupo_id: grupo.id, item_carta_id: itemId,
       items: editItems.filter((i) => i.insumo_id || i.preparacion_id).map((i) => ({

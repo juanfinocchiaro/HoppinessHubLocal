@@ -72,7 +72,7 @@ export function NewRemovibleForm({
     selectedType === 'receta' && selectedReceta
       ? selectedReceta.costo_calculado * (selectedReceta.cantidad || 1)
       : selectedInsumo
-        ? (selectedInsumo.base_unit_cost || 0) * (selectedInsumo.cantidad || 1)
+        ? (selectedInsumo.base_unit_cost || 0) * (selectedInsumo.quantity || 1)
         : 0;
 
   const handleSave = async () => {
@@ -98,7 +98,7 @@ export function NewRemovibleForm({
         tipo: 'removible',
         nombre: displayName,
         ingrediente_id: selectedId,
-        cantidad_ahorro: selectedInsumo?.cantidad || 0,
+        cantidad_ahorro: selectedInsumo?.quantity || 0,
         unidad_ahorro: selectedInsumo?.unidad || selectedInsumo?.base_unit || 'un',
         costo_ahorro: costoAhorro,
       });
@@ -146,7 +146,7 @@ export function NewRemovibleForm({
                   </SelectLabel>
                   {group.ingredientes.map((ing) => (
                     <SelectItem key={`${group.receta_id}-${ing.insumo_id}`} value={ing.insumo_id}>
-                      {ing.nombre}
+                      {ing.name}
                     </SelectItem>
                   ))}
                 </SelectGroup>
