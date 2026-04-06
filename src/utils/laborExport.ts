@@ -6,6 +6,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import type { EmployeeLaborSummary, LaborStats } from '@/hooks/useLaborHours';
+
+export type FinancialDataMap = Map<string, { consumos: number; adelantos: number }>;
 import { formatHoursDecimal } from '@/hooks/useLaborHours';
 
 function formatPosition(pos: string | null | undefined): string {
