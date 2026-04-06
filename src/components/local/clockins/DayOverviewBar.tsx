@@ -57,7 +57,7 @@ export function DayOverviewBar({ rows, isToday }: Props) {
       workShifts, covered, allCovered,
       totalMinutes, overtimeMinutes,
       lateCount, lateTotalMin,
-      unclosedCount, absentCount, offCount,
+      unclosedCount, absentCount, offCount, vacationCount, leaveCount,
     };
   }, [rows]);
 
