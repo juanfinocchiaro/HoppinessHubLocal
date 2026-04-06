@@ -65,14 +65,15 @@ export interface EmployeeLaborSummary {
   hsTrabajadasMes: number;
   diasTrabajados: number;
 
-  // Desglose francos y feriados
+  // Desglose por tipo de día
+  hsRegulares: number;
+  hsExtrasDiaHabil: number;
   feriadosHs: number;
   hsFrancoTrabajado: number;
-  hsFrancoFeriado: number; // kept for backward compat = feriadosHs + hsFrancoTrabajado
 
-  // Extras
+  // Backward compat fields
+  hsFrancoFeriado: number;
   hsHabiles: number;
-  hsExtrasDiaHabil: number;
   hsExtrasFrancoFeriado: number;
   totalExtras: number;
 
@@ -85,6 +86,9 @@ export interface EmployeeLaborSummary {
   faltasJustificadas: number;
   tardanzaAcumuladaMin: number;
   presentismo: boolean;
+
+  // Vacaciones (días)
+  diasVacaciones: number;
 
   // Horas de licencia (separadas)
   hsLicencia: number;
