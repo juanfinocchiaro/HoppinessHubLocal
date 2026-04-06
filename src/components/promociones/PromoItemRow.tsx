@@ -27,7 +27,7 @@ export function PromoItemRow({ item, discountPercent, onUpdate, onRemove }: Prom
   );
 
   const computeAutoPrice = (base: number, extras: PromoItemExtraDraft[], disc: number) => {
-    const extrasTotal = extras.reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
+    const extrasTotal = extras.reduce((s, e) => s + e.precio_extra * e.quantity, 0);
     return Math.round((base + extrasTotal) * (1 - disc / 100));
   };
 
