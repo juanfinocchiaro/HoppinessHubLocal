@@ -17,6 +17,7 @@ interface ClockEntryRequest {
   gps_status?: string
   gps_message?: string
   photo_base64?: string
+  override_manager_name?: string
 }
 
 interface ValidatedUser {
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
     })
 
     const body: ClockEntryRequest = await req.json()
-    const { branch_code, pin, user_agent, gps_lat, gps_lng, gps_status, gps_message, photo_base64 } = body
+    const { branch_code, pin, user_agent, gps_lat, gps_lng, gps_status, gps_message, photo_base64, override_manager_name } = body
 
     if (!branch_code || !pin) {
       return jsonRes({ error: 'Faltan campos requeridos: branch_code, pin' }, 400)
@@ -510,6 +511,9 @@ Deno.serve(async (req) => {
         gps_message: gps_message || null,
         photo_url: photoUrl,
         work_date: workDate,
+        manual_reason: override_manager_name
+          ? `Override encargado: ${override_manager_name} - reglamento pendiente`
+          : null,
       })
       .select('id, created_at')
       .single()
