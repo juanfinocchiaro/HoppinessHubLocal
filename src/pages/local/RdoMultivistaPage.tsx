@@ -82,7 +82,7 @@ export default function RdoMultivistaPage() {
     const base = data?.opciones_filtros.categorias || [];
     const query = categoriaSearch.trim().toLowerCase();
     if (!query) return base;
-    return base.filter((c) => c.name.toLowerCase().includes(query));
+    return base.filter((c) => c.nombre.toLowerCase().includes(query));
   }, [data?.opciones_filtros.categorias, categoriaSearch]);
 
   const productosDisponibles = useMemo(() => {
