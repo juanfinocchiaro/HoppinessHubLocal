@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     })
 
     const body: ClockEntryRequest = await req.json()
-    const { branch_code, pin, user_agent, gps_lat, gps_lng, gps_status, gps_message, photo_base64 } = body
+    const { branch_code, pin, user_agent, gps_lat, gps_lng, gps_status, gps_message, photo_base64, override_manager_name } = body
 
     if (!branch_code || !pin) {
       return jsonRes({ error: 'Faltan campos requeridos: branch_code, pin' }, 400)
