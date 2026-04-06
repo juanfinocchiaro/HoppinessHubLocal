@@ -52,6 +52,12 @@ import {
 import { useWorkPositions } from '@/hooks/useWorkPositions';
 import { exportLaborPDF, exportLaborExcel } from '@/utils/laborExport';
 import { exportEmployeePDF, exportEmployeeExcel } from '@/utils/laborEmployeeExport';
+import {
+  useEmployeeConsumptionsByMonth,
+  useSalaryAdvancesByMonth,
+  aggregateByUser,
+} from '@/hooks/useEmployeeConsumptions';
+import { EmployeeConsumptionModal } from '@/components/local/EmployeeConsumptionModal';
 
 interface LaborHoursSummaryProps {
   branchId: string;
