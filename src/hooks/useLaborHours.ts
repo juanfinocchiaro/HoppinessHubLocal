@@ -159,25 +159,39 @@ function pairClockEntries(
     const paired: DayEntry[] = [];
 
     for (const [, group] of bySchedule) {
-      const clockIn = group.find((e) => e.entry_type === 'clock_in');
-      const clockOut = group.find((e) => e.entry_type === 'clock_out');
-
-      if (clockIn) {
-        const checkInTime = new Date(clockIn.created_at);
-        const date = clockIn.work_date ?? format(checkInTime, 'yyyy-MM-dd');
-        const minutes = clockOut
-          ? differenceInMinutes(new Date(clockOut.created_at), checkInTime)
-          : 0;
-
+      let pendingIn: ClockEntryRaw | null = null;
+      for (const e of group) {
+        if (e.entry_type === 'clock_in') {
+          if (pendingIn) {
+            const date = pendingIn.work_date ?? format(new Date(pendingIn.created_at), 'yyyy-MM-dd');
+            paired.push({
+              date, checkIn: pendingIn.created_at, checkOut: null,
+              minutesWorked: 0, hoursDecimal: 0,
+              isHoliday: holidays.has(date), isDayOff: scheduledDaysOff.has(date),
+              earlyLeaveAuthorized: false,
+            });
+          }
+          pendingIn = e;
+        } else if (e.entry_type === 'clock_out' && pendingIn) {
+          const checkInTime = new Date(pendingIn.created_at);
+          const date = pendingIn.work_date ?? format(checkInTime, 'yyyy-MM-dd');
+          const minutes = differenceInMinutes(new Date(e.created_at), checkInTime);
+          paired.push({
+            date, checkIn: pendingIn.created_at, checkOut: e.created_at,
+            minutesWorked: Math.max(0, minutes), hoursDecimal: Math.max(0, minutes) / 60,
+            isHoliday: holidays.has(date), isDayOff: scheduledDaysOff.has(date),
+            earlyLeaveAuthorized: e.early_leave_authorized || false,
+          });
+          pendingIn = null;
+        }
+      }
+      if (pendingIn) {
+        const date = pendingIn.work_date ?? format(new Date(pendingIn.created_at), 'yyyy-MM-dd');
         paired.push({
-          date,
-          checkIn: clockIn.created_at,
-          checkOut: clockOut?.created_at ?? null,
-          minutesWorked: Math.max(0, minutes),
-          hoursDecimal: Math.max(0, minutes) / 60,
-          isHoliday: holidays.has(date),
-          isDayOff: scheduledDaysOff.has(date),
-          earlyLeaveAuthorized: clockOut?.early_leave_authorized || false,
+          date, checkIn: pendingIn.created_at, checkOut: null,
+          minutesWorked: 0, hoursDecimal: 0,
+          isHoliday: holidays.has(date), isDayOff: scheduledDaysOff.has(date),
+          earlyLeaveAuthorized: false,
         });
       }
     }
