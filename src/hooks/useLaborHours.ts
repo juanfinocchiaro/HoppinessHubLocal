@@ -500,6 +500,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
 
       hsHabiles: Number(hsHabiles.toFixed(2)),
       hsExtrasDiaHabil: Number(hsExtrasDiaHabil.toFixed(2)),
+      hsExtrasInhabil: Number(hsExtrasInhabil.toFixed(2)),
       hsExtrasFrancoFeriado: Number(hsExtrasFrancoFeriado.toFixed(2)),
       totalExtras: Number(totalExtras.toFixed(2)),
 
