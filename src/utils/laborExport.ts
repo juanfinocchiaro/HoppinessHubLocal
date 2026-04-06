@@ -89,6 +89,28 @@ function buildRows(summaries: EmployeeLaborSummary[], financialData?: FinancialD
   return rows;
 }
 
+// Brand colors
+const BRAND_BLUE: [number, number, number] = [0, 19, 155];
+const BRAND_ORANGE: [number, number, number] = [255, 82, 29];
+const BRAND_YELLOW: [number, number, number] = [255, 212, 31];
+
+function drawRoundedRect(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fill: [number, number, number]) {
+  doc.setFillColor(...fill);
+  doc.roundedRect(x, y, w, h, r, r, 'F');
+}
+
+function drawStatCard(doc: jsPDF, x: number, y: number, w: number, h: number, value: string, label: string, bg: [number, number, number], textColor: [number, number, number] = [30, 30, 30]) {
+  drawRoundedRect(doc, x, y, w, h, 2, bg);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...textColor);
+  doc.text(value, x + w / 2, y + h / 2 - 1, { align: 'center' });
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(label, x + w / 2, y + h / 2 + 5, { align: 'center' });
+}
+
 export function exportLaborPDF(
   summaries: EmployeeLaborSummary[],
   stats: LaborStats,
@@ -98,52 +120,71 @@ export function exportLaborPDF(
   financialData?: FinancialDataMap,
 ) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
   const rows = buildRows(summaries, financialData);
 
-  // Title
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Liquidación — ${monthLabel}`, 14, 15);
+  // ── 1. Brand header band ──
+  doc.setFillColor(...BRAND_BLUE);
+  doc.rect(0, 0, pageW, 20, 'F');
 
-  // Config info
-  doc.setFontSize(9);
+  // Accent line (orange)
+  doc.setFillColor(...BRAND_ORANGE);
+  doc.rect(0, 20, pageW, 1.2, 'F');
+
+  // Title on blue band
+  doc.setFontSize(17);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`LIQUIDACIÓN — ${monthLabel}`, 14, 13);
+
+  // Subtitle on blue band (right side)
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100);
+  doc.setTextColor(200, 210, 255);
   doc.text(
-    `Límite diario: ${configInfo.dailyLimit} hs  |  Tolerancia tardanza: ${configInfo.lateTolerance} min acum.  |  Extras = exceso sobre ${configInfo.dailyLimit}hs/día`,
-    14,
-    22,
+    `Límite diario: ${configInfo.dailyLimit}hs  |  Tolerancia tardanza: ${configInfo.lateTolerance} min  |  Extras = exceso sobre ${configInfo.dailyLimit}hs/día`,
+    pageW - 14,
+    13,
+    { align: 'right' },
   );
-  doc.setTextColor(0);
 
-  // Stats summary
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  const statsY = 28;
-  const statsText = [
-    `Empleados: ${stats.totalEmpleados}`,
-    `Total horas: ${formatHoursDecimal(stats.totalHsEquipo)}`,
-    `Horas extras: ${stats.totalExtrasMes.toFixed(1)}h`,
-    `Con presentismo: ${stats.empleadosConPresentismo}`,
-    `Sin presentismo: ${stats.empleadosSinPresentismo}`,
+  // ── 2. Stats summary cards ──
+  const cardsY = 25;
+  const cardH = 14;
+  const gap = 3;
+  const totalGaps = 5 * gap;
+  const availW = pageW - 28;
+  const cardW = (availW - totalGaps) / 6;
+  let cx = 14;
+
+  const statCards: { value: string; label: string; bg: [number, number, number]; text?: [number, number, number] }[] = [
+    { value: stats.totalEmpleados.toString(), label: 'Empleados', bg: [224, 231, 255] },
+    { value: formatHoursDecimal(stats.totalHsEquipo), label: 'Total Horas', bg: [224, 231, 255] },
+    { value: `${stats.totalExtrasMes.toFixed(1)}h`, label: 'Horas Extras', bg: [220, 252, 231] },
+    { value: stats.empleadosConPresentismo.toString(), label: 'Con Presentismo', bg: [220, 252, 231], text: [22, 128, 60] },
+    { value: stats.empleadosSinPresentismo.toString(), label: 'Sin Presentismo', bg: [254, 226, 226], text: [180, 30, 30] },
+    { value: summaries.length.toString(), label: 'En reporte', bg: [255, 243, 205] },
   ];
-  doc.text(statsText.join('   |   '), 14, statsY);
-  doc.setFont('helvetica', 'normal');
 
-  // Table
+  for (const card of statCards) {
+    drawStatCard(doc, cx, cardsY, cardW, cardH, card.value, card.label, card.bg, card.text);
+    cx += cardW + gap;
+  }
+
+  // ── 3. Main table ──
   autoTable(doc, {
-    startY: 33,
+    startY: cardsY + cardH + 5,
     head: [HEADERS],
     body: rows,
     theme: 'grid',
     styles: {
       fontSize: 7.5,
       cellPadding: 2,
-      lineWidth: 0.1,
-      lineColor: [200, 200, 200],
+      lineWidth: 0.15,
+      lineColor: [210, 215, 225],
     },
     headStyles: {
-      fillColor: [41, 65, 106],
+      fillColor: BRAND_BLUE,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 7,
@@ -167,31 +208,73 @@ export function exportLaborPDF(
       14: { halign: 'right' },
       15: { halign: 'center', cellWidth: 14 },
     },
-    alternateRowStyles: { fillColor: [245, 247, 250] },
+    alternateRowStyles: { fillColor: [240, 244, 255] },
     didParseCell(data) {
-      // Color presentismo (column 15 now)
+      // Presentismo SI/NO (col 15)
       if (data.section === 'body' && data.column.index === 15) {
         const val = data.cell.raw as string;
         if (val === 'SI') {
-          data.cell.styles.textColor = [22, 163, 74];
+          data.cell.styles.textColor = [22, 128, 60];
+          data.cell.styles.fillColor = [220, 252, 231];
           data.cell.styles.fontStyle = 'bold';
-        } else {
-          data.cell.styles.textColor = [220, 38, 38];
+        } else if (val === 'NO') {
+          data.cell.styles.textColor = [180, 30, 30];
+          data.cell.styles.fillColor = [254, 226, 226];
           data.cell.styles.fontStyle = 'bold';
         }
       }
-      // Color faltas inj
+      // Faltas injustificadas > 0 (col 6)
       if (data.section === 'body' && data.column.index === 6) {
         const val = Number(data.cell.raw);
         if (val > 0) {
-          data.cell.styles.textColor = [220, 38, 38];
+          data.cell.styles.textColor = [180, 30, 30];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Extras hábil > 0 (col 11)
+      if (data.section === 'body' && data.column.index === 11) {
+        const val = parseFloat(data.cell.raw as string);
+        if (val > 0) {
+          data.cell.styles.textColor = BRAND_ORANGE;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Extras inhábil > 0 (col 12)
+      if (data.section === 'body' && data.column.index === 12) {
+        const val = parseFloat(data.cell.raw as string);
+        if (val > 0) {
+          data.cell.styles.textColor = BRAND_ORANGE;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Tardanza > 0 (col 8)
+      if (data.section === 'body' && data.column.index === 8) {
+        const raw = data.cell.raw as string;
+        const mins = parseInt(raw);
+        if (mins > 0) {
+          data.cell.styles.textColor = [230, 120, 0];
+        }
+      }
+      // Hs Franco > 0 (col 10)
+      if (data.section === 'body' && data.column.index === 10) {
+        const val = parseFloat(data.cell.raw as string);
+        if (val > 0) {
+          data.cell.styles.textColor = BRAND_BLUE;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Hs Feriados > 0 (col 9)
+      if (data.section === 'body' && data.column.index === 9) {
+        const val = parseFloat(data.cell.raw as string);
+        if (val > 0) {
+          data.cell.styles.textColor = [120, 50, 180];
           data.cell.styles.fontStyle = 'bold';
         }
       }
     },
   });
 
-  // References / Glossary
+  // ── 4. Glossary ──
   const GLOSSARY: string[][] = [
     ['Hs Trab.', 'Total de horas trabajadas en el mes (incluye feriados, francos, todo lo trabajado en el local)'],
     ['Hs Reg.', 'Horas regulares de trabajo en el local'],
@@ -208,48 +291,73 @@ export function exportLaborPDF(
     ['Present.', 'Presentismo: SI si no tiene faltas injustificadas ni tardanza mayor a 15 min acumulados'],
   ];
 
-  const lastTableY = (doc as any).lastAutoTable?.finalY || 33;
+  const lastTableY = (doc as any).lastAutoTable?.finalY || 45;
   const pageH = doc.internal.pageSize.getHeight();
-  const glossaryHeight = GLOSSARY.length * 5 + 15;
+  const glossaryHeight = GLOSSARY.length * 5 + 20;
 
-  // Add new page if not enough space
   if (lastTableY + glossaryHeight > pageH - 15) {
     doc.addPage();
   }
+  const glossStartY = lastTableY + glossaryHeight > pageH - 15 ? 15 : lastTableY + 10;
+
+  // Glossary decorative header
+  doc.setFillColor(...BRAND_BLUE);
+  doc.rect(14, glossStartY - 4, 3, 7, 'F');
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_BLUE);
+  doc.text('Referencias', 20, glossStartY + 1);
 
   autoTable(doc, {
-    startY: lastTableY + glossaryHeight > pageH - 15 ? 15 : lastTableY + 8,
-    head: [['Columna', 'Descripcion']],
+    startY: glossStartY + 5,
+    head: [['Columna', 'Descripción']],
     body: GLOSSARY,
     theme: 'plain',
     styles: {
       fontSize: 7,
       cellPadding: 1.5,
-      textColor: [80, 80, 80],
+      textColor: [60, 60, 60],
     },
     headStyles: {
-      fillColor: [230, 233, 240],
-      textColor: [41, 65, 106],
+      fillColor: [224, 231, 255],
+      textColor: BRAND_BLUE,
       fontStyle: 'bold',
       fontSize: 7.5,
     },
     columnStyles: {
-      0: { cellWidth: 22, fontStyle: 'bold' },
+      0: { cellWidth: 22, fontStyle: 'bold', textColor: BRAND_BLUE },
       1: { cellWidth: 120 },
     },
+    alternateRowStyles: { fillColor: [245, 247, 255] },
     tableWidth: 142,
   });
 
-  // Footer
+  // ── 5. Footer on every page ──
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    const footerY = doc.internal.pageSize.getHeight() - 8;
+
+    // Separator line
+    doc.setDrawColor(...BRAND_BLUE);
+    doc.setLineWidth(0.3);
+    doc.line(14, footerY - 2, pageW - 14, footerY - 2);
+
+    // Brand name left
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...BRAND_BLUE);
+    doc.text('HOPPINESS CLUB', 14, footerY + 1);
+
+    // Date + page right
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(150);
+    doc.setTextColor(120, 120, 120);
     doc.text(
       `Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}  —  Página ${i}/${pageCount}`,
-      14,
-      doc.internal.pageSize.getHeight() - 7,
+      pageW - 14,
+      footerY + 1,
+      { align: 'right' },
     );
   }
 
