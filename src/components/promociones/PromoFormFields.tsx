@@ -164,7 +164,7 @@ export function PromoFormFields({
             <select className="hidden"><option /></select>
             <input type="checkbox" className="hidden" />
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={form.activa} onChange={(e) => setForm((f) => ({ ...f, activa: e.target.checked }))} className="sr-only peer" />
+              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))} className="sr-only peer" />
             </label>
           </div>
         </div>
