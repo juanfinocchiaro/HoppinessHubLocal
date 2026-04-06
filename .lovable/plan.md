@@ -1,31 +1,45 @@
 
 
-## Limpieza de fichajes duplicados/huérfanos de Leonardo (29/03)
+## Puesto por defecto en Horarios y Liquidación
 
 ### Problema
-Al cargar fichajes manuales con el bug de UTC (ya corregido), quedaron 3 registros basura en `clock_entries` para Leonardo en `work_date = 2026-03-29`:
-
-1. **`edaee3dd...`** — clock_in a las 00:00 UTC (21:00 ART del 28) — creado por el bug de timezone
-2. **`7744262d...`** — clock_in a las 00:00 UTC — duplicado del anterior
-3. **`08b04feb...`** — clock_out a las 23:58 UTC del 30/03 — huérfano sin clock_in asociado
+Cuando se asigna un horario sin elegir puesto, queda como "Sin puesto" tanto en el calendario como en Liquidación. El encargado tiene que elegir manualmente el puesto cada vez, aunque el empleado ya tiene uno asignado en Equipo.
 
 ### Solución
-Crear una migración SQL que elimine estos 3 registros específicos por ID:
+Hacer que el `default_position` del empleado (configurado en Equipo) se use automáticamente en dos lugares:
 
-```sql
-DELETE FROM clock_entries
-WHERE id IN (
-  'edaee3dd-ec6a-4d32-803a-b48d39505e25',
-  '7744262d-1182-4ee1-a98f-876e5448eea0',
-  '08b04feb-12d7-4eae-b0fb-3977f6c9ef2b'
-);
-```
+### Cambios
+
+#### 1. Horarios — usar `default_position` al guardar celdas sin puesto
+**`src/components/hr/InlineScheduleEditor.tsx`**
+- En `handleCellChange` (línea ~317): si `value.position` es null/vacío, buscar el `default_position` del team member y usarlo
+- Crear un mapa `teamDefaultPositions` (Map<userId, position>) a partir de `team`
+
+#### 2. Horarios — pre-seleccionar posición en SelectionToolbar
+**`src/components/hr/schedule-selection/useScheduleActions.ts`**
+- En `handleApplyWithOptions`: cuando `position` es null, buscar el `default_position` de cada empleado seleccionado en lugar de dejarlo vacío
+- Requiere pasar un mapa de `defaultPositions` al hook
+
+**`src/components/hr/schedule-selection/useScheduleSelection.ts`**
+- Aceptar `teamDefaultPositions` como parámetro y pasarlo a `useScheduleActions`
+
+#### 3. Liquidación — fallback a `default_position` cuando `work_position` es null
+**`src/services/hrService.ts`**
+- En `fetchLaborUsersData`: incluir `default_position` del `user_role_assignments` en la respuesta
+
+**`src/hooks/useLaborHours.ts`**
+- En línea ~411: cambiar `const posKey = position || 'Sin puesto'` por `const posKey = position || userData?.default_position || 'Sin puesto'`
+- En `positionByDate` (línea ~363): si `work_position` es null, usar `default_position` del usuario
 
 ### Resultado
-Quedarán solo los 4 fichajes correctos del 29/03:
-- 11:53 → 16:03 (turno mañana, 4.17h)
-- 20:56 → 00:55 (turno noche, 3.98h)
+- Al cargar horarios, el puesto se llena automáticamente con el del empleado
+- En Liquidación, las horas se clasifican por el puesto real en vez de "Sin puesto"
+- Si el encargado elige otro puesto manualmente, ese tiene prioridad
 
 ### Archivos a modificar
-- Ninguno — solo una migración de base de datos
+- `src/components/hr/InlineScheduleEditor.tsx`
+- `src/components/hr/schedule-selection/useScheduleActions.ts`
+- `src/components/hr/schedule-selection/useScheduleSelection.ts`
+- `src/services/hrService.ts`
+- `src/hooks/useLaborHours.ts`
 
