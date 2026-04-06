@@ -65,8 +65,8 @@ function buildRows(summaries: EmployeeLaborSummary[]) {
     } else {
       // Single position or no breakdown — one row
       const posLabel = s.positionBreakdown.length === 1
-        ? s.positionBreakdown[0].position.charAt(0).toUpperCase() + s.positionBreakdown[0].position.slice(1)
-        : (s.localRole?.toUpperCase() || '-');
+        ? formatPosition(s.positionBreakdown[0].position)
+        : formatPosition(s.localRole);
       rows.push([
         counter.toString(), s.userName, posLabel,
         s.hsTrabajadasMes.toFixed(2), s.hsRegulares.toFixed(2),
