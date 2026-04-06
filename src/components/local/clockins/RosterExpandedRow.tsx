@@ -178,6 +178,34 @@ export function RosterExpandedRow({
     return { monthRows: sorted, futureScheduledCount: futureCount, monthMinutes: minutes };
   }, [monthData, monthStart, monthEnd, row.userId, row.userName, windowConfig, todayStr]);
 
+  return (
+    <div className="px-4 pb-4 pt-1 space-y-3 bg-muted/20 border-t">
+      {/* ── Section 1: Day detail ──────────────────────────────────── */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">
+            Detalle del día — {format(selectedDate, 'dd/MM/yyyy')}
+          </p>
+          {canEdit && manualEventKey !== `day-${dayDateStr}` && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                setManualEventKey(`day-${dayDateStr}`);
+                setManualType('clock_in');
+                setManualTime('');
+                setManualReason('');
+                setManualEarlyLeave(false);
+              }}
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Fichaje manual
+            </Button>
+          )}
+        </div>
+
         {canEdit && manualEventKey === `day-${dayDateStr}` && (
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-muted/40 rounded p-2">
             <div>
