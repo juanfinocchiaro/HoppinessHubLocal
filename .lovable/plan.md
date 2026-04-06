@@ -1,17 +1,37 @@
 
 
-## Fix: Input pierde foco al escribir en "Fichaje manual"
+## Fix: "Detalle del día" no muestra todos los fichajes en empleados multi-turno
 
-### Causa raíz
-`ManualEntryForm` está definido como un componente inline (función dentro de `RosterExpandedRow`, línea 182). Cada vez que el usuario escribe en el campo "Motivo", cambia el estado `manualReason`, lo cual re-renderiza el padre, que **recrea** `ManualEntryForm` como una función nueva. React lo interpreta como un componente distinto, lo desmonta y lo vuelve a montar — perdiendo el foco del input.
+### Problema
+Cuando un empleado tiene 2 turnos (ej: 12:00-15:00 y 19:00-02:00), el panel expandido "Detalle del día" solo muestra los fichajes del primer turno. Esto ocurre porque `RosterExpandedRow` recibe solo `mainRow` (el primer `RosterRow` del grupo), y `dayEntries` se construye únicamente desde `row.sessions`.
+
+**Línea 103:**
+```typescript
+const dayEntries = row.sessions.flatMap((s) => [s.clockIn, s.clockOut].filter(Boolean));
+```
+Solo usa las sessions del row recibido (turno 1), ignorando el turno 2.
 
 ### Solución
-Convertir `ManualEntryForm` de componente inline a JSX directo (inline el markup en lugar de llamarlo como `<ManualEntryForm />`). Esto evita el problema de identidad de componente sin necesidad de extraerlo a un archivo separado.
+Pasar **todas las rows del grupo** al `RosterExpandedRow` para que el detalle del día muestre todos los fichajes del empleado en ese día.
 
-En la línea 248 donde se usa `<ManualEntryForm dateStr={dayDateStr} eventKey={...} />`, reemplazar por el JSX del formulario directamente. Lo mismo para cualquier otro lugar donde se use `<ManualEntryForm />` en el archivo (verificar las líneas del historial mensual ~línea 400+).
+### Cambios
 
-Eliminar la definición de `ManualEntryForm` (líneas 182-217) y pegar el contenido directamente donde se invoca.
+#### 1. `RosterExpandedRow.tsx` — aceptar `allRows` como prop
+- Agregar prop `allRows?: RosterRow[]`
+- Cambiar el cálculo de `dayEntries` para usar todas las rows:
+  ```
+  const dayEntries = (allRows ?? [row]).flatMap(r => r.sessions.flatMap(s => [s.clockIn, s.clockOut].filter(Boolean)))
+  ```
+- Deduplicar por `id` y ordenar cronológicamente
 
-### Archivo a modificar
+#### 2. `RosterTable.tsx` — pasar `allRows={group.rows}`
+- En la llamada a `<RosterExpandedRow>` (línea 293), agregar `allRows={group.rows}`
+
+#### 3. `RosterMobileList.tsx` — mismo cambio
+- Pasar `allRows={group.rows}` en la llamada a `<RosterExpandedRow>`
+
+### Archivos a modificar
 - `src/components/local/clockins/RosterExpandedRow.tsx`
+- `src/components/local/clockins/RosterTable.tsx`
+- `src/components/local/clockins/RosterMobileList.tsx`
 
