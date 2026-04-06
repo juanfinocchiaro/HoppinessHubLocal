@@ -399,7 +399,7 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
   const { data: result, error } = await fromUntyped('branch_monthly_sales')
     .insert({
       branch_id: payload.branch_id!,
-      period: payload.periodo!,
+      period: payload.period!,
       total_sales: vt,
       efectivo: ef,
       fc_total: fc,
