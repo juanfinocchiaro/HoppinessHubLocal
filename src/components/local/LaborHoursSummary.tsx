@@ -588,6 +588,7 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
               consumos={financialMap.get(summary.userId)?.consumos ?? 0}
               adelantos={financialMap.get(summary.userId)?.adelantos ?? 0}
               onAddConsumo={() => setConsumptionTarget({ userId: summary.userId, userName: summary.userName })}
+              onViewConsumos={() => setConsumptionListTarget({ userId: summary.userId, userName: summary.userName })}
             />
           ))}
         </div>
