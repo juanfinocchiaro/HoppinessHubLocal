@@ -35,7 +35,12 @@ import { fetchEmployeeScheduleForBranch } from '@/services/schedulesService';
 import { createManualClockEntry } from '@/services/hrService';
 import { useLaborHours } from '@/hooks/useLaborHours';
 import { calculateShiftHours } from '@/lib/timeEngine';
-import { usePayrollReport } from '@/hooks/usePayrollReport';
+
+import {
+  useEmployeeConsumptionsByMonth,
+  useSalaryAdvancesByMonth,
+  aggregateByUser,
+} from '@/hooks/useEmployeeConsumptions';
 import { formatDuration } from '@/components/local/clockins/helpers';
 
 type PanelSection = 'hoy' | 'mes' | 'horarios' | 'liquidacion';
@@ -124,13 +129,12 @@ export function EmployeeSummaryPanel({
   });
   const laborSummary = summaries.find((s) => s.userId === userId);
 
-  // ── Data: payroll ──
-  const { rows: payrollRows } = usePayrollReport({
-    branchId,
-    year: todayDate.getFullYear(),
-    month: todayDate.getMonth(),
-  });
-  const payrollRow = payrollRows.find((r) => r.userId === userId);
+
+  // ── Data: consumptions & advances ──
+  const { data: consumptions = [] } = useEmployeeConsumptionsByMonth(branchId, todayDate.getFullYear(), todayDate.getMonth());
+  const { data: advances = [] } = useSalaryAdvancesByMonth(branchId, todayDate.getFullYear(), todayDate.getMonth());
+  const financialMap = aggregateByUser(consumptions, advances);
+  const financialData = financialMap.get(userId) ?? { consumos: 0, adelantos: 0 };
 
   // ── Computed: month hours ──
   const completedHours = laborSummary?.hsTrabajadasMes ?? 0;
@@ -452,48 +456,70 @@ export function EmployeeSummaryPanel({
           {expanded.has('liquidacion') && (
             <div className="space-y-2 pl-1">
               {laborSummary ? (
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Hábiles: </span>
-                    <span className="font-bold">{laborSummary.hsHabiles.toFixed(1)}h</span>
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  {/* Hábiles */}
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 px-2 py-2 text-center">
+                    <div className="font-bold text-blue-700 text-sm">{laborSummary.hsHabiles.toFixed(1)}h</div>
+                    <div className="text-blue-600/70 text-[10px]">Hábiles</div>
                   </div>
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Feriados: </span>
-                    <span className="font-bold">{laborSummary.feriadosHs.toFixed(1)}h</span>
+                  {/* Feriados */}
+                  <div className="rounded-lg bg-violet-50 border border-violet-200 px-2 py-2 text-center">
+                    <div className="font-bold text-violet-700 text-sm">{laborSummary.feriadosHs.toFixed(1)}h</div>
+                    <div className="text-violet-600/70 text-[10px]">Feriados</div>
                   </div>
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Extras hábil: </span>
-                    <span className="font-bold text-amber-600">{laborSummary.hsExtrasDiaHabil.toFixed(1)}h</span>
+                  {/* Presentismo */}
+                  <div className={`rounded-lg px-2 py-2 text-center border ${laborSummary.presentismo ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <div className={`font-bold text-sm ${laborSummary.presentismo ? 'text-green-700' : 'text-red-700'}`}>
+                      {laborSummary.presentismo ? 'SI' : 'NO'}
+                    </div>
+                    <div className={`text-[10px] ${laborSummary.presentismo ? 'text-green-600/70' : 'text-red-600/70'}`}>Presentismo</div>
                   </div>
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Extras fco/fer: </span>
-                    <span className="font-bold text-primary">{laborSummary.hsExtrasFrancoFeriado.toFixed(1)}h</span>
+                  {/* Extras hábil */}
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 px-2 py-2 text-center">
+                    <div className="font-bold text-amber-700 text-sm">{laborSummary.hsExtrasDiaHabil.toFixed(1)}h</div>
+                    <div className="text-amber-600/70 text-[10px]">Extras háb.</div>
                   </div>
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Faltas inj.: </span>
-                    <span className={`font-bold ${laborSummary.faltasInjustificadas > 0 ? 'text-red-600' : ''}`}>
+                  {/* Extras franco/feriado */}
+                  <div className="rounded-lg bg-orange-50 border border-orange-200 px-2 py-2 text-center">
+                    <div className="font-bold text-orange-700 text-sm">{laborSummary.hsExtrasFrancoFeriado.toFixed(1)}h</div>
+                    <div className="text-orange-600/70 text-[10px]">Extras fco.</div>
+                  </div>
+                  {/* Faltas injustificadas */}
+                  <div className={`rounded-lg px-2 py-2 text-center border ${laborSummary.faltasInjustificadas > 0 ? 'bg-red-50 border-red-200' : 'bg-muted/30 border-border'}`}>
+                    <div className={`font-bold text-sm ${laborSummary.faltasInjustificadas > 0 ? 'text-red-700' : 'text-foreground'}`}>
                       {laborSummary.faltasInjustificadas}
-                    </span>
+                    </div>
+                    <div className="text-muted-foreground text-[10px]">Faltas inj.</div>
                   </div>
-                  <div className="rounded border px-2 py-1.5">
-                    <span className="text-muted-foreground">Lic. enf.: </span>
-                    <span className="font-bold">{laborSummary.faltasJustificadas}</span>
+                  {/* Lic. enfermedad */}
+                  <div className="rounded-lg bg-muted/30 border border-border px-2 py-2 text-center">
+                    <div className="font-bold text-foreground text-sm">{laborSummary.faltasJustificadas}</div>
+                    <div className="text-muted-foreground text-[10px]">Lic. enf.</div>
                   </div>
-                  {payrollRow && (
-                    <>
-                      <div className="rounded border px-2 py-1.5">
-                        <span className="text-muted-foreground">Adelantos: </span>
-                        <span className="font-bold">${payrollRow.advances.toFixed(0)}</span>
-                      </div>
-                      <div className="rounded border px-2 py-1.5">
-                        <span className="text-muted-foreground">Consumos: </span>
-                        <span className="font-bold">${payrollRow.consumptions.toFixed(0)}</span>
-                      </div>
-                    </>
-                  )}
+                  {/* Consumos - always visible */}
+                  <div className="rounded-lg bg-violet-50 border border-violet-200 px-2 py-2 text-center">
+                    <div className="font-bold text-violet-700 text-sm">${financialData.consumos.toFixed(0)}</div>
+                    <div className="text-violet-600/70 text-[10px]">Consumos</div>
+                  </div>
+                  {/* Adelantos - always visible */}
+                  <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-2 py-2 text-center">
+                    <div className="font-bold text-indigo-700 text-sm">${financialData.adelantos.toFixed(0)}</div>
+                    <div className="text-indigo-600/70 text-[10px]">Adelantos</div>
+                  </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Sin datos de liquidación</p>
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  {/* Even without labor data, show consumos & adelantos */}
+                  <div className="col-span-3 text-center text-muted-foreground py-1">Sin datos de horas</div>
+                  <div className="rounded-lg bg-violet-50 border border-violet-200 px-2 py-2 text-center">
+                    <div className="font-bold text-violet-700 text-sm">${financialData.consumos.toFixed(0)}</div>
+                    <div className="text-violet-600/70 text-[10px]">Consumos</div>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-2 py-2 text-center">
+                    <div className="font-bold text-indigo-700 text-sm">${financialData.adelantos.toFixed(0)}</div>
+                    <div className="text-indigo-600/70 text-[10px]">Adelantos</div>
+                  </div>
+                </div>
               )}
               <Button
                 variant="ghost"
