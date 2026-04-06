@@ -92,7 +92,7 @@ function buildRows(summaries: EmployeeLaborSummary[], financialData?: FinancialD
 // Brand colors
 const BRAND_BLUE: [number, number, number] = [0, 19, 155];
 const BRAND_ORANGE: [number, number, number] = [255, 82, 29];
-const BRAND_YELLOW: [number, number, number] = [255, 212, 31];
+const _BRAND_YELLOW: [number, number, number] = [255, 212, 31];
 
 function drawRoundedRect(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fill: [number, number, number]) {
   doc.setFillColor(...fill);
