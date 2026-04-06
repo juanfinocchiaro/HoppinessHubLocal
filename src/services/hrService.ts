@@ -754,9 +754,12 @@ export async function createManualClockEntry(params: {
   reason: string;
   managerId: string;
   earlyLeaveAuthorized?: boolean;
+  workDate?: string;
 }) {
   const ts = new Date(params.timestamp);
-  const dateStr = ts.toISOString().slice(0, 10);
+  // Use explicit workDate if provided; otherwise derive from local date components (NOT UTC)
+  const dateStr = params.workDate
+    ?? `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}-${String(ts.getDate()).padStart(2, '0')}`;
 
   // Find matching schedule for the given timestamp
   let scheduleId: string | null = null;

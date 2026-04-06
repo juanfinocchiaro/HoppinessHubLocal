@@ -83,6 +83,7 @@ export function RosterExpandedRow({
         reason: manualReason.trim(),
         managerId: user.id,
         earlyLeaveAuthorized: manualType === 'clock_out' ? manualEarlyLeave : undefined,
+        workDate: params.dateStr,
       });
     },
     onSuccess: () => {

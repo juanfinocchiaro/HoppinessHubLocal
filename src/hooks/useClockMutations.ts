@@ -34,6 +34,7 @@ export function useClockMutations({ branchId, onSuccess }: UseClockMutationsOpti
       entryType: 'clock_in' | 'clock_out';
       timestamp: string;
       reason: string;
+      workDate?: string;
     }) =>
       createManualClockEntry({
         branchId,
@@ -42,6 +43,7 @@ export function useClockMutations({ branchId, onSuccess }: UseClockMutationsOpti
         timestamp: params.timestamp,
         reason: params.reason,
         managerId: user!.id,
+        workDate: params.workDate,
       }),
     onSuccess: () => {
       toast.success('Fichaje manual agregado');

@@ -28,6 +28,7 @@ interface AddManualEntryFormProps {
     timestamp: string;
     reason: string;
     earlyLeaveAuthorized?: boolean;
+    workDate?: string;
   }) => void;
   onCancel: () => void;
 }

@@ -162,6 +162,7 @@ export default function ClockInsPage() {
       timestamp: string;
       reason: string;
       earlyLeaveAuthorized?: boolean;
+      workDate?: string;
     }) => createManualClockEntry({
       branchId: branchId!,
       userId: params.userId,
@@ -170,6 +171,7 @@ export default function ClockInsPage() {
       reason: params.reason,
       managerId: user!.id,
       earlyLeaveAuthorized: params.earlyLeaveAuthorized,
+      workDate: params.workDate,
     }),
     onSuccess: () => {
       toast.success('Fichaje manual agregado');

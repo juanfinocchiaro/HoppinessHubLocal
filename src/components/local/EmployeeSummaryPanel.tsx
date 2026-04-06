@@ -181,6 +181,7 @@ export function EmployeeSummaryPanel({
         timestamp: ts,
         reason: 'Cierre rápido desde panel de empleado',
         managerId: user.id,
+        workDate: date,
       });
     },
     onSuccess: () => {
