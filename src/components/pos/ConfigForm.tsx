@@ -103,9 +103,9 @@ export function ConfigForm({
     setDeliveryAddress(result);
     setDeliveryCalc(null);
     if (result) {
-      onChange({ ...config, clienteDireccion: result.formatted_address });
+      onChange({ ...config, customerAddress: result.formatted_address });
     } else {
-      onChange({ ...config, clienteDireccion: '', costoDelivery: 0 });
+      onChange({ ...config, customerAddress: '', costoDelivery: 0 });
     }
   };
 
