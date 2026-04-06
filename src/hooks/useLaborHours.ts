@@ -110,6 +110,9 @@ export interface EmployeeLaborSummary {
   // Desglose por puesto operativo
   positionBreakdown: PositionBreakdown[];
 
+  // Horarios programados del mes (para export PDF/Excel)
+  scheduledDays: { date: string; startTime: string | null; endTime: string | null; startTime2: string | null; endTime2: string | null; isDayOff: boolean; position: string | null }[];
+
   // Control
   entries: DayEntry[];
   hasUnpairedEntries: boolean;
