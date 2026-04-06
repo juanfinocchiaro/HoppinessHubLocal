@@ -79,9 +79,9 @@ export function useInsumoMutations() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['insumos'] });
       const label =
-        variables.item_type === 'producto'
+        variables.tipo_item === 'producto'
           ? 'Producto'
-          : variables.item_type === 'ingrediente'
+          : variables.tipo_item === 'ingrediente'
             ? 'Ingrediente'
             : 'Insumo';
       toast.success(`${label} creado`);
