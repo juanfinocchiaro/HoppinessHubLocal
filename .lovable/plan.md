@@ -1,37 +1,37 @@
-
-
-## Fix: "Detalle del día" no muestra todos los fichajes en empleados multi-turno
+## Override de encargado en fichaje bloqueado por reglamento
 
 ### Problema
-Cuando un empleado tiene 2 turnos (ej: 12:00-15:00 y 19:00-02:00), el panel expandido "Detalle del día" solo muestra los fichajes del primer turno. Esto ocurre porque `RosterExpandedRow` recibe solo `mainRow` (el primer `RosterRow` del grupo), y `dayEntries` se construye únicamente desde `row.sessions`.
-
-**Línea 103:**
-```typescript
-const dayEntries = row.sessions.flatMap((s) => [s.clockIn, s.clockOut].filter(Boolean));
-```
-Solo usa las sessions del row recibido (turno 1), ignorando el turno 2.
+Cuando un empleado tiene el fichaje bloqueado por no firmar el reglamento, la encargada no puede desbloquearlo desde la pantalla pública `/fichaje/:branchCode`.
 
 ### Solución
-Pasar **todas las rows del grupo** al `RosterExpandedRow` para que el detalle del día muestre todos los fichajes del empleado en ese día.
+Agregar botón "Autorizar como encargado" en el step `regulation-blocked`. Al presionarlo, se muestra un input de PIN. Si el PIN pertenece a un encargado/franquiciado de esa sucursal, se permite continuar al paso de cámara.
 
 ### Cambios
 
-#### 1. `RosterExpandedRow.tsx` — aceptar `allRows` como prop
-- Agregar prop `allRows?: RosterRow[]`
-- Cambiar el cálculo de `dayEntries` para usar todas las rows:
-  ```
-  const dayEntries = (allRows ?? [row]).flatMap(r => r.sessions.flatMap(s => [s.clockIn, s.clockOut].filter(Boolean)))
-  ```
-- Deduplicar por `id` y ordenar cronológicamente
+#### 1. `src/services/hrService.ts` — nueva función
+```typescript
+export async function validateManagerOverridePin(branchCode: string, pin: string) {
+  // Buscar branch por clock_code, luego buscar en user_role_assignments
+  // un usuario con ese clock_pin + rol encargado/franquiciado en esa branch
+  // Retorna { user_id, full_name } o null
+}
+```
+Usa query a `branches` (por clock_code), luego `user_role_assignments` join `roles` (key in encargado, franquiciado, superadmin) join `profiles` (full_name), filtrando por `clock_pin = pin` y `branch_id` (o branch_id IS NULL para superadmin).
 
-#### 2. `RosterTable.tsx` — pasar `allRows={group.rows}`
-- En la llamada a `<RosterExpandedRow>` (línea 293), agregar `allRows={group.rows}`
+#### 2. `src/pages/FichajeEmpleado.tsx`
+- Agregar estado: `managerOverride` (boolean), `managerPin` (string), `managerName` (string), `showManagerPinInput` (boolean)
+- En step `regulation-blocked`: agregar botón "Autorizar como encargado"
+  - Al presionar: muestra input de PIN de 4 dígitos
+  - Al completar: llama `validateManagerOverridePin`
+  - Si válido: setManagerOverride(true), avanzar a step `camera`
+  - Si inválido: toast error
+- En `clockMutation`: pasar `override_manager_name` al edge function (solo para registro/auditoría, no bloquea)
 
-#### 3. `RosterMobileList.tsx` — mismo cambio
-- Pasar `allRows={group.rows}` en la llamada a `<RosterExpandedRow>`
+#### 3. `supabase/functions/register-clock-entry/index.ts`
+- Aceptar campo opcional `override_manager_name` en el body
+- Si presente, guardarlo en `manual_reason` del clock_entry (agregar al insert)
 
-### Archivos a modificar
-- `src/components/local/clockins/RosterExpandedRow.tsx`
-- `src/components/local/clockins/RosterTable.tsx`
-- `src/components/local/clockins/RosterMobileList.tsx`
-
+### Archivos
+- `src/services/hrService.ts`
+- `src/pages/FichajeEmpleado.tsx`
+- `supabase/functions/register-clock-entry/index.ts`
