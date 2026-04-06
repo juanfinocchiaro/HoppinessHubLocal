@@ -51,6 +51,16 @@ export interface DayEntry {
   earlyLeaveAuthorized?: boolean;
 }
 
+export interface PositionBreakdown {
+  position: string;
+  hsTrabajadas: number;
+  hsRegulares: number;
+  hsExtrasDiaHabil: number;
+  hsExtrasInhabil: number;
+  feriadosHs: number;
+  hsFrancoTrabajado: number;
+}
+
 export interface EmployeeLaborSummary {
   userId: string;
   userName: string;
@@ -96,6 +106,9 @@ export interface EmployeeLaborSummary {
 
   // Per-day lateness breakdown
   dailyLateness: { date: string; minutes: number; scheduledStart: string }[];
+
+  // Desglose por puesto operativo
+  positionBreakdown: PositionBreakdown[];
 
   // Control
   entries: DayEntry[];
@@ -362,38 +375,82 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
     let hsFrancoTrabajado = 0;
     const alertasDiarias: { date: string; horasExtra: number }[] = [];
 
+    // Position breakdown accumulator
+    const posBreakdownMap = new Map<string, {
+      hsTrabajadas: number; hsRegulares: number; hsExtrasDiaHabil: number;
+      hsExtrasInhabil: number; feriadosHs: number; hsFrancoTrabajado: number;
+    }>();
+    const getPosBucket = (pos: string) => {
+      if (!posBreakdownMap.has(pos)) {
+        posBreakdownMap.set(pos, { hsTrabajadas: 0, hsRegulares: 0, hsExtrasDiaHabil: 0, hsExtrasInhabil: 0, feriadosHs: 0, hsFrancoTrabajado: 0 });
+      }
+      return posBreakdownMap.get(pos)!;
+    };
+
     for (const [date, horasDia] of Object.entries(hoursByDay)) {
       const isHoliday = holidaySet.has(date);
       const isDayOff = userDaysOff.has(date);
       const position = positionByDate.get(date);
+      const posKey = position || 'Sin puesto';
       const dayOfWeek = new Date(date + 'T12:00:00').getDay(); // 0=Sun, 6=Sat
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
+      const bucket = getPosBucket(posKey);
+
       if (position === 'vacaciones') {
-        hsRegulares += Math.min(horasDia, config.daily_hours_limit);
+        const reg = Math.min(horasDia, config.daily_hours_limit);
+        hsRegulares += reg;
+        bucket.hsRegulares += reg;
         if (isWeekend) {
-          hsExtrasInhabil += Math.max(0, horasDia - config.daily_hours_limit);
+          const ext = Math.max(0, horasDia - config.daily_hours_limit);
+          hsExtrasInhabil += ext;
+          bucket.hsExtrasInhabil += ext;
         } else {
-          hsExtrasDiaHabil += Math.max(0, horasDia - config.daily_hours_limit);
+          const ext = Math.max(0, horasDia - config.daily_hours_limit);
+          hsExtrasDiaHabil += ext;
+          bucket.hsExtrasDiaHabil += ext;
         }
       } else if (isHoliday) {
         feriadosHs += horasDia;
+        bucket.feriadosHs += horasDia;
       } else if (isDayOff) {
         hsFrancoTrabajado += horasDia;
+        bucket.hsFrancoTrabajado += horasDia;
       } else {
         // Regular business day
-        hsRegulares += Math.min(horasDia, config.daily_hours_limit);
+        const reg = Math.min(horasDia, config.daily_hours_limit);
+        hsRegulares += reg;
+        bucket.hsRegulares += reg;
         if (isWeekend) {
-          hsExtrasInhabil += Math.max(0, horasDia - config.daily_hours_limit);
+          const ext = Math.max(0, horasDia - config.daily_hours_limit);
+          hsExtrasInhabil += ext;
+          bucket.hsExtrasInhabil += ext;
         } else {
-          hsExtrasDiaHabil += Math.max(0, horasDia - config.daily_hours_limit);
+          const ext = Math.max(0, horasDia - config.daily_hours_limit);
+          hsExtrasDiaHabil += ext;
+          bucket.hsExtrasDiaHabil += ext;
         }
       }
+      bucket.hsTrabajadas += horasDia;
 
       if (horasDia > config.daily_hours_limit) {
         alertasDiarias.push({ date, horasExtra: horasDia - config.daily_hours_limit });
       }
     }
+
+    // Build positionBreakdown array
+    const positionBreakdown: PositionBreakdown[] = Array.from(posBreakdownMap.entries())
+      .filter(([pos]) => pos !== 'vacaciones' && pos !== 'cumple')
+      .map(([position, b]) => ({
+        position,
+        hsTrabajadas: Number(b.hsTrabajadas.toFixed(2)),
+        hsRegulares: Number(b.hsRegulares.toFixed(2)),
+        hsExtrasDiaHabil: Number(b.hsExtrasDiaHabil.toFixed(2)),
+        hsExtrasInhabil: Number(b.hsExtrasInhabil.toFixed(2)),
+        feriadosHs: Number(b.feriadosHs.toFixed(2)),
+        hsFrancoTrabajado: Number(b.hsFrancoTrabajado.toFixed(2)),
+      }))
+      .sort((a, b) => b.hsTrabajadas - a.hsTrabajadas);
 
     const hsTrabajadasMes = hsRegulares + hsExtrasDiaHabil + hsExtrasInhabil + feriadosHs + hsFrancoTrabajado;
     const hsFrancoFeriado = feriadosHs + hsFrancoTrabajado;
@@ -552,6 +609,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
       hsLicencia: Number(hsLicencia.toFixed(2)),
 
       dailyLateness,
+      positionBreakdown,
       entries: paired,
       hasUnpairedEntries: unpairedEntries.length > 0,
       unpairedCount: unpairedEntries.length,

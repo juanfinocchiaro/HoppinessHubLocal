@@ -26,22 +26,55 @@ const HEADERS = [
 ];
 
 function buildRows(summaries: EmployeeLaborSummary[]) {
-  return summaries.map((s, i) => [
-    (i + 1).toString(),
-    s.userName,
-    s.localRole?.toUpperCase() || '-',
-    s.hsTrabajadasMes.toFixed(2),
-    s.hsRegulares.toFixed(2),
-    s.diasVacaciones.toString(),
-    s.faltasInjustificadas.toString(),
-    s.hsLicencia.toFixed(2),
-    `${s.tardanzaAcumuladaMin} min`,
-    s.feriadosHs.toFixed(2),
-    s.hsFrancoTrabajado.toFixed(2),
-    s.hsExtrasDiaHabil.toFixed(2),
-    s.hsExtrasInhabil.toFixed(2),
-    s.presentismo ? 'SI' : 'NO',
-  ]);
+  const rows: string[][] = [];
+  let counter = 0;
+
+  for (const s of summaries) {
+    counter++;
+    const hasBreakdown = s.positionBreakdown.length > 0;
+
+    if (hasBreakdown) {
+      // Header row (employee name only)
+      rows.push([
+        counter.toString(), s.userName, s.localRole?.toUpperCase() || '-',
+        '', '', '', '', '', '', '', '', '', '', '',
+      ]);
+
+      // Sub-rows per position
+      for (const pb of s.positionBreakdown) {
+        rows.push([
+          '', `  └ ${pb.position.charAt(0).toUpperCase() + pb.position.slice(1)}`, '',
+          pb.hsTrabajadas.toFixed(2), pb.hsRegulares.toFixed(2),
+          '-', '-', '-', '-',
+          pb.feriadosHs.toFixed(2), pb.hsFrancoTrabajado.toFixed(2),
+          pb.hsExtrasDiaHabil.toFixed(2), pb.hsExtrasInhabil.toFixed(2), '',
+        ]);
+      }
+
+      // Total row
+      rows.push([
+        '', '  TOTAL', '',
+        s.hsTrabajadasMes.toFixed(2), s.hsRegulares.toFixed(2),
+        s.diasVacaciones.toString(), s.faltasInjustificadas.toString(),
+        s.hsLicencia.toFixed(2), `${s.tardanzaAcumuladaMin} min`,
+        s.feriadosHs.toFixed(2), s.hsFrancoTrabajado.toFixed(2),
+        s.hsExtrasDiaHabil.toFixed(2), s.hsExtrasInhabil.toFixed(2),
+        s.presentismo ? 'SI' : 'NO',
+      ]);
+    } else {
+      rows.push([
+        counter.toString(), s.userName, s.localRole?.toUpperCase() || '-',
+        s.hsTrabajadasMes.toFixed(2), s.hsRegulares.toFixed(2),
+        s.diasVacaciones.toString(), s.faltasInjustificadas.toString(),
+        s.hsLicencia.toFixed(2), `${s.tardanzaAcumuladaMin} min`,
+        s.feriadosHs.toFixed(2), s.hsFrancoTrabajado.toFixed(2),
+        s.hsExtrasDiaHabil.toFixed(2), s.hsExtrasInhabil.toFixed(2),
+        s.presentismo ? 'SI' : 'NO',
+      ]);
+    }
+  }
+
+  return rows;
 }
 
 export function exportLaborPDF(

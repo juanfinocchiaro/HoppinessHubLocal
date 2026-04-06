@@ -51,12 +51,18 @@ import {
   formatHoursDecimal,
   type EmployeeLaborSummary,
 } from '@/hooks/useLaborHours';
+import { useWorkPositions } from '@/hooks/useWorkPositions';
 import { exportLaborPDF, exportLaborExcel } from '@/utils/laborExport';
 import { exportEmployeePDF, exportEmployeeExcel } from '@/utils/laborEmployeeExport';
 import { LOCAL_ROLE_LABELS } from '@/hooks/usePermissions';
 
 interface LaborHoursSummaryProps {
   branchId: string;
+}
+
+function PositionLabel({ posKey, positions }: { posKey: string; positions: { key: string; label: string }[] }) {
+  const pos = positions.find((p) => p.key === posKey);
+  return <>{pos?.label || posKey.charAt(0).toUpperCase() + posKey.slice(1)}</>;
 }
 
 function EmployeeRow({
@@ -67,6 +73,7 @@ function EmployeeRow({
   branchTag,
   monthOnly,
   yearStr,
+  positions,
 }: {
   summary: EmployeeLaborSummary;
   expanded: boolean;
@@ -75,6 +82,7 @@ function EmployeeRow({
   branchTag: string;
   monthOnly: string;
   yearStr: string;
+  positions: { key: string; label: string }[];
 }) {
   const initials = summary.userName
     .split(' ')
@@ -83,13 +91,15 @@ function EmployeeRow({
     .toUpperCase()
     .slice(0, 2);
 
+  const showPositionRows = summary.positionBreakdown.length > 0;
+
   return (
     <>
+      {/* Header row: employee name + avatar */}
       <TableRow
         className={`cursor-pointer hover:bg-muted/50 ${summary.hasUnpairedEntries ? 'bg-amber-50/50' : ''}`}
         onClick={onToggle}
       >
-        {/* 1. Empleado */}
         <TableCell>
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
@@ -106,102 +116,47 @@ function EmployeeRow({
             </div>
           </div>
         </TableCell>
-        {/* 2. Hs Trabajadas */}
-        <TableCell className="text-center">
-          <span className="font-bold">{summary.hsTrabajadasMes.toFixed(1)}</span>
-        </TableCell>
-        {/* 3. Hs Regulares */}
-        <TableCell className="text-center">
-          {summary.hsRegulares > 0 ? summary.hsRegulares.toFixed(1) : '-'}
-        </TableCell>
-        {/* 4. Vacaciones (días) */}
-        <TableCell className="text-center">
-          {summary.diasVacaciones > 0 ? (
-            <span className="text-cyan-600 font-medium">{summary.diasVacaciones}d</span>
-          ) : (
-            '-'
-          )}
-        </TableCell>
-        {/* 5. Faltas Inj. */}
-        <TableCell className="text-center">
-          {summary.faltasInjustificadas > 0 ? (
-            <span className="text-destructive font-medium">{summary.faltasInjustificadas}</span>
-          ) : (
-            '0'
-          )}
-        </TableCell>
-        {/* 6. Falta Justificada (horas) */}
-        <TableCell className="text-center">
-          {summary.hsLicencia > 0 ? (
-            <span className="text-orange-600 font-medium">{summary.hsLicencia.toFixed(1)}h</span>
-          ) : (
-            '-'
-          )}
-        </TableCell>
-        {/* 7. Tardanza (minutos) */}
-        <TableCell className="text-center">
-          {summary.tardanzaAcumuladaMin > 0 ? (
-            <span className="text-amber-600 font-medium">{summary.tardanzaAcumuladaMin}m</span>
-          ) : (
-            '0'
-          )}
-        </TableCell>
-        {/* 8. Hs Feriados */}
-        <TableCell className="text-center">
-          {summary.feriadosHs > 0 ? summary.feriadosHs.toFixed(1) : '-'}
-        </TableCell>
-        {/* 9. Hs Franco */}
-        <TableCell className="text-center">
-          {summary.hsFrancoTrabajado > 0 ? (
-            <span className="text-blue-600 font-medium">
-              {summary.hsFrancoTrabajado.toFixed(1)}
-            </span>
-          ) : (
-            '-'
-          )}
-        </TableCell>
-        {/* 10. Extras Hábil */}
-        <TableCell className="text-center">
-          {summary.hsExtrasDiaHabil > 0 ? (
-            <span className="text-amber-600 font-medium">
-              {summary.hsExtrasDiaHabil.toFixed(1)}
-            </span>
-          ) : (
-            '-'
-          )}
-        </TableCell>
-        {/* 11. Extras Inhábil */}
-        <TableCell className="text-center">
-          {summary.hsExtrasInhabil > 0 ? (
-            <span className="text-purple-600 font-medium">
-              {summary.hsExtrasInhabil.toFixed(1)}
-            </span>
-          ) : (
-            '-'
-          )}
-        </TableCell>
-        {/* 12. Presentismo */}
-        <TableCell className="text-center">
-          {summary.presentismo ? (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-              SI
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
-              NO
-            </Badge>
-          )}
-        </TableCell>
+        {/* Show totals only if no position breakdown (single position or none) */}
+        {!showPositionRows ? (
+          <>
+            <TableCell className="text-center"><span className="font-bold">{summary.hsTrabajadasMes.toFixed(1)}</span></TableCell>
+            <TableCell className="text-center">{summary.hsRegulares > 0 ? summary.hsRegulares.toFixed(1) : '-'}</TableCell>
+            <TableCell className="text-center">{summary.diasVacaciones > 0 ? <span className="text-cyan-600 font-medium">{summary.diasVacaciones}d</span> : '-'}</TableCell>
+            <TableCell className="text-center">{summary.faltasInjustificadas > 0 ? <span className="text-destructive font-medium">{summary.faltasInjustificadas}</span> : '0'}</TableCell>
+            <TableCell className="text-center">{summary.hsLicencia > 0 ? <span className="text-orange-600 font-medium">{summary.hsLicencia.toFixed(1)}h</span> : '-'}</TableCell>
+            <TableCell className="text-center">{summary.tardanzaAcumuladaMin > 0 ? <span className="text-amber-600 font-medium">{summary.tardanzaAcumuladaMin}m</span> : '0'}</TableCell>
+            <TableCell className="text-center">{summary.feriadosHs > 0 ? summary.feriadosHs.toFixed(1) : '-'}</TableCell>
+            <TableCell className="text-center">{summary.hsFrancoTrabajado > 0 ? <span className="text-blue-600 font-medium">{summary.hsFrancoTrabajado.toFixed(1)}</span> : '-'}</TableCell>
+            <TableCell className="text-center">{summary.hsExtrasDiaHabil > 0 ? <span className="text-amber-600 font-medium">{summary.hsExtrasDiaHabil.toFixed(1)}</span> : '-'}</TableCell>
+            <TableCell className="text-center">{summary.hsExtrasInhabil > 0 ? <span className="text-purple-600 font-medium">{summary.hsExtrasInhabil.toFixed(1)}</span> : '-'}</TableCell>
+            <TableCell className="text-center">
+              {summary.presentismo ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">SI</Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">NO</Badge>
+              )}
+            </TableCell>
+          </>
+        ) : (
+          <>
+            {/* Empty cells for header row when we have position sub-rows */}
+            <TableCell colSpan={10} className="text-xs text-muted-foreground italic">
+              {summary.positionBreakdown.length} puesto{summary.positionBreakdown.length > 1 ? 's' : ''} operativo{summary.positionBreakdown.length > 1 ? 's' : ''}
+            </TableCell>
+            <TableCell className="text-center">
+              {summary.presentismo ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">SI</Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">NO</Badge>
+              )}
+            </TableCell>
+          </>
+        )}
         <TableCell className="text-center">
           <div className="flex items-center gap-1 justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -220,6 +175,47 @@ function EmployeeRow({
           </div>
         </TableCell>
       </TableRow>
+
+      {/* Position sub-rows */}
+      {showPositionRows && summary.positionBreakdown.map((pb) => (
+        <TableRow key={pb.position} className="bg-muted/20 hover:bg-muted/30">
+          <TableCell className="pl-12">
+            <span className="text-xs text-muted-foreground">└</span>{' '}
+            <span className="text-sm"><PositionLabel posKey={pb.position} positions={positions} /></span>
+          </TableCell>
+          <TableCell className="text-center text-sm">{pb.hsTrabajadas > 0 ? pb.hsTrabajadas.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center text-sm">{pb.hsRegulares > 0 ? pb.hsRegulares.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center text-sm">-</TableCell>
+          <TableCell className="text-center text-sm">-</TableCell>
+          <TableCell className="text-center text-sm">-</TableCell>
+          <TableCell className="text-center text-sm">-</TableCell>
+          <TableCell className="text-center text-sm">{pb.feriadosHs > 0 ? pb.feriadosHs.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center text-sm">{pb.hsFrancoTrabajado > 0 ? pb.hsFrancoTrabajado.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center text-sm">{pb.hsExtrasDiaHabil > 0 ? pb.hsExtrasDiaHabil.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center text-sm">{pb.hsExtrasInhabil > 0 ? pb.hsExtrasInhabil.toFixed(1) : '-'}</TableCell>
+          <TableCell></TableCell>
+          <TableCell></TableCell>
+        </TableRow>
+      ))}
+
+      {/* Total row when multiple positions */}
+      {showPositionRows && (
+        <TableRow className="bg-muted/40 font-semibold border-b-2">
+          <TableCell className="pl-12 text-sm font-bold">TOTAL</TableCell>
+          <TableCell className="text-center"><span className="font-bold">{summary.hsTrabajadasMes.toFixed(1)}</span></TableCell>
+          <TableCell className="text-center">{summary.hsRegulares > 0 ? summary.hsRegulares.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center">{summary.diasVacaciones > 0 ? <span className="text-cyan-600 font-medium">{summary.diasVacaciones}d</span> : '-'}</TableCell>
+          <TableCell className="text-center">{summary.faltasInjustificadas > 0 ? <span className="text-destructive font-medium">{summary.faltasInjustificadas}</span> : '0'}</TableCell>
+          <TableCell className="text-center">{summary.hsLicencia > 0 ? <span className="text-orange-600 font-medium">{summary.hsLicencia.toFixed(1)}h</span> : '-'}</TableCell>
+          <TableCell className="text-center">{summary.tardanzaAcumuladaMin > 0 ? <span className="text-amber-600 font-medium">{summary.tardanzaAcumuladaMin}m</span> : '0'}</TableCell>
+          <TableCell className="text-center">{summary.feriadosHs > 0 ? summary.feriadosHs.toFixed(1) : '-'}</TableCell>
+          <TableCell className="text-center">{summary.hsFrancoTrabajado > 0 ? <span className="text-blue-600 font-medium">{summary.hsFrancoTrabajado.toFixed(1)}</span> : '-'}</TableCell>
+          <TableCell className="text-center">{summary.hsExtrasDiaHabil > 0 ? <span className="text-amber-600 font-medium">{summary.hsExtrasDiaHabil.toFixed(1)}</span> : '-'}</TableCell>
+          <TableCell className="text-center">{summary.hsExtrasInhabil > 0 ? <span className="text-purple-600 font-medium">{summary.hsExtrasInhabil.toFixed(1)}</span> : '-'}</TableCell>
+          <TableCell></TableCell>
+          <TableCell></TableCell>
+        </TableRow>
+      )}
 
       {expanded && (
         <TableRow>
@@ -249,19 +245,13 @@ function EmployeeRow({
                           {format(new Date(entry.date + 'T12:00:00'), 'EEE d MMM', { locale: es })}
                         </span>
                         {entry.isHoliday && (
-                          <Badge variant="outline" className="text-xs">
-                            Feriado
-                          </Badge>
+                          <Badge variant="outline" className="text-xs">Feriado</Badge>
                         )}
                         {entry.isDayOff && (
-                          <Badge variant="outline" className="text-xs">
-                            Franco
-                          </Badge>
+                          <Badge variant="outline" className="text-xs">Franco</Badge>
                         )}
                         {entry.earlyLeaveAuthorized && (
-                          <Badge variant="outline" className="text-xs text-green-600 border-green-300">
-                            Retiro autorizado
-                          </Badge>
+                          <Badge variant="outline" className="text-xs text-green-600 border-green-300">Retiro autorizado</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs">
@@ -279,9 +269,7 @@ function EmployeeRow({
                             </Badge>
                           </>
                         ) : (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300">
-                            Sin salida
-                          </Badge>
+                          <Badge variant="outline" className="text-amber-600 border-amber-300">Sin salida</Badge>
                         )}
                       </div>
                     </div>
@@ -311,6 +299,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
   const month = currentDate.getMonth();
 
   const { summaries, stats, config, loading } = useLaborHours({ branchId, year, month });
+  const { data: workPositions = [] } = useWorkPositions();
+  const positionsList = workPositions.map((p) => ({ key: p.key, label: p.label }));
 
   const { data: branchName = '' } = useQuery({
     queryKey: ['branch-name', branchId],
@@ -567,6 +557,7 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
                     branchTag={branchTag}
                     monthOnly={monthOnly}
                     yearStr={yearStr}
+                    positions={positionsList}
                   />
                 ))}
               </TableBody>
