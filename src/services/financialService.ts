@@ -26,7 +26,7 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
   const { data: result, error } = await fromUntyped('canon_settlements')
     .insert({
       branch_id: data.branch_id,
-      periodo: data.periodo,
+      periodo: data.period,
       ventas_id: data.ventas_id,
       fc_total: data.fc_total,
       ft_total: data.ft_total,
