@@ -99,8 +99,8 @@ export default function PromocionesPage() {
   const applyPercentageToAll = (form: PromocionFormData, setItems: Dispatch<SetStateAction<PromoItemDraft[]>>) => {
     if (form.tipo !== 'descuento_porcentaje' || form.valor <= 0) return;
     setItems((prev) => prev.map((i) => {
-      const extrasTotal = (i.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.cantidad, 0);
-      return { ...i, precio_promo: Math.round((i.precio_base + extrasTotal) * (1 - form.valor / 100)) };
+      const extrasTotal = (i.preconfigExtras || []).reduce((s, e) => s + e.precio_extra * e.quantity, 0);
+      return { ...i, precio_promo: Math.round((i.base_price + extrasTotal) * (1 - form.valor / 100)) };
     }));
   };
 
