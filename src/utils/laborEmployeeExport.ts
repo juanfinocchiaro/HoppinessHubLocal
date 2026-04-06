@@ -89,6 +89,16 @@ export function exportEmployeePDF(s: EmployeeLaborSummary, monthLabel: string, f
     ['Presentismo', s.presentismo ? 'SI' : 'NO'],
   ];
 
+  // Add position breakdown if available
+  if (s.positionBreakdown.length > 0) {
+    summaryData.push(['', '']);
+    summaryData.push(['DESGLOSE POR PUESTO', '']);
+    for (const pb of s.positionBreakdown) {
+      const posLabel = pb.position.charAt(0).toUpperCase() + pb.position.slice(1);
+      summaryData.push([`  ${posLabel}`, `${pb.hsTrabajadas.toFixed(2)} hs`]);
+    }
+  }
+
   autoTable(doc, {
     startY: 34,
     head: [['Concepto', 'Valor']],
