@@ -2188,6 +2188,60 @@ export type Database = {
           },
         ]
       }
+      employee_consumptions: {
+        Row: {
+          amount: number
+          branch_id: string
+          consumption_date: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          branch_id: string
+          consumption_date?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          consumption_date?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_consumptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_consumptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_data: {
         Row: {
           alias: string | null
