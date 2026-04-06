@@ -48,13 +48,20 @@ export function useEmployeeTimeData({ branchId, year, month, userId }: UseEmploy
     queryKey: ['employee-time-data', branchId, year, month, userId ?? 'all'],
     enabled: !!branchId,
     queryFn: async () => {
-      const [entries, holidays, schedules, absences, laborConfig] = await Promise.all([
+      const [entries, holidays, schedules, absences, laborConfigRaw] = await Promise.all([
         fetchClockEntries(branchId, startDate, endDate),
         fetchSpecialDays(startDate, endDate),
         fetchBranchSchedules(branchId, startDate, endDate),
         fetchAbsences(branchId, startDate, endDate),
-        fetchLaborConfig(branchId),
+        (async () => {
+          const { data } = await fromUntyped('labor_config')
+            .select('*')
+            .eq('branch_id', branchId)
+            .maybeSingle();
+          return data;
+        })(),
       ]);
+      const laborConfig = laborConfigRaw;
 
       const userIdsFromEntries = [...new Set(entries.map((e: any) => e.user_id))];
       const userIdsFromSchedules = [...new Set(schedules.map((s: any) => s.user_id))];
