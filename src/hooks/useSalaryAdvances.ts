@@ -50,8 +50,9 @@ export interface SalaryAdvance {
 }
 
 export function useSalaryAdvances(branchId: string | undefined, selectedMonth?: Date) {
+  const monthKey = selectedMonth ? `${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}` : undefined;
   return useQuery({
-    queryKey: salaryAdvanceKeys.list(branchId || ''),
+    queryKey: salaryAdvanceKeys.list(branchId || '', monthKey),
     queryFn: async () => {
       if (!branchId) return [];
       return (await fetchSalaryAdvances(branchId, selectedMonth)) as SalaryAdvance[];
