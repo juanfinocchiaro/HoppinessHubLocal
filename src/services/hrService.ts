@@ -1054,3 +1054,62 @@ export async function getStorageSignedUrl(bucket: string, path: string) {
   const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
   return data?.signedUrl || null;
 }
+
+// ── Payroll Closing ─────────────────────────────────────────────────
+
+export async function fetchPayrollClosing(branchId: string, month: number, year: number) {
+  const { data, error } = await fromUntyped('payroll_closings')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('month', month)
+    .eq('year', year)
+    .maybeSingle();
+  if (error) return null;
+  return data;
+}
+
+export async function closePayrollMonth(params: {
+  branchId: string;
+  month: number;
+  year: number;
+  closedBy: string;
+  notes?: string;
+}) {
+  const { data, error } = await fromUntyped('payroll_closings').insert({
+    branch_id: params.branchId,
+    month: params.month,
+    year: params.year,
+    closed_by: params.closedBy,
+    notes: params.notes || null,
+    closed_at: new Date().toISOString(),
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function reopenPayrollMonth(params: {
+  branchId: string;
+  month: number;
+  year: number;
+  notes?: string;
+}) {
+  const { data, error } = await fromUntyped('payroll_closings')
+    .update({ reopened_at: new Date().toISOString(), reopen_notes: params.notes || null })
+    .eq('branch_id', params.branchId)
+    .eq('month', params.month)
+    .eq('year', params.year)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchEmployeeConsumptions(branchId: string, startDate: string, endDate: string) {
+  const { data, error } = await fromUntyped('employee_consumptions')
+    .select('user_id, amount')
+    .eq('branch_id', branchId)
+    .gte('consumption_date', startDate)
+    .lte('consumption_date', endDate);
+  if (error) return [];
+  return data || [];
+}

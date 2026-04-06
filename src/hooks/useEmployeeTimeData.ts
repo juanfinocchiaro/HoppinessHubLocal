@@ -71,7 +71,7 @@ export function useEmployeeTimeData({ branchId, year, month, userId }: UseEmploy
 
       return {
         entries,
-        holidays: new Set(holidays),
+        holidays: new Set<string>(holidays),
         schedules,
         absences,
         usersData,
