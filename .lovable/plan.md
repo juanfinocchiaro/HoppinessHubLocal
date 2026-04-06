@@ -1,4 +1,5 @@
 
+
 ## Formatear puestos y ajustar columnas del PDF de Liquidación
 
 ### Problema
@@ -31,3 +32,4 @@
 
 ### Archivo a modificar
 - `src/utils/laborExport.ts`
+
