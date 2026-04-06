@@ -170,22 +170,48 @@ export function pairClockEntries(
     }
 
     for (const [scheduleId, group] of bySchedule) {
-      const cin = group.find((g) => g.entry_type === 'clock_in') ?? null;
-      const cout = group.find((g) => g.entry_type === 'clock_out') ?? null;
-      if (!cin) continue;
-      const minutesWorked = cout
-        ? Math.max(0, differenceInMinutes(new Date(cout.created_at), new Date(cin.created_at)))
-        : includeInProgress
-          ? Math.max(0, differenceInMinutes(new Date(), new Date(cin.created_at)))
+      let pendingIn: RawClockEntry | null = null;
+      for (const e of group) {
+        if (e.entry_type === 'clock_in') {
+          if (pendingIn) {
+            const mw = includeInProgress
+              ? Math.max(0, differenceInMinutes(new Date(), new Date(pendingIn.created_at)))
+              : 0;
+            pairs.push({
+              date: toDateStr(pendingIn),
+              clockIn: pendingIn,
+              clockOut: null,
+              minutesWorked: mw,
+              scheduleId,
+              isManual: !!pendingIn.is_manual,
+            });
+          }
+          pendingIn = e;
+        } else if (e.entry_type === 'clock_out' && pendingIn) {
+          pairs.push({
+            date: toDateStr(pendingIn),
+            clockIn: pendingIn,
+            clockOut: e,
+            minutesWorked: Math.max(0, differenceInMinutes(new Date(e.created_at), new Date(pendingIn.created_at))),
+            scheduleId,
+            isManual: !!pendingIn.is_manual || !!e.is_manual,
+          });
+          pendingIn = null;
+        }
+      }
+      if (pendingIn) {
+        const mw = includeInProgress
+          ? Math.max(0, differenceInMinutes(new Date(), new Date(pendingIn.created_at)))
           : 0;
-      pairs.push({
-        date: toDateStr(cin),
-        clockIn: cin,
-        clockOut: cout,
-        minutesWorked,
-        scheduleId,
-        isManual: !!cin.is_manual || !!cout?.is_manual,
-      });
+        pairs.push({
+          date: toDateStr(pendingIn),
+          clockIn: pendingIn,
+          clockOut: null,
+          minutesWorked: mw,
+          scheduleId,
+          isManual: !!pendingIn.is_manual,
+        });
+      }
     }
 
     pairs.push(...pairClockEntries(unlinked, { includeInProgress }));
