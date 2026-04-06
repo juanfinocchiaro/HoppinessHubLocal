@@ -254,6 +254,10 @@ function resolveRowStatus(
   }
 
   if (schedule.is_day_off) {
+    const pos = schedule.position;
+    if (pos === 'vacaciones') {
+      return { status: 'vacation', isLate: false, lateMinutes: 0 };
+    }
     return { status: 'day_off', isLate: false, lateMinutes: 0 };
   }
 
