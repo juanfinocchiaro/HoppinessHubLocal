@@ -414,8 +414,8 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
 }
 
 export async function updateVentaMensual(id: string, payload: VentaMensualPayload) {
-  const vt = payload.venta_total ?? 0;
-  const ef = payload.efectivo ?? 0;
+  const vt = payload.total_sales ?? 0;
+  const ef = payload.cash ?? 0;
   const fc = vt - ef;
   const { error } = await fromUntyped('branch_monthly_sales')
     .update({
