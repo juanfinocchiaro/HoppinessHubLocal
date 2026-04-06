@@ -94,6 +94,9 @@ export interface EmployeeLaborSummary {
   // Horas de licencia (separadas)
   hsLicencia: number;
 
+  // Per-day lateness breakdown
+  dailyLateness: { date: string; minutes: number; scheduledStart: string }[];
+
   // Control
   entries: DayEntry[];
   hasUnpairedEntries: boolean;
@@ -448,37 +451,38 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
     // Calculate cumulative lateness (tardanza acumulativa)
     // Only count on working days (skip francos, vacaciones, holidays)
     let tardanzaAcumuladaMin = 0;
+    const dailyLateness: { date: string; minutes: number; scheduledStart: string }[] = [];
     for (const entry of paired) {
       if (!entry.checkIn) continue;
-      // Skip days off, holidays, and vacations
       if (entry.isDayOff || entry.isHoliday) continue;
       const position = positionByDate.get(entry.date);
       if (position === 'vacaciones' || position === 'cumple') continue;
 
-      // Find schedule for this entry's date
       const daySchedules = schedules.filter(
         (s: any) => s.user_id === userId && s.schedule_date === entry.date && !s.is_day_off && s.start_time,
       );
       if (daySchedules.length === 0) continue;
 
-      // Convert clock-in to Argentina local time (UTC-3)
       const clockInTime = new Date(entry.checkIn);
       const argentinaOffsetMs = -3 * 60 * 60 * 1000;
       const localClockIn = new Date(clockInTime.getTime() + clockInTime.getTimezoneOffset() * 60000 + argentinaOffsetMs);
       const clockInMin = localClockIn.getHours() * 60 + localClockIn.getMinutes();
 
-      // Find closest schedule and check lateness
       let bestLate = 0;
       let bestDist = Infinity;
+      let bestSchedStart = '';
       for (const s of daySchedules) {
         const [h, m] = (s as any).start_time.split(':').map(Number);
         const schedMin = h * 60 + m;
         const diff = ((clockInMin - schedMin) % 1440 + 1440) % 1440;
-        // Only count as late if diff < 360 (6 hours — reasonable window)
         if (diff > 0 && diff < 360 && diff < bestDist) {
           bestDist = diff;
           bestLate = diff;
+          bestSchedStart = (s as any).start_time;
         }
+      }
+      if (bestLate > 0) {
+        dailyLateness.push({ date: entry.date, minutes: bestLate, scheduledStart: bestSchedStart });
       }
       tardanzaAcumuladaMin += bestLate;
     }
@@ -547,6 +551,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
       diasVacaciones,
       hsLicencia: Number(hsLicencia.toFixed(2)),
 
+      dailyLateness,
       entries: paired,
       hasUnpairedEntries: unpairedEntries.length > 0,
       unpairedCount: unpairedEntries.length,

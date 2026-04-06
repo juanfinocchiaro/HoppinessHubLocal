@@ -50,6 +50,7 @@ import {
   type EmployeeLaborSummary,
 } from '@/hooks/useLaborHours';
 import { exportLaborPDF, exportLaborExcel } from '@/utils/laborExport';
+import { exportEmployeePDF, exportEmployeeExcel } from '@/utils/laborEmployeeExport';
 import { LOCAL_ROLE_LABELS } from '@/hooks/usePermissions';
 
 interface LaborHoursSummaryProps {
@@ -60,10 +61,12 @@ function EmployeeRow({
   summary,
   expanded,
   onToggle,
+  monthLabel,
 }: {
   summary: EmployeeLaborSummary;
   expanded: boolean;
   onToggle: () => void;
+  monthLabel: string;
 }) {
   const initials = summary.userName
     .split(' ')
@@ -182,7 +185,31 @@ function EmployeeRow({
           )}
         </TableCell>
         <TableCell className="text-center">
-          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <div className="flex items-center gap-1 justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportEmployeePDF(summary, monthLabel); }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF individual
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportEmployeeExcel(summary, monthLabel); }}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel individual
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </TableCell>
       </TableRow>
 
@@ -513,6 +540,7 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
                     onToggle={() =>
                       setExpandedUserId(expandedUserId === summary.userId ? null : summary.userId)
                     }
+                    monthLabel={monthLabelCapitalized}
                   />
                 ))}
               </TableBody>
