@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import type { EmployeeLaborSummary, LaborStats } from '@/hooks/useLaborHours';
+import type { EmployeeLaborSummary, LaborStats, PositionBreakdown } from '@/hooks/useLaborHours';
 import { formatHoursDecimal } from '@/hooks/useLaborHours';
 
 const HEADERS = [
