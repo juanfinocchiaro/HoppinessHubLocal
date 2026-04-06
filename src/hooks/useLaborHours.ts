@@ -551,6 +551,7 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
       diasVacaciones,
       hsLicencia: Number(hsLicencia.toFixed(2)),
 
+      dailyLateness,
       entries: paired,
       hasUnpairedEntries: unpairedEntries.length > 0,
       unpairedCount: unpairedEntries.length,
