@@ -95,9 +95,6 @@ export function EmployeeSummaryPanel({
   const { data: workingTeam } = useCurrentlyWorkingTeam(branchId);
   const workingEntry = workingTeam?.find((m) => m.user_id === userId);
   const isWorking = !!workingEntry;
-  const _workingSince = workingEntry // eslint-disable-line @typescript-eslint/no-unused-vars
-    ? format(new Date(workingEntry.check_in), 'HH:mm')
-    : null;
   const workingMin = workingEntry?.minutesWorking ?? 0;
 
   // ── Data: today's clock entries ──

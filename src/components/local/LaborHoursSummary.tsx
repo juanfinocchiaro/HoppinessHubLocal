@@ -2,8 +2,9 @@
  * LaborHoursSummary Component
  *
  * Resumen de horas trabajadas con cálculos dinámicos desde labor_config.
- * Columnas: Empleado, Hs Trabajadas, Hs Regulares, Hs Extras, Hs Feriado,
- *           Hs Franco, Licencia (días), Faltas Inj., Presentismo.
+ * Columnas: Empleado, Hs Trabajadas, Hs Regulares, Vacaciones, Faltas Inj.,
+ *           Falta Just., Tardanza, Hs Feriados, Hs Franco, Extras Hábil,
+ *           Extras Inhábil, Presentismo.
  */
 import { useState } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
@@ -69,7 +70,7 @@ function EmployeeRow({
         className={`cursor-pointer hover:bg-muted/50 ${summary.hasUnpairedEntries ? 'bg-amber-50/50' : ''}`}
         onClick={onToggle}
       >
-        {/* Empleado */}
+        {/* 1. Empleado */}
         <TableCell>
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
@@ -86,29 +87,51 @@ function EmployeeRow({
             </div>
           </div>
         </TableCell>
-        {/* Hs Trabajadas */}
+        {/* 2. Hs Trabajadas */}
         <TableCell className="text-center">
           <span className="font-bold">{summary.hsTrabajadasMes.toFixed(1)}</span>
         </TableCell>
-        {/* Hs Regulares */}
+        {/* 3. Hs Regulares */}
         <TableCell className="text-center">
           {summary.hsRegulares > 0 ? summary.hsRegulares.toFixed(1) : '-'}
         </TableCell>
-        {/* Hs Extras */}
+        {/* 4. Vacaciones (días) */}
         <TableCell className="text-center">
-          {summary.hsExtrasDiaHabil > 0 ? (
-            <span className="text-amber-600 font-medium">
-              {summary.hsExtrasDiaHabil.toFixed(1)}
-            </span>
+          {summary.diasVacaciones > 0 ? (
+            <span className="text-cyan-600 font-medium">{summary.diasVacaciones}d</span>
           ) : (
             '-'
           )}
         </TableCell>
-        {/* Hs Feriado */}
+        {/* 5. Faltas Inj. */}
+        <TableCell className="text-center">
+          {summary.faltasInjustificadas > 0 ? (
+            <span className="text-destructive font-medium">{summary.faltasInjustificadas}</span>
+          ) : (
+            '0'
+          )}
+        </TableCell>
+        {/* 6. Falta Justificada (horas) */}
+        <TableCell className="text-center">
+          {summary.hsLicencia > 0 ? (
+            <span className="text-orange-600 font-medium">{summary.hsLicencia.toFixed(1)}h</span>
+          ) : (
+            '-'
+          )}
+        </TableCell>
+        {/* 7. Tardanza (minutos) */}
+        <TableCell className="text-center">
+          {summary.tardanzaAcumuladaMin > 0 ? (
+            <span className="text-amber-600 font-medium">{summary.tardanzaAcumuladaMin}m</span>
+          ) : (
+            '0'
+          )}
+        </TableCell>
+        {/* 8. Hs Feriados */}
         <TableCell className="text-center">
           {summary.feriadosHs > 0 ? summary.feriadosHs.toFixed(1) : '-'}
         </TableCell>
-        {/* Hs Franco */}
+        {/* 9. Hs Franco */}
         <TableCell className="text-center">
           {summary.hsFrancoTrabajado > 0 ? (
             <span className="text-blue-600 font-medium">
@@ -118,39 +141,36 @@ function EmployeeRow({
             '-'
           )}
         </TableCell>
-        {/* Licencia (días) */}
+        {/* 10. Extras Hábil */}
         <TableCell className="text-center">
-          {summary.diasVacaciones > 0 ? (
-            <span className="text-cyan-600 font-medium">{summary.diasVacaciones}d</span>
+          {summary.hsExtrasDiaHabil > 0 ? (
+            <span className="text-amber-600 font-medium">
+              {summary.hsExtrasDiaHabil.toFixed(1)}
+            </span>
           ) : (
             '-'
           )}
         </TableCell>
-        {/* Faltas Inj. */}
+        {/* 11. Extras Inhábil */}
         <TableCell className="text-center">
-          {summary.faltasInjustificadas > 0 ? (
-            <span className="text-destructive font-medium">{summary.faltasInjustificadas}</span>
+          {summary.hsExtrasInhabil > 0 ? (
+            <span className="text-purple-600 font-medium">
+              {summary.hsExtrasInhabil.toFixed(1)}
+            </span>
           ) : (
-            '0'
+            '-'
           )}
         </TableCell>
-        {/* Presentismo */}
+        {/* 12. Presentismo */}
         <TableCell className="text-center">
           {summary.presentismo ? (
             <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
               SI
             </Badge>
           ) : (
-            <div className="flex flex-col items-center gap-0.5">
-              <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
-                NO
-              </Badge>
-              {summary.tardanzaAcumuladaMin > 0 && (
-                <span className="text-[10px] text-muted-foreground">
-                  ({summary.tardanzaAcumuladaMin}m tard.)
-                </span>
-              )}
-            </div>
+            <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
+              NO
+            </Badge>
           )}
         </TableCell>
         <TableCell className="text-center">
@@ -160,7 +180,7 @@ function EmployeeRow({
 
       {expanded && (
         <TableRow>
-          <TableCell colSpan={10} className="bg-muted/30 p-4">
+          <TableCell colSpan={14} className="bg-muted/30 p-4">
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Detalle de fichajes</h4>
               <div className="grid gap-1 max-h-48 overflow-y-auto">
@@ -360,7 +380,7 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
                 <Info className="h-3 w-3" /> Hs Regulares
               </TooltipTrigger>
               <TooltipContent>
-                <p className="max-w-xs">Primeras {config.daily_hours_limit}hs de cada día hábil</p>
+                <p className="max-w-xs">Primeras {config.daily_hours_limit}hs de cada día (sin feriado ni franco)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -368,11 +388,24 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="flex items-center gap-1">
-                <Info className="h-3 w-3" /> Hs Extras
+                <Info className="h-3 w-3" /> Extras Hábil
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs">
-                  Exceso sobre {config.daily_hours_limit}hs en cada día hábil (suma diaria)
+                  Exceso sobre {config.daily_hours_limit}hs en Lunes a Viernes
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-1">
+                <Info className="h-3 w-3" /> Extras Inhábil
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">
+                  Exceso sobre {config.daily_hours_limit}hs en Sábados y Domingos
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -394,7 +427,7 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="flex items-center gap-1">
-                <Info className="h-3 w-3" /> Licencia
+                <Info className="h-3 w-3" /> Vacaciones
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs">
@@ -426,11 +459,14 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
                   <TableHead>Empleado</TableHead>
                   <TableHead className="text-center">Hs Trabajadas</TableHead>
                   <TableHead className="text-center">Hs Regulares</TableHead>
-                  <TableHead className="text-center">Hs Extras</TableHead>
-                  <TableHead className="text-center">Hs Feriado</TableHead>
-                  <TableHead className="text-center">Hs Franco</TableHead>
-                  <TableHead className="text-center">Licencia</TableHead>
+                  <TableHead className="text-center">Vacaciones</TableHead>
                   <TableHead className="text-center">Faltas Inj.</TableHead>
+                  <TableHead className="text-center">Falta Just.</TableHead>
+                  <TableHead className="text-center">Tardanza</TableHead>
+                  <TableHead className="text-center">Hs Feriados</TableHead>
+                  <TableHead className="text-center">Hs Franco</TableHead>
+                  <TableHead className="text-center">Extras Hábil</TableHead>
+                  <TableHead className="text-center">Extras Inhábil</TableHead>
                   <TableHead className="text-center">Presentismo</TableHead>
                   <TableHead className="w-8"></TableHead>
                 </TableRow>
