@@ -37,7 +37,7 @@ export function PromoItemRow({ item, discountPercent, onUpdate, onRemove }: Prom
     if (existing.some((e) => e.extra_item_carta_id === extraId)) {
       next = existing.filter((e) => e.extra_item_carta_id !== extraId);
     } else {
-      next = [...existing, { extra_item_carta_id: extraId, nombre, cantidad: 1, precio_extra: precio }];
+      next = [...existing, { extra_item_carta_id: extraId, name: nombre, quantity: 1, precio_extra: precio }];
     }
     const newPrice = computeAutoPrice(item.base_price, next, discountPercent);
     onUpdate({ ...item, preconfigExtras: next.length > 0 ? next : undefined, precio_promo: newPrice });
