@@ -39,6 +39,7 @@ export function useScheduleActions({
   onCellChange,
   getTeamMemberName,
   enabled,
+  teamDefaultPositions,
 }: UseScheduleActionsOptions) {
   const [clipboard, setClipboard] = useState<ClipboardDataV2 | null>(null);
 
