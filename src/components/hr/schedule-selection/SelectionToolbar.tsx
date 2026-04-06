@@ -10,7 +10,7 @@
  * - Copy/Paste/Clear buttons
  * - Keyboard shortcut hints
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,15 @@ import { cn } from '@/lib/utils';
 import type { ClipboardDataV2 } from './types';
 import type { WorkPosition } from '@/hooks/useWorkPositions';
 
+interface InitialToolbarValues {
+  startTime: string;
+  endTime: string;
+  position: string | null;
+  isSplitShift: boolean;
+  startTime2?: string;
+  endTime2?: string;
+}
+
 interface SelectionToolbarProps {
   selectionCount: number;
   clipboard: ClipboardDataV2 | null;
@@ -60,6 +69,7 @@ interface SelectionToolbarProps {
   onDeselect: () => void;
   positions?: WorkPosition[];
   showBirthday?: boolean;
+  initialValues?: InitialToolbarValues;
   className?: string;
 }
 
@@ -76,6 +86,7 @@ export function SelectionToolbar({
   onDeselect,
   positions = [],
   showBirthday = false,
+  initialValues,
   className,
 }: SelectionToolbarProps) {
   const [startTime, setStartTime] = useState('19:00');
@@ -87,6 +98,18 @@ export function SelectionToolbar({
   const [isSplitShift, setIsSplitShift] = useState(false);
   const [startTime2, setStartTime2] = useState('20:00');
   const [endTime2, setEndTime2] = useState('01:00');
+
+  // Pre-fill from selected cell
+  useEffect(() => {
+    if (initialValues) {
+      setStartTime(initialValues.startTime);
+      setEndTime(initialValues.endTime);
+      setSelectedPosition(initialValues.position || '');
+      setIsSplitShift(initialValues.isSplitShift);
+      if (initialValues.startTime2) setStartTime2(initialValues.startTime2);
+      if (initialValues.endTime2) setEndTime2(initialValues.endTime2);
+    }
+  }, [initialValues]);
 
   const handleApply = () => {
     if (startTime && endTime) {
