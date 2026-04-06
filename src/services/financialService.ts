@@ -35,8 +35,8 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
       marketing_porcentaje: data.marketing_porcentaje ?? 0.5,
       marketing_monto: data.marketing_monto,
       total_canon: data.total_canon,
-      fecha_vencimiento: data.fecha_vencimiento,
-      notes: data.observaciones,
+      fecha_vencimiento: data.due_date,
+      notes: data.notes,
       created_by: userId,
     })
     .select()
