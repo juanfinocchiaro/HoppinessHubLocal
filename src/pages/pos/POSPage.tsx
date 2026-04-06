@@ -163,7 +163,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
   const updateNotes = useCallback((index: number, notes: string) => {
     setCart((prev) => {
       const copy = [...prev];
-      copy[index] = { ...copy[index], notas: notes || undefined };
+      copy[index] = { ...copy[index], notes: notes || undefined };
       return copy;
     });
   }, []);
