@@ -295,8 +295,11 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
     staleTime: 60 * 1000,
   });
 
-  // Query datos de usuarios
-  const userIds = [...new Set(rawEntries.map((e) => e.user_id))];
+  // Include user_ids from both entries AND schedules (so vacation-only employees appear)
+  const userIds = [...new Set([
+    ...rawEntries.map((e) => e.user_id),
+    ...schedules.map((s: any) => s.user_id as string),
+  ])];
 
   const { data: usersData = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['labor-users', branchId, userIds.join(',')],
