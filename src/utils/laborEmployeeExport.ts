@@ -206,6 +206,17 @@ export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string,
   data.push(['Extras Hábil', s.hsExtrasDiaHabil]);
   data.push(['Extras Inhábil', s.hsExtrasInhabil]);
   data.push(['Presentismo', s.presentismo ? 'SI' : 'NO']);
+
+  // Position breakdown
+  if (s.positionBreakdown.length > 0) {
+    data.push([]);
+    data.push(['DESGLOSE POR PUESTO', '']);
+    for (const pb of s.positionBreakdown) {
+      const posLabel = pb.position.charAt(0).toUpperCase() + pb.position.slice(1);
+      data.push([`  ${posLabel}`, pb.hsTrabajadas]);
+    }
+  }
+
   data.push([]);
 
   // Daily detail
