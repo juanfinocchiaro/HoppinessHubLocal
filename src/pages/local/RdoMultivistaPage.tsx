@@ -339,7 +339,7 @@ export default function RdoMultivistaPage() {
                           }))
                         }
                       />
-                      <span>{cat.name}</span>
+                      <span>{cat.nombre}</span>
                     </label>
                   );
                 })}
