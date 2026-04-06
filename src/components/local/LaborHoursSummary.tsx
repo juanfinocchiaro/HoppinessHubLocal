@@ -306,20 +306,35 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
 
   const { summaries, stats, config, loading } = useLaborHours({ branchId, year, month });
 
+  const { data: branchName = '' } = useQuery({
+    queryKey: ['branch-name', branchId],
+    queryFn: async () => {
+      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
+      return data?.name || '';
+    },
+    enabled: !!branchId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
 
   const monthLabel = format(currentDate, 'MMMM yyyy', { locale: es });
   const monthLabelCapitalized = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const monthOnly = format(currentDate, 'MMMM', { locale: es }).toUpperCase();
+  const yearStr = format(currentDate, 'yyyy');
+  const branchTag = branchName.toUpperCase().replace(/\s+/g, '_');
 
   const configInfo = { dailyLimit: config.daily_hours_limit, lateTolerance: config.late_tolerance_total_min };
 
   const handleExportPDF = () => {
-    exportLaborPDF(summaries, stats, monthLabelCapitalized, configInfo);
+    const filename = `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_FULL`;
+    exportLaborPDF(summaries, stats, monthLabelCapitalized, configInfo, filename);
   };
 
   const handleExportExcel = () => {
-    exportLaborExcel(summaries, stats, monthLabelCapitalized, configInfo);
+    const filename = `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_FULL`;
+    exportLaborExcel(summaries, stats, monthLabelCapitalized, configInfo, filename);
   };
 
   if (loading) {
