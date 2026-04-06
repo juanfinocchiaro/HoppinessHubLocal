@@ -176,7 +176,7 @@ export async function fetchRdoUnifiedReport(
         ticket_promedio: toNumber(r.ticket_promedio),
       })),
       por_medio_pago: toArray<any>(mv?.por_medio_pago).map((r) => ({
-        medio_pago: String(r.medio_pago ?? 'otro'),
+        payment_method: String(r.medio_pago ?? r.payment_method ?? 'otro'),
         pedidos: toNumber(r.pedidos),
         ventas: toNumber(r.ventas),
         porcentaje: toNumber(r.porcentaje),
