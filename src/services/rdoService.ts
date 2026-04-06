@@ -71,7 +71,7 @@ function normalizeMultivistaPayload(payload: any): RdoMultivistaData {
       ticket_promedio: toNumber(row.ticket_promedio),
     })),
     por_medio_pago: toArray<any>(payload?.por_medio_pago).map((row) => ({
-      medio_pago: String(row.medio_pago ?? 'otro'),
+      payment_method: String(row.medio_pago ?? row.payment_method ?? 'otro'),
       pedidos: toNumber(row.pedidos),
       ventas: toNumber(row.ventas),
       porcentaje: toNumber(row.porcentaje),
