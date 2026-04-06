@@ -171,8 +171,7 @@ export function exportEmployeePDF(s: EmployeeLaborSummary, monthLabel: string, f
     );
   }
 
-  const safeName = s.userName.replace(/\s+/g, '_').toLowerCase();
-  doc.save(`resumen-${safeName}-${monthLabel.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  doc.save(`${filename || `resumen-${s.userName.replace(/\s+/g, '_').toLowerCase()}`}.pdf`);
 }
 
 export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string) {
