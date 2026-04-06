@@ -1,76 +1,50 @@
 
 
-# Reestructurar Liquidación: columnas correctas y extras hábil/inhábil
+# Fix Faltas Injustificadas en Liquidación
 
-## Columnas solicitadas (en orden)
+## Problema raíz
 
-| # | Columna | Definición |
-|---|---------|-----------|
-| 1 | Empleado | Nombre + rol |
-| 2 | Hs Trabajadas | Total de todas las horas trabajadas |
-| 3 | Hs Regulares | Horas dentro del límite diario 9hs, en días hábiles (L-D), sin feriado ni franco |
-| 4 | Vacaciones | Días de vacaciones configurados en Horarios (`work_position='vacaciones'`) |
-| 5 | Faltas Inj. | Cantidad de faltas del mes (consistente con Fichajes) |
-| 6 | Falta Justificada | Horas que suman las faltas justificadas según el horario del día |
-| 7 | Tardanza | Minutos acumulados de tardanza (mismo motor que Fichajes) |
-| 8 | Hs Feriados | Horas trabajadas en feriados |
-| 9 | Hs Franco | Horas trabajadas en francos |
-| 10 | Extras Hábil | Exceso sobre 9hs diarias en días Lunes a Viernes |
-| 11 | Extras Inhábil | **NUEVO** — Exceso sobre 9hs diarias en Sábados y Domingos |
-| 12 | Presentismo | SI/NO + minutos de tardanza |
+En **Fichajes**, una "falta" se detecta automáticamente: si el empleado tiene horario programado y no fichó → "Ausente".
 
-## Cambios en `src/hooks/useLaborHours.ts`
+En **Liquidación**, las faltas se cuentan desde `schedule_requests` (tabla de solicitudes). Si nadie creó un registro de ausencia para Micaela el 15/03, la falta no aparece.
 
-### A. Nuevo campo `hsExtrasInhabil`
-Agregar a `EmployeeLaborSummary` el campo `hsExtrasInhabil: number`.
+**Son dos motores distintos para el mismo concepto.** Liquidación debe usar la misma lógica que Fichajes.
 
-### B. Clasificar extras por día de semana
-En el loop de `hoursByDay`, para días hábiles (no feriado, no franco):
+## Solución
+
+Calcular faltas injustificadas directamente en `useLaborHours.ts` cruzando **schedules con clock_entries**, sin depender de `schedule_requests`.
+
+### Lógica unificada para contar faltas
+
 ```text
-const dayOfWeek = new Date(date + 'T12:00:00').getDay(); // 0=Dom, 6=Sab
-const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-hsRegulares += min(horasDia, 9)
-if (isWeekend) {
-  hsExtrasInhabil += max(0, horasDia - 9)
-} else {
-  hsExtrasDiaHabil += max(0, horasDia - 9)
-}
+Para cada día del mes hasta hoy:
+  - Obtener schedules del usuario en ese día
+  - Si tiene horario programado (is_day_off=false, start_time existe):
+    - Si NO hay ningún clock_in ese día en completedEntries ni paired:
+      - Si ese día tiene un absence aprobado en schedule_requests → falta JUSTIFICADA
+      - Si no → falta INJUSTIFICADA
 ```
 
-### C. Renombrar y aclarar campos
-- `diasVacaciones` ya existe y se calcula desde schedules con `work_position='vacaciones'` — correcto
-- `hsLicencia` ya se calcula cruzando absences justificadas con horarios — renombrar en UI a "Falta Justificada"
-- `tardanzaAcumuladaMin` ya existe — mostrarlo como columna separada
+Esto replica exactamente lo que Fichajes muestra como "Ausente".
 
-### D. Actualizar `generateLaborCSV`
-Agregar columna EXTRAS INHÁBIL y reorganizar columnas.
+## Archivo a modificar
 
-## Cambios en `src/components/local/LaborHoursSummary.tsx`
+### `src/hooks/useLaborHours.ts`
 
-Reorganizar columnas de la tabla al orden solicitado:
-1. Empleado
-2. Hs Trabajadas
-3. Hs Regulares
-4. Vacaciones (días) — era "Licencia"
-5. Faltas Inj.
-6. Falta Just. (horas de `hsLicencia`)
-7. Tardanza (minutos)
-8. Hs Feriados
-9. Hs Franco
-10. Extras Hábil (`hsExtrasDiaHabil`)
-11. Extras Inhábil (`hsExtrasInhabil`) — **NUEVO**
-12. Presentismo
+**Reemplazar** el cálculo actual de `faltasInjustificadas` y `faltasJustificadas` (líneas 402-414) que solo cuenta registros de `schedule_requests`, por:
 
-Actualizar tooltips, stats cards, y colspan del detalle expandido (colSpan=13).
+1. Iterar cada fecha del mes (hasta hoy, no fechas futuras)
+2. Verificar si el usuario tiene schedule con `is_day_off=false` y `start_time`
+3. Verificar si existe al menos un clock_in en `paired` para esa fecha
+4. Si no fichó → verificar si hay absence aprobado en `schedule_requests`
+   - Sí → `faltasJustificadas++` y sumar horas a `hsLicencia`
+   - No → `faltasInjustificadas++`
+5. Excluir días con `work_position='vacaciones'` o `'cumple'` (no son faltas)
+6. Excluir feriados (no son faltas)
 
-## Fix build error
-- `src/components/local/EmployeeSummaryPanel.tsx` línea 98: eliminar `_workingSince` no usada
+### Impacto en otros campos
 
-## Archivos a modificar (3)
-1. `src/hooks/useLaborHours.ts` — agregar `hsExtrasInhabil`, clasificar por día de semana
-2. `src/components/local/LaborHoursSummary.tsx` — reorganizar columnas
-3. `src/components/local/EmployeeSummaryPanel.tsx` — fix variable no usada
-
-Los demás build errors (PromocionesPage, POSPage, FichaTecnicaTab, financialService, etc.) son pre-existentes y no están relacionados con esta funcionalidad.
+- **Presentismo** se recalcula automáticamente (ya usa `faltasInjustificadas`)
+- **Falta Justificada** (hsLicencia) también se beneficia porque ahora detecta el día aunque no haya registro en `schedule_requests`
+- No se tocan las columnas de la tabla UI (ya están correctas del cambio anterior)
 
