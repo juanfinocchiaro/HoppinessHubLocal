@@ -99,7 +99,7 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
         if (!source) return null;
         return {
           id: e.id,
-          nombre: source.nombre,
+          nombre: source.name,
           precio: source.precio_extra ?? 0,
         };
       })
