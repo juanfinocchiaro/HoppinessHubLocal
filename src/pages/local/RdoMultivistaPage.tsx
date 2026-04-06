@@ -370,7 +370,7 @@ export default function RdoMultivistaPage() {
                           }))
                         }
                       />
-                      <span>{prod.name}</span>
+                      <span>{prod.nombre}</span>
                       {prod.categoria_nombre && (
                         <Badge variant="outline">{prod.categoria_nombre}</Badge>
                       )}
