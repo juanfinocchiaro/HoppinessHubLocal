@@ -54,7 +54,7 @@ export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConf
 
   useEffect(() => {
     if (open) {
-      setTipoFactura((facturaOriginal.tipo_comprobante === 'A' ? 'A' : 'B') as 'A' | 'B');
+      setTipoFactura((facturaOriginal.receipt_type === 'A' ? 'A' : 'B') as 'A' | 'B');
       setCuit('');
       setRazonSocial('');
       setCondicionIva('Consumidor Final');
