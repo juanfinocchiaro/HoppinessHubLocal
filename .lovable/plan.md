@@ -1,30 +1,33 @@
 
+## Formatear puestos y ajustar columnas del PDF de Liquidación
 
-## Agregar glosario/leyenda al PDF de Liquidación
+### Problema
+1. Los puestos se muestran con guiones bajos tal como están en la base de datos (ej: `Encargado_turno` en vez de `Encargado de Turno`)
+2. Las columnas no están bien dimensionadas, causando que el texto se corte o quede apretado
 
-### Qué se hace
-Después de la tabla principal de datos, agregar una sección "Referencias" con la descripción de cada columna para que cualquier persona (estudio contable, franquiciado, etc.) entienda el informe sin necesidad de explicación.
+### Solución
 
-### Contenido de la leyenda
+**`src/utils/laborExport.ts`**:
 
-| Columna | Descripción |
-|---------|-------------|
-| Hs Trab. | Total de horas trabajadas en el mes (incluye feriados, francos, todo lo trabajado en el local) |
-| Hs Reg. | Horas regulares de trabajo en el local |
-| Vacac. | Dias de vacaciones tomados |
-| Faltas Inj. | Faltas injustificadas. No afecta liquidacion pero el empleado pierde el presentismo |
-| Falta Just. | Falta justificada: se computan las horas del horario programado ese dia |
-| Tardanza | Minutos de tardanza acumulados en el mes. 15 min acumulados = pierde presentismo |
-| Hs Fer. | Horas trabajadas en dias feriado |
-| Hs Franco | Horas trabajadas en dia franco |
-| Ext. Hab. | Horas extras de lunes a viernes |
-| Ext. Inh. | Horas extras de sabado y domingo |
-| Present. | Presentismo: SI si no tiene faltas injustificadas ni tardanza mayor a 15 min |
+1. **Agregar función `formatPosition()`** que reemplace guiones bajos por espacios y capitalice correctamente:
+   ```typescript
+   function formatPosition(pos: string | null | undefined): string {
+     if (!pos) return '-';
+     return pos
+       .replace(/_/g, ' ')
+       .replace(/\b\w/g, c => c.toUpperCase());
+   }
+   ```
 
-### Implementacion
+2. **Aplicar en `buildRows()`** — en las 3 instancias donde se usa el puesto (single position, multi position header, sub-rows)
 
-Se agrega una tabla compacta tipo `autoTable` debajo de la tabla principal (o en la ultima pagina si no entra), con dos columnas: "Columna" y "Descripcion", usando fuente pequena (7-8pt) y estilo sutil para que no compita visualmente con los datos.
+3. **Aplicar en `exportLaborExcel()`** — línea 288 donde usa `s.localRole`
+
+4. **Ajustar `columnStyles`** del PDF para mejor distribución:
+   - Empleado: 35mm → 38mm
+   - Puesto: 22mm → 28mm (para que entre "Encargado de Turno")
+   - Columnas numéricas: dejar en auto para que se distribuyan el espacio restante
+   - Reducir fontSize general a 7.5 para que entre todo cómodo en landscape A4
 
 ### Archivo a modificar
-- `src/utils/laborExport.ts` — funcion `exportLaborPDF`, agregar seccion de referencias despues de la tabla principal
-
+- `src/utils/laborExport.ts`
