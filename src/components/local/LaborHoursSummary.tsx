@@ -247,6 +247,15 @@ function EmployeeCard({
           <span className="text-muted-foreground">
             Tardanza: {summary.tardanzaAcumuladaMin > 0 ? <span className="text-amber-600 font-medium">{summary.tardanzaAcumuladaMin}m</span> : '0m'}
           </span>
+          <span className="text-muted-foreground flex items-center gap-1">
+            Consumos: {consumos > 0 ? <span className="text-violet-600 font-medium">${consumos.toLocaleString('es-AR')}</span> : '-'}
+            <Button variant="ghost" size="icon" className="h-5 w-5 ml-0.5" onClick={onAddConsumo} title="Registrar consumo">
+              <UtensilsCrossed className="h-3 w-3" />
+            </Button>
+          </span>
+          <span className="text-muted-foreground">
+            Adelantos: {adelantos > 0 ? <span className="text-indigo-600 font-medium">${adelantos.toLocaleString('es-AR')}</span> : '-'}
+          </span>
           <span className="ml-auto">
             {summary.presentismo ? (
               <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">Presentismo: SI</Badge>
