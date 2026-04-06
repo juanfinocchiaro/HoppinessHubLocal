@@ -49,10 +49,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (configError || !config) {
-      return new Response(JSON.stringify({ error: "No hay configuración ARCA para esta sucursal" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "No hay configuración ARCA para esta sucursal ´${branch_id}´ ´${configError}´" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     if (!config.certificado_crt || !config.private_key_enc || !config.point_of_sale) {
