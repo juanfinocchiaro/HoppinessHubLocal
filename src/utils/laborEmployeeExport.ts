@@ -177,11 +177,31 @@ function drawBrandFooter(doc: jsPDF) {
 
 const DAILY_HEADERS = ['Día', 'Horario', 'Entrada', 'Salida', 'Horas', 'Tipo', 'Tardanza'];
 
+interface FinancialItem {
+  date: string;
+  description: string;
+  amount: number;
+}
+
+interface AdvanceItem {
+  date: string;
+  reason: string;
+  amount: number;
+  status: string;
+}
+
+export interface EmployeeFinancialData {
+  consumos: number;
+  adelantos: number;
+  consumoItems?: FinancialItem[];
+  adelantoItems?: AdvanceItem[];
+}
+
 export function exportEmployeePDF(
   s: EmployeeLaborSummary,
   monthLabel: string,
   filename?: string,
-  financialData?: { consumos: number; adelantos: number },
+  financialData?: EmployeeFinancialData,
 ) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
