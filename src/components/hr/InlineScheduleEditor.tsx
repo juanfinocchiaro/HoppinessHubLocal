@@ -240,6 +240,15 @@ export default function InlineScheduleEditor({
   // Team member IDs array for selection
   const teamMemberIds = useMemo(() => team.map((m) => m.id), [team]);
 
+  // Map of userId -> default_position for auto-filling
+  const teamDefaultPositions = useMemo(() => {
+    const map = new Map<string, string>();
+    team.forEach((m) => {
+      if (m.default_position) map.set(m.id, m.default_position);
+    });
+    return map;
+  }, [team]);
+
   // Team member name lookup
   const getTeamMemberName = useCallback(
     (userId: string) => {
