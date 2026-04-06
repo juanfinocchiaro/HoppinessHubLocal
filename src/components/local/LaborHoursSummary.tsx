@@ -51,7 +51,7 @@ import {
 } from '@/hooks/useLaborHours';
 import { useWorkPositions } from '@/hooks/useWorkPositions';
 import { exportLaborPDF, exportLaborExcel } from '@/utils/laborExport';
-import { exportEmployeePDF, exportEmployeeExcel } from '@/utils/laborEmployeeExport';
+import { exportEmployeePDF, exportEmployeeExcel, EmployeeFinancialData } from '@/utils/laborEmployeeExport';
 import {
   useEmployeeConsumptionsByMonth,
   useSalaryAdvancesByMonth,
