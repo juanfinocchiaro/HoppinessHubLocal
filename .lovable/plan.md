@@ -1,39 +1,17 @@
 
 
-## Agregar detalle de consumos y adelantos al PDF individual
+## Fix: Input pierde foco al escribir en "Fichaje manual"
 
-### Problema
-El PDF individual del empleado solo muestra los totales de consumos y adelantos como stat cards, pero el empleado necesita ver el desglose: fecha y concepto de cada consumo y adelanto para poder controlar.
+### Causa raíz
+`ManualEntryForm` está definido como un componente inline (función dentro de `RosterExpandedRow`, línea 182). Cada vez que el usuario escribe en el campo "Motivo", cambia el estado `manualReason`, lo cual re-renderiza el padre, que **recrea** `ManualEntryForm` como una función nueva. React lo interpreta como un componente distinto, lo desmonta y lo vuelve a montar — perdiendo el foco del input.
 
 ### Solución
-Agregar dos tablas compactas después de las stat cards (y antes del detalle diario) con el listado detallado de consumos y adelantos del mes.
+Convertir `ManualEntryForm` de componente inline a JSX directo (inline el markup en lugar de llamarlo como `<ManualEntryForm />`). Esto evita el problema de identidad de componente sin necesidad de extraerlo a un archivo separado.
 
-### Cambios
+En la línea 248 donde se usa `<ManualEntryForm dateStr={dayDateStr} eventKey={...} />`, reemplazar por el JSX del formulario directamente. Lo mismo para cualquier otro lugar donde se use `<ManualEntryForm />` en el archivo (verificar las líneas del historial mensual ~línea 400+).
 
-#### 1. Ampliar el tipo de `financialData` en `exportEmployeePDF`
-Pasar de `{ consumos: number; adelantos: number }` a incluir los items detallados:
-```
-financialData?: {
-  consumos: number;
-  adelantos: number;
-  consumoItems: { date: string; description: string; amount: number }[];
-  adelantoItems: { date: string; reason: string; amount: number; status: string }[];
-}
-```
+Eliminar la definición de `ManualEntryForm` (líneas 182-217) y pegar el contenido directamente donde se invoca.
 
-#### 2. En `laborEmployeeExport.ts` — después de las stat cards y antes del detalle diario
-- Si hay `consumoItems.length > 0`: tabla con header violeta, columnas Fecha | Descripción | Monto
-- Si hay `adelantoItems.length > 0`: tabla con header indigo, columnas Fecha | Motivo | Monto | Estado
-- Totales en fila final de cada tabla (bold)
-- Misma estética que el resto del PDF (zebra-striping, bordes suaves)
-
-#### 3. En `LaborHoursSummary.tsx` — al llamar `exportEmployeePDF`
-- Filtrar los datos crudos de `consumptions` y `advances` (ya disponibles en el componente) por `user_id` del empleado
-- Mapear a la estructura esperada y pasar como parte de `empFin`
-
-#### 4. También actualizar `exportEmployeeExcel` para incluir las mismas secciones detalladas
-
-### Archivos a modificar
-- `src/utils/laborEmployeeExport.ts` — agregar tablas de detalle financiero
-- `src/components/local/LaborHoursSummary.tsx` — pasar items detallados al exportar
+### Archivo a modificar
+- `src/components/local/clockins/RosterExpandedRow.tsx`
 
