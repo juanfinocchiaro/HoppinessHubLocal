@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 
 export const salaryAdvanceKeys = {
   all: ['salary-advances'] as const,
-  list: (branchId: string) => [...salaryAdvanceKeys.all, 'list', branchId] as const,
+  list: (branchId: string, month?: string) => [...salaryAdvanceKeys.all, 'list', branchId, month ?? 'all'] as const,
   user: (userId: string) => [...salaryAdvanceKeys.all, 'user', userId] as const,
   shift: (shiftId: string) => [...salaryAdvanceKeys.all, 'shift', shiftId] as const,
   pendingTransfers: (branchId: string) =>
@@ -50,8 +50,9 @@ export interface SalaryAdvance {
 }
 
 export function useSalaryAdvances(branchId: string | undefined, selectedMonth?: Date) {
+  const monthKey = selectedMonth ? `${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}` : undefined;
   return useQuery({
-    queryKey: salaryAdvanceKeys.list(branchId || ''),
+    queryKey: salaryAdvanceKeys.list(branchId || '', monthKey),
     queryFn: async () => {
       if (!branchId) return [];
       return (await fetchSalaryAdvances(branchId, selectedMonth)) as SalaryAdvance[];
