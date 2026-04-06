@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  UtensilsCrossed,
   FileSpreadsheet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
