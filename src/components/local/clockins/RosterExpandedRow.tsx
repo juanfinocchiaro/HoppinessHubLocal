@@ -390,7 +390,40 @@ export function RosterExpandedRow({
                                   )}
 
                                   {canEdit && manualEventKey === eventKey && (
-                                    <ManualEntryForm dateStr={r.dateStr} eventKey={eventKey} />
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-muted/40 rounded p-2">
+                                      <div>
+                                        <Label className="text-[10px]">Tipo</Label>
+                                        <Select value={manualType} onValueChange={(v) => setManualType(v as 'clock_in' | 'clock_out')}>
+                                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="clock_in">Entrada</SelectItem>
+                                            <SelectItem value="clock_out">Salida</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div>
+                                        <Label className="text-[10px]">Hora</Label>
+                                        <Input type="time" value={manualTime} onChange={(ev) => setManualTime(ev.target.value)} className="h-8 text-xs" />
+                                      </div>
+                                      <div className="sm:col-span-2">
+                                        <Label className="text-[10px]">Motivo *</Label>
+                                        <Input value={manualReason} onChange={(ev) => setManualReason(ev.target.value)} placeholder="Motivo de la corrección" className="h-8 text-xs" />
+                                      </div>
+                                      {manualType === 'clock_out' && (
+                                        <div className="sm:col-span-4 flex items-center gap-2">
+                                          <Checkbox id={`manual-early-${eventKey}`} checked={manualEarlyLeave} onCheckedChange={(c) => setManualEarlyLeave(!!c)} />
+                                          <Label htmlFor={`manual-early-${eventKey}`} className="text-[10px] cursor-pointer">
+                                            Retiro anticipado autorizado (no afecta presentismo)
+                                          </Label>
+                                        </div>
+                                      )}
+                                      <div className="sm:col-span-4 flex justify-end gap-2">
+                                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setManualEventKey(null)}>Cancelar</Button>
+                                        <Button size="sm" className="h-7 text-xs" onClick={() => addManualMutation.mutate({ dateStr: r.dateStr })} disabled={addManualMutation.isPending || !manualReason.trim() || !manualTime}>
+                                          {addManualMutation.isPending ? 'Guardando...' : 'Guardar'}
+                                        </Button>
+                                      </div>
+                                    </div>
                                   )}
 
                                   <p className="text-[11px] text-muted-foreground">Fichajes del turno</p>
