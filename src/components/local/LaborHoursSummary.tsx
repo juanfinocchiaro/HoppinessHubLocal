@@ -359,40 +359,50 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
         </DropdownMenu>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{stats.totalEmpleados}</div>
-            <div className="text-xs text-muted-foreground">Empleados</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold">{formatHoursDecimal(stats.totalHsEquipo)}</div>
-            <div className="text-xs text-muted-foreground">Total horas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-amber-600">
-              {stats.totalExtrasMes.toFixed(1)}h
-            </div>
-            <div className="text-xs text-muted-foreground">Horas extras</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.empleadosConPresentismo}</div>
-            <div className="text-xs text-muted-foreground">Con presentismo</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.empleadosSinPresentismo}</div>
-            <div className="text-xs text-muted-foreground">Sin presentismo</div>
-          </CardContent>
-        </Card>
+      {/* Stats Cards — mirrors table columns */}
+      {(() => {
+        const totals = summaries.reduce(
+          (acc, s) => ({
+            hsTrabajadas: acc.hsTrabajadas + s.hsTrabajadasMes,
+            hsRegulares: acc.hsRegulares + s.hsRegulares,
+            vacaciones: acc.vacaciones + s.diasVacaciones,
+            faltasInj: acc.faltasInj + s.faltasInjustificadas,
+            faltaJust: acc.faltaJust + s.hsLicencia,
+            tardanza: acc.tardanza + s.tardanzaAcumuladaMin,
+            hsFeriados: acc.hsFeriados + s.feriadosHs,
+            hsFranco: acc.hsFranco + s.hsFrancoTrabajado,
+            extrasHabil: acc.extrasHabil + s.hsExtrasDiaHabil,
+            extrasInhabil: acc.extrasInhabil + s.hsExtrasInhabil,
+          }),
+          { hsTrabajadas: 0, hsRegulares: 0, vacaciones: 0, faltasInj: 0, faltaJust: 0, tardanza: 0, hsFeriados: 0, hsFranco: 0, extrasHabil: 0, extrasInhabil: 0 },
+        );
+        const cards: { label: string; value: string; color?: string }[] = [
+          { label: 'Hs Trabajadas', value: formatHoursDecimal(totals.hsTrabajadas) },
+          { label: 'Hs Regulares', value: formatHoursDecimal(totals.hsRegulares) },
+          { label: 'Vacaciones', value: `${totals.vacaciones}d`, color: 'text-blue-600' },
+          { label: 'Faltas Inj.', value: totals.faltasInj.toString(), color: totals.faltasInj > 0 ? 'text-destructive' : undefined },
+          { label: 'Falta Just.', value: totals.faltaJust > 0 ? `${totals.faltaJust.toFixed(1)}h` : '-' },
+          { label: 'Tardanza', value: `${totals.tardanza}m`, color: totals.tardanza > 0 ? 'text-orange-600' : undefined },
+          { label: 'Hs Feriados', value: totals.hsFeriados > 0 ? `${totals.hsFeriados.toFixed(1)}h` : '-' },
+          { label: 'Hs Franco', value: totals.hsFranco > 0 ? `${totals.hsFranco.toFixed(1)}h` : '-' },
+          { label: 'Extras Hábil', value: totals.extrasHabil > 0 ? `${totals.extrasHabil.toFixed(1)}h` : '-', color: totals.extrasHabil > 0 ? 'text-green-600' : undefined },
+          { label: 'Extras Inhábil', value: totals.extrasInhabil > 0 ? `${totals.extrasInhabil.toFixed(1)}h` : '-', color: totals.extrasInhabil > 0 ? 'text-green-600' : undefined },
+          { label: 'Con Presentismo', value: stats.empleadosConPresentismo.toString(), color: 'text-green-600' },
+          { label: 'Sin Presentismo', value: stats.empleadosSinPresentismo.toString(), color: 'text-destructive' },
+        ];
+        return (
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+            {cards.map((c) => (
+              <Card key={c.label}>
+                <CardContent className="p-2.5 text-center">
+                  <div className={`text-xl font-bold ${c.color || ''}`}>{c.value}</div>
+                  <div className="text-[10px] text-muted-foreground leading-tight">{c.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      })()}
       </div>
 
       {/* Leyenda de columnas */}
