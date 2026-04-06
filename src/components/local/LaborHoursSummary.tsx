@@ -142,7 +142,7 @@ function EmployeeCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => {
                   const empName = summary.userName.toUpperCase().replace(/\s+/g, '_');
-                  const empFin = financialMap.get(summary.userId) || { consumos: 0, adelantos: 0 };
+                  const empFin = { consumos, adelantos };
                   exportEmployeePDF(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`, empFin);
                 }}>
                   <FileText className="h-4 w-4 mr-2" />
