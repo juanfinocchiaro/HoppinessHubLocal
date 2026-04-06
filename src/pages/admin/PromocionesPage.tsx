@@ -36,7 +36,8 @@ export default function PromocionesPage() {
 
   const menuItems = useMemo(
     () => (allItems as Array<{ id: string; nombre: string; tipo: string; is_active: boolean; precio_base: number; imagen_url?: string | null }>)
-      .filter((i) => i.tipo === 'item' && i.is_active),
+      .filter((i) => i.tipo === 'item' && i.is_active)
+      .map((i) => ({ id: i.id, name: i.nombre, base_price: i.precio_base, image_url: i.imagen_url })),
     [allItems],
   );
 
@@ -115,7 +116,7 @@ export default function PromocionesPage() {
   };
 
   const buildItemsPayload = (promoItems: PromoItemDraft[]) =>
-    promoItems.map((i) => ({ item_carta_id: i.item_carta_id, precio_promo: i.precio_promo, preconfigExtras: i.preconfigExtras?.map((e) => ({ extra_item_carta_id: e.extra_item_carta_id, cantidad: e.cantidad })) }));
+    promoItems.map((i) => ({ item_carta_id: i.item_carta_id, precio_promo: i.precio_promo, preconfigExtras: i.preconfigExtras?.map((e) => ({ extra_item_carta_id: e.extra_item_carta_id, cantidad: e.quantity })) }));
 
   const handleCreateSubmit = async () => {
     if (!validateForm(createForm)) return;

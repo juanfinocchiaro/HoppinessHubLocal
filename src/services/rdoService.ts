@@ -71,7 +71,7 @@ function normalizeMultivistaPayload(payload: any): RdoMultivistaData {
       ticket_promedio: toNumber(row.ticket_promedio),
     })),
     por_medio_pago: toArray<any>(payload?.por_medio_pago).map((row) => ({
-      medio_pago: String(row.medio_pago ?? 'otro'),
+      payment_method: String(row.medio_pago ?? row.payment_method ?? 'otro'),
       pedidos: toNumber(row.pedidos),
       ventas: toNumber(row.ventas),
       porcentaje: toNumber(row.porcentaje),
@@ -176,7 +176,7 @@ export async function fetchRdoUnifiedReport(
         ticket_promedio: toNumber(r.ticket_promedio),
       })),
       por_medio_pago: toArray<any>(mv?.por_medio_pago).map((r) => ({
-        medio_pago: String(r.medio_pago ?? 'otro'),
+        payment_method: String(r.medio_pago ?? r.payment_method ?? 'otro'),
         pedidos: toNumber(r.pedidos),
         ventas: toNumber(r.ventas),
         porcentaje: toNumber(r.porcentaje),
@@ -307,22 +307,22 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
   await fromUntyped('rdo_movements')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
-    .eq('period', data.periodo)
+    .eq('period', data.period)
     .eq('rdo_category_code', data.rdo_category_code)
     .eq('source', data.origen)
     .is('source_id', null)
     .is('deleted_at', null);
 
-  if (data.monto === 0) return null;
+  if (data.amount === 0) return null;
 
   const { data: result, error } = await fromUntyped('rdo_movements')
     .insert([
       {
         branch_id: data.branch_id,
-        period: data.periodo,
+        period: data.period,
         rdo_category_code: data.rdo_category_code,
         source: data.origen,
-        amount: data.monto,
+        amount: data.amount,
         description: data.descripcion,
         extra_data: data.datos_extra as any,
         created_by: userId,
@@ -367,14 +367,14 @@ export async function fetchVentasMensuales(branchId: string) {
 }
 
 export async function createVentaMensual(payload: VentaMensualPayload, userId?: string) {
-  const vt = payload.venta_total ?? 0;
-  const ef = payload.efectivo ?? 0;
+  const vt = payload.total_sales ?? 0;
+  const ef = payload.cash ?? 0;
   const fc = vt - ef;
 
   const { data: existing } = await fromUntyped('branch_monthly_sales')
     .select('id')
     .eq('branch_id', payload.branch_id!)
-    .eq('period', payload.periodo!)
+    .eq('period', payload.period!)
     .not('deleted_at', 'is', null)
     .maybeSingle();
 
@@ -385,7 +385,7 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
         efectivo: ef,
         fc_total: fc,
         ft_total: ef,
-        notes: payload.observaciones,
+        notes: payload.notes,
         loaded_by: userId,
         deleted_at: null,
       } as any)
@@ -399,12 +399,12 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
   const { data: result, error } = await fromUntyped('branch_monthly_sales')
     .insert({
       branch_id: payload.branch_id!,
-      period: payload.periodo!,
+      period: payload.period!,
       total_sales: vt,
       efectivo: ef,
       fc_total: fc,
       ft_total: ef,
-      notes: payload.observaciones,
+      notes: payload.notes,
       loaded_by: userId,
     } as any)
     .select()
@@ -414,8 +414,8 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
 }
 
 export async function updateVentaMensual(id: string, payload: VentaMensualPayload) {
-  const vt = payload.venta_total ?? 0;
-  const ef = payload.efectivo ?? 0;
+  const vt = payload.total_sales ?? 0;
+  const ef = payload.cash ?? 0;
   const fc = vt - ef;
   const { error } = await fromUntyped('branch_monthly_sales')
     .update({
@@ -423,7 +423,7 @@ export async function updateVentaMensual(id: string, payload: VentaMensualPayloa
       efectivo: ef,
       fc_total: fc,
       ft_total: ef,
-      notes: payload.observaciones,
+      notes: payload.notes,
     } as any)
     .eq('id', id);
   if (error) throw error;

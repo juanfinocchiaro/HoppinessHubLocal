@@ -26,7 +26,7 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
   const { data: result, error } = await fromUntyped('canon_settlements')
     .insert({
       branch_id: data.branch_id,
-      periodo: data.periodo,
+      periodo: data.period,
       ventas_id: data.ventas_id,
       fc_total: data.fc_total,
       ft_total: data.ft_total,
@@ -35,8 +35,8 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
       marketing_porcentaje: data.marketing_porcentaje ?? 0.5,
       marketing_monto: data.marketing_monto,
       total_canon: data.total_canon,
-      fecha_vencimiento: data.fecha_vencimiento,
-      notes: data.observaciones,
+      fecha_vencimiento: data.due_date,
+      notes: data.notes,
       created_by: userId,
     })
     .select()
@@ -82,11 +82,11 @@ export async function createPagoCanon(data: PagoCanonFormData, userId?: string) 
     .insert({
       canon_liquidacion_id: data.canon_liquidacion_id,
       branch_id: data.branch_id,
-      amount: data.monto,
-      payment_date: data.fecha_pago,
-      payment_method: data.medio_pago,
+      amount: data.amount,
+      payment_date: data.payment_date,
+      payment_method: data.payment_method,
       referencia: data.referencia,
-      notes: data.observaciones,
+      notes: data.notes,
       created_by: userId,
     })
     .select()
@@ -190,26 +190,26 @@ export async function insertFacturaCompleta(
     data.total_factura != null
       ? data.total_factura
       : subtotalItems + (data.iva || 0) + (data.otros_impuestos || 0);
-  const estadoPago = data.condicion_pago === 'contado' ? 'pagado' : 'pendiente';
+  const estadoPago = data.payment_terms === 'contado' ? 'pagado' : 'pendiente';
 
   const facturaPayload = {
     branch_id: data.branch_id,
     proveedor_id: data.proveedor_id,
-    invoice_type: data.factura_tipo || null,
-    invoice_number: data.factura_numero,
-    invoice_date: data.factura_fecha,
+    invoice_type: data.invoice_type || null,
+    invoice_number: data.invoice_number,
+    invoice_date: data.invoice_date,
     subtotal: subtotalItems,
     iva: data.iva || 0,
     otros_impuestos: data.otros_impuestos || 0,
     total,
-    payment_terms: data.condicion_pago,
-    due_date: data.fecha_vencimiento || null,
+    payment_terms: data.payment_terms,
+    due_date: data.due_date || null,
     payment_status: estadoPago,
     pending_balance: estadoPago === 'pagado' ? 0 : total,
     type: data.tipo || 'normal',
-    extraordinary_reason: data.motivo_extraordinaria || null,
-    period: data.periodo,
-    notes: data.observaciones || null,
+    extraordinary_reason: data.extraordinary_reason || null,
+    period: data.period,
+    notes: data.notes || null,
     created_by: userId || null,
     subtotal_bruto: data.subtotal_bruto ?? null,
     total_descuentos: data.total_descuentos ?? 0,
@@ -282,12 +282,12 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
     .insert({
       proveedor_id: data.proveedor_id,
       branch_id: data.branch_id,
-      amount: data.monto,
-      payment_date: data.fecha_pago,
-      payment_method: data.medio_pago,
+      amount: data.amount,
+      payment_date: data.payment_date,
+      payment_method: data.payment_method,
       referencia: data.referencia || null,
-      payment_due_date: data.fecha_vencimiento_pago || null,
-      notes: data.observaciones || null,
+      payment_due_date: data.payment_due_date || null,
+      notes: data.notes || null,
       created_by: userId,
     } as any)
     .select()

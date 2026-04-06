@@ -263,7 +263,7 @@ export function usePromocionMutations() {
     const rows: Array<{
       promocion_item_id: string;
       extra_item_carta_id: string;
-      cantidad: number;
+      quantity: number;
     }> = [];
     for (const inserted of insertedItems) {
       const source = sourceItems.find((s) => s.item_carta_id === inserted.item_carta_id);

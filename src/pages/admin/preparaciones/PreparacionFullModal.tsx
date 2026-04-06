@@ -75,7 +75,7 @@ export function PreparacionFullModal({
     if (isEdit || savedId) {
       await mutations.update.mutateAsync({ id: savedId || preparacion.id, data: form });
     } else {
-      const result = await mutations.create.mutateAsync(form);
+      const result = await mutations.create.mutateAsync({ nombre: form.name, descripcion: form.description, tipo: form.type, is_interchangeable: form.is_interchangeable, metodo_costeo: form.costing_method });
       setSavedId(result.id);
       setActiveTab('ficha');
     }

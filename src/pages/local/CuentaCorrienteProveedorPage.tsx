@@ -370,7 +370,7 @@ export default function CuentaCorrienteProveedorPage() {
                     <TableRow key={`${mov.tipo}-${mov.id}`}>
                       {/* Fecha */}
                       <TableCell className="text-sm whitespace-nowrap">
-                        {formatLocalDate(mov.fecha)}
+                        {formatLocalDate(mov.date)}
                       </TableCell>
 
                       {/* Tipo */}
@@ -426,20 +426,20 @@ export default function CuentaCorrienteProveedorPage() {
                       {/* Importe (signed) */}
                       <TableCell className="text-right font-mono text-sm">
                         {isFactura ? (
-                          <span className="text-destructive">+{formatCurrency(mov.monto)}</span>
+                          <span className="text-destructive">+{formatCurrency(mov.amount)}</span>
                         ) : (
-                          <span className="text-green-600">-{formatCurrency(mov.monto)}</span>
+                          <span className="text-green-600">-{formatCurrency(mov.amount)}</span>
                         )}
                       </TableCell>
 
                       {/* Saldo running */}
                       <TableCell className="text-right font-mono text-sm font-semibold">
-                        {mov.saldo_acumulado < 0 ? (
+                        {mov.cumulative_balance < 0 ? (
                           <span className="text-green-600">
-                            -{formatCurrency(Math.abs(mov.saldo_acumulado))}
+                            -{formatCurrency(Math.abs(mov.cumulative_balance))}
                           </span>
                         ) : (
-                          <span>{formatCurrency(mov.saldo_acumulado)}</span>
+                          <span>{formatCurrency(mov.cumulative_balance)}</span>
                         )}
                       </TableCell>
 

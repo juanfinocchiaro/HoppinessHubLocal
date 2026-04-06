@@ -59,12 +59,12 @@ export function FichaTecnicaTab({
       mapped.sort((a, b) => {
         const costA =
           a.tipo_linea === 'preparacion'
-            ? (a.cantidad || 0) * (a.sub_preparacion?.calculated_cost || 0)
-            : calcSubtotal(a.cantidad, a.insumo?.base_unit_cost || 0, a.unidad);
+            ? (a.quantity || 0) * (a.sub_preparacion?.calculated_cost || 0)
+            : calcSubtotal(a.quantity, a.insumo?.base_unit_cost || 0, a.unidad);
         const costB =
           b.tipo_linea === 'preparacion'
-            ? (b.cantidad || 0) * (b.sub_preparacion?.calculated_cost || 0)
-            : calcSubtotal(b.cantidad, b.insumo?.base_unit_cost || 0, b.unidad);
+            ? (b.quantity || 0) * (b.sub_preparacion?.calculated_cost || 0)
+            : calcSubtotal(b.quantity, b.insumo?.base_unit_cost || 0, b.unidad);
         return costB - costA;
       });
       setItems(mapped);
@@ -79,7 +79,7 @@ export function FichaTecnicaTab({
         tipo_linea: tipo,
         insumo_id: '',
         sub_preparacion_id: '',
-        cantidad: 0,
+        quantity: 0,
         unidad: tipo === 'preparacion' ? 'un' : '',
         insumo: null,
         sub_preparacion: null,
@@ -119,10 +119,10 @@ export function FichaTecnicaTab({
     () =>
       items.reduce((t, item) => {
         if (item.tipo_linea === 'preparacion') {
-          return t + (item.cantidad || 0) * (item.sub_preparacion?.calculated_cost || 0);
+          return t + (item.quantity || 0) * (item.sub_preparacion?.calculated_cost || 0);
         }
         return (
-          t + calcSubtotal(item.cantidad, item.insumo?.base_unit_cost || 0, item.unidad)
+          t + calcSubtotal(item.quantity, item.insumo?.base_unit_cost || 0, item.unidad)
         );
       }, 0),
     [items],
@@ -132,11 +132,11 @@ export function FichaTecnicaTab({
     await mutations.saveIngredientes.mutateAsync({
       preparacion_id: preparacionId,
       items: items
-        .filter((i) => (i.insumo_id || i.sub_preparacion_id) && i.cantidad > 0)
+        .filter((i) => (i.insumo_id || i.sub_preparacion_id) && i.quantity > 0)
         .map((i) => ({
           insumo_id: i.tipo_linea === 'insumo' ? i.insumo_id : null,
           sub_preparacion_id: i.tipo_linea === 'preparacion' ? i.sub_preparacion_id : null,
-          quantity: i.cantidad,
+          quantity: i.quantity,
           unit: i.unidad,
         })),
     });
@@ -157,8 +157,8 @@ export function FichaTecnicaTab({
               ? item.sub_preparacion?.calculated_cost || 0
               : item.insumo?.base_unit_cost || 0;
             const subtotal = isPrep
-              ? (item.cantidad || 0) * costoUnit
-              : calcSubtotal(item.cantidad, costoUnit, item.unidad);
+              ? (item.quantity || 0) * costoUnit
+              : calcSubtotal(item.quantity, costoUnit, item.unidad);
             const usedInsumoIds = items
               .filter((_, idx) => idx !== index)
               .map((i) => i.insumo_id)
@@ -233,8 +233,8 @@ export function FichaTecnicaTab({
                 <Input
                   type="number"
                   step="0.01"
-                  value={item.cantidad || ''}
-                  onChange={(e) => updateItem(index, 'cantidad', Number(e.target.value))}
+                  value={item.quantity || ''}
+                  onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
                   className="h-7 w-16 text-xs shrink-0"
                 />
                 <span className="text-xs text-muted-foreground w-6 shrink-0">

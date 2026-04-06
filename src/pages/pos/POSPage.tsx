@@ -163,7 +163,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
   const updateNotes = useCallback((index: number, notes: string) => {
     setCart((prev) => {
       const copy = [...prev];
-      copy[index] = { ...copy[index], notas: notes || undefined };
+      copy[index] = { ...copy[index], notes: notes || undefined };
       return copy;
     });
   }, []);
@@ -190,16 +190,16 @@ function POSPageContent({ branchId }: { branchId: string }) {
       }
       if (
         orderConfig.tipoServicio === 'takeaway' &&
-        !orderConfig.clienteNombre?.trim() &&
+        !orderConfig.customerName?.trim() &&
         !orderConfig.numeroLlamador
       ) {
         return 'Ingresá el nombre del cliente o un número de llamador';
       }
       if (orderConfig.tipoServicio === 'delivery') {
-        if (!orderConfig.clienteNombre?.trim() || !orderConfig.clienteTelefono?.trim()) {
+        if (!orderConfig.customerName?.trim() || !orderConfig.customerPhone?.trim()) {
           return 'Nombre y teléfono son requeridos';
         }
-        if (!orderConfig.clienteDireccion?.trim()) return 'Ingresá la dirección de entrega';
+        if (!orderConfig.customerAddress?.trim()) return 'Ingresá la dirección de entrega';
       }
     }
     // Validate invoice fields â€” required only for Factura A
@@ -405,7 +405,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
                 inicio_actividades: afipConfig.inicio_actividades || '',
               },
               receptor: {
-                nombre: orderConfig.receptorRazonSocial || orderConfig.clienteNombre || undefined,
+                nombre: orderConfig.receptorRazonSocial || orderConfig.customerName || undefined,
                 documento_tipo: orderConfig.receptorCuit ? 'CUIT' : 'DNI',
                 documento_numero: orderConfig.receptorCuit || undefined,
                 condicion_iva: condicionIvaReceptor,
@@ -443,7 +443,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
         caller_number: orderConfig.numeroLlamador
           ? parseInt(orderConfig.numeroLlamador, 10)
           : null,
-        customer_name: orderConfig.clienteNombre ?? null,
+        customer_name: orderConfig.customerName ?? null,
         referencia_app: orderConfig.referenciaApp ?? null,
         created_at: new Date().toISOString(),
         items: cart.map((c) => ({
@@ -460,8 +460,8 @@ function POSPageContent({ branchId }: { branchId: string }) {
         voucher_codigo: orderConfig.voucherCodigo,
         voucher_descuento: orderConfig.voucherDescuento,
         costo_delivery: costoEnvio > 0 ? costoEnvio : undefined,
-        customer_phone: orderConfig.clienteTelefono ?? null,
-        customer_address: orderConfig.clienteDireccion ?? null,
+         customer_phone: orderConfig.customerPhone ?? null,
+         customer_address: orderConfig.customerAddress ?? null,
       };
 
       const singlePayment = payments.length === 1 ? payments[0] : null;

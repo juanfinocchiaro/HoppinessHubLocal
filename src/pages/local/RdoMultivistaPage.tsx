@@ -82,7 +82,7 @@ export default function RdoMultivistaPage() {
     const base = data?.opciones_filtros.categorias || [];
     const query = categoriaSearch.trim().toLowerCase();
     if (!query) return base;
-    return base.filter((c) => c.name.toLowerCase().includes(query));
+    return base.filter((c) => c.nombre.toLowerCase().includes(query));
   }, [data?.opciones_filtros.categorias, categoriaSearch]);
 
   const productosDisponibles = useMemo(() => {
@@ -91,7 +91,7 @@ export default function RdoMultivistaPage() {
     if (!query) return base;
     return base.filter(
       (p) =>
-        p.name.toLowerCase().includes(query) ||
+        p.nombre.toLowerCase().includes(query) ||
         (p.categoria_nombre || '').toLowerCase().includes(query),
     );
   }, [data?.opciones_filtros.productos, productoSearch]);
@@ -136,7 +136,7 @@ export default function RdoMultivistaPage() {
     if (!data?.por_medio_pago.length) return;
     exportToExcel(
       data.por_medio_pago.map((r) => ({
-        medio_pago: r.medio_pago,
+        medio_pago: r.payment_method,
         pedidos: r.pedidos,
         ventas: r.ventas,
         porcentaje: Number(r.porcentaje.toFixed(2)),
@@ -339,7 +339,7 @@ export default function RdoMultivistaPage() {
                           }))
                         }
                       />
-                      <span>{cat.name}</span>
+                      <span>{cat.nombre}</span>
                     </label>
                   );
                 })}
@@ -370,7 +370,7 @@ export default function RdoMultivistaPage() {
                           }))
                         }
                       />
-                      <span>{prod.name}</span>
+                      <span>{prod.nombre}</span>
                       {prod.categoria_nombre && (
                         <Badge variant="outline">{prod.categoria_nombre}</Badge>
                       )}
@@ -490,8 +490,8 @@ export default function RdoMultivistaPage() {
                     </TableRow>
                   ) : (
                     data.por_medio_pago.map((row) => (
-                      <TableRow key={row.medio_pago}>
-                        <TableCell>{row.medio_pago}</TableCell>
+                      <TableRow key={row.payment_method}>
+                        <TableCell>{row.payment_method}</TableCell>
                         <TableCell className="text-right">{row.pedidos}</TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(row.ventas)}
