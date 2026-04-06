@@ -85,7 +85,7 @@ export default function PromocionesPage() {
 
   const openDuplicate = async (promo: Promocion) => {
     const loadedItems = await fetchPromoItems(promo.id);
-    setCreateForm({ ...buildFormFromPromo(promo), name: `${promo.name} (Copia)` });
+    setCreateForm({ ...buildFormFromPromo(promo as any), name: `${promo.name} (Copia)` });
     setCreatePromoItems(loadedItems);
     setCreateItemSearch('');
     setCreatingNew(true);
