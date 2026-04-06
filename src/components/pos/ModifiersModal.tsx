@@ -282,14 +282,14 @@ export function ModifiersModal({ open, onOpenChange, item, onConfirm }: Modifier
       .filter((ex) => (selectedExtras[ex.id] || 0) > 0)
       .map((ex) => ({
         id: ex.id,
-        nombre: ex.nombre,
+        name: ex.nombre,
         precio: ex.precio,
-        cantidad: selectedExtras[ex.id],
+        quantity: selectedExtras[ex.id],
       }));
 
     const cartRemovibles: CartItemRemovible[] = removiblesList
       .filter((r: any) => selectedRemovibles[r.id])
-      .map((r: any) => ({ id: r.id, nombre: r.nombre }));
+      .map((r: any) => ({ id: r.id, name: r.nombre }));
 
     const cartOpcionales: CartItemOpcional[] = [];
     const notasParts: string[] = [];
