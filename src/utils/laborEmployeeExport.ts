@@ -213,7 +213,5 @@ export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string,
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, 'Resumen');
-
-  const safeName = s.userName.replace(/\s+/g, '_').toLowerCase();
-  XLSX.writeFile(wb, `resumen-${safeName}-${monthLabel.replace(/\s+/g, '-').toLowerCase()}.xlsx`);
+  XLSX.writeFile(wb, `${filename || `resumen-${s.userName.replace(/\s+/g, '_').toLowerCase()}`}.xlsx`);
 }
