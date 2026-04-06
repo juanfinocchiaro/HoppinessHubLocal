@@ -49,6 +49,7 @@ export function exportLaborPDF(
   stats: LaborStats,
   monthLabel: string,
   configInfo: { dailyLimit: number; lateTolerance: number },
+  filename?: string,
 ) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const rows = buildRows(summaries);
