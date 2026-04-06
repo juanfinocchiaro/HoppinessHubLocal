@@ -156,7 +156,7 @@ export function exportLaborPDF(
     );
   }
 
-  doc.save(`liquidacion-${monthLabel.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  doc.save(`${filename || 'liquidacion'}.pdf`);
 }
 
 export function exportLaborExcel(
