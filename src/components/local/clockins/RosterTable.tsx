@@ -292,6 +292,7 @@ export function RosterTable({
                     <td colSpan={colCount} className="p-0">
                       <RosterExpandedRow
                         row={mainRow}
+                        allRows={group.rows}
                         branchId={branchId}
                         selectedDate={selectedDate}
                         canEdit={canEdit}
