@@ -392,11 +392,11 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
       }
     }
 
-    const hsTrabajadasMes = hsRegulares + hsExtrasDiaHabil + feriadosHs + hsFrancoTrabajado;
+    const hsTrabajadasMes = hsRegulares + hsExtrasDiaHabil + hsExtrasInhabil + feriadosHs + hsFrancoTrabajado;
     const hsFrancoFeriado = feriadosHs + hsFrancoTrabajado;
     const hsExtrasFrancoFeriado = hsFrancoFeriado;
-    const hsHabiles = hsRegulares + hsExtrasDiaHabil;
-    const totalExtras = hsExtrasDiaHabil + hsExtrasFrancoFeriado;
+    const hsHabiles = hsRegulares + hsExtrasDiaHabil + hsExtrasInhabil;
+    const totalExtras = hsExtrasDiaHabil + hsExtrasInhabil + hsExtrasFrancoFeriado;
 
     // Presentismo: faltas injustificadas + tardanza acumulativa
     const userAbsences = absences.filter((a: any) => a.user_id === userId);
