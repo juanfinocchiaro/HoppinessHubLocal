@@ -299,6 +299,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
   const month = currentDate.getMonth();
 
   const { summaries, stats, config, loading } = useLaborHours({ branchId, year, month });
+  const { data: workPositions = [] } = useWorkPositions();
+  const positionsList = workPositions.map((p) => ({ key: p.key, label: p.label }));
 
   const { data: branchName = '' } = useQuery({
     queryKey: ['branch-name', branchId],
