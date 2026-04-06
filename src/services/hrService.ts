@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fromUntyped } from '@/lib/supabase-helpers';
 
 // ── Clock Entries / Labor ────────────────────────────────────────────
 
