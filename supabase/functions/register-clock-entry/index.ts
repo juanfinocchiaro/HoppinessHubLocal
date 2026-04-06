@@ -511,6 +511,9 @@ Deno.serve(async (req) => {
         gps_message: gps_message || null,
         photo_url: photoUrl,
         work_date: workDate,
+        manual_reason: override_manager_name
+          ? `Override encargado: ${override_manager_name} - reglamento pendiente`
+          : null,
       })
       .select('id, created_at')
       .single()
