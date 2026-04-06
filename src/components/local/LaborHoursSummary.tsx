@@ -582,6 +582,16 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
           ))}
         </div>
       )}
+
+      {consumptionTarget && (
+        <EmployeeConsumptionModal
+          open={!!consumptionTarget}
+          onOpenChange={(open) => { if (!open) setConsumptionTarget(null); }}
+          branchId={branchId}
+          userId={consumptionTarget.userId}
+          userName={consumptionTarget.userName}
+        />
+      )}
     </div>
   );
 }
