@@ -21,6 +21,7 @@ export const STATUS_COLOR: Record<RosterRowStatus, string> = {
   pending: 'text-sky-600',
   completed: 'text-muted-foreground',
   day_off: 'text-muted-foreground',
+  vacation: 'text-cyan-600',
   leave: 'text-purple-600',
   no_schedule: 'text-orange-600',
 };
