@@ -8,6 +8,13 @@ import { format } from 'date-fns';
 import type { EmployeeLaborSummary, LaborStats } from '@/hooks/useLaborHours';
 import { formatHoursDecimal } from '@/hooks/useLaborHours';
 
+function formatPosition(pos: string | null | undefined): string {
+  if (!pos) return '-';
+  return pos
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 const HEADERS = [
   '#',
   'Empleado',
