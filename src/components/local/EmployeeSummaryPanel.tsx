@@ -35,7 +35,7 @@ import { fetchEmployeeScheduleForBranch } from '@/services/schedulesService';
 import { createManualClockEntry } from '@/services/hrService';
 import { useLaborHours } from '@/hooks/useLaborHours';
 import { calculateShiftHours } from '@/lib/timeEngine';
-import { usePayrollReport } from '@/hooks/usePayrollReport';
+
 import {
   useEmployeeConsumptionsByMonth,
   useSalaryAdvancesByMonth,
