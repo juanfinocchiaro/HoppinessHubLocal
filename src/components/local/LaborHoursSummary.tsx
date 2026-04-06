@@ -575,6 +575,9 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
               monthOnly={monthOnly}
               yearStr={yearStr}
               positions={positionsList}
+              consumos={financialMap.get(summary.userId)?.consumos ?? 0}
+              adelantos={financialMap.get(summary.userId)?.adelantos ?? 0}
+              onAddConsumo={() => setConsumptionTarget({ userId: summary.userId, userName: summary.userName })}
             />
           ))}
         </div>
