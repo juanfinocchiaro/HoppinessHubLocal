@@ -46,7 +46,7 @@ const CONDICIONES_IVA = [
 export function ChangeInvoiceModal({ open, onOpenChange, facturaOriginal, onConfirm }: Props) {
   const [loading, setLoading] = useState(false);
   const [tipoFactura, setTipoFactura] = useState<'A' | 'B'>(
-    (facturaOriginal.tipo_comprobante === 'A' ? 'A' : 'B') as 'A' | 'B',
+    (facturaOriginal.receipt_type === 'A' ? 'A' : 'B') as 'A' | 'B',
   );
   const [cuit, setCuit] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
