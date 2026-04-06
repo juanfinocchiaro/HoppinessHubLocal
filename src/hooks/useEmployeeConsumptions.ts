@@ -53,7 +53,7 @@ export function useSalaryAdvancesByMonth(branchId: string, year: number, month: 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('salary_advances')
-        .select('id, user_id, amount, status, created_at')
+        .select('id, user_id, amount, status, reason, created_at')
         .eq('branch_id', branchId)
         .neq('status', 'cancelled')
         .gte('created_at', monthStart.toISOString())

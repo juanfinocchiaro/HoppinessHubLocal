@@ -51,11 +51,12 @@ import {
 } from '@/hooks/useLaborHours';
 import { useWorkPositions } from '@/hooks/useWorkPositions';
 import { exportLaborPDF, exportLaborExcel } from '@/utils/laborExport';
-import { exportEmployeePDF, exportEmployeeExcel } from '@/utils/laborEmployeeExport';
+import { exportEmployeePDF, exportEmployeeExcel, EmployeeFinancialData } from '@/utils/laborEmployeeExport';
 import {
   useEmployeeConsumptionsByMonth,
   useSalaryAdvancesByMonth,
   aggregateByUser,
+  EmployeeConsumption,
 } from '@/hooks/useEmployeeConsumptions';
 import { EmployeeConsumptionModal } from '@/components/local/EmployeeConsumptionModal';
 import { EmployeeConsumptionListModal } from '@/components/local/EmployeeConsumptionListModal';
@@ -85,6 +86,8 @@ function EmployeeCard({
   positions,
   consumos,
   adelantos,
+  userConsumptions,
+  userAdvances,
   onAddConsumo,
   onViewConsumos,
 }: {
@@ -98,6 +101,8 @@ function EmployeeCard({
   positions: { key: string; label: string }[];
   consumos: number;
   adelantos: number;
+  userConsumptions: EmployeeConsumption[];
+  userAdvances: { user_id: string; amount: number; reason: string | null; status: string; created_at: string }[];
   onAddConsumo: () => void;
   onViewConsumos: () => void;
 }) {
@@ -142,7 +147,21 @@ function EmployeeCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => {
                   const empName = summary.userName.toUpperCase().replace(/\s+/g, '_');
-                  const empFin = { consumos, adelantos };
+                  const empFin: EmployeeFinancialData = {
+                    consumos,
+                    adelantos,
+                    consumoItems: userConsumptions.map((c) => ({
+                      date: c.consumption_date,
+                      description: c.description || '-',
+                      amount: Number(c.amount),
+                    })),
+                    adelantoItems: userAdvances.map((a) => ({
+                      date: format(new Date(a.created_at), 'yyyy-MM-dd'),
+                      reason: a.reason || '-',
+                      amount: Number(a.amount),
+                      status: a.status,
+                    })),
+                  };
                   exportEmployeePDF(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`, empFin);
                 }}>
                   <FileText className="h-4 w-4 mr-2" />
@@ -150,7 +169,22 @@ function EmployeeCard({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   const empName = summary.userName.toUpperCase().replace(/\s+/g, '_');
-                  exportEmployeeExcel(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`);
+                  const empFin: EmployeeFinancialData = {
+                    consumos,
+                    adelantos,
+                    consumoItems: userConsumptions.map((c) => ({
+                      date: c.consumption_date,
+                      description: c.description || '-',
+                      amount: Number(c.amount),
+                    })),
+                    adelantoItems: userAdvances.map((a) => ({
+                      date: format(new Date(a.created_at), 'yyyy-MM-dd'),
+                      reason: a.reason || '-',
+                      amount: Number(a.amount),
+                      status: a.status,
+                    })),
+                  };
+                  exportEmployeeExcel(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`, empFin);
                 }}>
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   Excel individual
@@ -590,6 +624,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
               positions={positionsList}
               consumos={financialMap.get(summary.userId)?.consumos ?? 0}
               adelantos={financialMap.get(summary.userId)?.adelantos ?? 0}
+              userConsumptions={consumptions.filter((c) => c.user_id === summary.userId)}
+              userAdvances={advances.filter((a) => a.user_id === summary.userId)}
               onAddConsumo={() => setConsumptionTarget({ userId: summary.userId, userName: summary.userName })}
               onViewConsumos={() => setConsumptionListTarget({ userId: summary.userId, userName: summary.userName })}
             />

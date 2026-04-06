@@ -177,11 +177,31 @@ function drawBrandFooter(doc: jsPDF) {
 
 const DAILY_HEADERS = ['Día', 'Horario', 'Entrada', 'Salida', 'Horas', 'Tipo', 'Tardanza'];
 
+interface FinancialItem {
+  date: string;
+  description: string;
+  amount: number;
+}
+
+interface AdvanceItem {
+  date: string;
+  reason: string;
+  amount: number;
+  status: string;
+}
+
+export interface EmployeeFinancialData {
+  consumos: number;
+  adelantos: number;
+  consumoItems?: FinancialItem[];
+  adelantoItems?: AdvanceItem[];
+}
+
 export function exportEmployeePDF(
   s: EmployeeLaborSummary,
   monthLabel: string,
   filename?: string,
-  financialData?: { consumos: number; adelantos: number },
+  financialData?: EmployeeFinancialData,
 ) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -279,7 +299,72 @@ export function exportEmployeePDF(
     currentY = (doc as any).lastAutoTable.finalY + 5;
   }
 
-  // ── 3. Daily detail table ──
+  // ── 2c. Detalle de consumos ──
+  const cItems = financialData?.consumoItems ?? [];
+  if (cItems.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(109, 40, 217);
+    doc.text('DETALLE DE CONSUMOS', 14, currentY);
+    currentY += 2;
+
+    const consumoBody = cItems.map((c) => [c.date, c.description || '-', `$${c.amount.toLocaleString('es-AR')}`]);
+    consumoBody.push(['', 'TOTAL', `$${fin.consumos.toLocaleString('es-AR')}`]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Fecha', 'Descripción', 'Monto']],
+      body: consumoBody,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 1.5, lineWidth: 0.1, lineColor: [210, 215, 225] },
+      headStyles: { fillColor: [109, 40, 217] as any, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      columnStyles: { 0: { cellWidth: 22 }, 2: { halign: 'right', cellWidth: 24 } },
+      alternateRowStyles: { fillColor: [245, 240, 255] },
+      didParseCell(data) {
+        if (data.section === 'body' && data.row.index === consumoBody.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [237, 233, 254];
+        }
+      },
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 4;
+  }
+
+  // ── 2d. Detalle de adelantos ──
+  const aItems = financialData?.adelantoItems ?? [];
+  if (aItems.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(37, 99, 235);
+    doc.text('DETALLE DE ADELANTOS', 14, currentY);
+    currentY += 2;
+
+    const statusLabels: Record<string, string> = {
+      pending: 'Pendiente', paid: 'Pagado', pending_transfer: 'Pend. Transf.',
+      transferred: 'Transferido', deducted: 'Descontado', cancelled: 'Cancelado',
+    };
+    const adelantoBody = aItems.map((a) => [a.date, a.reason || '-', `$${a.amount.toLocaleString('es-AR')}`, statusLabels[a.status] || a.status]);
+    adelantoBody.push(['', 'TOTAL', `$${fin.adelantos.toLocaleString('es-AR')}`, '']);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Fecha', 'Motivo', 'Monto', 'Estado']],
+      body: adelantoBody,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 1.5, lineWidth: 0.1, lineColor: [210, 215, 225] },
+      headStyles: { fillColor: [37, 99, 235] as any, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      columnStyles: { 0: { cellWidth: 22 }, 2: { halign: 'right', cellWidth: 24 }, 3: { cellWidth: 24 } },
+      alternateRowStyles: { fillColor: [240, 244, 255] },
+      didParseCell(data) {
+        if (data.section === 'body' && data.row.index === adelantoBody.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [224, 231, 255];
+        }
+      },
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 4;
+  }
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...BRAND_BLUE);
@@ -351,7 +436,7 @@ export function exportEmployeePDF(
   doc.save(`${filename || `resumen-${s.userName.replace(/\s+/g, '_').toLowerCase()}`}.pdf`);
 }
 
-export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string, filename?: string) {
+export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string, filename?: string, financialData?: EmployeeFinancialData) {
   const wb = XLSX.utils.book_new();
 
   const refDate = s.scheduledDays[0]?.date || s.entries[0]?.date || format(new Date(), 'yyyy-MM-dd');
@@ -360,6 +445,7 @@ export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string,
   const month = parseInt(monthStr) - 1;
 
   const rows = buildDailyRows(s, year, month);
+  const fin = financialData || { consumos: 0, adelantos: 0 };
 
   const data: (string | number)[][] = [];
   data.push([`Resumen Individual — ${monthLabel}`]);
@@ -378,6 +464,8 @@ export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string,
   data.push(['Extras Hábil', s.hsExtrasDiaHabil]);
   data.push(['Extras Inhábil', s.hsExtrasInhabil]);
   data.push(['Presentismo', s.presentismo ? 'SI' : 'NO']);
+  data.push(['Consumos', fin.consumos]);
+  data.push(['Adelantos', fin.adelantos]);
 
   if (s.positionBreakdown.length > 0) {
     data.push([]);
@@ -386,6 +474,30 @@ export function exportEmployeeExcel(s: EmployeeLaborSummary, monthLabel: string,
       const posLabel = pb.position.charAt(0).toUpperCase() + pb.position.slice(1);
       data.push([`  ${posLabel}`, pb.hsTrabajadas]);
     }
+  }
+
+  // Detalle de consumos
+  const cItems = financialData?.consumoItems ?? [];
+  if (cItems.length > 0) {
+    data.push([]);
+    data.push(['DETALLE DE CONSUMOS']);
+    data.push(['Fecha', 'Descripción', 'Monto']);
+    for (const c of cItems) {
+      data.push([c.date, c.description || '-', c.amount]);
+    }
+    data.push(['', 'TOTAL', fin.consumos]);
+  }
+
+  // Detalle de adelantos
+  const aItems = financialData?.adelantoItems ?? [];
+  if (aItems.length > 0) {
+    data.push([]);
+    data.push(['DETALLE DE ADELANTOS']);
+    data.push(['Fecha', 'Motivo', 'Monto', 'Estado']);
+    for (const a of aItems) {
+      data.push([a.date, a.reason || '-', a.amount, a.status]);
+    }
+    data.push(['', 'TOTAL', fin.adelantos, '']);
   }
 
   data.push([]);
