@@ -19,6 +19,7 @@ import {
   fetchBranchForClock,
   validateClockPin,
   checkRegulationStatus as checkRegulationStatusService,
+  validateManagerOverridePin,
 } from '@/services/hrService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
