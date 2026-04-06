@@ -31,29 +31,12 @@ function buildRows(summaries: EmployeeLaborSummary[]) {
 
   for (const s of summaries) {
     counter++;
-    const hasBreakdown = s.positionBreakdown.length > 0;
+    const multiPosition = s.positionBreakdown.length > 1;
 
-    if (hasBreakdown) {
-      // Header row (employee name only)
+    if (multiPosition) {
+      // Main row with totals
       rows.push([
-        counter.toString(), s.userName, s.localRole?.toUpperCase() || '-',
-        '', '', '', '', '', '', '', '', '', '', '',
-      ]);
-
-      // Sub-rows per position
-      for (const pb of s.positionBreakdown) {
-        rows.push([
-          '', `  └ ${pb.position.charAt(0).toUpperCase() + pb.position.slice(1)}`, '',
-          pb.hsTrabajadas.toFixed(2), pb.hsRegulares.toFixed(2),
-          '-', '-', '-', '-',
-          pb.feriadosHs.toFixed(2), pb.hsFrancoTrabajado.toFixed(2),
-          pb.hsExtrasDiaHabil.toFixed(2), pb.hsExtrasInhabil.toFixed(2), '',
-        ]);
-      }
-
-      // Total row
-      rows.push([
-        '', '  TOTAL', '',
+        counter.toString(), s.userName, 'MULTI',
         s.hsTrabajadasMes.toFixed(2), s.hsRegulares.toFixed(2),
         s.diasVacaciones.toString(), s.faltasInjustificadas.toString(),
         s.hsLicencia.toFixed(2), `${s.tardanzaAcumuladaMin} min`,
@@ -61,9 +44,25 @@ function buildRows(summaries: EmployeeLaborSummary[]) {
         s.hsExtrasDiaHabil.toFixed(2), s.hsExtrasInhabil.toFixed(2),
         s.presentismo ? 'SI' : 'NO',
       ]);
+
+      // Sub-rows per position (only hours breakdown)
+      for (const pb of s.positionBreakdown) {
+        const posLabel = pb.position.charAt(0).toUpperCase() + pb.position.slice(1);
+        rows.push([
+          '', `  > ${posLabel}`, '',
+          pb.hsTrabajadas.toFixed(2), pb.hsRegulares.toFixed(2),
+          '-', '-', '-', '-',
+          pb.feriadosHs.toFixed(2), pb.hsFrancoTrabajado.toFixed(2),
+          pb.hsExtrasDiaHabil.toFixed(2), pb.hsExtrasInhabil.toFixed(2), '',
+        ]);
+      }
     } else {
+      // Single position or no breakdown — one row
+      const posLabel = s.positionBreakdown.length === 1
+        ? s.positionBreakdown[0].position.charAt(0).toUpperCase() + s.positionBreakdown[0].position.slice(1)
+        : (s.localRole?.toUpperCase() || '-');
       rows.push([
-        counter.toString(), s.userName, s.localRole?.toUpperCase() || '-',
+        counter.toString(), s.userName, posLabel,
         s.hsTrabajadasMes.toFixed(2), s.hsRegulares.toFixed(2),
         s.diasVacaciones.toString(), s.faltasInjustificadas.toString(),
         s.hsLicencia.toFixed(2), `${s.tardanzaAcumuladaMin} min`,
