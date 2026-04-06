@@ -60,7 +60,7 @@ export async function fetchLaborUsersData(branchId: string, userIds: string[]) {
 
   const { data: roles, error: rolesError } = await supabase
     .from('user_role_assignments')
-    .select('user_id, roles!inner(key)')
+    .select('user_id, roles!inner(key), default_position')
     .eq('branch_id', branchId)
     .in('user_id', userIds)
     .eq('is_active', true);
