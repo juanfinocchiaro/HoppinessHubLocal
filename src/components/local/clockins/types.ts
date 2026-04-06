@@ -48,6 +48,7 @@ export type RosterRowStatus =
   | 'pending'
   | 'completed'
   | 'day_off'
+  | 'vacation'
   | 'leave'
   | 'no_schedule';
 

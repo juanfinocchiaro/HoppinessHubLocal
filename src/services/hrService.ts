@@ -682,7 +682,7 @@ export async function fetchProfileNames(userIds: string[]) {
 export async function fetchDaySchedulesForClock(branchId: string, dateStr: string) {
   const { data, error } = await supabase
     .from('employee_schedules')
-    .select('id, user_id, start_time, end_time, is_day_off, start_time_2, end_time_2')
+    .select('id, user_id, start_time, end_time, is_day_off, start_time_2, end_time_2, work_position')
     .eq('branch_id', branchId)
     .eq('schedule_date', dateStr);
 

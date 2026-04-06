@@ -54,8 +54,9 @@ export const STATUS_ORDER: Record<RosterRowStatus, number> = {
   pending: 4,
   completed: 5,
   day_off: 6,
-  leave: 7,
-  no_schedule: 8,
+  vacation: 7,
+  leave: 8,
+  no_schedule: 9,
 };
 
 export interface WindowConfig {
