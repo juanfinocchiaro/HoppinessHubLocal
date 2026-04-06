@@ -1,58 +1,76 @@
 
 
-# Fix Liquidación: horas inconsistentes, tardanzas falsas, vacaciones invisibles
+# Reestructurar Liquidación: columnas correctas y extras hábil/inhábil
 
-## Problemas encontrados
+## Columnas solicitadas (en orden)
 
-### 1. Vacaciones nunca aparecen
-`useLaborHours` construye `userIds` solo desde `clock_entries` (línea 299). Empleados de vacaciones que no fichan **nunca se incluyen** en la lista. Se necesita incluir también los user_ids de `schedules`.
+| # | Columna | Definición |
+|---|---------|-----------|
+| 1 | Empleado | Nombre + rol |
+| 2 | Hs Trabajadas | Total de todas las horas trabajadas |
+| 3 | Hs Regulares | Horas dentro del límite diario 9hs, en días hábiles (L-D), sin feriado ni franco |
+| 4 | Vacaciones | Días de vacaciones configurados en Horarios (`work_position='vacaciones'`) |
+| 5 | Faltas Inj. | Cantidad de faltas del mes (consistente con Fichajes) |
+| 6 | Falta Justificada | Horas que suman las faltas justificadas según el horario del día |
+| 7 | Tardanza | Minutos acumulados de tardanza (mismo motor que Fichajes) |
+| 8 | Hs Feriados | Horas trabajadas en feriados |
+| 9 | Hs Franco | Horas trabajadas en francos |
+| 10 | Extras Hábil | Exceso sobre 9hs diarias en días Lunes a Viernes |
+| 11 | Extras Inhábil | **NUEVO** — Exceso sobre 9hs diarias en Sábados y Domingos |
+| 12 | Presentismo | SI/NO + minutos de tardanza |
 
-### 2. Horas totales no coinciden con el diario
-El diario (Fichajes) usa `useEmployeeTimeData` → `timeEngine.pairClockEntries` que tiene lógica distinta de `useLaborHours.pairClockEntries`:
-- Distinto manejo de turnos sin cerrar (el diario incluye "in-progress", el mensual los ignora con `minutesWorked: 0`)
-- Distinto manejo de `schedule_id` grouping
-- El diario acumula todos los pares incluyendo en progreso; el mensual solo cuenta `completedEntries` (línea 339)
+## Cambios en `src/hooks/useLaborHours.ts`
 
-### 3. Tardanzas falsas
-La lógica de tardanza (líneas 402-428) usa `clockInMin` del timestamp UTC pero lo compara con `start_time` local. Además, usa `diff < 720` que puede generar falsos positivos con turnos nocturnos. También cuenta tardanza en días de vacaciones/franco.
+### A. Nuevo campo `hsExtrasInhabil`
+Agregar a `EmployeeLaborSummary` el campo `hsExtrasInhabil: number`.
 
-## Plan de corrección (1 archivo: `src/hooks/useLaborHours.ts`)
-
-### A. Incluir usuarios de schedules (vacaciones visibles)
+### B. Clasificar extras por día de semana
+En el loop de `hoursByDay`, para días hábiles (no feriado, no franco):
 ```text
-ANTES: userIds = [...new Set(rawEntries.map(e => e.user_id))]
-DESPUÉS: userIds = [...new Set([
-  ...rawEntries.map(e => e.user_id),
-  ...schedules.map(s => s.user_id)
-])]
+const dayOfWeek = new Date(date + 'T12:00:00').getDay(); // 0=Dom, 6=Sab
+const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+hsRegulares += min(horasDia, 9)
+if (isWeekend) {
+  hsExtrasInhabil += max(0, horasDia - 9)
+} else {
+  hsExtrasDiaHabil += max(0, horasDia - 9)
+}
 ```
-Esto asegura que empleados con vacaciones programadas pero sin fichajes aparezcan en la tabla.
 
-### B. Fix tardanza: solo contar en días hábiles, usar hora local
-- Saltar días donde `isDayOff` o `position === 'vacaciones'`
-- Convertir `clockIn` a hora local Argentina (UTC-3) antes de comparar con `start_time`
-- Mejorar la lógica de "closest schedule" para no contar tardanzas espurias
+### C. Renombrar y aclarar campos
+- `diasVacaciones` ya existe y se calcula desde schedules con `work_position='vacaciones'` — correcto
+- `hsLicencia` ya se calcula cruzando absences justificadas con horarios — renombrar en UI a "Falta Justificada"
+- `tardanzaAcumuladaMin` ya existe — mostrarlo como columna separada
 
-### C. Asegurar consistencia de horas con el diario
-- Los pares sin `checkOut` ya se excluyen correctamente de `completedEntries` (consistente con no contar turnos en progreso)
-- Verificar que no se pierdan pares por la lógica de `schedule_id` grouping
+### D. Actualizar `generateLaborCSV`
+Agregar columna EXTRAS INHÁBIL y reorganizar columnas.
 
-### D. Fix build errors en este archivo
-- `fetchLaborConfig` ya no se exporta de `hrService.ts` → arreglar `useEmployeeTimeData.ts` 
-- Otros build errors son de archivos no relacionados (PromocionesPage, POSPage, etc.) — se listarán como pendientes
+## Cambios en `src/components/local/LaborHoursSummary.tsx`
 
-## Archivos a modificar
+Reorganizar columnas de la tabla al orden solicitado:
+1. Empleado
+2. Hs Trabajadas
+3. Hs Regulares
+4. Vacaciones (días) — era "Licencia"
+5. Faltas Inj.
+6. Falta Just. (horas de `hsLicencia`)
+7. Tardanza (minutos)
+8. Hs Feriados
+9. Hs Franco
+10. Extras Hábil (`hsExtrasDiaHabil`)
+11. Extras Inhábil (`hsExtrasInhabil`) — **NUEVO**
+12. Presentismo
 
-1. **`src/hooks/useLaborHours.ts`** — Fix principal:
-   - Incluir user_ids de schedules para vacaciones
-   - Fix tardanza: skip días no hábiles, usar hora local
-   
-2. **`src/hooks/useEmployeeTimeData.ts`** — Fix build error:
-   - Reemplazar `fetchLaborConfig` por la query directa (ya no existe en hrService)
+Actualizar tooltips, stats cards, y colspan del detalle expandido (colSpan=13).
 
-3. **`src/hooks/useMonthClosed.ts`** y **`src/hooks/usePayrollReport.ts`** — Fix build errors:
-   - Restaurar exports faltantes en `hrService.ts` o ajustar imports
+## Fix build error
+- `src/components/local/EmployeeSummaryPanel.tsx` línea 98: eliminar `_workingSince` no usada
 
-## Nota sobre los demás build errors
-Los ~40 errores restantes (PromocionesPage, POSPage, FichaTecnicaTab, financialService, etc.) son del migration español→inglés previo y no están relacionados con esta funcionalidad. Se pueden abordar en un paso separado.
+## Archivos a modificar (3)
+1. `src/hooks/useLaborHours.ts` — agregar `hsExtrasInhabil`, clasificar por día de semana
+2. `src/components/local/LaborHoursSummary.tsx` — reorganizar columnas
+3. `src/components/local/EmployeeSummaryPanel.tsx` — fix variable no usada
+
+Los demás build errors (PromocionesPage, POSPage, FichaTecnicaTab, financialService, etc.) son pre-existentes y no están relacionados con esta funcionalidad.
 
