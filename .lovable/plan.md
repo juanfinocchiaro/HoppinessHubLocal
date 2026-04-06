@@ -1,45 +1,96 @@
 
-# Corrección masiva de errores de build — Spanish→English naming
 
-## Resumen
-~60 errores de TypeScript en 14+ archivos. Todos son propiedades en español que los types/interfaces ya definen en inglés. Se corrigen las referencias en los componentes para que coincidan.
+# Plan Unificado: Consistencia entre Horarios, Fichajes y Liquidación
 
-## Archivos y cambios
+## Problema central
+Los tres sistemas usan fuentes y lógica diferentes para los mismos conceptos. Vacaciones aparecen como "Franco" en fichajes, horas extras se calculan distinto (mensual vs diario), y la liquidación no muestra las mismas columnas que el negocio necesita.
 
-### 1. `EmployeeSummaryPanel.tsx` — variables no usadas
-- Prefixar `workingSince` y `entryId` con `_`
+## Archivos a modificar (8 archivos)
 
-### 2. `PosHistoryView.tsx`, `AccountItemRow.tsx`, `OrderPanel.tsx` — `notas` → `notes`
+### 1. `src/services/hrService.ts` — Agregar `work_position` a queries
+- `fetchDaySchedulesForClock`: agregar `work_position` al SELECT
+- Query de schedules en `useLaborHours` (línea 275): agregar `work_position` al SELECT
 
-### 3. `ConfigForm.tsx`, `ConfigHeader.tsx`, `ConfigSummaryLine.tsx`
-- `clienteNombre` → `customerName`
-- `clienteTelefono` → `customerPhone`
-- `clienteDireccion` → `customerAddress`
+### 2. `src/components/local/clockins/types.ts` — Nuevos tipos
+- Agregar `position?: string | null` a `ScheduleInfo`
+- Agregar `'vacation'` a `RosterRowStatus`
 
-### 4. `ChangeInvoiceModal.tsx`
-- `tipo_comprobante` → `receipt_type`
-- `punto_venta` → `point_of_sale`
-- `numero_comprobante` → `receipt_number`
+### 3. `src/components/local/clockins/constants.ts` — Nuevo status
+- Agregar `vacation: 'Vacaciones'` a todos los records (`STATUS_LABEL`, `STATUS_COLOR`, `DOT_COLOR`, `STATUS_ORDER`)
 
-### 5. `ModifiersModal.tsx`
-- `source.nombre` → `source.name`
-- Extras/removibles: `nombre`→`name`, `cantidad`→`quantity`
+### 4. `src/hooks/useClockEntries.ts` — Pasar `work_position`
+- En `useDaySchedules`, incluir `position: row.work_position` al construir `ScheduleInfo`
 
-### 6. `SalesAnalysisTab.tsx`
-- `r.medio_pago` → `r.payment_method`
+### 5. `src/components/local/clockins/helpers.ts` — Distinguir vacaciones
+- `shiftLabel()` (línea 341): si `schedule.is_day_off && schedule.position === 'vacaciones'` → "Vacaciones"; si `position === 'cumple'` → "Cumpleaños"
+- `resolveRowStatus()` (línea 256): si `schedule.is_day_off && schedule.position === 'vacaciones'` → devolver status `'vacation'`
 
-### 7. `ModificadoresTab.tsx`
-- `grupo.nombre`→`grupo.name`, `grupo.costo_promedio`→`grupo.average_cost`
-- `gi.insumos`→`gi.supplies`, `gi.preparaciones`→`gi.recipes`
-- `gi.cantidad`→`gi.quantity`, `gi.costo_unitario`→`gi.unit_cost`
+### 6. `src/hooks/useLaborHours.ts` — Corregir lógica de cálculo
+**Cambios en la query (línea 274):** agregar `work_position` al SELECT de `employee_schedules`
 
-### 8. `NewExtraForm.tsx`, `NewRemovibleForm.tsx`
-- `ing.nombre` → `ing.name`
-- `selectedInsumo.cantidad` → `selectedInsumo.quantity`
+**Cambios en el cálculo (líneas 345-362):** reemplazar la lógica actual:
+```text
+ANTES (mal):
+  hsExtrasDiaHabil = max(0, hsHabiles - monthly_hours_limit)  // exceso mensual
 
-### 9. `PromoCard.tsx`, `PromoFormFields.tsx`, `PromoItemRow.tsx`
-- `promo.activa` → `promo.is_active`
-- `e.cantidad` → `e.quantity`
-- `form.description` → `form.descripcion`
+DESPUÉS (correcto):
+  Para cada día en hoursByDay:
+    Si work_position='vacaciones' → diasVacaciones++ (no cuenta horas)
+    Si es FERIADO → hsFeriado += horasDia
+    Si es FRANCO  → hsFranco += horasDia
+    Si es HÁBIL:
+      hsRegulares += min(horasDia, daily_hours_limit)
+      hsExtras    += max(0, horasDia - daily_hours_limit)
+  
+  hsTrabajadasMes = hsRegulares + hsExtras + hsFeriado + hsFranco
+```
 
-No se tocan tipos ni interfaces — solo se actualizan las referencias en componentes.
+**Cambios en `EmployeeLaborSummary`:** agregar `hsRegulares`, `diasVacaciones`. Para esto necesito:
+- Construir un mapa de `date → work_position` desde schedules para saber si cada día es vacaciones, franco normal, o hábil
+- Iterar `hoursByDay` clasificando cada día
+
+**Cambios en `generateLaborCSV`:** nuevas columnas alineadas con la tabla
+
+### 7. `src/components/local/LaborHoursSummary.tsx` — Reorganizar tabla
+
+**Columnas nuevas (en orden):**
+
+| # | Columna | Campo |
+|---|---------|-------|
+| 1 | Empleado | nombre + rol |
+| 2 | Hs Trabajadas | total (regulares + extras + feriado + franco) |
+| 3 | Hs Regulares | `hsRegulares` — nuevo |
+| 4 | Hs Extras | `hsExtrasDiaHabil` — recalculado diario |
+| 5 | Hs Feriado | `feriadosHs` |
+| 6 | Hs Franco | `hsFrancoTrabajado` |
+| 7 | Licencia | `diasVacaciones` — días, no horas |
+| 8 | Faltas Inj. | `faltasInjustificadas` |
+| 9 | Presentismo | SI/NO + `(Xm)` tardanza |
+
+**Columnas eliminadas:** CUIL, Hs Licencia, Lic. Enf., Tardanza (separada), Extras Franco
+
+**Stats cards:** actualizar "Horas extras" para usar el nuevo cálculo
+
+**Tooltips/leyenda:** actualizar descripciones
+
+### 8. `src/components/local/clockins/DayOverviewBar.tsx` — Vacaciones en resumen
+- Contar empleados con status `vacation` y mostrar indicador "X de vacaciones"
+
+## Lógica unificada (los 3 sistemas)
+
+```text
+Fuente de verdad: employee_schedules.work_position
+
+  work_position = 'vacaciones' → VACACIONES (Horarios ✅, Fichajes ✅, Liquidación ✅)
+  work_position = 'cumple'     → CUMPLEAÑOS (Horarios ✅, Fichajes ✅)
+  is_day_off = true (sin position especial) → FRANCO
+  is_day_off = false + horario → DÍA HÁBIL
+
+Horas extras = exceso DIARIO sobre daily_hours_limit (9hs default)
+Vacaciones en liquidación = días con work_position='vacaciones' en schedules
+Presentismo = sin faltas injustificadas AND tardanza acumulada ≤ 15min
+```
+
+## Sin cambios de base de datos
+El campo `work_position` ya existe en `employee_schedules`.
+
