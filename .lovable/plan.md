@@ -1,61 +1,36 @@
 
 
-## Mostrar una fila por puesto en la tabla de Liquidación
+## Mostrar puesto operativo en las celdas del calendario de horarios
 
-### Idea
+### Situación actual
 
-En vez de una sola fila por empleado con los puestos listados en texto, cada empleado tendrá **N filas** (una por cada puesto que ocupó en el mes) y una **fila TOTAL** que consolida todo. Visualmente quedaría así:
+Hoy cada celda del calendario solo muestra:
+- Rango horario (ej: `11:00-17:00`)
+- Un **ícono pequeño** del puesto (tooltip al pasar el mouse)
+
+El puesto asignado no se ve directamente — hay que hacer hover sobre el ícono para saber qué posición cubre.
+
+### Cambio propuesto
+
+Agregar el **nombre del puesto como texto** debajo del horario en cada celda, con el color correspondiente. Quedaría así:
 
 ```text
-┌──────────────────────┬───────┬───────┬─────┬─────┬─────┬─────┬───────┬───────┬───────┬────────┬──────┐
-│ Empleado             │Hs Trab│Hs Reg │Vac  │F.Inj│F.Jus│Tard │Ferias │Franco │Ext.Háb│Ext.Inh │Pres. │
-├──────────────────────┼───────┼───────┼─────┼─────┼─────┼─────┼───────┼───────┼───────┼────────┼──────┤
-│ Agustín Gómez        │       │       │     │     │     │     │       │       │       │        │      │
-│  └ Sandwichero       │ 24.0  │ 24.0  │  -  │  -  │  -  │  -  │   -   │   -   │   -   │   -    │      │
-│  └ Cajero            │ 16.0  │ 16.0  │  -  │  -  │  -  │  -  │   -   │   -   │   -   │   -    │      │
-│  TOTAL               │ 40.0  │ 40.0  │  0  │  0  │  -  │ 0m  │   -   │   -   │   -   │   -    │ SI   │
-├──────────────────────┼───────┼───────┼─────┼─────┼─────┼─────┼───────┼───────┼───────┼────────┼──────┤
-│ María López          │       │       │     │     │     │     │       │       │       │        │      │
-│  └ Cajero            │ 35.0  │ 35.0  │  -  │  -  │  -  │  -  │   -   │   -   │   -   │   -    │      │
-│  TOTAL               │ 35.0  │ 35.0  │  0  │  0  │  -  │ 0m  │   -   │   -   │   -   │   -    │ SI   │
-└──────────────────────┴───────┴───────┴─────┴─────┴─────┴─────┴───────┴───────┴───────┴────────┴──────┘
+┌──────────────┐
+│ 11:00-17:00  │
+│ 🔥 Sandwich. │  ← nombre abreviado + ícono, en color
+└──────────────┘
 ```
 
-### Cambios
+### Cambios en archivo
 
-**1. `src/hooks/useLaborHours.ts`**
-- Agregar `hoursByPosition: Record<string, number>` al tipo `EmployeeLaborSummary`
-- En el loop diario, cruzar cada día con `positionByDate` para acumular horas por posición
-- También desglosar las sub-categorías por posición: regulares, extras hábil, extras inhábil, feriados, franco (nuevo tipo `PositionBreakdown`)
+**`src/components/hr/InlineScheduleEditor.tsx`** (único archivo)
 
-**2. `src/components/local/LaborHoursSummary.tsx`**
-- Cambiar `EmployeeRow` para renderizar:
-  - Una fila "header" con avatar + nombre + rol de sistema (sin datos numéricos, o solo como agrupador)
-  - Una sub-fila por cada posición con indent visual (`pl-8`), mostrando las horas desglosadas de ese puesto
-  - Una fila "TOTAL" con fondo destacado que suma todo y muestra presentismo, faltas, tardanza, vacaciones (datos que son globales del empleado)
-- Las filas de posición y total se muestran siempre (no requieren expandir)
-- El expand/collapse sigue mostrando el detalle de fichajes día a día
+En la función `renderCellContent` (~línea 793-830), donde ya se renderiza el `PositionIcon` dentro de un tooltip:
 
-**3. `src/utils/laborExport.ts` y `laborEmployeeExport.ts`**
-- Replicar la misma estructura en PDF/Excel: sub-filas por posición + fila total por empleado
+1. Agregar el **label del puesto** como texto visible junto al ícono (no solo en tooltip)
+2. Usar el color de `positionConfig.color` para el texto
+3. Truncar nombres largos con `truncate` y `max-w` para que entre en la celda de 80px
+4. Para posiciones que no están en `POSITION_ICONS` (dinámicas), mostrar el nombre capitalizado en gris
 
-### Detalle técnico del desglose por posición
-
-```typescript
-// Nuevo tipo
-interface PositionBreakdown {
-  position: string;
-  hsTrabajadas: number;
-  hsRegulares: number;
-  hsExtrasDiaHabil: number;
-  hsExtrasInhabil: number;
-  feriadosHs: number;
-  hsFrancoTrabajado: number;
-}
-
-// En EmployeeLaborSummary
-positionBreakdown: PositionBreakdown[];
-```
-
-En el loop diario existente, donde ya se clasifica cada día, se agrega la acumulación por posición usando el `work_position` del schedule de ese día. Los días sin posición asignada se agrupan bajo "Sin puesto".
+El ícono se mantiene, pero el label ahora es visible directamente sin necesidad de hover.
 
