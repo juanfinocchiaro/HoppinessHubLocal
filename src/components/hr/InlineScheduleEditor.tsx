@@ -807,21 +807,19 @@ export default function InlineScheduleEditor({
           )}
         </div>
 
-        <div className="flex items-center gap-1">
-          {PositionIcon && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PositionIcon className={cn('w-3 h-3', positionConfig.color)} />
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                {positionConfig.label}
-              </TooltipContent>
-            </Tooltip>
-          )}
+        <div className="flex items-center gap-1 max-w-full">
+          {PositionIcon ? (
+            <div className="flex items-center gap-0.5 truncate max-w-full" style={{ color: positionConfig.color.includes('text-') ? undefined : positionConfig.color }}>
+              <PositionIcon className={cn('w-3 h-3 shrink-0', positionConfig.color)} />
+              <span className={cn('truncate', positionConfig.color)}>{positionConfig.label}</span>
+            </div>
+          ) : value.position ? (
+            <span className="truncate text-muted-foreground capitalize">{value.position}</span>
+          ) : null}
           {hasBreak && !hasSplitShift && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Coffee className="w-3 h-3 text-amber-600" />
+                <Coffee className="w-3 h-3 text-amber-600 shrink-0" />
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
                 Break: {value.breakStart?.slice(0, 5)}-{value.breakEnd?.slice(0, 5)}
