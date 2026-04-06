@@ -63,9 +63,9 @@ export function useEmployeeTimeData({ branchId, year, month, userId }: UseEmploy
       ]);
       const laborConfig = laborConfigRaw;
 
-      const userIdsFromEntries = [...new Set(entries.map((e: any) => e.user_id))];
-      const userIdsFromSchedules = [...new Set(schedules.map((s: any) => s.user_id))];
-      const allUserIds = [...new Set([...userIdsFromEntries, ...userIdsFromSchedules])];
+      const userIdsFromEntries = [...new Set(entries.map((e: any) => e.user_id as string))];
+      const userIdsFromSchedules = [...new Set(schedules.map((s: any) => s.user_id as string))];
+      const allUserIds: string[] = [...new Set([...userIdsFromEntries, ...userIdsFromSchedules])];
       const targetUserIds = userId ? allUserIds.filter((id) => id === userId) : allUserIds;
       const usersData = await fetchLaborUsersData(branchId, targetUserIds);
 
