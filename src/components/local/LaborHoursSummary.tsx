@@ -625,6 +625,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
               positions={positionsList}
               consumos={financialMap.get(summary.userId)?.consumos ?? 0}
               adelantos={financialMap.get(summary.userId)?.adelantos ?? 0}
+              userConsumptions={consumptions.filter((c) => c.user_id === summary.userId)}
+              userAdvances={advances.filter((a) => a.user_id === summary.userId)}
               onAddConsumo={() => setConsumptionTarget({ userId: summary.userId, userName: summary.userName })}
               onViewConsumos={() => setConsumptionListTarget({ userId: summary.userId, userName: summary.userName })}
             />
