@@ -49,7 +49,9 @@ export function DayOverviewBar({ rows, isToday }: Props) {
 
     const unclosedCount = mainRows.filter((r) => r.status === 'unclosed').length;
     const absentCount = mainRows.filter((r) => r.status === 'absent').length;
-    const offCount = mainRows.filter((r) => ['day_off', 'leave'].includes(r.status)).length;
+    const offCount = mainRows.filter((r) => r.status === 'day_off').length;
+    const vacationCount = mainRows.filter((r) => r.status === 'vacation').length;
+    const leaveCount = mainRows.filter((r) => r.status === 'leave').length;
 
     return {
       workShifts, covered, allCovered,
