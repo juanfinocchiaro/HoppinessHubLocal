@@ -206,11 +206,11 @@ function EmployeeRow({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportEmployeePDF(summary, monthLabel); }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); const empName = summary.userName.toUpperCase().replace(/\s+/g, '_'); exportEmployeePDF(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`); }}>
                   <FileText className="h-4 w-4 mr-2" />
                   PDF individual
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportEmployeeExcel(summary, monthLabel); }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); const empName = summary.userName.toUpperCase().replace(/\s+/g, '_'); exportEmployeeExcel(summary, monthLabel, `${branchTag}_LIQUIDACION_${monthOnly}_${yearStr}_${empName}`); }}>
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   Excel individual
                 </DropdownMenuItem>
