@@ -81,7 +81,7 @@ export function buildFormFromPromo(promo: {
     producto_ids: promo.producto_ids,
     categoria_ids: promo.categoria_ids,
     tipo_usuario: promo.tipo_usuario as PromocionFormData['tipo_usuario'],
-    activa: promo.activa,
+    is_active: promo.activa,
     branch_ids: promo.branch_ids,
     canales: promo.canales || ALL_CANALES,
   };
