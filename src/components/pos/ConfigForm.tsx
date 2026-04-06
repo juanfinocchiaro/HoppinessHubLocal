@@ -305,9 +305,9 @@ export function ConfigForm({
                 <div className="relative mt-1">
                   <Input
                     placeholder="Ej: 3511234567"
-                    value={config.clienteTelefono}
+                    value={config.customerPhone}
                     onChange={(e) => {
-                      set({ clienteTelefono: e.target.value, clienteUserId: undefined });
+                      set({ customerPhone: e.target.value, clienteUserId: undefined });
                       setProfileSuggestion(null);
                     }}
                     className="h-9 pr-8"
