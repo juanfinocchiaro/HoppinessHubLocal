@@ -91,7 +91,7 @@ export default function RdoMultivistaPage() {
     if (!query) return base;
     return base.filter(
       (p) =>
-        p.name.toLowerCase().includes(query) ||
+        p.nombre.toLowerCase().includes(query) ||
         (p.categoria_nombre || '').toLowerCase().includes(query),
     );
   }, [data?.opciones_filtros.productos, productoSearch]);
