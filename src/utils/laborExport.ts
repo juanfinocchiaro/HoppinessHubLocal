@@ -291,7 +291,7 @@ export function exportLaborExcel(
     data.push([
       i + 1,
       s.userName,
-      s.localRole?.toUpperCase() || '-',
+      formatPosition(s.localRole),
       s.hsTrabajadasMes,
       s.hsRegulares,
       s.diasVacaciones,
