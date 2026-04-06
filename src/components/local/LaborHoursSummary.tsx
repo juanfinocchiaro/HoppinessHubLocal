@@ -56,6 +56,7 @@ import {
   useEmployeeConsumptionsByMonth,
   useSalaryAdvancesByMonth,
   aggregateByUser,
+  EmployeeConsumption,
 } from '@/hooks/useEmployeeConsumptions';
 import { EmployeeConsumptionModal } from '@/components/local/EmployeeConsumptionModal';
 import { EmployeeConsumptionListModal } from '@/components/local/EmployeeConsumptionListModal';
