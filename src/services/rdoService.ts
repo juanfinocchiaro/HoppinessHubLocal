@@ -307,22 +307,22 @@ export async function upsertRdoMovimiento(data: RdoMovimientoFormData, userId?: 
   await fromUntyped('rdo_movements')
     .update({ deleted_at: new Date().toISOString() })
     .eq('branch_id', data.branch_id)
-    .eq('period', data.periodo)
+    .eq('period', data.period)
     .eq('rdo_category_code', data.rdo_category_code)
     .eq('source', data.origen)
     .is('source_id', null)
     .is('deleted_at', null);
 
-  if (data.monto === 0) return null;
+  if (data.amount === 0) return null;
 
   const { data: result, error } = await fromUntyped('rdo_movements')
     .insert([
       {
         branch_id: data.branch_id,
-        period: data.periodo,
+        period: data.period,
         rdo_category_code: data.rdo_category_code,
         source: data.origen,
-        amount: data.monto,
+        amount: data.amount,
         description: data.descripcion,
         extra_data: data.datos_extra as any,
         created_by: userId,
