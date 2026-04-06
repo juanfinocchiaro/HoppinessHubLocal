@@ -156,7 +156,7 @@ export function SalesAnalysisTab({ branchId, daysBack, onDaysBackChange }: Sales
     if (!rows.length) return;
     exportToExcel(
       rows.map((r) => ({
-        medio_pago: r.medio_pago,
+        medio_pago: r.payment_method,
         pedidos: r.pedidos,
         ventas: r.ventas,
         porcentaje: Number(r.porcentaje.toFixed(2)),
