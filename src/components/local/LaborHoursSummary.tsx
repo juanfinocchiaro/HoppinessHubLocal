@@ -403,7 +403,6 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
           </div>
         );
       })()}
-      </div>
 
       {/* Leyenda de columnas */}
       <Card className="p-3">
