@@ -540,6 +540,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
                     onToggle={() =>
                       setExpandedUserId(expandedUserId === summary.userId ? null : summary.userId)
                     }
+                    monthLabel={monthLabelCapitalized}
+                  />
                   />
                 ))}
               </TableBody>
