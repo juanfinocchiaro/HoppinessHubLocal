@@ -1075,6 +1075,21 @@ export default function InlineScheduleEditor({
                       onDeselect={selection.clearSelection}
                       positions={workPositions}
                       showBirthday={true}
+                      initialValues={(() => {
+                        if (selection.selectedCells.size !== 1) return undefined;
+                        const cellKey = Array.from(selection.selectedCells)[0];
+                        const [userId, dateStr] = cellKey.split(':');
+                        const val = getEffectiveValue(userId, dateStr);
+                        if (val.isDayOff || !val.startTime || !val.endTime) return undefined;
+                        return {
+                          startTime: val.startTime,
+                          endTime: val.endTime,
+                          position: val.position,
+                          isSplitShift: !!(val.startTime2 && val.endTime2),
+                          startTime2: val.startTime2 || undefined,
+                          endTime2: val.endTime2 || undefined,
+                        };
+                      })()}
                     />
                   </div>
                 )}
