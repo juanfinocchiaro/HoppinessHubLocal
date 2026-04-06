@@ -265,8 +265,8 @@ export function ConfigForm({
                     className="h-8 text-xs font-medium"
                     onClick={() => {
                       const updates: Partial<OrderConfig> = { numeroLlamador: String(num) };
-                      if (!config.clienteNombre || config.clienteNombre.startsWith('Llamador #')) {
-                        updates.clienteNombre = `Llamador #${num}`;
+                      if (!config.customerName || config.customerName.startsWith('Llamador #')) {
+                        updates.customerName = `Llamador #${num}`;
                       }
                       set(updates);
                     }}
