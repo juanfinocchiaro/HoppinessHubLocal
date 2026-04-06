@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 
 interface Props {
   row: RosterRow;
+  allRows?: RosterRow[];
   branchId: string;
   selectedDate: Date;
   canEdit?: boolean;
@@ -35,6 +36,7 @@ interface Props {
 
 export function RosterExpandedRow({
   row,
+  allRows,
   branchId,
   selectedDate,
   canEdit,
@@ -100,8 +102,17 @@ export function RosterExpandedRow({
 
   // ── Day detail ──────────────────────────────────────────────────────
   const dayEntries = useMemo(() => {
-    return row.sessions.flatMap((s) => [s.clockIn, s.clockOut].filter(Boolean)) as ClockEntry[];
-  }, [row.sessions]);
+    const rowsToProcess = allRows ?? [row];
+    const all = rowsToProcess.flatMap((r) =>
+      r.sessions.flatMap((s) => [s.clockIn, s.clockOut].filter(Boolean))
+    ) as ClockEntry[];
+    // Deduplicate by id and sort chronologically
+    const deduped = new Map<string, ClockEntry>();
+    for (const e of all) deduped.set(e.id, e);
+    return [...deduped.values()].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [row.sessions, allRows]);
 
   const dayDateStr = format(selectedDate, 'yyyy-MM-dd');
 

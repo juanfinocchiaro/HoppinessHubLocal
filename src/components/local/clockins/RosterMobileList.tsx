@@ -230,6 +230,7 @@ export function RosterMobileList({
             {isExpanded && (
               <RosterExpandedRow
                 row={mainRow}
+                allRows={group.rows}
                 branchId={branchId}
                 selectedDate={selectedDate}
                 canEdit={canEdit}
