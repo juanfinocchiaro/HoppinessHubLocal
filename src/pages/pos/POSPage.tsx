@@ -443,7 +443,7 @@ function POSPageContent({ branchId }: { branchId: string }) {
         caller_number: orderConfig.numeroLlamador
           ? parseInt(orderConfig.numeroLlamador, 10)
           : null,
-        customer_name: orderConfig.clienteNombre ?? null,
+        customer_name: orderConfig.customerName ?? null,
         referencia_app: orderConfig.referenciaApp ?? null,
         created_at: new Date().toISOString(),
         items: cart.map((c) => ({
