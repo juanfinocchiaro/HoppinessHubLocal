@@ -34,6 +34,7 @@ export const DOT_COLOR: Record<RosterRowStatus, string> = {
   pending: 'bg-sky-400',
   completed: 'bg-gray-400',
   day_off: 'bg-gray-300',
+  vacation: 'bg-cyan-400',
   leave: 'bg-purple-400',
   no_schedule: 'bg-orange-300',
 };
