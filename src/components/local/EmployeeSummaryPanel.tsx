@@ -129,13 +129,6 @@ export function EmployeeSummaryPanel({
   });
   const laborSummary = summaries.find((s) => s.userId === userId);
 
-  // ── Data: payroll ──
-  const { rows: payrollRows } = usePayrollReport({
-    branchId,
-    year: todayDate.getFullYear(),
-    month: todayDate.getMonth(),
-  });
-  const payrollRow = payrollRows.find((r) => r.userId === userId);
 
   // ── Data: consumptions & advances ──
   const { data: consumptions = [] } = useEmployeeConsumptionsByMonth(branchId, todayDate.getFullYear(), todayDate.getMonth());
