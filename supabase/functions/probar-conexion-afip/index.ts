@@ -47,7 +47,9 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("branch_id", branch_id)
       .single();
-
+    console.log("debug");
+    console.log(config);
+    console.log(configError);
     if (configError || !config) {
       return new Response(
         JSON.stringify({ error: "No hay configuración ARCA para esta sucursal ´${branch_id}´ ´${configError}´" }),
