@@ -175,6 +175,53 @@ export function exportLaborPDF(
     },
   });
 
+  // References / Glossary
+  const GLOSSARY: string[][] = [
+    ['Hs Trab.', 'Total de horas trabajadas en el mes (incluye feriados, francos, todo lo trabajado en el local)'],
+    ['Hs Reg.', 'Horas regulares de trabajo en el local'],
+    ['Vacac.', 'Dias de vacaciones tomados'],
+    ['Faltas Inj.', 'Faltas injustificadas. No afecta liquidacion pero el empleado pierde el presentismo'],
+    ['Falta Just.', 'Falta justificada: se computan las horas del horario programado ese dia'],
+    ['Tardanza', 'Minutos de tardanza acumulados en el mes. 15 min acumulados = pierde presentismo'],
+    ['Hs Fer.', 'Horas trabajadas en dias feriado'],
+    ['Hs Franco', 'Horas trabajadas en dia franco'],
+    ['Ext. Hab.', 'Horas extras de lunes a viernes'],
+    ['Ext. Inh.', 'Horas extras de sabado y domingo'],
+    ['Present.', 'Presentismo: SI si no tiene faltas injustificadas ni tardanza mayor a 15 min acumulados'],
+  ];
+
+  const lastTableY = (doc as any).lastAutoTable?.finalY || 33;
+  const pageH = doc.internal.pageSize.getHeight();
+  const glossaryHeight = GLOSSARY.length * 5 + 15;
+
+  // Add new page if not enough space
+  if (lastTableY + glossaryHeight > pageH - 15) {
+    doc.addPage();
+  }
+
+  autoTable(doc, {
+    startY: lastTableY + glossaryHeight > pageH - 15 ? 15 : lastTableY + 8,
+    head: [['Columna', 'Descripcion']],
+    body: GLOSSARY,
+    theme: 'plain',
+    styles: {
+      fontSize: 7,
+      cellPadding: 1.5,
+      textColor: [80, 80, 80],
+    },
+    headStyles: {
+      fillColor: [230, 233, 240],
+      textColor: [41, 65, 106],
+      fontStyle: 'bold',
+      fontSize: 7.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 22, fontStyle: 'bold' },
+      1: { cellWidth: 120 },
+    },
+    tableWidth: 142,
+  });
+
   // Footer
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
