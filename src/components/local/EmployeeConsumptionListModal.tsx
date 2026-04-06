@@ -10,7 +10,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   useEmployeeConsumptionsByMonth,
   useEmployeeConsumptionMutations,
-  type EmployeeConsumption,
 } from '@/hooks/useEmployeeConsumptions';
 import { EmployeeConsumptionModal } from './EmployeeConsumptionModal';
 

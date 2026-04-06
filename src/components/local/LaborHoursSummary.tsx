@@ -86,6 +86,7 @@ function EmployeeCard({
   consumos,
   adelantos,
   onAddConsumo,
+  onViewConsumos,
 }: {
   summary: EmployeeLaborSummary;
   expanded: boolean;
@@ -98,6 +99,7 @@ function EmployeeCard({
   consumos: number;
   adelantos: number;
   onAddConsumo: () => void;
+  onViewConsumos: () => void;
 }) {
   const initials = summary.userName
     .split(' ')
