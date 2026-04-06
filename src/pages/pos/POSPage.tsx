@@ -190,16 +190,16 @@ function POSPageContent({ branchId }: { branchId: string }) {
       }
       if (
         orderConfig.tipoServicio === 'takeaway' &&
-        !orderConfig.clienteNombre?.trim() &&
+        !orderConfig.customerName?.trim() &&
         !orderConfig.numeroLlamador
       ) {
         return 'Ingresá el nombre del cliente o un número de llamador';
       }
       if (orderConfig.tipoServicio === 'delivery') {
-        if (!orderConfig.clienteNombre?.trim() || !orderConfig.clienteTelefono?.trim()) {
+        if (!orderConfig.customerName?.trim() || !orderConfig.customerPhone?.trim()) {
           return 'Nombre y teléfono son requeridos';
         }
-        if (!orderConfig.clienteDireccion?.trim()) return 'Ingresá la dirección de entrega';
+        if (!orderConfig.customerAddress?.trim()) return 'Ingresá la dirección de entrega';
       }
     }
     // Validate invoice fields â€” required only for Factura A
