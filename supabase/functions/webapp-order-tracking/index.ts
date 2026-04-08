@@ -1,12 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-/**
- * Public edge function — returns order status by tracking code.
- * No auth required. Sanitised output (no customer PII).
- *
- * GET ?code=<uuid>
- */
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -42,27 +35,27 @@ Deno.serve(async (req) => {
 
     // Fetch order (non-sensitive fields only)
     const { data: pedido, error: pedErr } = await supabase
-      .from("pedidos")
+      .from("orders")
       .select(
-        `id, order_number, estado, tipo, tipo_servicio,
-         subtotal, costo_delivery, descuento, total,
-         tiempo_prometido, tiempo_inicio_prep, tiempo_listo, tiempo_entregado,
-         tiempo_confirmado, tiempo_en_camino,
-         pago_estado, created_at, cliente_nombre,
+        `id, order_number, status, type, service_type,
+         subtotal, delivery_cost, descuento, total,
+         promised_time, prep_started_at_time, ready_at_time, delivered_at_time,
+         confirmed_at_time, on_route_at_time,
+         pago_estado, created_at, customer_name,
          branch_id`,
       )
       .eq("webapp_tracking_code", trackingCode)
-      .single();
+      .maybeSingle();
 
     if (pedErr || !pedido)
       return json(404, { error: "Pedido no encontrado" });
 
     // Fetch items + modifiers
     const { data: items } = await supabase
-      .from("pedido_items")
+      .from("order_items")
       .select(
-        `id, nombre, cantidad, precio_unitario, subtotal, notas,
-         pedido_item_modificadores(tipo, descripcion, precio_extra)`,
+        `id, name, quantity, unit_price, subtotal, notes,
+         order_item_modifiers(type, description, extra_price)`,
       )
       .eq("pedido_id", pedido.id)
       .order("created_at", { ascending: true });
@@ -74,62 +67,55 @@ Deno.serve(async (req) => {
       .eq("id", pedido.branch_id)
       .single();
 
-    // Build timeline from timestamps
-    // States flow: pendiente → confirmado → en_preparacion → listo → [en_camino] → entregado
-    const estado = pedido.estado;
+    // Build timeline
+    const estado = pedido.status;
     const timeline: Array<{ estado: string; timestamp: string | null }> = [
       { estado: "pendiente", timestamp: pedido.created_at },
     ];
 
-    // Confirmado (accepted by store)
     const pastConfirmado = estado !== "pendiente" && estado !== "cancelado";
     if (pastConfirmado) {
       timeline.push({
         estado: "confirmado",
-        timestamp: pedido.tiempo_confirmado ?? pedido.tiempo_inicio_prep ?? null,
+        timestamp: pedido.confirmed_at_time ?? pedido.prep_started_at_time ?? null,
       });
     }
 
-    // En preparación
     const pastPrep = ["en_preparacion", "listo", "en_camino", "entregado"].includes(estado);
     if (pastPrep) {
       timeline.push({
         estado: "en_preparacion",
-        timestamp: pedido.tiempo_inicio_prep,
+        timestamp: pedido.prep_started_at_time,
       });
     }
 
-    // Listo
     const pastListo = ["listo", "en_camino", "entregado"].includes(estado);
     if (pastListo) {
-      timeline.push({ estado: "listo", timestamp: pedido.tiempo_listo });
+      timeline.push({ estado: "listo", timestamp: pedido.ready_at_time });
     }
 
-    // En camino (delivery only)
     const pastEnCamino = ["en_camino", "entregado"].includes(estado);
-    if (pastEnCamino && pedido.tipo_servicio === "delivery") {
+    if (pastEnCamino && pedido.service_type === "delivery") {
       timeline.push({
         estado: "en_camino",
-        timestamp: pedido.tiempo_en_camino ?? null,
+        timestamp: pedido.on_route_at_time ?? null,
       });
     }
 
-    // Entregado
     if (estado === "entregado") {
       timeline.push({
         estado: "entregado",
-        timestamp: pedido.tiempo_entregado,
+        timestamp: pedido.delivered_at_time,
       });
     }
 
-    // Cancelado
     if (estado === "cancelado") {
       timeline.push({ estado: "cancelado", timestamp: null });
     }
 
     // Delivery tracking (cadete GPS)
     let deliveryTracking = null;
-    if (pedido.tipo_servicio === "delivery") {
+    if (pedido.service_type === "delivery") {
       const { data: dt } = await supabase
         .from("delivery_tracking")
         .select(
@@ -156,27 +142,27 @@ Deno.serve(async (req) => {
       pedido: {
         id: pedido.id,
         numero_pedido: pedido.order_number,
-        estado: pedido.estado,
-        tipo_servicio: pedido.tipo_servicio,
+        estado: pedido.status,
+        tipo_servicio: pedido.service_type,
         subtotal: pedido.subtotal,
-        costo_delivery: pedido.costo_delivery,
+        costo_delivery: pedido.delivery_cost,
         descuento: pedido.descuento,
         total: pedido.total,
         pago_estado: pedido.pago_estado,
-        tiempo_prometido: pedido.tiempo_prometido,
+        tiempo_prometido: pedido.promised_time,
         created_at: pedido.created_at,
-        cliente_nombre: pedido.cliente_nombre,
+        cliente_nombre: pedido.customer_name,
       },
       items: (items ?? []).map((it: any) => ({
-        nombre: it.nombre,
-        cantidad: it.cantidad,
-        precio_unitario: it.precio_unitario,
+        nombre: it.name,
+        cantidad: it.quantity,
+        precio_unitario: it.unit_price,
         subtotal: it.subtotal,
-        notas: it.notas,
-        modificadores: (it.pedido_item_modificadores ?? []).map((m: any) => ({
-          tipo: m.tipo,
-          descripcion: m.descripcion,
-          precio_extra: m.precio_extra,
+        notas: it.notes,
+        modificadores: (it.order_item_modifiers ?? []).map((m: any) => ({
+          tipo: m.type,
+          descripcion: m.description,
+          precio_extra: m.extra_price,
         })),
       })),
       branch: branch ?? null,
