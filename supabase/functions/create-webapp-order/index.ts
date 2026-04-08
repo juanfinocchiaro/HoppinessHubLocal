@@ -47,8 +47,7 @@ interface CreateWebappOrderBody {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 function json(status: number, body: unknown) {
@@ -59,15 +58,11 @@ function json(status: number, body: unknown) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS")
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const body: CreateWebappOrderBody = await req.json();
 
@@ -76,7 +71,9 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
       if (user) {
         clienteUserId = user.id;
 
@@ -98,19 +95,13 @@ Deno.serve(async (req) => {
 
     // ── Validation ──────────────────────────────────────────────
     if (!body.branch_id) return json(400, { error: "branch_id es requerido" });
-    if (!body.cliente_nombre?.trim())
-      return json(400, { error: "cliente_nombre es requerido" });
-    if (!body.cliente_telefono?.trim())
-      return json(400, { error: "cliente_telefono es requerido" });
+    if (!body.cliente_nombre?.trim()) return json(400, { error: "cliente_nombre es requerido" });
+    if (!body.cliente_telefono?.trim()) return json(400, { error: "cliente_telefono es requerido" });
     if (!Array.isArray(body.items) || body.items.length === 0)
       return json(400, { error: "Se requiere al menos un item" });
-    if (
-      body.tipo_servicio === "delivery" &&
-      !body.cliente_direccion?.trim()
-    )
+    if (body.tipo_servicio === "delivery" && !body.cliente_direccion?.trim())
       return json(400, { error: "La dirección es requerida para delivery" });
-    if (body.tipo_servicio === "comer_aca")
-      return json(400, { error: "Comer acá no disponible por web" });
+    if (body.tipo_servicio === "comer_aca") return json(400, { error: "Comer acá no disponible por web" });
 
     // ── Verify branch & webapp config ───────────────────────────
     const { data: config, error: cfgErr } = await supabase
@@ -119,13 +110,11 @@ Deno.serve(async (req) => {
       .eq("branch_id", body.branch_id)
       .single();
 
-    if (cfgErr || !config)
-      return json(400, { error: "Local no encontrado o webapp no configurada" });
+    if (cfgErr || !config) return json(400, { error: "Local no encontrado o webapp no configurada" });
 
-    if (!config.webapp_activa)
-      return json(400, { error: "La webapp de este local no está activa" });
+    if (!config.webapp_activa) return json(400, { error: "La webapp de este local no está activa" });
 
-    if (config.estado !== "abierto")
+    if (config.status !== "abierto")
       return json(400, {
         error: config.mensaje_pausa || "El local no está recibiendo pedidos en este momento",
       });
@@ -139,24 +128,28 @@ Deno.serve(async (req) => {
     const itemIds = body.items.map((i) => i.item_carta_id);
     const { data: cartaItems, error: itemsErr } = await supabase
       .from("items_carta")
-      .select("id, nombre, precio_base, categoria_carta_id, kitchen_station_id, disponible_webapp, kitchen_stations(name)")
+      .select(
+        "id, nombre, precio_base, categoria_carta_id, kitchen_station_id, disponible_webapp, kitchen_stations(name)",
+      )
       .in("id", itemIds);
 
-    if (itemsErr)
-      return json(500, { error: "Error al verificar productos" });
+    if (itemsErr) return json(500, { error: "Error al verificar productos" });
 
-    const cartaMap = new Map(
-      (cartaItems ?? []).map((ci: any) => [ci.id, ci]),
-    );
+    const cartaMap = new Map((cartaItems ?? []).map((ci: any) => [ci.id, ci]));
 
     // Fetch active promo prices for these items
     const { data: promoItems } = await supabase
       .from("promocion_items")
-      .select("id, item_carta_id, precio_promo, promocion_id, promociones!inner(activa, canales, fecha_inicio, fecha_fin)")
+      .select(
+        "id, item_carta_id, precio_promo, promocion_id, promociones!inner(activa, canales, fecha_inicio, fecha_fin)",
+      )
       .in("item_carta_id", itemIds);
 
     const promoMap = new Map<string, number>();
-    const promoItemMap = new Map<string, { id: string; item_carta_id: string; precio_promo: number; promocion_id: string }>();
+    const promoItemMap = new Map<
+      string,
+      { id: string; item_carta_id: string; precio_promo: number; promocion_id: string }
+    >();
     for (const pi of promoItems ?? []) {
       const promo = (pi as any).promociones;
       if (!promo?.activa) continue;
@@ -180,8 +173,7 @@ Deno.serve(async (req) => {
     // Validate all items exist and are webapp-enabled
     for (const item of body.items) {
       const ci = cartaMap.get(item.item_carta_id);
-      if (!ci)
-        return json(400, { error: `Producto no encontrado: ${item.nombre}` });
+      if (!ci) return json(400, { error: `Producto no encontrado: ${item.nombre}` });
       if (ci.disponible_webapp === false)
         return json(400, { error: `"${ci.nombre}" no está disponible para pedidos online` });
     }
@@ -215,10 +207,9 @@ Deno.serve(async (req) => {
     if (body.tipo_servicio === "delivery") {
       if (body.delivery_lat != null && body.delivery_lng != null) {
         // Re-calculate delivery cost server-side (never trust client value)
-        const { data: calcResult, error: calcErr } = await supabase.functions.invoke(
-          "calculate-delivery",
-          { body: { branch_id: body.branch_id, lat: body.delivery_lat, lng: body.delivery_lng } },
-        );
+        const { data: calcResult, error: calcErr } = await supabase.functions.invoke("calculate-delivery", {
+          body: { branch_id: body.branch_id, lat: body.delivery_lat, lng: body.delivery_lng },
+        });
         if (!calcErr && calcResult?.available && calcResult?.cost != null) {
           costoDelivery = calcResult.cost;
         } else if (body.delivery_cost_calculated != null) {
@@ -233,10 +224,8 @@ Deno.serve(async (req) => {
           .eq("branch_id", body.branch_id)
           .single();
 
-        if (zoneErr || !zone)
-          return json(400, { error: "Zona de delivery no encontrada" });
-        if (!zone.is_active)
-          return json(400, { error: "Esta zona de delivery no está disponible" });
+        if (zoneErr || !zone) return json(400, { error: "Zona de delivery no encontrada" });
+        if (!zone.is_active) return json(400, { error: "Esta zona de delivery no está disponible" });
 
         costoDelivery = zone.costo_envio ?? 0;
         deliveryZoneId = zone.id;
@@ -250,10 +239,7 @@ Deno.serve(async (req) => {
       } else {
         costoDelivery = config.delivery_costo ?? 0;
 
-        if (
-          config.delivery_pedido_minimo &&
-          subtotal < config.delivery_pedido_minimo
-        ) {
+        if (config.delivery_pedido_minimo && subtotal < config.delivery_pedido_minimo) {
           return json(400, {
             error: `El pedido mínimo para delivery es $${config.delivery_pedido_minimo}`,
           });
@@ -264,16 +250,13 @@ Deno.serve(async (req) => {
     const total = subtotal + costoDelivery;
 
     // ── Generate order_number ──────────────────────────────────
-    const { data: numeroPedido, error: numErr } = await supabase.rpc(
-      "generate_order_number",
-      { p_branch_id: body.branch_id },
-    );
-    if (numErr)
-      return json(500, { error: "Error al generar número de pedido" });
+    const { data: numeroPedido, error: numErr } = await supabase.rpc("generate_order_number", {
+      p_branch_id: body.branch_id,
+    });
+    if (numErr) return json(500, { error: "Error al generar número de pedido" });
 
     // ── Determine auto-accept ───────────────────────────────────
-    const autoAccept = config.auto_accept_orders === true ||
-      config.recepcion_modo === "auto";
+    const autoAccept = config.auto_accept_orders === true || config.recepcion_modo === "auto";
 
     // Orders with MercadoPago start in pendiente_pago (invisible to kitchen)
     // until webhook confirms payment. Cash orders go straight to kitchen.
@@ -304,14 +287,9 @@ Deno.serve(async (req) => {
     const trackingCode = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    const pagoEstado =
-      body.metodo_pago === "mercadopago" ? "pendiente" : "pendiente_entrega";
+    const pagoEstado = body.metodo_pago === "mercadopago" ? "pendiente" : "pendiente_entrega";
 
-    const estadoInicial = isMpPayment
-      ? "pendiente_pago"
-      : autoAccept
-        ? "en_preparacion"
-        : "pendiente";
+    const estadoInicial = isMpPayment ? "pendiente_pago" : autoAccept ? "en_preparacion" : "pendiente";
 
     const { error: pedidoErr } = await supabase.from("pedidos").insert({
       id: pedidoId,
@@ -338,9 +316,7 @@ Deno.serve(async (req) => {
       delivery_lng: body.delivery_lng ?? null,
       delivery_distance_km: body.delivery_distance_km ?? null,
       webapp_tracking_code: trackingCode,
-      tiempo_prometido: tiempoEstimado
-        ? new Date(Date.now() + tiempoEstimado * 60_000).toISOString()
-        : null,
+      tiempo_prometido: tiempoEstimado ? new Date(Date.now() + tiempoEstimado * 60_000).toISOString() : null,
       tiempo_inicio_prep: !isMpPayment && autoAccept ? now : null,
       origen: "webapp",
       cliente_user_id: clienteUserId,
@@ -360,8 +336,7 @@ Deno.serve(async (req) => {
       } else if (item.articulo_tipo !== "promo") {
         serverPrice = promoMap.get(item.item_carta_id) ?? ci.precio_base;
       }
-      const stationName =
-        (ci.kitchen_stations as any)?.name ?? "armado";
+      const stationName = (ci.kitchen_stations as any)?.name ?? "armado";
       const extrasTotal = (item.extras ?? []).reduce(
         (s: number, e: { precio: number; cantidad?: number }) => s + e.precio * (e.cantidad ?? 1),
         0,
@@ -432,9 +407,7 @@ Deno.serve(async (req) => {
       }
 
       if (modifiers.length > 0) {
-        const { error: modErr } = await supabase
-          .from("pedido_item_modificadores")
-          .insert(modifiers as any);
+        const { error: modErr } = await supabase.from("pedido_item_modificadores").insert(modifiers as any);
         if (modErr) {
           console.error("Modifier insert error:", modErr);
           await supabase.from("pedidos").delete().eq("id", pedidoId);
