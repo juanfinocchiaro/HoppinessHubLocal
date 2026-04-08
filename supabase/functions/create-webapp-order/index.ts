@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
 
     if (!config.webapp_activa) return json(400, { error: "La webapp de este local no está activa" });
 
+    console.log(config.status);
     if (config.status !== "abierto")
       return json(400, {
         error: config.mensaje_pausa || "El local no está recibiendo pedidos en este momento",
