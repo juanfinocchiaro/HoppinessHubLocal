@@ -77,7 +77,12 @@ Deno.serve(async (req) => {
       cliente_referencia: raw.cliente_referencia || raw.customer_reference || null,
       cliente_notas: raw.cliente_notas || raw.customer_notes || null,
       tipo_servicio: raw.tipo_servicio || raw.service_type || "retiro",
-      metodo_pago: raw.metodo_pago || raw.payment_method || "efectivo",
+      metodo_pago: (() => {
+        const m = raw.metodo_pago || raw.payment_method || "efectivo";
+        if (m === "cash") return "efectivo";
+        if (m === "mercadopago" || m === "mp") return "mercadopago";
+        return m;
+      })(),
     };
 
     // ── Normalize item field names (English → Spanish) ──────────
