@@ -9,20 +9,20 @@ export interface AddressResult {
   neighborhood_name?: string;
 }
 
-export type TipoServicioWebapp = 'retiro' | 'delivery';
+export type TipoServicioWebapp = "retiro" | "delivery";
 
 export interface WebappConfig {
   id: string;
   branch_id: string;
   webapp_activa: boolean;
-  estado: 'abierto' | 'pausado' | 'cerrado';
+  status: "abierto" | "pausado" | "cerrado";
   delivery_habilitado: boolean;
   delivery_radio_km: number;
   delivery_costo: number | null;
   delivery_pedido_minimo: number | null;
   retiro_habilitado: boolean;
   comer_aca_habilitado: boolean;
-  recepcion_modo: 'auto' | 'manual';
+  recepcion_modo: "auto" | "manual";
   auto_accept_orders?: boolean;
   tiempo_estimado_retiro_min: number;
   tiempo_estimado_delivery_min: number;
@@ -62,7 +62,7 @@ export interface CartItemModifier {
   id: string;
   name: string;
   precio: number;
-  tipo: 'extra' | 'sin';
+  tipo: "extra" | "sin";
   quantity?: number;
 }
 
