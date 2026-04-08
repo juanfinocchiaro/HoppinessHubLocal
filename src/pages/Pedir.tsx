@@ -97,12 +97,12 @@ function useBranchesForPedir() {
             closing_time: b.closing_time ?? null,
             public_hours: b.public_hours ?? null,
             webapp_activa: cfg?.webapp_activa === true,
-            estado: cfg?.estado ?? 'cerrado',
+            estado: cfg?.status ?? 'cerrado',
             delivery_habilitado: cfg?.delivery_habilitado ?? false,
             retiro_habilitado: cfg?.retiro_habilitado ?? false,
             delivery_costo: cfg?.delivery_costo ?? null,
-            tiempo_retiro: cfg?.tiempo_estimado_retiro_min ?? null,
-            tiempo_delivery: cfg?.tiempo_estimado_delivery_min ?? null,
+            tiempo_retiro: cfg?.estimated_pickup_time_min ?? null,
+            tiempo_delivery: cfg?.estimated_delivery_time_min ?? null,
           };
         })
         .sort((a, b) => {

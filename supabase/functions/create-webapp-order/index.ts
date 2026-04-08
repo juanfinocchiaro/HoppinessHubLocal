@@ -293,9 +293,9 @@ Deno.serve(async (req) => {
       if (dynamicRow) {
         tiempoEstimado = tiempoEstimadoZona ?? dynamicRow.prep_time_min;
       } else if (body.tipo_servicio === "delivery") {
-        tiempoEstimado = tiempoEstimadoZona ?? config.prep_time_delivery ?? config.tiempo_estimado_delivery_min ?? 40;
+        tiempoEstimado = tiempoEstimadoZona ?? config.prep_time_delivery ?? config.estimated_delivery_time_min ?? 40;
       } else {
-        tiempoEstimado = config.prep_time_retiro ?? config.tiempo_estimado_retiro_min ?? 15;
+        tiempoEstimado = config.prep_time_retiro ?? config.estimated_pickup_time_min ?? 15;
       }
     }
 

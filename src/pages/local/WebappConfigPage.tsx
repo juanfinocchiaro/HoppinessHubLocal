@@ -99,8 +99,8 @@ export default function WebappConfigPage() {
         prep_time_retiro: services.retiro?.prep_time ?? 15,
         prep_time_delivery: services.delivery?.prep_time ?? 40,
         prep_time_comer_aca: services.comer_aca?.prep_time ?? 15,
-        tiempo_estimado_retiro_min: services.retiro?.prep_time ?? null,
-        tiempo_estimado_delivery_min: services.delivery?.prep_time ?? null,
+        estimated_pickup_time_min: services.retiro?.prep_time ?? null,
+        estimated_delivery_time_min: services.delivery?.prep_time ?? null,
         service_schedules: services,
         updated_at: new Date().toISOString(),
       };

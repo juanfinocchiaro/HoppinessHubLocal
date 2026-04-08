@@ -54,7 +54,7 @@ export async function fetchBranchesForPedir() {
   if (branchIds.length > 0) {
     const { data: configs, error: configErr } = await fromUntyped('webapp_config')
       .select(
-        'branch_id, webapp_activa, estado, delivery_habilitado, retiro_habilitado, delivery_costo, tiempo_estimado_retiro_min, tiempo_estimado_delivery_min',
+        'branch_id, webapp_activa, status, delivery_habilitado, retiro_habilitado, delivery_costo, estimated_pickup_time_min, estimated_delivery_time_min',
       )
       .in('branch_id', branchIds);
 

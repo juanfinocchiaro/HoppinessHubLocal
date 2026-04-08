@@ -26,6 +26,8 @@ export interface WebappConfig {
   auto_accept_orders?: boolean;
   tiempo_estimado_retiro_min: number;
   tiempo_estimado_delivery_min: number;
+  estimated_pickup_time_min?: number;
+  estimated_delivery_time_min?: number;
   prep_time_retiro?: number | null;
   prep_time_delivery?: number | null;
   prep_time_comer_aca?: number | null;
