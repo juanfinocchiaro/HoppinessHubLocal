@@ -80,6 +80,28 @@ Deno.serve(async (req) => {
       metodo_pago: raw.metodo_pago || raw.payment_method || "efectivo",
     };
 
+    // ── Normalize item field names (English → Spanish) ──────────
+    if (Array.isArray(body.items)) {
+      body.items = body.items.map((item: any) => ({
+        ...item,
+        nombre: item.nombre || item.name || "",
+        cantidad: Number(item.cantidad ?? item.quantity ?? 1),
+        precio_unitario: Number(item.precio_unitario ?? item.unit_price ?? 0),
+        notas: item.notas ?? item.notes ?? null,
+        extras: (item.extras ?? []).map((e: any) => ({
+          ...e,
+          nombre: e.nombre || e.name || "",
+          precio: Number(e.precio ?? e.price ?? 0),
+          cantidad: Number(e.cantidad ?? e.quantity ?? 1),
+        })),
+        incluidos: (item.incluidos ?? []).map((inc: any) => ({
+          ...inc,
+          nombre: inc.nombre || inc.name || "",
+          cantidad: Number(inc.cantidad ?? inc.quantity ?? 1),
+        })),
+      }));
+    }
+
     // ── Extract authenticated user (if any) ─────────────────────
     let clienteUserId: string | null = null;
     const authHeader = req.headers.get("Authorization");
