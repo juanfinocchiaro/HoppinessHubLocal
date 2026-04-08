@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     // ── Force-cancel any known pending order ────────────────────────────
     if (force_cancel_pending) {
       const { data: pendingPedido } = await supabase
-        .from("pedidos")
+        .from("orders")
         .select("mp_payment_intent_id")
         .eq("branch_id", branch_id)
         .not("mp_payment_intent_id", "is", null)
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
     if (result.status === 409) {
       // Try to find and cancel the blocking order
       const { data: lastPedido } = await supabase
-        .from("pedidos")
+        .from("orders")
         .select("mp_payment_intent_id")
         .eq("branch_id", branch_id)
         .not("mp_payment_intent_id", "is", null)
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
 
     // Save the order ID on the pedido for future cancellation/tracking
     await supabase
-      .from("pedidos")
+      .from("orders")
       .update({ mp_payment_intent_id: orderId } as any)
       .eq("id", pedido_id)
       .eq("branch_id", branch_id);

@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     const extRef = body.data?.external_reference;
     if (extRef) {
       const { data: pedido } = await supabase
-        .from("pedidos")
+        .from("orders")
         .select("branch_id")
         .eq("id", extRef)
         .maybeSingle();
@@ -181,77 +181,74 @@ Deno.serve(async (req) => {
 
     if (externalReference && status === "approved") {
       // Idempotency: check if this payment was already processed
-      const { data: existing } = await supabase
-        .from("pedido_pagos")
-        .select("id")
-        .eq("mp_payment_id", String(paymentId))
-        .limit(1)
-        .maybeSingle();
+        const { data: existing } = await supabase
+          .from("order_payments")
+          .select("id")
+          .eq("mp_payment_id", String(paymentId))
+          .limit(1)
+          .maybeSingle();
 
-      if (!existing) {
-        const metodo = mapPaymentMethod(paymentData);
+        if (!existing) {
+          const metodo = mapPaymentMethod(paymentData);
 
-        // Insert the payment record with reconciliation data
-        await supabase.from("pedido_pagos").insert({
-          pedido_id: externalReference,
-          metodo,
-          monto: transactionAmount,
-          monto_recibido: transactionAmount,
-          vuelto: 0,
-          mp_payment_id: String(paymentId),
-          conciliado: true,
-          conciliado_at: new Date().toISOString(),
-        });
-
-        // Fetch current order state to decide transition
-        const { data: pedido } = await supabase
-          .from("pedidos")
-          .select("id, estado, origen, branch_id")
-          .eq("id", externalReference)
-          .eq("branch_id", matchedBranchId)
-          .single();
-
-        if (pedido) {
-          const updates: Record<string, unknown> = {
+          await supabase.from("order_payments").insert({
+            pedido_id: externalReference,
+            method: metodo,
+            amount: transactionAmount,
+            received_amount: transactionAmount,
+            vuelto: 0,
             mp_payment_id: String(paymentId),
-            pago_estado: "confirmado",
-          };
+            conciliado: true,
+            conciliado_at: new Date().toISOString(),
+          });
 
-          // Transition pendiente_pago -> pendiente (makes order visible to kitchen)
-          if (pedido.estado === "pendiente_pago") {
-            if (pedido.origen === "webapp") {
-              const { data: wconfig } = await supabase
-                .from("webapp_config")
-                .select("auto_accept_orders, recepcion_modo")
-                .eq("branch_id", matchedBranchId)
-                .single();
-
-              const autoAccept =
-                wconfig?.auto_accept_orders === true ||
-                wconfig?.recepcion_modo === "auto";
-
-              updates.estado = autoAccept ? "en_preparacion" : "pendiente";
-              if (autoAccept) {
-                updates.tiempo_inicio_prep = new Date().toISOString();
-              }
-            } else {
-              updates.estado = "pendiente";
-            }
-          }
-
-          await supabase
-            .from("pedidos")
-            .update(updates)
+          const { data: pedido } = await supabase
+            .from("orders")
+            .select("id, status, source, branch_id")
             .eq("id", externalReference)
-            .eq("branch_id", matchedBranchId);
-        }
+            .eq("branch_id", matchedBranchId)
+            .single();
+
+          if (pedido) {
+            const updates: Record<string, unknown> = {
+              pago_online_id: String(paymentId),
+              pago_estado: "confirmado",
+            };
+
+            if (pedido.status === "pendiente_pago") {
+              if (pedido.source === "webapp") {
+                const { data: wconfig } = await supabase
+                  .from("webapp_config")
+                  .select("auto_accept_orders, recepcion_modo")
+                  .eq("branch_id", matchedBranchId)
+                  .single();
+
+                const autoAccept =
+                  wconfig?.auto_accept_orders === true ||
+                  wconfig?.recepcion_modo === "auto";
+
+                updates.status = autoAccept ? "en_preparacion" : "pendiente";
+                if (autoAccept) {
+                  updates.prep_started_at_time = new Date().toISOString();
+                }
+              } else {
+                updates.status = "pendiente";
+              }
+            }
+
+            await supabase
+              .from("orders")
+              .update(updates)
+              .eq("id", externalReference)
+              .eq("branch_id", matchedBranchId);
+          }
       }
     }
 
     // Handle refunds, chargebacks, and rejections
     if (externalReference && (status === "refunded" || status === "charged_back")) {
       await supabase
-        .from("pedidos")
+        .from("orders")
         .update({ pago_estado: "reembolsado" })
         .eq("id", externalReference)
         .eq("branch_id", matchedBranchId);
@@ -259,16 +256,16 @@ Deno.serve(async (req) => {
 
     if (externalReference && (status === "rejected" || status === "cancelled")) {
       const { data: pedido } = await supabase
-        .from("pedidos")
-        .select("estado")
+        .from("orders")
+        .select("status")
         .eq("id", externalReference)
         .eq("branch_id", matchedBranchId)
         .single();
 
-      if (pedido?.estado === "pendiente_pago") {
+      if (pedido?.status === "pendiente_pago") {
         await supabase
-          .from("pedidos")
-          .update({ pago_estado: "rechazado", estado: "cancelado" })
+          .from("orders")
+          .update({ pago_estado: "rechazado", status: "cancelado" })
           .eq("id", externalReference)
           .eq("branch_id", matchedBranchId);
       }
