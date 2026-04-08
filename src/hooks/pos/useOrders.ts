@@ -38,7 +38,7 @@ export interface PaymentLineInput {
 
 export interface CreatePedidoParams {
   items: PedidoItemInput[];
-  tipo?: "counter" | "delivery" | "webapp";
+  tipo?: "mostrador" | "delivery" | "webapp";
   descuento?: number;
   metodoPago?: string;
   montoRecibido?: number;
