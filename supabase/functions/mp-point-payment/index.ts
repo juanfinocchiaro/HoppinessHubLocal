@@ -76,11 +76,11 @@ Deno.serve(async (req) => {
 
     const { data: config } = await supabase
       .from("mercadopago_config")
-      .select("access_token, device_id, estado_conexion")
+      .select("access_token, device_id, connection_status")
       .eq("branch_id", branch_id)
       .single();
 
-    if (!config?.access_token || config.estado_conexion !== "conectado") {
+    if (!config?.access_token || config.connection_status !== "conectado") {
       return json(400, { error: "MercadoPago no está conectado para este local" });
     }
     if (!config.device_id) {

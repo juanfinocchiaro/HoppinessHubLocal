@@ -73,9 +73,9 @@ Deno.serve(async (req) => {
       await supabase
         .from("mercadopago_config")
         .update({
-          estado_conexion: "error",
-          ultimo_test: new Date().toISOString(),
-          ultimo_test_ok: false,
+          connection_status: "error",
+          last_test: new Date().toISOString(),
+          last_test_ok: false,
         })
         .eq("branch_id", branch_id);
 
@@ -91,10 +91,10 @@ Deno.serve(async (req) => {
     await supabase
       .from("mercadopago_config")
       .update({
-        estado_conexion: "conectado",
+        connection_status: "conectado",
         collector_id: String(mpData.id),
-        ultimo_test: new Date().toISOString(),
-        ultimo_test_ok: true,
+        last_test: new Date().toISOString(),
+        last_test_ok: true,
       })
       .eq("branch_id", branch_id);
 

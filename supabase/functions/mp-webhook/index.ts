@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
           .from("mercadopago_config")
           .select("branch_id, access_token")
           .eq("branch_id", pedido.branch_id)
-          .eq("estado_conexion", "conectado")
+          .eq("connection_status", "conectado")
           .single();
         if (cfg?.access_token) {
           matchedBranchId = cfg.branch_id;
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       const { data: configs } = await supabase
         .from("mercadopago_config")
         .select("branch_id, access_token")
-        .eq("estado_conexion", "conectado");
+        .eq("connection_status", "conectado");
 
       if (!configs?.length) {
         return new Response(
