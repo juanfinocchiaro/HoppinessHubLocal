@@ -330,11 +330,11 @@ Deno.serve(async (req) => {
     // ── Insert pedido_items ─────────────────────────────────────
     for (const item of body.items) {
       const ci = cartaMap.get(item.item_carta_id)!;
-      let serverPrice = ci.precio_base;
+      let serverPrice = ci.base_price;
       if (item.promocion_item_id) {
-        serverPrice = promoItemMap.get(item.promocion_item_id)?.precio_promo ?? ci.precio_base;
+        serverPrice = promoItemMap.get(item.promocion_item_id)?.promo_price ?? ci.base_price;
       } else if (item.articulo_tipo !== "promo") {
-        serverPrice = promoMap.get(item.item_carta_id) ?? ci.precio_base;
+        serverPrice = promoMap.get(item.item_carta_id) ?? ci.base_price;
       }
       const stationName = (ci.kitchen_stations as any)?.name ?? "armado";
       const extrasTotal = (item.extras ?? []).reduce(
