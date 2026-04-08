@@ -64,7 +64,21 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    const body: CreateWebappOrderBody = await req.json();
+    const raw = await req.json();
+
+    // ── Normalize English field names from frontend to Spanish ──
+    const body: CreateWebappOrderBody = {
+      ...raw,
+      cliente_nombre: raw.cliente_nombre || raw.customer_name || "",
+      cliente_telefono: raw.cliente_telefono || raw.customer_phone || "",
+      cliente_email: raw.cliente_email ?? raw.customer_email ?? null,
+      cliente_direccion: raw.cliente_direccion || raw.customer_address || null,
+      cliente_piso: raw.cliente_piso || raw.customer_floor || null,
+      cliente_referencia: raw.cliente_referencia || raw.customer_reference || null,
+      cliente_notas: raw.cliente_notas || raw.customer_notes || null,
+      tipo_servicio: raw.tipo_servicio || raw.service_type || "retiro",
+      metodo_pago: raw.metodo_pago || raw.payment_method || "efectivo",
+    };
 
     // ── Extract authenticated user (if any) ─────────────────────
     let clienteUserId: string | null = null;
