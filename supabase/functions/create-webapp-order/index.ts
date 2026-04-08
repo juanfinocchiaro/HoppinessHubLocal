@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const total = subtotal + costoDelivery;
+    const total = Number(subtotal) + Number(costoDelivery);
 
     // ── Generate order_number ──────────────────────────────────
     const { data: numeroPedido, error: numErr } = await supabase.rpc("generate_order_number", {
