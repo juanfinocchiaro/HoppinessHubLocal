@@ -18,6 +18,7 @@ interface PointPaymentRequest {
   pedido_id: string;
   amount: number;
   ticket_number?: string;
+  cancel_order_id?: string;
   /** If true, cancel any pending order on the device before creating a new one */
   force_cancel_pending?: boolean;
 }
@@ -54,7 +55,7 @@ Deno.serve(async (req) => {
     if (authError || !user) return json(401, { error: "Unauthorized" });
 
     const body: PointPaymentRequest = await req.json();
-    const { branch_id, pedido_id, amount, ticket_number, force_cancel_pending } = body;
+    const { branch_id, pedido_id, amount, ticket_number, force_cancel_pending, cancel_order_id } = body;
 
     // Access check via normalized model
     const [{ data: hasAccessV2 }, { data: localRole }] = await Promise.all([
@@ -70,7 +71,7 @@ Deno.serve(async (req) => {
     ]);
     if (!hasAccessV2 && !localRole) return json(403, { error: "No tenés acceso a este local" });
 
-    if (!branch_id || !pedido_id || !amount) {
+    if (!branch_id || !pedido_id || (!amount && !cancel_order_id)) {
       return json(400, { error: "branch_id, pedido_id y amount son requeridos" });
     }
 
@@ -89,6 +90,15 @@ Deno.serve(async (req) => {
 
     const accessToken = config.access_token;
     const deviceId = config.device_id;
+
+    if (cancel_order_id) {
+      const cancelResult = await cancelOrder(accessToken, cancel_order_id);
+      return json(cancelResult.ok ? 200 : 502, {
+        ok: cancelResult.ok,
+        cancelled_order_id: cancel_order_id,
+        detail: cancelResult.data,
+      });
+    }
 
     // ── Force-cancel any known pending order ────────────────────────────
     if (force_cancel_pending) {

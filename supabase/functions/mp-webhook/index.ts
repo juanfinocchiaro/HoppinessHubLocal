@@ -180,68 +180,67 @@ Deno.serve(async (req) => {
     const transactionAmount = Number(paymentData.transaction_amount);
 
     if (externalReference && status === "approved") {
-      // Idempotency: check if this payment was already processed
-        const { data: existing } = await supabase
-          .from("order_payments")
-          .select("id")
-          .eq("mp_payment_id", String(paymentId))
-          .limit(1)
-          .maybeSingle();
+      const { data: existing } = await supabase
+        .from("order_payments")
+        .select("id")
+        .eq("mp_payment_id", String(paymentId))
+        .limit(1)
+        .maybeSingle();
 
-        if (!existing) {
-          const metodo = mapPaymentMethod(paymentData);
+      if (!existing) {
+        const metodo = mapPaymentMethod(paymentData);
 
-          await supabase.from("order_payments").insert({
-            pedido_id: externalReference,
-            method: metodo,
-            amount: transactionAmount,
-            received_amount: transactionAmount,
-            vuelto: 0,
-            mp_payment_id: String(paymentId),
-            conciliado: true,
-            conciliado_at: new Date().toISOString(),
-          });
+        await supabase.from("order_payments").insert({
+          pedido_id: externalReference,
+          method: metodo,
+          amount: transactionAmount,
+          received_amount: transactionAmount,
+          vuelto: 0,
+          mp_payment_id: String(paymentId),
+          conciliado: true,
+          conciliado_at: new Date().toISOString(),
+        });
+      }
 
-          const { data: pedido } = await supabase
-            .from("orders")
-            .select("id, status, source, branch_id")
-            .eq("id", externalReference)
-            .eq("branch_id", matchedBranchId)
-            .single();
+      const { data: pedido } = await supabase
+        .from("orders")
+        .select("id, status, source, branch_id")
+        .eq("id", externalReference)
+        .eq("branch_id", matchedBranchId)
+        .single();
 
-          if (pedido) {
-            const updates: Record<string, unknown> = {
-              pago_online_id: String(paymentId),
-              pago_estado: "confirmado",
-            };
+      if (pedido) {
+        const updates: Record<string, unknown> = {
+          pago_online_id: String(paymentId),
+          pago_estado: "confirmado",
+        };
 
-            if (pedido.status === "pendiente_pago") {
-              if (pedido.source === "webapp") {
-                const { data: wconfig } = await supabase
-                  .from("webapp_config")
-                  .select("auto_accept_orders, recepcion_modo")
-                  .eq("branch_id", matchedBranchId)
-                  .single();
+        if (pedido.status === "pendiente_pago") {
+          if (pedido.source === "webapp") {
+            const { data: wconfig } = await supabase
+              .from("webapp_config")
+              .select("auto_accept_orders, recepcion_modo")
+              .eq("branch_id", matchedBranchId)
+              .single();
 
-                const autoAccept =
-                  wconfig?.auto_accept_orders === true ||
-                  wconfig?.recepcion_modo === "auto";
+            const autoAccept =
+              wconfig?.auto_accept_orders === true ||
+              wconfig?.recepcion_modo === "auto";
 
-                updates.status = autoAccept ? "en_preparacion" : "pendiente";
-                if (autoAccept) {
-                  updates.prep_started_at_time = new Date().toISOString();
-                }
-              } else {
-                updates.status = "pendiente";
-              }
+            updates.status = autoAccept ? "en_preparacion" : "pendiente";
+            if (autoAccept) {
+              updates.prep_started_at_time = new Date().toISOString();
             }
-
-            await supabase
-              .from("orders")
-              .update(updates)
-              .eq("id", externalReference)
-              .eq("branch_id", matchedBranchId);
+          } else {
+            updates.status = "pendiente";
           }
+        }
+
+        await supabase
+          .from("orders")
+          .update(updates)
+          .eq("id", externalReference)
+          .eq("branch_id", matchedBranchId);
       }
     }
 
