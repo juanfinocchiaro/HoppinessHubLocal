@@ -297,7 +297,7 @@ export function RegisterPaymentPanel({
           )}
         </div>
         {/* Point Smart shortcut */}
-        {hasPointSmart && onPointSmartPayment && (
+        {hasPointSmart && onPointSmartPayment && !esEfectivo && (
           <button
             type="button"
             disabled={maxNonCash <= 0}

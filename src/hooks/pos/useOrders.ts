@@ -56,11 +56,11 @@ export function useOrders(branchId: string) {
   });
 }
 
-function resolveTipo(orderConfig?: OrderConfig): "counter" | "delivery" | "webapp" {
-  if (!orderConfig) return "counter";
+function resolveTipo(orderConfig?: OrderConfig): "mostrador" | "delivery" | "webapp" {
+  if (!orderConfig) return "mostrador";
   if (orderConfig.canalVenta === "apps") return "webapp";
   if (orderConfig.tipoServicio === "delivery") return "delivery";
-  return "counter";
+  return "mostrador";
 }
 
 export function useCreatePedido(branchId: string) {
