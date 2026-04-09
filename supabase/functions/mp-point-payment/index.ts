@@ -19,6 +19,7 @@ interface PointPaymentRequest {
   amount: number;
   ticket_number?: string;
   cancel_order_id?: string;
+  check_order_id?: string;
   /** If true, cancel any pending order on the device before creating a new one */
   force_cancel_pending?: boolean;
 }
@@ -55,7 +56,7 @@ Deno.serve(async (req) => {
     if (authError || !user) return json(401, { error: "Unauthorized" });
 
     const body: PointPaymentRequest = await req.json();
-    const { branch_id, pedido_id, amount, ticket_number, force_cancel_pending, cancel_order_id } = body;
+    const { branch_id, pedido_id, amount, ticket_number, force_cancel_pending, cancel_order_id, check_order_id } = body;
 
     // Access check via normalized model
     const [{ data: hasAccessV2 }, { data: localRole }] = await Promise.all([
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
     ]);
     if (!hasAccessV2 && !localRole) return json(403, { error: "No tenés acceso a este local" });
 
-    if (!branch_id || !pedido_id || (!amount && !cancel_order_id)) {
+    if (!branch_id || !pedido_id || (!amount && !cancel_order_id && !check_order_id)) {
       return json(400, { error: "branch_id, pedido_id y amount son requeridos" });
     }
 
@@ -91,11 +92,54 @@ Deno.serve(async (req) => {
     const accessToken = config.access_token;
     const deviceId = config.device_id;
 
+    if (check_order_id) {
+      const orderStatus = await getOrderStatus(accessToken, check_order_id);
+      if (!orderStatus.ok) {
+        return json(orderStatus.status || 502, {
+          error: orderStatus.data?.message || "No se pudo consultar el estado del cobro",
+          detail: orderStatus.data,
+        });
+      }
+
+      const status = orderStatus.data?.status ?? null;
+
+      const { data: existingPayment } = await supabase
+        .from("order_payments")
+        .select("method, amount, mp_payment_id, conciliado")
+        .eq("pedido_id", pedido_id)
+        .not("mp_payment_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return json(200, {
+        ok: true,
+        order_id: check_order_id,
+        status,
+        reconciled: !!existingPayment?.mp_payment_id,
+        payment: existingPayment
+          ? {
+              method: existingPayment.method,
+              amount: existingPayment.amount,
+              mp_payment_id: existingPayment.mp_payment_id,
+            }
+          : null,
+      });
+    }
+
     if (cancel_order_id) {
       const cancelResult = await cancelOrder(accessToken, cancel_order_id);
-      return json(cancelResult.ok ? 200 : 502, {
+      const manualCancelRequired =
+        !cancelResult.ok &&
+        cancelResult.data?.errors?.some((err: { code?: string }) => err.code === "cannot_cancel_order");
+
+      return json(manualCancelRequired || cancelResult.ok ? 200 : 502, {
         ok: cancelResult.ok,
         cancelled_order_id: cancel_order_id,
+        manual_cancel_required: manualCancelRequired,
+        error: manualCancelRequired
+          ? "El cobro sigue activo en el Point Smart. Cancelalo manualmente desde el dispositivo."
+          : undefined,
         detail: cancelResult.data,
       });
     }
