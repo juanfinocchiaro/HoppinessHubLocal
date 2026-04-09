@@ -35,9 +35,13 @@ const TIMEOUT_MS = 5 * 60 * 1000;
 const METODO_LABELS: Record<string, string> = {
   debit_card: 'Tarjeta Débito',
   credit_card: 'Tarjeta Crédito',
+  tarjeta_debito: 'Tarjeta Débito',
+  tarjeta_credito: 'Tarjeta Crédito',
   mercadopago_qr: 'QR MercadoPago',
   cash: 'Efectivo',
+  efectivo: 'Efectivo',
   transfer: 'Transferencia',
+  transferencia: 'Transferencia',
 };
 
 export function PointPaymentModal({
@@ -120,7 +124,9 @@ export function PointPaymentModal({
 
   // Subscribe to realtime changes on pedido_pagos for this order
   useEffect(() => {
-    if (!open || !pedidoId || stage !== 'waiting') return;
+    if (!open || !pedidoId || !paymentIntentId || stage !== 'waiting') return;
+
+    let disposed = false;
 
     const channel = subscribeToPedidoPagos(pedidoId, (row) => {
       if (row.conciliado === true && row.mp_payment_id) {
@@ -134,6 +140,40 @@ export function PointPaymentModal({
       }
     });
 
+    const pollPaymentStatus = async () => {
+      try {
+        const { data, error } = await invokeMpPointPayment({
+          branch_id: branchId,
+          pedido_id: pedidoId,
+          amount: 0,
+          check_order_id: paymentIntentId,
+        });
+
+        if (disposed || error || !data) return;
+
+        if (data.reconciled && data.payment?.mp_payment_id) {
+          const payment: ConfirmedPayment = {
+            method: String(data.payment.method),
+            amount: Number(data.payment.amount),
+            mp_payment_id: String(data.payment.mp_payment_id),
+          };
+          setConfirmedPayment(payment);
+          setStage('confirmed');
+          return;
+        }
+
+        if (data.status === 'rejected' || data.status === 'cancelled') {
+          setErrorMsg('El pago fue rechazado o cancelado en el Point Smart.');
+          setStage('rejected');
+        }
+      } catch {
+        // keep waiting, realtime/webhook may still arrive
+      }
+    };
+
+    pollPaymentStatus();
+    const poller = setInterval(pollPaymentStatus, 4000);
+
     const timer = setTimeout(() => {
       if (stage === 'waiting') {
         setStage('error');
@@ -142,10 +182,12 @@ export function PointPaymentModal({
     }, TIMEOUT_MS);
 
     return () => {
+      disposed = true;
       removeSupabaseChannel(channel);
+      clearInterval(poller);
       clearTimeout(timer);
     };
-  }, [open, pedidoId, stage]);
+  }, [open, pedidoId, paymentIntentId, stage, branchId]);
 
   // Auto-close and notify on confirmation
   useEffect(() => {
@@ -159,22 +201,29 @@ export function PointPaymentModal({
   }, [stage, confirmedPayment]);
 
   const handleCancel = async () => {
-    setStage('cancelled');
-
     // Cancel the order via API if we have the ID
     if (paymentIntentId) {
       try {
-        await invokeMpPointPayment({
+        const { data } = await invokeMpPointPayment({
           branch_id: branchId,
           pedido_id: pedidoId,
           amount: 0,
           cancel_order_id: paymentIntentId,
-        }).catch(() => {});
+        });
+
+        if (data?.manual_cancel_required) {
+          setStage('error');
+          setErrorMsg(data.error ?? 'Cancelá manualmente el cobro en el Point Smart y luego reintentá.');
+          return;
+        }
       } catch {
-        // Best-effort
+        setStage('error');
+        setErrorMsg('No se pudo cancelar el cobro desde el Point Smart.');
+        return;
       }
     }
 
+    setStage('cancelled');
     toast.info('Cobro cancelado');
     onCancelled?.();
     onOpenChange(false);
