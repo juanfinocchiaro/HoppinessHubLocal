@@ -102,6 +102,19 @@ Deno.serve(async (req) => {
       }
 
       const status = orderStatus.data?.status ?? null;
+      const paymentId = orderStatus.data?.transactions?.payments?.[0]?.id
+        ? String(orderStatus.data.transactions.payments[0].id)
+        : null;
+
+      if (status === "processed" && paymentId) {
+        await reconcileApprovedPayment({
+          supabase,
+          accessToken,
+          branchId: branch_id,
+          pedidoId: pedido_id,
+          paymentId,
+        });
+      }
 
       const { data: existingPayment } = await supabase
         .from("order_payments")
@@ -301,4 +314,116 @@ async function cancelOrder(
   } catch {
     return { ok: false };
   }
+}
+
+async function getOrderStatus(
+  accessToken: string,
+  orderId: string,
+): Promise<{ ok: boolean; status: number; data?: any }> {
+  try {
+    const res = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 500 };
+  }
+}
+
+async function getPaymentStatus(
+  accessToken: string,
+  paymentId: string,
+): Promise<{ ok: boolean; status: number; data?: any }> {
+  try {
+    const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 500 };
+  }
+}
+
+function mapPaymentMethod(paymentData: Record<string, unknown>): string {
+  const typeId = paymentData.payment_type_id as string | undefined;
+  const methodId = paymentData.payment_method_id as string | undefined;
+
+  if (typeId === "debit_card" || methodId === "debit_card") return "tarjeta_debito";
+  if (typeId === "credit_card" || methodId === "credit_card") return "tarjeta_credito";
+  if (typeId === "account_money" || methodId === "account_money") return "mercadopago_qr";
+  if (typeId === "bank_transfer" || methodId === "bank_transfer") return "transferencia";
+
+  return "mercadopago_qr";
+}
+
+async function reconcileApprovedPayment({
+  supabase,
+  accessToken,
+  branchId,
+  pedidoId,
+  paymentId,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  accessToken: string;
+  branchId: string;
+  pedidoId: string;
+  paymentId: string;
+}) {
+  const { data: existing } = await supabase
+    .from("order_payments")
+    .select("id")
+    .eq("mp_payment_id", paymentId)
+    .limit(1)
+    .maybeSingle();
+
+  if (!existing) {
+    const paymentStatus = await getPaymentStatus(accessToken, paymentId);
+    if (!paymentStatus.ok || paymentStatus.data?.status !== "approved") return;
+
+    const paymentData = paymentStatus.data as Record<string, unknown>;
+    const transactionAmount = Number(paymentData.transaction_amount ?? 0);
+
+    await supabase.from("order_payments").insert({
+      pedido_id: pedidoId,
+      method: mapPaymentMethod(paymentData),
+      amount: transactionAmount,
+      received_amount: transactionAmount,
+      vuelto: 0,
+      mp_payment_id: paymentId,
+      conciliado: true,
+      conciliado_at: new Date().toISOString(),
+    });
+  }
+
+  const { data: pedido } = await supabase
+    .from("orders")
+    .select("id, status, source")
+    .eq("id", pedidoId)
+    .eq("branch_id", branchId)
+    .maybeSingle();
+
+  if (!pedido) return;
+
+  const updates: Record<string, unknown> = {
+    pago_online_id: paymentId,
+    pago_estado: "confirmado",
+  };
+
+  if (pedido.status === "pendiente_pago") {
+    updates.status = pedido.source === "webapp" ? "pendiente" : "pendiente";
+  }
+
+  await supabase
+    .from("orders")
+    .update(updates)
+    .eq("id", pedidoId)
+    .eq("branch_id", branchId);
 }
