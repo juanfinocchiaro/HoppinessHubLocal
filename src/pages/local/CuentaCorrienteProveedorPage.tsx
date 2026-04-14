@@ -496,6 +496,17 @@ export default function CuentaCorrienteProveedorPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              title="Editar fecha"
+                              onClick={() => setEditingPago({ id: mov.id, date: mov.date })}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {!isFactura && !mov.is_verified && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
                               title="Eliminar pago"
                               onClick={() => setDeletingPagoId(mov.id)}
                             >
