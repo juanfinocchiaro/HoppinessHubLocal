@@ -1,61 +1,41 @@
 
 
-## Diagnóstico: Errores en el saldo acumulado de Cuenta Corriente
+## Fix: Pagos a cuenta no se imputan a facturas pendientes
 
-### Problemas encontrados
+### Problema actual
 
-**1. Doble conteo de imputaciones de saldo a favor**
+Cuando se registra un "Pago a Cuenta" (sin vincular a factura), el dinero queda como pago flotante (`invoice_id = NULL`). Las facturas siguen mostrando su `pending_balance` completo y aparecen como "vencidas", aunque hay fondos suficientes para cubrirlas.
 
-Cuando se sobrepaga una factura (ej: CANON-2025-12 se pagó $2,656,290.62 sobre $2,648,797.83), el saldo acumulado ya refleja ese sobrante como balance negativo (-$7,492.79). Luego, al registrar la "imputación" como un pago de $7,492.79 contra la siguiente factura, se resta DOS veces del saldo acumulado.
-
-```text
-Ejemplo actual (incorrecto):
-  CANON-2025-12      +2,648,797.83  → saldo 2,648,797.83
-  Pago transferencia  -1,256,290.62  → saldo 1,392,507.21
-  Pago efectivo       -1,400,000.00  → saldo -7,492.79    ← overpayment ya reflejado
-  CANON-2026-01      +2,389,815.66  → saldo 2,382,322.87
-  Imputación          -7,492.79      → saldo 2,374,830.08  ← DOBLE CONTEO
-
-Correcto:
-  ...mismos pasos...
-  CANON-2026-01      +2,389,815.66  → saldo 2,382,322.87  ← imputación no afecta running balance
-```
-
-**2. CANON-2026-01 marcada como "pagado" incorrectamente**
-
-La factura de enero 2026 tiene `pending_balance = 0` y `status = pagado`, pero solo tiene $7,492.79 en pagos reales (la imputación). Falta aplicar el pago a cuenta de $2,500,000.
-
-```text
-Datos en DB:
-  CANON-2026-01: total=2,389,815.66, total_paid=7,492.79, pending=0, status=pagado ← MAL
-  Pago a cuenta: $2,500,000 con invoice_id=NULL (no aplicado)
-```
-
-**3. Efecto cascada: saldo final inflado**
-
-El saldo final muestra $4,873,409.94 cuando debería ser ~$4,998,579.86 (facturas pendientes reales) menos $2,500,000 (pago a cuenta) = ~$2,498,579.86.
+Datos actuales en Manantiales:
+- CANON-2026-01-MNT: $2,389,815.66 pendiente (vencida)
+- Pago a cuenta: $2,500,000 sin vincular
 
 ### Plan de corrección
 
-**A. Fix en código: excluir imputaciones del running balance** (1 archivo)
+**A. Migración SQL: vincular pagos flotantes existentes** (1 migración)
 
-En `src/hooks/useCuentaCorrienteProveedor.ts`:
-- Las imputaciones (`payment_method = 'imputacion_saldo'`) se siguen mostrando como filas en la tabla (para trazabilidad)
-- Pero NO se restan del saldo acumulado, ya que el efecto del sobrepago ya está reflejado en el balance
+Tomar los 5 pagos huérfanos (`invoice_id IS NULL`) y aplicarlos a las facturas pendientes más antiguas de cada sucursal, usando lógica FIFO:
+- Para cada pago sin factura, buscar facturas pendientes de la misma sucursal/proveedor ordenadas por `due_date`
+- Crear registros en `invoice_payment_links` y actualizar `pending_balance` / `payment_status` de cada factura
+- Si el pago excede la factura, pasar el remanente a la siguiente
 
-**B. Fix de datos: corregir CANON-2026-01** (migración SQL)
+**B. Código: auto-imputar pagos a cuenta al registrarlos** (1 archivo)
 
-- Recalcular `pending_balance` de CANON-2026-01 basándose en pagos reales vinculados (excluyendo imputaciones internas, o contándolas correctamente)
-- Actualizar `payment_status` según el balance real
-- Verificar que el pago a cuenta de $2.5M esté correctamente reflejado (decidir si vincularlo o dejarlo como pago a cuenta)
+Modificar `createPagoProveedor` en `src/services/financialService.ts`:
+- Cuando no hay `aplicaciones` (pago a cuenta), buscar automáticamente facturas pendientes de ese proveedor+sucursal ordenadas por `due_date` ASC
+- Aplicar el monto FIFO: ir cubriendo facturas desde la más vieja hasta agotar el pago
+- Crear los `invoice_payment_links` correspondientes
+- Actualizar `pending_balance` y `payment_status` de cada factura tocada
+- Si queda remanente, el pago queda parcialmente sin vincular (saldo a favor real)
 
-**C. Fix en trigger `generate_canon_invoice`** (migración SQL)
+**C. Lógica de status automático** (ya incluido en B)
 
-- Al recalcular pending_balance, excluir pagos con `payment_method = 'imputacion_saldo'` del cálculo, ya que representan transferencias internas, no pagos reales — O alternativamente, contarlos pero asegurarse de que el sobrepago de la factura fuente también se ajuste
+Cuando `pending_balance` llega a 0 → `payment_status = 'pagado'`
+Cuando baja pero no llega a 0 → `payment_status = 'parcial'`
 
 ### Resultado esperado
 
-- El saldo acumulado reflejará correctamente las entradas y salidas de dinero real
-- Las imputaciones se mostrarán como información pero no distorsionarán el balance
-- Las facturas tendrán pending_balance y status consistentes con los pagos reales
+- Al registrar un pago a cuenta, se aplica automáticamente a facturas vencidas/pendientes (FIFO)
+- Las facturas pasan a "pagado" cuando su saldo llega a 0
+- Los $2.5M existentes se vincularán a CANON-2026-01-MNT, dejándola pagada con ~$110K de saldo a favor
 
