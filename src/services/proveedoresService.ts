@@ -216,7 +216,7 @@ export async function fetchMovimientosProveedorData(branchId: string, proveedorI
   if (fErr) throw fErr;
 
   const { data: pagos, error: pErr } = await fromUntyped('supplier_payments')
-    .select('id, payment_date, amount, payment_method, referencia, factura_id, is_verified')
+    .select('id, payment_date, amount, payment_method, reference, invoice_id, is_verified')
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
     .is('deleted_at', null)
