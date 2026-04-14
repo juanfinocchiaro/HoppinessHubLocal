@@ -382,9 +382,10 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
     const { data: result, error } = await fromUntyped('branch_monthly_sales')
       .update({
         total_sales: vt,
-        efectivo: ef,
-        fc_total: fc,
-        ft_total: ef,
+        cash: ef,
+        online_total: fc,
+        cash_total: ef,
+        cash_percentage: vt > 0 ? (ef / vt) * 100 : 0,
         notes: payload.notes,
         loaded_by: userId,
         deleted_at: null,
@@ -401,9 +402,10 @@ export async function createVentaMensual(payload: VentaMensualPayload, userId?: 
       branch_id: payload.branch_id!,
       period: payload.period!,
       total_sales: vt,
-      efectivo: ef,
-      fc_total: fc,
-      ft_total: ef,
+      cash: ef,
+      online_total: fc,
+      cash_total: ef,
+      cash_percentage: vt > 0 ? (ef / vt) * 100 : 0,
       notes: payload.notes,
       loaded_by: userId,
     } as any)
@@ -420,9 +422,10 @@ export async function updateVentaMensual(id: string, payload: VentaMensualPayloa
   const { error } = await fromUntyped('branch_monthly_sales')
     .update({
       total_sales: vt,
-      efectivo: ef,
-      fc_total: fc,
-      ft_total: ef,
+      cash: ef,
+      online_total: fc,
+      cash_total: ef,
+      cash_percentage: vt > 0 ? (ef / vt) * 100 : 0,
       notes: payload.notes,
     } as any)
     .eq('id', id);
