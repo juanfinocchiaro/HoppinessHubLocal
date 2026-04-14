@@ -491,7 +491,7 @@ export default function CuentaCorrienteProveedorPage() {
                               Registrar Pago
                             </Button>
                           )}
-                          {!isFactura && !mov.is_verified && (
+                          {!isFactura && (
                             <Button
                               variant="ghost"
                               size="icon"
