@@ -207,7 +207,7 @@ export async function fetchSaldosProveedores(branchId: string) {
 export async function fetchMovimientosProveedorData(branchId: string, proveedorId: string) {
   const { data: facturas, error: fErr } = await fromUntyped('supplier_invoices')
     .select(
-      'id, invoice_date, invoice_type, invoice_number, total, pending_balance, payment_status, due_date, invoice_items:supplier_invoice_items(id)',
+      'id, invoice_date, invoice_type, invoice_number, total, pending_balance, payment_status, due_date, invoice_items(id)',
     )
     .eq('branch_id', branchId)
     .eq('proveedor_id', proveedorId)
