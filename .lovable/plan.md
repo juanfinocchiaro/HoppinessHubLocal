@@ -1,32 +1,22 @@
 
 
-## Fix: Columnas inexistentes `tiempo_estimado_retiro_min` / `tiempo_estimado_delivery_min`
+## Fix: Error "Could not find 'efectivo' column of 'branch_monthly_sales'"
 
-### Diagnóstico
+**Problema**: El código usa columnas con nombres viejos en español (`efectivo`, `fc_total`, `ft_total`) pero la tabla real tiene columnas en inglés (`cash`, `online_total`, `cash_total`).
 
-La tabla `webapp_config` tiene las columnas en inglés (`estimated_pickup_time_min`, `estimated_delivery_time_min`), pero el código las referencia con los nombres viejos en español. Esto causa el error del schema cache al guardar cambios en la configuración de la tienda online.
+**Columnas reales de la tabla**:
+- `total_sales` (OK)
+- `cash` (el código usa `efectivo`)
+- `online_total` (el código usa `fc_total`)
+- `cash_total` (el código usa `ft_total`)
+- `cash_percentage`
 
-### Cambios
+**Cambio en un solo archivo**: `src/services/rdoService.ts`
 
-**1. `src/pages/local/WebappConfigPage.tsx`** (líneas 102-103)
-- `tiempo_estimado_retiro_min` → `estimated_pickup_time_min`
-- `tiempo_estimado_delivery_min` → `estimated_delivery_time_min`
+Reemplazar en las funciones `createVentaMensual` y `updateVentaMensual`:
+- `efectivo: ef` → `cash: ef`
+- `fc_total: fc` → `online_total: fc`
+- `ft_total: ef` → `cash_total: ef`
 
-**2. `src/services/publicBranchService.ts`** (línea 57)
-- Corregir el select: `tiempo_estimado_retiro_min` → `estimated_pickup_time_min`, `tiempo_estimado_delivery_min` → `estimated_delivery_time_min`, `estado` → `status`
-
-**3. `src/pages/Pedir.tsx`** (líneas 104-105)
-- Actualizar el mapeo para usar los nombres correctos devueltos por la query corregida
-
-**4. `supabase/functions/create-webapp-order/index.ts`** (línea 296-298)
-- Corregir las referencias a `config.tiempo_estimado_delivery_min` → `config.estimated_delivery_time_min` y `config.tiempo_estimado_retiro_min` → `config.estimated_pickup_time_min`
-
-**5. `src/hooks/useWebappMenu.ts` / `src/services/menuService.ts`**
-- Verificar si `fetchWebappConfig` mapea las columnas correctamente al tipo `WebappConfig` y corregir si es necesario
-
-**6. `src/types/webapp.ts`** (líneas 27-28)
-- Renombrar los campos del tipo `WebappConfig` a los nombres ingleses, o mantener los españoles y asegurar el mapeo en el fetch
-
-### Resultado
-Se elimina el error de schema cache y la configuración de la tienda online se guarda correctamente.
+También agregar `cash_percentage` calculado automáticamente.
 
