@@ -104,6 +104,9 @@ export function useResumenProveedor(branchId?: string, proveedorId?: string) {
       let pagos_pendientes_verif = 0;
 
       for (const p of pagos || []) {
+        // Imputaciones are internal transfers (already reflected in overpayment),
+        // so exclude them from totals to avoid double-counting
+        if (p.payment_method === 'imputacion_saldo') continue;
         const m = Number(p.amount);
         total_pagado += m;
         if (p.is_verified) {
