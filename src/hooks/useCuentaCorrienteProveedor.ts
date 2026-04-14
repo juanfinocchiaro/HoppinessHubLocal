@@ -179,7 +179,7 @@ export function useMovimientosProveedor(branchId?: string, proveedorId?: string)
           date: p.payment_date,
           tipo: 'pago',
           payment_method: p.payment_method ?? undefined,
-          referencia: !p.factura_id ? 'Pago a cuenta' : (p.referencia ?? undefined),
+          referencia: !p.invoice_id ? 'Pago a cuenta' : (p.reference ?? undefined),
           amount: Number(p.amount),
           cumulative_balance: 0,
           is_verified: p.is_verified ?? true,

@@ -27,7 +27,7 @@ export function PagoCanonModal({ open, onOpenChange, canon }: PagoCanonModalProp
     amount: '',
     payment_date: new Date().toISOString().slice(0, 10),
     payment_method: 'transfer',
-    referencia: '',
+    reference: '',
     notes: '',
   });
 
@@ -36,12 +36,12 @@ export function PagoCanonModal({ open, onOpenChange, canon }: PagoCanonModalProp
   const handleSubmit = async () => {
     if (!canon || !form.amount) return;
     await create.mutateAsync({
-      canon_liquidacion_id: canon.id,
+      canon_settlement_id: canon.id,
       branch_id: canon.branch_id,
       amount: parseFloat(form.amount),
       payment_date: form.payment_date,
       payment_method: form.payment_method,
-      referencia: form.referencia || undefined,
+      reference: form.reference || undefined,
       notes: form.notes || undefined,
     });
     onOpenChange(false);
@@ -107,7 +107,7 @@ export function PagoCanonModal({ open, onOpenChange, canon }: PagoCanonModalProp
 
           <div>
             <Label>Referencia</Label>
-            <Input value={form.referencia} onChange={(e) => set('referencia', e.target.value)} />
+            <Input value={form.reference} onChange={(e) => set('reference', e.target.value)} />
           </div>
 
           <div>

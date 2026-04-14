@@ -143,14 +143,14 @@ export function PagoProveedorModal({
         const isImputacion = line.medio_pago === 'imputacion_saldo';
         await create.mutateAsync({
           aplicaciones: factura?.id
-            ? [{ factura_id: factura.id, monto_aplicado: parseFloat(line.monto) }]
+            ? [{ invoice_id: factura.id, applied_amount: parseFloat(line.monto) }]
             : undefined,
           proveedor_id: effectiveProveedorId,
           branch_id: effectiveBranchId,
           amount: parseFloat(line.monto),
           payment_date: line.fecha,
           payment_method: line.medio_pago,
-          referencia: isImputacion ? 'Imputación saldo a favor' : referencia || undefined,
+          reference: isImputacion ? 'Imputación saldo a favor' : referencia || undefined,
           notes: isImputacion
             ? `Imputación de saldo a favor de cuenta corriente. Monto: $${line.monto}`
             : observaciones || undefined,

@@ -66,9 +66,9 @@ export function VerificarPagoModal({ open, onOpenChange, pago }: VerificarPagoMo
             <p>
               Medio: <strong>{pago.payment_method}</strong>
             </p>
-            {pago.referencia && (
+            {pago.reference && (
               <p>
-                Referencia: <strong>{pago.referencia}</strong>
+                Referencia: <strong>{pago.reference}</strong>
               </p>
             )}
             {pago.notes && <p className="text-muted-foreground">{pago.notes}</p>}

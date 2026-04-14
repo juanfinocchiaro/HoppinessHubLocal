@@ -91,11 +91,11 @@ export interface PagoProveedorFormData {
   amount: number;
   payment_date: string;
   payment_method: string;
-  referencia?: string;
+  reference?: string;
   payment_due_date?: string;
   notes?: string;
   /** IDs de facturas a las que se aplica este pago, con montos parciales */
-  aplicaciones?: { factura_id: string; monto_aplicado: number }[];
+  aplicaciones?: { invoice_id: string; applied_amount: number }[];
 }
 
 export interface GastoFormData {

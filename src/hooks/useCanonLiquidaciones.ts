@@ -71,7 +71,7 @@ export function usePagoCanonMutations() {
       return createPagoCanon(data, user?.id);
     },
     onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ['pagos-canon', vars.canon_liquidacion_id] });
+      qc.invalidateQueries({ queryKey: ['pagos-canon', vars.canon_settlement_id] });
       qc.invalidateQueries({ queryKey: ['canon-liquidaciones'] });
       toast.success('Pago de canon registrado');
     },

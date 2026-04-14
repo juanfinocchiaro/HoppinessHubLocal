@@ -13,9 +13,9 @@ export interface VentaMensualFormData {
 export interface CanonLiquidacionFormData {
   branch_id: string;
   period: string;
-  ventas_id?: string;
-  fc_total: number;
-  ft_total: number;
+  monthly_sales_id?: string;
+  online_total: number;
+  cash_total: number;
   canon_porcentaje?: number;
   canon_monto: number;
   marketing_porcentaje?: number;
@@ -26,11 +26,11 @@ export interface CanonLiquidacionFormData {
 }
 
 export interface PagoCanonFormData {
-  canon_liquidacion_id: string;
+  canon_settlement_id: string;
   branch_id: string;
   amount: number;
   payment_date: string;
   payment_method: string;
-  referencia?: string;
+  reference?: string;
   notes?: string;
 }

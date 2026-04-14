@@ -26,16 +26,16 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
   const { data: result, error } = await fromUntyped('canon_settlements')
     .insert({
       branch_id: data.branch_id,
-      periodo: data.period,
-      ventas_id: data.ventas_id,
-      fc_total: data.fc_total,
-      ft_total: data.ft_total,
-      canon_porcentaje: data.canon_porcentaje ?? 4.5,
-      canon_monto: data.canon_monto,
-      marketing_porcentaje: data.marketing_porcentaje ?? 0.5,
-      marketing_monto: data.marketing_monto,
+      period: data.period,
+      monthly_sales_id: data.monthly_sales_id,
+      online_total: data.online_total,
+      cash_total: data.cash_total,
+      canon_percentage: data.canon_porcentaje ?? 4.5,
+      canon_amount: data.canon_monto,
+      marketing_percentage: data.marketing_porcentaje ?? 0.5,
+      marketing_amount: data.marketing_monto,
       total_canon: data.total_canon,
-      fecha_vencimiento: data.due_date,
+      due_date: data.due_date,
       notes: data.notes,
       created_by: userId,
     })
@@ -48,7 +48,7 @@ export async function createCanonLiquidacion(data: CanonLiquidacionFormData, use
 export async function fetchPagosCanon(canonId: string) {
   const { data, error } = await fromUntyped('canon_payments')
     .select('*')
-    .eq('canon_liquidacion_id', canonId)
+    .eq('canon_settlement_id', canonId)
     .is('deleted_at', null)
     .order('payment_date', { ascending: false });
   if (error) throw error;
@@ -68,9 +68,9 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
 
   const { data: pagos, error } = await fromUntyped('supplier_payments')
     .select(
-      'id, payment_date, amount, payment_method, referencia, notes, is_verified, verificado_por, verificado_at, verificado_notas, created_at',
+      'id, payment_date, amount, payment_method, reference, notes, is_verified, verified_by, verified_at, verified_notes, created_at',
     )
-    .eq('factura_id', factura.id)
+    .eq('invoice_id', factura.id)
     .is('deleted_at', null)
     .order('payment_date', { ascending: false });
   if (error) throw error;
@@ -80,12 +80,12 @@ export async function fetchPagosCanonFromProveedores(branchId: string, periodo: 
 export async function createPagoCanon(data: PagoCanonFormData, userId?: string) {
   const { data: result, error } = await fromUntyped('canon_payments')
     .insert({
-      canon_liquidacion_id: data.canon_liquidacion_id,
+      canon_settlement_id: data.canon_settlement_id,
       branch_id: data.branch_id,
       amount: data.amount,
       payment_date: data.payment_date,
       payment_method: data.payment_method,
-      referencia: data.referencia,
+      reference: data.reference,
       notes: data.notes,
       created_by: userId,
     })
@@ -258,13 +258,13 @@ export async function softDeleteFactura(id: string) {
 
 export async function fetchPagosProveedor(facturaId: string) {
   const { data, error } = await fromUntyped('invoice_payment_links')
-    .select('monto_aplicado, supplier_payments(*)')
-    .eq('factura_id', facturaId);
+    .select('applied_amount, supplier_payments(*)')
+    .eq('invoice_id', facturaId);
 
   if (error) {
     const { data: legacyData, error: legacyErr } = await fromUntyped('supplier_payments')
       .select('*')
-      .eq('factura_id', facturaId)
+      .eq('invoice_id', facturaId)
       .is('deleted_at', null)
       .order('payment_date', { ascending: false });
     if (legacyErr) throw legacyErr;
@@ -273,7 +273,7 @@ export async function fetchPagosProveedor(facturaId: string) {
 
   return (data || []).map((row: any) => ({
     ...row.supplier_payments,
-    monto_aplicado: row.monto_aplicado,
+    applied_amount: row.applied_amount,
   }));
 }
 
@@ -285,7 +285,7 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
       amount: data.amount,
       payment_date: data.payment_date,
       payment_method: data.payment_method,
-      referencia: data.referencia || null,
+      reference: data.reference || null,
       payment_due_date: data.payment_due_date || null,
       notes: data.notes || null,
       created_by: userId,
@@ -297,8 +297,8 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
   if (data.aplicaciones && data.aplicaciones.length > 0) {
     const junctionRows = data.aplicaciones.map((app) => ({
       pago_id: pago.id,
-      factura_id: app.factura_id,
-      monto_aplicado: app.monto_aplicado,
+      invoice_id: app.invoice_id,
+      applied_amount: app.applied_amount,
     }));
 
     const { error: junctionErr } = await fromUntyped('invoice_payment_links').insert(junctionRows);
@@ -307,18 +307,18 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
     for (const app of data.aplicaciones) {
       const { data: factura, error: facturaErr } = await fromUntyped('supplier_invoices')
         .select('pending_balance')
-        .eq('id', app.factura_id)
+        .eq('id', app.invoice_id)
         .single();
 
       if (facturaErr) throw facturaErr;
 
-      const nuevoSaldo = Math.max(0, (factura.pending_balance || 0) - app.monto_aplicado);
+      const nuevoSaldo = Math.max(0, (factura.pending_balance || 0) - app.applied_amount);
       const { error: updateErr } = await fromUntyped('supplier_invoices')
         .update({
           pending_balance: nuevoSaldo,
           payment_status: nuevoSaldo === 0 ? 'pagado' : 'parcial',
         })
-        .eq('id', app.factura_id);
+        .eq('id', app.invoice_id);
 
       if (updateErr) throw updateErr;
     }
@@ -521,9 +521,9 @@ export async function approvePagoProveedor(
   const { error } = await fromUntyped('supplier_payments')
     .update({
       is_verified: true,
-      verificado_por: userId,
-      verificado_at: new Date().toISOString(),
-      verificado_notas: notas,
+      verified_by: userId,
+      verified_at: new Date().toISOString(),
+      verified_notes: notas,
     })
     .eq('id', pagoId);
   if (error) throw error;
@@ -533,7 +533,7 @@ export async function rejectPagoProveedor(pagoId: string, notas: string) {
   const { error } = await fromUntyped('supplier_payments')
     .update({
       deleted_at: new Date().toISOString(),
-      verificado_notas: `RECHAZADO: ${notas}`,
+      verified_notes: `RECHAZADO: ${notas}`,
     })
     .eq('id', pagoId);
   if (error) throw error;

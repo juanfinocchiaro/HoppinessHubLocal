@@ -102,8 +102,8 @@ function PagosDetalleRow({ branchId, periodo }: { branchId: string; periodo: str
                 <Badge variant="outline" className="w-fit">
                   {p.payment_method}
                 </Badge>
-                {p.referencia && (
-                  <span className="text-xs text-muted-foreground">Ref: {p.referencia}</span>
+                {p.reference && (
+                  <span className="text-xs text-muted-foreground">Ref: {p.reference}</span>
                 )}
               </div>
               <Button size="sm" onClick={() => setVerificando(p)} className="shrink-0">
