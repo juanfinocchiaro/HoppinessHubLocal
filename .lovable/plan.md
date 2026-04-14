@@ -1,22 +1,24 @@
 
 
-## Fix: Error "Could not find 'efectivo' column of 'branch_monthly_sales'"
+## Fix: All FK constraints blocking DELETE on supplier_invoices
 
-**Problema**: El código usa columnas con nombres viejos en español (`efectivo`, `fc_total`, `ft_total`) pero la tabla real tiene columnas en inglés (`cash`, `online_total`, `cash_total`).
+**Problem**: Deleting a `supplier_invoice` row fails because two foreign key constraints have no `ON DELETE` rule, causing PostgreSQL to block the operation.
 
-**Columnas reales de la tabla**:
-- `total_sales` (OK)
-- `cash` (el código usa `efectivo`)
-- `online_total` (el código usa `fc_total`)
-- `cash_total` (el código usa `ft_total`)
-- `cash_percentage`
+**Constraints to fix**:
 
-**Cambio en un solo archivo**: `src/services/rdoService.ts`
+| Table | Constraint | Current | New Rule |
+|-------|-----------|---------|----------|
+| `stock_movements` | `stock_movimientos_factura_proveedor_id_fkey` | NO ACTION | `ON DELETE SET NULL` |
+| `supplier_payments` | `pagos_proveedores_factura_id_fkey` | NO ACTION | `ON DELETE CASCADE` |
 
-Reemplazar en las funciones `createVentaMensual` y `updateVentaMensual`:
-- `efectivo: ef` → `cash: ef`
-- `fc_total: fc` → `online_total: fc`
-- `ft_total: ef` → `cash_total: ef`
+**Rationale**:
+- `stock_movements`: SET NULL preserves movement history while unlinking from deleted invoice
+- `supplier_payments`: CASCADE deletes associated payments when the invoice is removed (canon invoices are auto-generated, so their payments should go too)
 
-También agregar `cash_percentage` calculado automáticamente.
+**Already OK** (no changes needed):
+- `invoice_items` → CASCADE ✅
+- `invoice_payment_links` → CASCADE ✅  
+- `supply_cost_history` → SET NULL ✅
+
+**Change**: Single database migration dropping and recreating the two constraints.
 
