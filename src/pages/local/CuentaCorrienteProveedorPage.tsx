@@ -36,6 +36,7 @@ import { useResumenProveedor, useMovimientosProveedor } from '@/hooks/useCuentaC
 import { useProveedores } from '@/hooks/useProveedores';
 import { usePagoProveedorMutations, useFacturaById } from '@/hooks/useCompras';
 import { PagoProveedorModal } from '@/components/finanzas/PagoProveedorModal';
+import { EditarFechaPagoModal } from '@/components/finanzas/EditarFechaPagoModal';
 import { ProveedorFormModal } from '@/components/finanzas/ProveedorFormModal';
 import { ProveedorDocumentos } from '@/components/finanzas/ProveedorDocumentos';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -83,6 +84,7 @@ export default function CuentaCorrienteProveedorPage() {
   const [payingAccountLevel, setPayingAccountLevel] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState(false);
   const [deletingPagoId, setDeletingPagoId] = useState<string | null>(null);
+  const [editingPago, setEditingPago] = useState<{ id: string; date: string } | null>(null);
   const { data: facturaData } = useFacturaById(payingFacturaId);
 
   const saldoAFavor = resumen
