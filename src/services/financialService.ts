@@ -355,6 +355,13 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
   return pago;
 }
 
+export async function updatePagoFecha(id: string, newDate: string) {
+  const { error } = await fromUntyped('supplier_payments')
+    .update({ payment_date: newDate })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function softDeletePago(id: string) {
   const { error } = await fromUntyped('supplier_payments')
     .update({ deleted_at: new Date().toISOString() })

@@ -36,6 +36,7 @@ import { useResumenProveedor, useMovimientosProveedor } from '@/hooks/useCuentaC
 import { useProveedores } from '@/hooks/useProveedores';
 import { usePagoProveedorMutations, useFacturaById } from '@/hooks/useCompras';
 import { PagoProveedorModal } from '@/components/finanzas/PagoProveedorModal';
+import { EditarFechaPagoModal } from '@/components/finanzas/EditarFechaPagoModal';
 import { ProveedorFormModal } from '@/components/finanzas/ProveedorFormModal';
 import { ProveedorDocumentos } from '@/components/finanzas/ProveedorDocumentos';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -83,6 +84,7 @@ export default function CuentaCorrienteProveedorPage() {
   const [payingAccountLevel, setPayingAccountLevel] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState(false);
   const [deletingPagoId, setDeletingPagoId] = useState<string | null>(null);
+  const [editingPago, setEditingPago] = useState<{ id: string; date: string } | null>(null);
   const { data: facturaData } = useFacturaById(payingFacturaId);
 
   const saldoAFavor = resumen
@@ -494,6 +496,17 @@ export default function CuentaCorrienteProveedorPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              title="Editar fecha"
+                              onClick={() => setEditingPago({ id: mov.id, date: mov.date })}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {!isFactura && !mov.is_verified && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
                               title="Eliminar pago"
                               onClick={() => setDeletingPagoId(mov.id)}
                             >
@@ -546,6 +559,14 @@ export default function CuentaCorrienteProveedorPage() {
           open={editingProveedor}
           onOpenChange={setEditingProveedor}
           proveedor={proveedor}
+        />
+      )}
+      {editingPago && (
+        <EditarFechaPagoModal
+          open={!!editingPago}
+          onOpenChange={() => setEditingPago(null)}
+          pagoId={editingPago.id}
+          currentDate={editingPago.date}
         />
       )}
     </div>
