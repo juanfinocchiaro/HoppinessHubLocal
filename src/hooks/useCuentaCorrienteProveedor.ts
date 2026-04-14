@@ -194,9 +194,15 @@ export function useMovimientosProveedor(branchId?: string, proveedorId?: string)
       });
 
       // Compute running balance
+      // Imputaciones (payment_method = 'imputacion_saldo') are internal transfers:
+      // the overpayment is already reflected as a negative balance, so counting
+      // the imputación again would double-subtract from the running total.
       let saldo = 0;
       for (const m of movimientos) {
-        saldo += m.tipo === 'factura' ? m.amount : -m.amount;
+        const isImputacion = m.tipo === 'pago' && m.payment_method === 'imputacion_saldo';
+        if (!isImputacion) {
+          saldo += m.tipo === 'factura' ? m.amount : -m.amount;
+        }
         m.cumulative_balance = saldo;
       }
 
