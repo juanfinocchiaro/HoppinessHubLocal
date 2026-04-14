@@ -561,6 +561,14 @@ export default function CuentaCorrienteProveedorPage() {
           proveedor={proveedor}
         />
       )}
+      {editingPago && (
+        <EditarFechaPagoModal
+          open={!!editingPago}
+          onOpenChange={() => setEditingPago(null)}
+          pagoId={editingPago.id}
+          currentDate={editingPago.date}
+        />
+      )}
     </div>
   );
 }
