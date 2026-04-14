@@ -294,8 +294,36 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
     .single();
   if (pagoErr) throw pagoErr;
 
-  if (data.aplicaciones && data.aplicaciones.length > 0) {
-    const junctionRows = data.aplicaciones.map((app) => ({
+  // Build the list of applications: either explicit or auto-FIFO
+  let aplicaciones = data.aplicaciones && data.aplicaciones.length > 0
+    ? data.aplicaciones
+    : null;
+
+  // Auto-impute: if no explicit applications, find pending invoices FIFO
+  if (!aplicaciones) {
+    const { data: pendingInvoices } = await fromUntyped('supplier_invoices')
+      .select('id, pending_balance')
+      .eq('branch_id', data.branch_id)
+      .eq('proveedor_id', data.proveedor_id)
+      .gt('pending_balance', 0)
+      .is('deleted_at', null)
+      .order('due_date', { ascending: true });
+
+    if (pendingInvoices && pendingInvoices.length > 0) {
+      aplicaciones = [];
+      let remaining = data.amount;
+      for (const inv of pendingInvoices) {
+        if (remaining <= 0) break;
+        const apply = Math.min(remaining, inv.pending_balance);
+        aplicaciones.push({ invoice_id: inv.id, applied_amount: apply });
+        remaining -= apply;
+      }
+    }
+  }
+
+  // Apply payments to invoices and update balances
+  if (aplicaciones && aplicaciones.length > 0) {
+    const junctionRows = aplicaciones.map((app) => ({
       pago_id: pago.id,
       invoice_id: app.invoice_id,
       applied_amount: app.applied_amount,
@@ -304,7 +332,7 @@ export async function createPagoProveedor(data: PagoProveedorFormData, userId?: 
     const { error: junctionErr } = await fromUntyped('invoice_payment_links').insert(junctionRows);
     if (junctionErr) throw junctionErr;
 
-    for (const app of data.aplicaciones) {
+    for (const app of aplicaciones) {
       const { data: factura, error: facturaErr } = await fromUntyped('supplier_invoices')
         .select('pending_balance')
         .eq('id', app.invoice_id)
