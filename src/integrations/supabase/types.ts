@@ -8023,24 +8023,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "insumos_costos_historial_factura_id_fkey"
+            foreignKeyName: "insumos_costos_historial_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_cost_history_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "brand_current_account"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "insumos_costos_historial_factura_id_fkey"
+            foreignKeyName: "supply_cost_history_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "supplier_invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "insumos_costos_historial_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
