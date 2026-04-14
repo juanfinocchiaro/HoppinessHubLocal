@@ -502,7 +502,7 @@ export default function CuentaCorrienteProveedorPage() {
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                           )}
-                          {!isFactura && !mov.is_verified && (
+                          {!isFactura && (
                             <Button
                               variant="ghost"
                               size="icon"
