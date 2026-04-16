@@ -22,6 +22,9 @@ interface Props {
     costo: number;
     precio: number;
     fcObj: number;
+    base_price?: number;
+    total_cost?: number;
+    fc_objetivo?: number;
   };
 }
 
