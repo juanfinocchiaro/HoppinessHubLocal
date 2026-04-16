@@ -12,11 +12,9 @@ import {
 interface Props {
   item: {
     id: string;
-    raw: {
-      base_price?: number;
-      total_cost?: number;
-      fc_objetivo?: number;
-    };
+    costo: number;
+    precio: number;
+    fcObj: number;
   };
 }
 
@@ -34,7 +32,7 @@ interface ChannelRow {
 
 const IVA = 1.21;
 
-function fcColor(fc: number, obj: number): string {
+function fcColorClass(fc: number, obj: number): string {
   if (fc <= obj) return 'text-green-600';
   if (fc <= obj * 1.15) return 'text-yellow-600';
   return 'text-red-600';
@@ -48,9 +46,9 @@ export function ChannelPricesInline({ item }: Props) {
   );
   const { data: allOverrides, isLoading: loadingItems } = useAllPriceListItems(priceListIds);
 
-  const basePrice = item.raw.base_price || 0;
-  const totalCost = item.raw.total_cost || 0;
-  const fcObj = item.raw.fc_objetivo || 35;
+  const basePrice = item.precio || 0;
+  const totalCost = item.costo || 0;
+  const fcObj = item.fcObj || 35;
 
   const rows = useMemo<ChannelRow[]>(() => {
     if (!priceLists) return [];
