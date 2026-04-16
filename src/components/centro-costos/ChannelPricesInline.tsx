@@ -8,7 +8,7 @@ import {
   useAllPriceListItems,
   useBulkUpdatePriceList,
   useDeletePriceOverride,
-  useUpdatePriceListConfig,
+  
   CHANNELS,
   computeChannelPrice,
   resolveChannelMode,
