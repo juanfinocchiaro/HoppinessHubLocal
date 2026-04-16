@@ -51,7 +51,7 @@ export function ChannelPricesInline({ item }: Props) {
   const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const basePrice = item.precio || 0;
+  const basePrice = item.precio || Number(item.base_price) || 0;
   const totalCost = item.costo || 0;
   const fcObj = item.fcObj || 35;
 
