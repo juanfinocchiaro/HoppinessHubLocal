@@ -45,7 +45,7 @@ export function ChannelPricesInline({ item }: Props) {
   const { data: allOverrides, isLoading: loadingItems } = useAllPriceListItems(priceListIds);
   const bulkUpdate = useBulkUpdatePriceList();
   const deleteOverride = useDeletePriceOverride();
-  const updateConfig = useUpdatePriceListConfig();
+  
 
   // Local edits: { [channel]: price } for price overrides
   const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
@@ -287,7 +287,7 @@ export function ChannelPricesInline({ item }: Props) {
               size="sm"
               onClick={() => {
                 setPriceEdits({});
-                setCommissionEdits({});
+                setPriceEdits({});
               }}
             >
               Cancelar
