@@ -260,27 +260,9 @@ export function ChannelPricesInline({ item }: Props) {
                   {r.isBase ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (
-                    <div className="flex items-center gap-0.5 justify-end">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        step={0.5}
-                        value={
-                          commissionEdits[r.channel] !== undefined
-                            ? commissionEdits[r.channel]
-                            : r.currentDbCommission
-                        }
-                        onChange={(e) =>
-                          setCommissionEdits((prev) => ({
-                            ...prev,
-                            [r.channel]: e.target.value,
-                          }))
-                        }
-                        className="h-7 w-[60px] text-right text-xs tabular-nums"
-                      />
-                      <span className="text-xs text-muted-foreground">%</span>
-                    </div>
+                    <span className="text-xs tabular-nums">
+                      {r.currentDbCommission}%
+                    </span>
                   )}
                 </td>
 
