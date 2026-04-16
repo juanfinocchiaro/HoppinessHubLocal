@@ -17,9 +17,7 @@ import {
   usePriceLists,
   useUpdatePriceListConfig,
   CHANNELS,
-  APP_CHANNELS,
   type PriceList,
-  type PricingMode,
 } from '@/hooks/useChannelPricing';
 import { insertPriceLists, deletePriceList } from '@/services/promoService';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,7 +32,6 @@ export default function CanalesVentaPage() {
   const [addingChannel, setAddingChannel] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PriceList | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   // Local edits for commissions
   const [edits, setEdits] = useState<Record<string, { commission?: string; active?: boolean }>>({});
