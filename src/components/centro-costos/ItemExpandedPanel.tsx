@@ -42,11 +42,13 @@ export function ItemExpandedPanel({ item, onClose, onDeleted }: Props) {
   const tabs: { id: PanelTab; label: string; icon: LucideIcon }[] = isExtra
     ? [
         { id: 'asignados', label: 'Asignados', icon: Link2 },
+        { id: 'canales', label: 'Canales', icon: Store },
         { id: 'editar', label: 'Editar', icon: DollarSign },
         { id: 'historial', label: 'Historial', icon: Clock },
       ]
     : [
         { id: 'composicion', label: 'Composición', icon: Layers },
+        { id: 'canales', label: 'Canales', icon: Store },
         { id: 'editar', label: 'Editar', icon: DollarSign },
         { id: 'historial', label: 'Historial', icon: Clock },
       ];
@@ -95,6 +97,7 @@ export function ItemExpandedPanel({ item, onClose, onDeleted }: Props) {
       <div className="p-4">
         {activeTab === 'composicion' && <ComposicionInline item={item} mutations={mutations} />}
         {activeTab === 'asignados' && <AsignadosInline item={item} />}
+        {activeTab === 'canales' && <ChannelPricesInline item={item} />}
         {activeTab === 'editar' && (
           <EditarInline item={item} mutations={mutations} onSaved={onClose} />
         )}

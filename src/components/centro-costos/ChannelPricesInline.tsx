@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import {
   usePriceLists,
