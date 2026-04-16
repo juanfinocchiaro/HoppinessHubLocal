@@ -1,12 +1,21 @@
-import { useMemo } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Loader2, Save, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 import {
   usePriceLists,
   useAllPriceListItems,
+  useBulkUpdatePriceList,
+  useDeletePriceOverride,
+  useUpdatePriceListConfig,
   CHANNELS,
+  APP_CHANNELS,
   computeChannelPrice,
   resolveChannelMode,
   type PriceList,
+  type Channel,
 } from '@/hooks/useChannelPricing';
 
 interface Props {
@@ -18,18 +27,6 @@ interface Props {
   };
 }
 
-interface ChannelRow {
-  channel: string;
-  label: string;
-  precioVenta: number;
-  comisionPct: number;
-  comisionMonto: number;
-  netoComision: number;
-  precioNeto: number;
-  fc: number;
-  margen: number;
-}
-
 const IVA = 1.21;
 
 function fcColorClass(fc: number, obj: number): string {
@@ -38,6 +35,9 @@ function fcColorClass(fc: number, obj: number): string {
   return 'text-red-600';
 }
 
+const fmt = (n: number) =>
+  n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+
 export function ChannelPricesInline({ item }: Props) {
   const { data: priceLists, isLoading: loadingLists } = usePriceLists();
   const priceListIds = useMemo(
@@ -45,49 +45,69 @@ export function ChannelPricesInline({ item }: Props) {
     [priceLists],
   );
   const { data: allOverrides, isLoading: loadingItems } = useAllPriceListItems(priceListIds);
+  const bulkUpdate = useBulkUpdatePriceList();
+  const deleteOverride = useDeletePriceOverride();
+  const updateConfig = useUpdatePriceListConfig();
+
+  // Local edits: { [channel]: price } for price overrides
+  const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
+  // Local edits: { [channel]: commission% }
+  const [commissionEdits, setCommissionEdits] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   const basePrice = item.precio || 0;
   const totalCost = item.costo || 0;
   const fcObj = item.fcObj || 35;
 
-  const rows = useMemo<ChannelRow[]>(() => {
-    if (!priceLists) return [];
-    const activeLists = priceLists.filter((l) => l.is_active) as PriceList[];
+  const activeLists = useMemo(
+    () => (priceLists || []).filter((l) => l.is_active) as PriceList[],
+    [priceLists],
+  );
 
-    return CHANNELS.map((ch) => {
-      const list = activeLists.find((l) => l.channel === ch.value);
-      if (!list) {
-        const pNeto = basePrice / IVA;
-        const fc = pNeto > 0 ? (totalCost / pNeto) * 100 : 0;
-        return {
-          channel: ch.value,
-          label: ch.label,
-          precioVenta: basePrice,
-          comisionPct: 0,
-          comisionMonto: 0,
-          netoComision: basePrice,
-          precioNeto: pNeto,
-          fc,
-          margen: pNeto - totalCost,
-        };
+  const isBaseChannel = (ch: string) => ch === 'mostrador' || ch === 'webapp';
+
+  const getChannelData = useCallback(
+    (ch: Channel) => {
+      const list = activeLists.find((l) => l.channel === ch);
+
+      // Edited price takes priority
+      const editedPrice = priceEdits[ch] !== undefined ? parseFloat(priceEdits[ch]) || 0 : null;
+      const editedCommission =
+        commissionEdits[ch] !== undefined ? parseFloat(commissionEdits[ch]) || 0 : null;
+
+      let precioVenta: number;
+      if (isBaseChannel(ch)) {
+        precioVenta = basePrice;
+      } else if (editedPrice !== null) {
+        precioVenta = editedPrice;
+      } else if (list) {
+        const { mode, value } = resolveChannelMode(ch, activeLists);
+        const override = allOverrides?.[list.id]?.[item.id];
+        precioVenta = computeChannelPrice(basePrice, mode, value, override);
+      } else {
+        precioVenta = basePrice;
       }
 
-      const { mode, value } = resolveChannelMode(ch.value, activeLists);
-      const override = allOverrides?.[list.id]?.[item.id];
-      const precioVenta = computeChannelPrice(basePrice, mode, value, override);
+      const comisionPct =
+        editedCommission !== null
+          ? editedCommission
+          : list?.pricing_mode === 'percentage'
+            ? list.pricing_value
+            : 0;
 
-      // Commission: only applies when the channel itself has percentage mode
-      const isAppChannel = list.pricing_mode === 'percentage';
-      const comisionPct = isAppChannel ? list.pricing_value : 0;
       const comisionMonto = precioVenta * (comisionPct / 100);
       const netoComision = precioVenta - comisionMonto;
       const precioNeto = netoComision / IVA;
       const fc = precioNeto > 0 ? (totalCost / precioNeto) * 100 : 0;
       const margen = precioNeto - totalCost;
 
+      // Current override from DB
+      const currentOverride = list ? allOverrides?.[list.id]?.[item.id] : undefined;
+
       return {
-        channel: ch.value,
-        label: ch.label,
+        channel: ch,
+        label: CHANNELS.find((c) => c.value === ch)?.label || ch,
+        listId: list?.id,
         precioVenta,
         comisionPct,
         comisionMonto,
@@ -95,9 +115,78 @@ export function ChannelPricesInline({ item }: Props) {
         precioNeto,
         fc,
         margen,
+        isBase: isBaseChannel(ch),
+        currentOverride,
+        currentDbCommission: list?.pricing_mode === 'percentage' ? list.pricing_value : 0,
       };
-    });
-  }, [priceLists, allOverrides, basePrice, totalCost, item.id]);
+    },
+    [activeLists, allOverrides, basePrice, totalCost, item.id, priceEdits, commissionEdits],
+  );
+
+  const rows = useMemo(
+    () => CHANNELS.map((ch) => getChannelData(ch.value)),
+    [getChannelData],
+  );
+
+  const hasChanges = Object.keys(priceEdits).length > 0 || Object.keys(commissionEdits).length > 0;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Save price overrides
+      for (const [channel, priceStr] of Object.entries(priceEdits)) {
+        const list = activeLists.find((l) => l.channel === channel);
+        if (!list) continue;
+        const price = parseFloat(priceStr) || 0;
+        if (price > 0) {
+          await bulkUpdate.mutateAsync({
+            price_list_id: list.id,
+            items: [{ item_carta_id: item.id, precio: price }],
+          });
+        }
+      }
+
+      // Save commission changes
+      for (const [channel, commStr] of Object.entries(commissionEdits)) {
+        const list = activeLists.find((l) => l.channel === channel);
+        if (!list) continue;
+        const commission = parseFloat(commStr) || 0;
+        await updateConfig.mutateAsync({
+          id: list.id,
+          pricing_mode: 'percentage',
+          pricing_value: commission,
+          mirror_channel: null,
+        });
+      }
+
+      setPriceEdits({});
+      setCommissionEdits({});
+      toast.success('Precios y comisiones guardados');
+    } catch (e) {
+      toast.error('Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPrice = async (channel: string) => {
+    const list = activeLists.find((l) => l.channel === channel);
+    if (!list) return;
+    try {
+      await deleteOverride.mutateAsync({
+        price_list_id: list.id,
+        item_carta_id: item.id,
+      });
+      setPriceEdits((prev) => {
+        const next = { ...prev };
+        delete next[channel];
+        return next;
+      });
+      toast.success('Precio reseteado al valor base');
+    } catch {
+      toast.error('Error al resetear precio');
+    }
+  };
 
   if (loadingLists || loadingItems) {
     return (
@@ -110,62 +199,149 @@ export function ChannelPricesInline({ item }: Props) {
   if (!priceLists?.length) {
     return (
       <p className="text-sm text-muted-foreground py-4">
-        No hay listas de precios configuradas. Configurá los canales desde la sección de Precios por Canal.
+        No hay listas de precios configuradas. Configurá los canales desde Precios por Canal.
       </p>
     );
   }
 
-  const fmt = (n: number) =>
-    n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            <th className="py-2 pr-3 font-medium">Canal</th>
-            <th className="py-2 pr-3 font-medium text-right">Precio Venta</th>
-            <th className="py-2 pr-3 font-medium text-right">Comisión</th>
-            <th className="py-2 pr-3 font-medium text-right">Neto s/Com</th>
-            <th className="py-2 pr-3 font-medium text-right">Precio Neto</th>
-            <th className="py-2 pr-3 font-medium text-right">FC%</th>
-            <th className="py-2 font-medium text-right">Margen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.channel} className="border-b last:border-0 hover:bg-muted/40">
-              <td className="py-2 pr-3 font-medium">{r.label}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.precioVenta)}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">
-                {r.comisionPct > 0 ? (
-                  <span>
-                    {r.comisionPct}%{' '}
-                    <span className="text-muted-foreground">({fmt(r.comisionMonto)})</span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </td>
-              <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.netoComision)}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.precioNeto)}</td>
-              <td className={`py-2 pr-3 text-right tabular-nums font-semibold ${fcColorClass(r.fc, fcObj)}`}>
-                {r.fc.toFixed(1)}%
-              </td>
-              <td className={`py-2 text-right tabular-nums font-semibold ${r.margen >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {fmt(r.margen)}
-              </td>
+    <div className="space-y-3">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              <th className="py-2 pr-2 font-medium">Canal</th>
+              <th className="py-2 pr-2 font-medium text-right w-[120px]">Precio Venta</th>
+              <th className="py-2 pr-2 font-medium text-right w-[100px]">Comisión</th>
+              <th className="py-2 pr-2 font-medium text-right">Neto s/Com</th>
+              <th className="py-2 pr-2 font-medium text-right">P. Neto</th>
+              <th className="py-2 pr-2 font-medium text-right">FC%</th>
+              <th className="py-2 font-medium text-right">Margen</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.channel} className="border-b last:border-0 hover:bg-muted/40">
+                <td className="py-2 pr-2 font-medium">{r.label}</td>
 
-      <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
-        <span>Costo: {fmt(totalCost)}</span>
-        <span>·</span>
-        <span>FC Objetivo: {fcObj}%</span>
-        <span>·</span>
-        <span>IVA: 21%</span>
+                {/* Precio Venta */}
+                <td className="py-2 pr-2 text-right">
+                  {r.isBase ? (
+                    <span className="tabular-nums text-muted-foreground">{fmt(basePrice)}</span>
+                  ) : (
+                    <div className="flex items-center gap-1 justify-end">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={100}
+                        value={
+                          priceEdits[r.channel] !== undefined
+                            ? priceEdits[r.channel]
+                            : r.precioVenta
+                        }
+                        onChange={(e) =>
+                          setPriceEdits((prev) => ({ ...prev, [r.channel]: e.target.value }))
+                        }
+                        className="h-7 w-[90px] text-right text-xs tabular-nums"
+                      />
+                      {r.currentOverride !== undefined && (
+                        <button
+                          onClick={() => handleResetPrice(r.channel)}
+                          className="text-muted-foreground hover:text-foreground"
+                          title="Resetear al precio calculado"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </td>
+
+                {/* Comisión */}
+                <td className="py-2 pr-2 text-right">
+                  {r.isBase ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={
+                          commissionEdits[r.channel] !== undefined
+                            ? commissionEdits[r.channel]
+                            : r.currentDbCommission
+                        }
+                        onChange={(e) =>
+                          setCommissionEdits((prev) => ({
+                            ...prev,
+                            [r.channel]: e.target.value,
+                          }))
+                        }
+                        className="h-7 w-[60px] text-right text-xs tabular-nums"
+                      />
+                      <span className="text-xs text-muted-foreground">%</span>
+                    </div>
+                  )}
+                </td>
+
+                {/* Neto s/Com */}
+                <td className="py-2 pr-2 text-right tabular-nums">{fmt(r.netoComision)}</td>
+
+                {/* Precio Neto */}
+                <td className="py-2 pr-2 text-right tabular-nums">{fmt(r.precioNeto)}</td>
+
+                {/* FC% */}
+                <td
+                  className={`py-2 pr-2 text-right tabular-nums font-semibold ${fcColorClass(r.fc, fcObj)}`}
+                >
+                  {r.fc.toFixed(1)}%
+                </td>
+
+                {/* Margen */}
+                <td
+                  className={`py-2 text-right tabular-nums font-semibold ${r.margen >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                >
+                  {fmt(r.margen)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex gap-3 text-xs text-muted-foreground">
+          <span>Costo: {fmt(totalCost)}</span>
+          <span>·</span>
+          <span>FC Obj: {fcObj}%</span>
+          <span>·</span>
+          <span>IVA: 21%</span>
+        </div>
+
+        {hasChanges && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setPriceEdits({});
+                setCommissionEdits({});
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              Guardar
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
