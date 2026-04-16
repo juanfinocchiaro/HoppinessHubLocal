@@ -1,53 +1,43 @@
 
 
-## Fix: Triggers con nombres de columnas/tablas antiguos
+## Fix: Costos no se actualizan al guardar composición
 
-### Problema
-Al crear un nuevo Item de Carta aparece el error **"record 'new' has no field 'activo'"**. Esto ocurre porque dos funciones de trigger siguen usando nombres antiguos (`activo`, `items_carta`) después de que las tablas y columnas fueron renombradas (`is_active`, `menu_items`).
+### Problema raíz
 
-### Funciones afectadas
+Se identificaron **3 problemas** que impiden la actualización de costos:
 
-1. **`seed_branch_item_availability_for_item()`** — trigger en `menu_items` al insertar
-   - Usa `NEW.activo` → debe ser `NEW.is_active`
+1. **`recalculate_menu_item_cost` no tiene `SECURITY DEFINER`** — La función ejecuta un `UPDATE menu_items SET total_cost = ...` pero RLS está activo en `menu_items`. Sin `SECURITY DEFINER`, el UPDATE falla silenciosamente porque opera bajo las políticas RLS del usuario llamante.
 
-2. **`seed_branch_item_availability_for_branch()`** — trigger en `branches` al insertar
-   - Referencia `items_carta` → debe ser `menu_items`
-   - Usa `i.activo` → debe ser `i.is_active`
+2. **`recalculate_recipe_cost` tampoco tiene `SECURITY DEFINER`** — Mismo problema para recálculo de recetas.
+
+3. **El botón "Recalcular Todo" llama a una función que no existe** — `adminService.ts` invoca `recalcular_todos_los_costos` (nombre viejo), pero la función actual se llama `recalculate_all_costs`.
 
 ### Plan
 
-Una migración SQL que recrea ambas funciones con los nombres correctos:
+**Paso 1: Migración SQL** — Recrear ambas funciones con `SECURITY DEFINER`:
 
 ```sql
--- Fix function 1: references NEW.activo → NEW.is_active
-CREATE OR REPLACE FUNCTION public.seed_branch_item_availability_for_item()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.is_active IS DISTINCT FROM true OR NEW.deleted_at IS NOT NULL THEN
-    RETURN NEW;
-  END IF;
-  INSERT INTO public.branch_item_availability (branch_id, item_carta_id)
-  SELECT b.id, NEW.id FROM public.branches b WHERE b.is_active = true
-  ON CONFLICT (branch_id, item_carta_id) DO NOTHING;
-  RETURN NEW;
-END;
+CREATE OR REPLACE FUNCTION public.recalculate_menu_item_cost(_item_id uuid)
+RETURNS void LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public AS $$
+-- misma lógica actual, ahora con SECURITY DEFINER
 $$;
 
--- Fix function 2: references items_carta.activo → menu_items.is_active
-CREATE OR REPLACE FUNCTION public.seed_branch_item_availability_for_branch()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.is_active IS DISTINCT FROM true THEN
-    RETURN NEW;
-  END IF;
-  INSERT INTO public.branch_item_availability (branch_id, item_carta_id)
-  SELECT NEW.id, i.id FROM public.menu_items i
-  WHERE i.is_active = true AND i.deleted_at IS NULL
-  ON CONFLICT (branch_id, item_carta_id) DO NOTHING;
-  RETURN NEW;
-END;
+CREATE OR REPLACE FUNCTION public.recalculate_recipe_cost(_recipe_id uuid)
+RETURNS void LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public AS $$
+-- misma lógica actual, ahora con SECURITY DEFINER
 $$;
 ```
 
-No se necesitan cambios en código frontend — el error es puramente de base de datos.
+**Paso 2: Corregir llamada en frontend** — En `src/services/adminService.ts`, cambiar:
+```typescript
+// De:
+await supabase.rpc('recalcular_todos_los_costos' as never);
+// A:
+await supabase.rpc('recalculate_all_costs' as never);
+```
+
+### Resultado esperado
+Al guardar composición, el costo se actualizará inmediatamente. El botón "Recalcular Todo" también funcionará.
 
