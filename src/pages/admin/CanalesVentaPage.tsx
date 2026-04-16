@@ -11,8 +11,6 @@ import {
   FileText,
   Search,
   Pencil,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -52,7 +50,7 @@ import {
   computeChannelPrice,
   resolveChannelMode,
   CHANNELS,
-  APP_CHANNELS,
+  
   PRICING_MODES,
   type Channel,
   type PricingMode,
