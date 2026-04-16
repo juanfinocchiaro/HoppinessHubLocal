@@ -22,6 +22,9 @@ interface Props {
     costo: number;
     precio: number;
     fcObj: number;
+    base_price?: number;
+    total_cost?: number;
+    fc_objetivo?: number;
   };
 }
 
@@ -51,9 +54,9 @@ export function ChannelPricesInline({ item }: Props) {
   const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const basePrice = item.precio || 0;
-  const totalCost = item.costo || 0;
-  const fcObj = item.fcObj || 35;
+  const basePrice = item.precio || Number(item.base_price) || 0;
+  const totalCost = item.costo || Number(item.total_cost) || 0;
+  const fcObj = item.fcObj || Number(item.fc_objetivo) || 35;
 
   const activeLists = useMemo(
     () => (priceLists || []).filter((l) => l.is_active) as PriceList[],
