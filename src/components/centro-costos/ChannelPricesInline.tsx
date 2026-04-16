@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { Loader2, Save, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import {
   usePriceLists,
@@ -11,7 +10,6 @@ import {
   useDeletePriceOverride,
   useUpdatePriceListConfig,
   CHANNELS,
-  APP_CHANNELS,
   computeChannelPrice,
   resolveChannelMode,
   type PriceList,
