@@ -149,7 +149,7 @@ export function ChannelPricesInline({ item }: Props) {
               </td>
               <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.netoComision)}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.precioNeto)}</td>
-              <td className={`py-2 pr-3 text-right tabular-nums font-semibold ${fcColor(r.fc, fcObj)}`}>
+              <td className={`py-2 pr-3 text-right tabular-nums font-semibold ${fcColorClass(r.fc, fcObj)}`}>
                 {r.fc.toFixed(1)}%
               </td>
               <td className={`py-2 text-right tabular-nums font-semibold ${r.margen >= 0 ? 'text-green-600' : 'text-red-600'}`}>
