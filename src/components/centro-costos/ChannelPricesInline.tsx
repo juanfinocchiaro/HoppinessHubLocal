@@ -55,8 +55,8 @@ export function ChannelPricesInline({ item }: Props) {
   const [saving, setSaving] = useState(false);
 
   const basePrice = item.precio || Number(item.base_price) || 0;
-  const totalCost = item.costo || 0;
-  const fcObj = item.fcObj || 35;
+  const totalCost = item.costo || Number(item.total_cost) || 0;
+  const fcObj = item.fcObj || Number(item.fc_objetivo) || 35;
 
   const activeLists = useMemo(
     () => (priceLists || []).filter((l) => l.is_active) as PriceList[],
