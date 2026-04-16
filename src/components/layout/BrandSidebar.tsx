@@ -210,9 +210,6 @@ export function BrandSidebar() {
           {bp.canViewInsumos && (
             <NavItemButton to="/mimarca/canales-venta" icon={Store} label="Canales de Venta" />
           )}
-          {bp.canViewInsumos && (
-            <NavItemButton to="/mimarca/precios-canal" icon={Tag} label="Precios por Canal" />
-          )}
           {bp.canViewInsumos && isSuperadmin && (
             <NavItemButton to="/mimarca/categorias-carta" icon={Tag} label="Categorías Carta" />
           )}
