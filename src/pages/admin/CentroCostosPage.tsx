@@ -123,7 +123,7 @@ export default function CentroCostosPage() {
         </div>
       </div>
 
-      <ChannelCommissionsPanel />
+      
 
       {tab === 'analisis' && (
         <AnalisisTab items={ei} cats={cats} gs={gs} loading={isLoading}
