@@ -8,7 +8,7 @@ import {
   useAllPriceListItems,
   useBulkUpdatePriceList,
   useDeletePriceOverride,
-  useUpdatePriceListConfig,
+  
   CHANNELS,
   computeChannelPrice,
   resolveChannelMode,
@@ -45,12 +45,10 @@ export function ChannelPricesInline({ item }: Props) {
   const { data: allOverrides, isLoading: loadingItems } = useAllPriceListItems(priceListIds);
   const bulkUpdate = useBulkUpdatePriceList();
   const deleteOverride = useDeletePriceOverride();
-  const updateConfig = useUpdatePriceListConfig();
+  
 
   // Local edits: { [channel]: price } for price overrides
   const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
-  // Local edits: { [channel]: commission% }
-  const [commissionEdits, setCommissionEdits] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const basePrice = item.precio || 0;
@@ -70,8 +68,6 @@ export function ChannelPricesInline({ item }: Props) {
 
       // Edited price takes priority
       const editedPrice = priceEdits[ch] !== undefined ? parseFloat(priceEdits[ch]) || 0 : null;
-      const editedCommission =
-        commissionEdits[ch] !== undefined ? parseFloat(commissionEdits[ch]) || 0 : null;
 
       let precioVenta: number;
       if (isBaseChannel(ch)) {
@@ -87,11 +83,9 @@ export function ChannelPricesInline({ item }: Props) {
       }
 
       const comisionPct =
-        editedCommission !== null
-          ? editedCommission
-          : list?.pricing_mode === 'percentage'
-            ? list.pricing_value
-            : 0;
+        list?.pricing_mode === 'percentage'
+          ? list.pricing_value
+          : 0;
 
       const comisionMonto = precioVenta * (comisionPct / 100);
       const netoComision = precioVenta - comisionMonto;
@@ -118,7 +112,7 @@ export function ChannelPricesInline({ item }: Props) {
         currentDbCommission: list?.pricing_mode === 'percentage' ? list.pricing_value : 0,
       };
     },
-    [activeLists, allOverrides, basePrice, totalCost, item.id, priceEdits, commissionEdits],
+    [activeLists, allOverrides, basePrice, totalCost, item.id, priceEdits],
   );
 
   const rows = useMemo(
@@ -126,7 +120,7 @@ export function ChannelPricesInline({ item }: Props) {
     [getChannelData],
   );
 
-  const hasChanges = Object.keys(priceEdits).length > 0 || Object.keys(commissionEdits).length > 0;
+  const hasChanges = Object.keys(priceEdits).length > 0;
 
   const handleSave = async () => {
     setSaving(true);
@@ -144,22 +138,8 @@ export function ChannelPricesInline({ item }: Props) {
         }
       }
 
-      // Save commission changes
-      for (const [channel, commStr] of Object.entries(commissionEdits)) {
-        const list = activeLists.find((l) => l.channel === channel);
-        if (!list) continue;
-        const commission = parseFloat(commStr) || 0;
-        await updateConfig.mutateAsync({
-          id: list.id,
-          pricing_mode: 'percentage',
-          pricing_value: commission,
-          mirror_channel: null,
-        });
-      }
-
       setPriceEdits({});
-      setCommissionEdits({});
-      toast.success('Precios y comisiones guardados');
+      toast.success('Precios guardados');
     } catch (e) {
       toast.error('Error al guardar');
     } finally {
@@ -260,27 +240,9 @@ export function ChannelPricesInline({ item }: Props) {
                   {r.isBase ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (
-                    <div className="flex items-center gap-0.5 justify-end">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        step={0.5}
-                        value={
-                          commissionEdits[r.channel] !== undefined
-                            ? commissionEdits[r.channel]
-                            : r.currentDbCommission
-                        }
-                        onChange={(e) =>
-                          setCommissionEdits((prev) => ({
-                            ...prev,
-                            [r.channel]: e.target.value,
-                          }))
-                        }
-                        className="h-7 w-[60px] text-right text-xs tabular-nums"
-                      />
-                      <span className="text-xs text-muted-foreground">%</span>
-                    </div>
+                    <span className="text-xs tabular-nums">
+                      {r.currentDbCommission}%
+                    </span>
                   )}
                 </td>
 
@@ -325,7 +287,7 @@ export function ChannelPricesInline({ item }: Props) {
               size="sm"
               onClick={() => {
                 setPriceEdits({});
-                setCommissionEdits({});
+                setPriceEdits({});
               }}
             >
               Cancelar
