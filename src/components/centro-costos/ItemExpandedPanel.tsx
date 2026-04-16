@@ -8,6 +8,7 @@ import {
   Clock,
   ChevronUp,
   Trash2,
+  Store,
 } from 'lucide-react';
 import { useItemCartaMutations } from '@/hooks/useItemsCarta';
 import type { LucideIcon } from 'lucide-react';
@@ -17,8 +18,9 @@ import { ComposicionInline } from './ComposicionInline';
 import { AsignadosInline } from './AsignadosSection';
 import { EditarInline } from './EditarInline';
 import { HistorialInline } from './HistorialInline';
+import { ChannelPricesInline } from './ChannelPricesInline';
 
-type PanelTab = 'composicion' | 'asignados' | 'editar' | 'historial';
+type PanelTab = 'composicion' | 'asignados' | 'editar' | 'historial' | 'canales';
 
 interface Props {
   item: any;
