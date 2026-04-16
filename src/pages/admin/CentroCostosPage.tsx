@@ -123,6 +123,8 @@ export default function CentroCostosPage() {
         </div>
       </div>
 
+      <ChannelCommissionsPanel />
+
       {tab === 'analisis' && (
         <AnalisisTab items={ei} cats={cats} gs={gs} loading={isLoading}
           onQueuePrice={(id, price) => { setPending((p) => ({ ...p, [id]: price })); setTab('actualizar'); }} />
