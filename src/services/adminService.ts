@@ -758,7 +758,7 @@ export async function fetchBranchesMap() {
 // ── Recalcular todos los costos (CentroCostosPage) ─────────────────
 
 export async function recalcularTodosLosCostos() {
-  await supabase.rpc('recalcular_todos_los_costos' as never);
+  await supabase.rpc('recalculate_all_costs' as never);
 }
 
 // ── Promo items fetching (PromocionesPage) ──────────────────────────
