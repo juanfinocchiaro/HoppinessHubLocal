@@ -304,6 +304,17 @@ export async function insertPriceLists(rows: Record<string, unknown>[]) {
   if (error) throw error;
 }
 
+export async function deletePriceList(id: string) {
+  // First delete all price list items
+  const { error: itemsErr } = await fromUntyped('price_list_items')
+    .delete()
+    .eq('price_list_id', id);
+  if (itemsErr) throw itemsErr;
+  // Then delete the price list itself
+  const { error } = await fromUntyped('price_lists').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ── Promo Discount Data ─────────────────────────────────────────────
 
 export async function fetchPromoDiscountItems(

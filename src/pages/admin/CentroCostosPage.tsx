@@ -26,7 +26,7 @@ import { ActualizarTab } from '@/components/centro-costos/ActualizarTab';
 import { ItemFormModal } from '@/components/centro-costos/ItemFormModal';
 import { ComposicionModal } from '@/components/centro-costos/ComposicionModal';
 import { HistorialModal } from '@/components/centro-costos/HistorialModal';
-import { ChannelCommissionsPanel } from '@/components/centro-costos/ChannelCommissionsPanel';
+
 
 export default function CentroCostosPage() {
   const { data: items, isLoading, refetch, isFetching } = useItemsCarta();
@@ -123,7 +123,7 @@ export default function CentroCostosPage() {
         </div>
       </div>
 
-      <ChannelCommissionsPanel />
+      
 
       {tab === 'analisis' && (
         <AnalisisTab items={ei} cats={cats} gs={gs} loading={isLoading}

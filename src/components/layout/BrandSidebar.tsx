@@ -130,6 +130,7 @@ export function BrandSidebar() {
     p.includes('/mimarca/categorias-carta') ||
     p === '/mimarca/centro-costos' ||
     p.includes('/mimarca/precios-canal') ||
+    p.includes('/mimarca/canales-venta') ||
     p.includes('/mimarca/promociones') ||
     p.includes('/mimarca/codigos-descuento');
   const isGestionRedActive =
@@ -206,6 +207,9 @@ export function BrandSidebar() {
           forceOpen={isMenuEngActive}
         >
           {bp.canViewInsumos && <NavItemButton to="/mimarca/carta" icon={BookOpen} label="Carta" />}
+          {bp.canViewInsumos && (
+            <NavItemButton to="/mimarca/canales-venta" icon={Store} label="Canales de Venta" />
+          )}
           {bp.canViewInsumos && (
             <NavItemButton to="/mimarca/precios-canal" icon={Tag} label="Precios por Canal" />
           )}

@@ -137,6 +137,7 @@ const PromocionesPage = lazy(() => import('./pages/admin/PromocionesPage'));
 const CodigosDescuentoPage = lazy(() => import('./pages/admin/CodigosDescuentoPage'));
 const CategoriasCartaPage = lazy(() => import('./pages/admin/CategoriasCartaPage'));
 const ChannelPricingPage = lazy(() => import('./pages/admin/ChannelPricingPage'));
+const CanalesVentaPage = lazy(() => import('./pages/admin/CanalesVentaPage'));
 const DeliveryConfigPage = lazy(() => import('./pages/admin/DeliveryConfigPage'));
 const BranchDeliveryDetailPage = lazy(() => import('./pages/admin/BranchDeliveryDetailPage'));
 
@@ -389,6 +390,7 @@ const App = () => (
 
                         {/* Precios por Canal */}
                         <Route path="precios-canal" element={<ChannelPricingPage />} />
+                        <Route path="canales-venta" element={<CanalesVentaPage />} />
 
                         {/* Delivery */}
                         <Route path="delivery" element={<DeliveryConfigPage />} />
