@@ -86,7 +86,6 @@ export default function CanalesVentaPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
       await deletePriceList(deleteTarget.id);
       qc.invalidateQueries({ queryKey: ['price-lists'] });
@@ -94,8 +93,6 @@ export default function CanalesVentaPage() {
       setDeleteTarget(null);
     } catch {
       toast.error('Error al eliminar canal');
-    } finally {
-      setDeleting(false);
     }
   };
 
