@@ -186,14 +186,10 @@ export default function FichajeEmpleado() {
     mutationFn: async () => {
       if (!validatedUser) throw new Error('Usuario no validado');
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/register-clock-entry`, {
+      const response = await fetch(`/api/hr/clock/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: supabaseKey,
         },
         body: JSON.stringify({
           branch_code: branchCode,
@@ -204,12 +200,13 @@ export default function FichajeEmpleado() {
         }),
       });
 
-      const data = await response.json();
+      const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al registrar fichaje');
+        throw new Error(json.error || 'Error al registrar fichaje');
       }
 
+      const data = json.data !== undefined ? json.data : json;
       return data as {
         entry_type: 'clock_in' | 'clock_out';
         schedule_label: string | null;

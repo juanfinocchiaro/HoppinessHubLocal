@@ -1,1 +1,0 @@
-ALTER TABLE webapp_config ADD COLUMN IF NOT EXISTS webapp_activa BOOLEAN NOT NULL DEFAULT false;

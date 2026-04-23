@@ -27,7 +27,7 @@ import {
 } from 'date-fns';
 import type { LocalRole } from './usePermissions';
 import { useLaborConfig, LABOR_CONFIG_DEFAULTS, type LaborConfig } from './useLaborConfig';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiGet } from '@/services/apiClient';
 
 export interface ClockEntryRaw {
   id: string;
@@ -284,15 +284,10 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
     queryFn: async () => {
       const startDate = format(monthStart, 'yyyy-MM-dd');
       const endDate = format(monthEnd, 'yyyy-MM-dd');
-      // Use fromUntyped to include early_leave_authorized
-      const { data, error } = await fromUntyped('clock_entries')
-        .select('id, user_id, entry_type, created_at, branch_id, schedule_id, work_date, early_leave_authorized')
-        .eq('branch_id', branchId)
-        .gte('work_date', startDate)
-        .lte('work_date', endDate)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data || []) as ClockEntryRaw[];
+      return apiGet<ClockEntryRaw[]>(`/hr/clock/${branchId}/entries`, {
+        startDate,
+        endDate,
+      });
     },
     enabled: !!branchId,
     staleTime: 60 * 1000,
@@ -309,13 +304,10 @@ export function useLaborHours({ branchId, year, month }: UseLaborHoursOptions) {
   const { data: schedules = [], isLoading: loadingSchedules } = useQuery({
     queryKey: ['labor-schedules-full', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await fromUntyped('employee_schedules')
-        .select('user_id, schedule_date, is_day_off, start_time, end_time, start_time_2, end_time_2, work_position')
-        .eq('branch_id', branchId)
-        .gte('schedule_date', startStr)
-        .lte('schedule_date', endStr);
-      if (error) throw error;
-      return data || [];
+      return apiGet(`/hr/schedules/${branchId}`, {
+        startDate: startStr,
+        endDate: endStr,
+      });
     },
     enabled: !!branchId,
     staleTime: 60 * 1000,

@@ -8,7 +8,7 @@ import {
   fetchLaborUsersData,
   fetchSpecialDays,
 } from '@/services/hrService';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiGet } from '@/services/apiClient';
 import {
   calculateLaborSummary,
   calculateScheduledHours,
@@ -53,13 +53,7 @@ export function useEmployeeTimeData({ branchId, year, month, userId }: UseEmploy
         fetchSpecialDays(startDate, endDate),
         fetchBranchSchedules(branchId, startDate, endDate),
         fetchAbsences(branchId, startDate, endDate),
-        (async () => {
-          const { data } = await fromUntyped('labor_config')
-            .select('*')
-            .eq('branch_id', branchId)
-            .maybeSingle();
-          return data;
-        })(),
+        apiGet(`/config/${branchId}/labor-config`).catch(() => null),
       ]);
       const laborConfig = laborConfigRaw;
 

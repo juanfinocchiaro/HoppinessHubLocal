@@ -5,7 +5,7 @@ import { RefreshCw, MapPin, Navigation } from 'lucide-react';
 import { devWarn } from '@/lib/errorHandler';
 import { toast } from 'sonner';
 import logoHoppiness from '@/assets/logo-hoppiness.png';
-import { getSession } from '@/services/authService';
+import { apiGet } from '@/services/apiClient';
 
 const libraries: 'places'[] = ['places'];
 
@@ -197,27 +197,7 @@ export default function BranchLocationMap(props: BranchLocationMapProps) {
       setError(false);
 
       try {
-        const {
-          data: { session },
-        } = await getSession();
-
-        if (!session) {
-          devWarn('No authenticated session for Google Maps API');
-          setError(true);
-          setLoadingKey(false);
-          return;
-        }
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-maps-key`,
-          {
-            headers: {
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          },
-        );
-        const data = await response.json();
+        const data = await apiGet<{ apiKey: string }>('/webapp/google-maps-key');
         if (data.apiKey) {
           setApiKey(data.apiKey);
           setError(false);

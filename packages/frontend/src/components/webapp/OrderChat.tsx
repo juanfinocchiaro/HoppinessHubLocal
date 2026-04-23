@@ -40,21 +40,16 @@ export function OrderChat({
   const [unread, setUnread] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await fetch(`${baseUrl}/functions/v1/webapp-pedido-chat?code=${trackingCode}`, {
-        headers: { apikey: apiKey },
-      });
+      const res = await fetch(`/api/webapp/orders/${trackingCode}/messages`);
       if (!res.ok) return;
       const data = await res.json();
       setMessages(data.messages ?? []);
     } catch {
       /* silent */
     }
-  }, [trackingCode, baseUrl, apiKey]);
+  }, [trackingCode]);
 
   // Initial load
   useEffect(() => {
@@ -99,10 +94,9 @@ export function OrderChat({
     setSending(true);
 
     try {
-      const res = await fetch(`${baseUrl}/functions/v1/webapp-pedido-chat`, {
+      const res = await fetch(`/api/webapp/orders/${trackingCode}/messages`, {
         method: 'POST',
         headers: {
-          apikey: apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

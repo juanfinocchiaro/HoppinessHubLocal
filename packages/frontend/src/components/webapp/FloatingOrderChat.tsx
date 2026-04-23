@@ -44,9 +44,6 @@ export function FloatingOrderChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
   // Find active order — logged in user or guest via localStorage
   const { data: activeOrder } = useQuery({
     queryKey: ['floating-chat-active-order', user?.id],
@@ -66,9 +63,7 @@ export function FloatingOrderChat() {
       const code = localStorage.getItem('hoppiness_last_tracking');
       if (!code) return null;
       try {
-        const res = await fetch(`${baseUrl}/functions/v1/webapp-pedido-chat?code=${code}`, {
-          headers: { apikey: apiKey },
-        });
+        const res = await fetch(`/api/webapp/orders/${code}/messages`);
         if (!res.ok) return null;
         const chatData = await res.json();
         if (!chatData?.pedido_id) return null;
@@ -96,9 +91,7 @@ export function FloatingOrderChat() {
   const fetchMessages = useCallback(async () => {
     if (!trackingCode) return;
     try {
-      const res = await fetch(`${baseUrl}/functions/v1/webapp-pedido-chat?code=${trackingCode}`, {
-        headers: { apikey: apiKey },
-      });
+      const res = await fetch(`/api/webapp/orders/${trackingCode}/messages`);
       if (!res.ok) return;
       const data = await res.json();
       if (data?.messages) {
@@ -107,7 +100,7 @@ export function FloatingOrderChat() {
     } catch {
       /* ignore */
     }
-  }, [trackingCode, baseUrl, apiKey]);
+  }, [trackingCode]);
 
   useEffect(() => {
     if (open && trackingCode) fetchMessages();
@@ -142,9 +135,9 @@ export function FloatingOrderChat() {
     if (!input.trim() || !trackingCode || sending) return;
     setSending(true);
     try {
-      await fetch(`${baseUrl}/functions/v1/webapp-pedido-chat`, {
+      await fetch(`/api/webapp/orders/${trackingCode}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: apiKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: trackingCode,
           mensaje: input.trim(),

@@ -75,14 +75,7 @@ export function TrackingInlineView({ trackingCode, onNewOrder }: Props) {
   const fetchTracking = useCallback(async () => {
     if (!trackingCode) return;
     try {
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const res = await fetch(
-        `${baseUrl}/functions/v1/webapp-order-tracking?code=${trackingCode}`,
-        {
-          headers: { apikey: apiKey },
-        },
-      );
+      const res = await fetch(`/api/webapp/tracking/${trackingCode}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || 'Pedido no encontrado');

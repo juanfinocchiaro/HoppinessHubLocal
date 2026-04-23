@@ -25,12 +25,15 @@ function isBucket(value: string): value is Bucket {
   return (ALLOWED_BUCKETS as readonly string[]).includes(value);
 }
 
-function ensureBucketDir(bucket: string): string {
-  const dir = path.join(UPLOADS_ROOT, bucket);
+function ensureDir(dir: string): string {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   return dir;
+}
+
+function sanitizePath(p: string): string {
+  return p.replace(/\.\./g, '').replace(/^\/+/, '');
 }
 
 const storage = multer.diskStorage({
@@ -39,17 +42,34 @@ const storage = multer.diskStorage({
     if (!isBucket(bucket)) {
       return cb(new AppError(400, `Invalid bucket: ${bucket}`), '');
     }
-    const dir = ensureBucketDir(bucket);
+
+    let dir = path.join(UPLOADS_ROOT, bucket);
+    const requestedPath = req.query.path as string | undefined;
+    if (requestedPath) {
+      const safe = sanitizePath(requestedPath);
+      const subdir = path.dirname(safe);
+      if (subdir && subdir !== '.') {
+        dir = path.join(dir, subdir);
+      }
+    }
+
+    ensureDir(dir);
     cb(null, dir);
   },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
+  filename: (req, file, cb) => {
+    const requestedPath = req.query.path as string | undefined;
+    if (requestedPath) {
+      const safe = sanitizePath(requestedPath);
+      cb(null, path.basename(safe));
+    } else {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
+    }
   },
 });
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const upload = multer({
   storage,
@@ -76,7 +96,11 @@ router.post('/upload/:bucket', requireAuth, (req, res, next) => {
       return next(new AppError(400, 'No file uploaded'));
     }
 
-    const fileUrl = `/uploads/${req.params.bucket}/${req.file.filename}`;
+    const requestedPath = req.query.path as string | undefined;
+    const fileUrl = requestedPath
+      ? `/uploads/${req.params.bucket}/${sanitizePath(requestedPath)}`
+      : `/uploads/${req.params.bucket}/${req.file.filename}`;
+
     res.status(201).json({
       data: {
         url: fileUrl,
@@ -89,7 +113,7 @@ router.post('/upload/:bucket', requireAuth, (req, res, next) => {
   });
 });
 
-// GET /signed-url/:bucket/:filename — return the file URL
+// GET /signed-url/:bucket/:filename — return the file URL (local equivalent)
 router.get('/signed-url/:bucket/:filename', requireAuth, (req, res, next) => {
   try {
     const { bucket, filename } = req.params;
@@ -102,8 +126,7 @@ router.get('/signed-url/:bucket/:filename', requireAuth, (req, res, next) => {
       throw new AppError(404, 'File not found');
     }
 
-    const fileUrl = `/uploads/${bucket}/${filename}`;
-    res.json({ data: { url: fileUrl } });
+    res.json({ data: { url: `/uploads/${bucket}/${filename}` } });
   } catch (err) {
     next(err);
   }
@@ -123,7 +146,7 @@ router.delete('/:bucket/:filename', requireAuth, (req, res, next) => {
     }
 
     fs.unlinkSync(filePath);
-    res.json({ message: 'File deleted' });
+    res.json({ data: { message: 'File deleted' } });
   } catch (err) {
     next(err);
   }

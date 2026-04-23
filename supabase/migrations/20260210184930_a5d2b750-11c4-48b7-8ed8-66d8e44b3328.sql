@@ -1,1 +1,0 @@
-UPDATE public.rdo_categories SET allowed_item_types = ARRAY['ingrediente', 'insumo'] WHERE code IN ('packaging_producto', 'descartables_salon', 'descartables_delivery', 'insumos_clientes', 'limpieza_higiene', 'descartables_cocina', 'uniformes') AND is_active = true;

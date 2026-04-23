@@ -1,58 +1,90 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import { db } from '../db/connection.js';
-import { users, profiles } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
-import { generateTokens, verifyRefreshToken, requireAuth } from '../middleware/auth.js';
+import * as schema from '../db/schema.js';
+import { requireAuth, generateTokens, verifyRefreshToken } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
-// POST /api/auth/signup
+// POST /auth/signup
 router.post('/signup', async (req, res, next) => {
   try {
-    const { email, password, full_name, phone } = req.body;
+    const { email, password, full_name, invitation_token } = req.body;
+    if (!email || !password) throw new AppError(400, 'Email and password are required');
 
-    if (!email || !password) {
-      throw new AppError(400, 'Email and password are required');
-    }
+    const existing = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.email, email.toLowerCase().trim()))
+      .limit(1);
 
-    const existing = await db.select().from(users).where(eq(users.email, email.toLowerCase())).get();
-    if (existing) {
-      throw new AppError(409, 'Email already registered');
-    }
+    if (existing.length > 0) throw new AppError(409, 'Email already registered');
 
-    const password_hash = await bcrypt.hash(password, 12);
-    const userId = crypto.randomUUID();
+    const id = randomUUID();
     const now = new Date().toISOString();
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    await db.insert(users).values({
-      id: userId,
-      email: email.toLowerCase(),
-      password_hash,
+    await db.insert(schema.users).values({
+      id,
+      email: email.toLowerCase().trim(),
+      password_hash: passwordHash,
       email_confirmed_at: now,
+      last_sign_in_at: now,
       created_at: now,
       updated_at: now,
     });
 
-    await db.insert(profiles).values({
-      id: userId,
-      email: email.toLowerCase(),
-      full_name: full_name || null,
-      phone: phone || null,
+    await db.insert(schema.profiles).values({
+      id,
+      full_name: full_name || email.split('@')[0],
+      email: email.toLowerCase().trim(),
       is_active: true,
-      onboarding_completed: false,
       created_at: now,
       updated_at: now,
     });
 
-    const tokens = generateTokens({ userId, email: email.toLowerCase() });
+    if (invitation_token) {
+      const inv = await db
+        .select()
+        .from(schema.staff_invitations)
+        .where(eq(schema.staff_invitations.token, invitation_token))
+        .limit(1);
 
-    const profile = await db.select().from(profiles).where(eq(profiles.id, userId)).get();
+      if (inv.length > 0 && inv[0].status === 'pending') {
+        await db.update(schema.staff_invitations)
+          .set({ status: 'accepted', accepted_at: now, accepted_by: id })
+          .where(eq(schema.staff_invitations.id, inv[0].id));
+
+        if (inv[0].branch_id && inv[0].role) {
+          const role = await db
+            .select({ id: schema.roles.id })
+            .from(schema.roles)
+            .where(eq(schema.roles.key, inv[0].role))
+            .limit(1);
+
+          if (role.length > 0) {
+            await db.insert(schema.user_role_assignments).values({
+              id: randomUUID(),
+              user_id: id,
+              role_id: role[0].id,
+              branch_id: inv[0].branch_id,
+              is_active: true,
+              created_at: now,
+            });
+          }
+        }
+      }
+    }
+
+    const tokens = generateTokens({ userId: id, email: email.toLowerCase().trim() });
+    const profile = await db.select().from(schema.profiles).where(eq(schema.profiles.id, id)).limit(1);
 
     res.status(201).json({
       data: {
-        user: profile,
+        user: profile[0] || { id, email: email.toLowerCase().trim() },
         tokens,
       },
     });
@@ -61,36 +93,37 @@ router.post('/signup', async (req, res, next) => {
   }
 });
 
-// POST /api/auth/login
+// POST /auth/login
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) throw new AppError(400, 'Email and password are required');
 
-    if (!email || !password) {
-      throw new AppError(400, 'Email and password are required');
-    }
+    const rows = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email.toLowerCase().trim()))
+      .limit(1);
 
-    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).get();
-    if (!user || !user.password_hash) {
-      throw new AppError(401, 'Invalid credentials');
-    }
+    if (rows.length === 0) throw new AppError(401, 'Invalid credentials');
 
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      throw new AppError(401, 'Invalid credentials');
-    }
+    const user = rows[0];
+    if (!user.password_hash) throw new AppError(401, 'Invalid credentials');
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) throw new AppError(401, 'Invalid credentials');
 
     const now = new Date().toISOString();
-    await db.update(users).set({ last_sign_in_at: now, updated_at: now }).where(eq(users.id, user.id));
-    await db.update(profiles).set({ last_sign_in_at: now, updated_at: now }).where(eq(profiles.id, user.id));
+    await db.update(schema.users)
+      .set({ last_sign_in_at: now, updated_at: now })
+      .where(eq(schema.users.id, user.id));
 
-    const tokens = generateTokens({ userId: user.id, email: user.email! });
-
-    const profile = await db.select().from(profiles).where(eq(profiles.id, user.id)).get();
+    const tokens = generateTokens({ userId: user.id, email: user.email });
+    const profile = await db.select().from(schema.profiles).where(eq(schema.profiles.id, user.id)).limit(1);
 
     res.json({
       data: {
-        user: profile,
+        user: profile[0] || { id: user.id, email: user.email },
         tokens,
       },
     });
@@ -99,27 +132,19 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// POST /api/auth/refresh
+// POST /auth/refresh
 router.post('/refresh', async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      throw new AppError(400, 'Refresh token required');
-    }
+    const refreshToken = req.body.refreshToken || req.body.refresh_token;
+    if (!refreshToken) throw new AppError(400, 'Refresh token is required');
 
     const payload = verifyRefreshToken(refreshToken);
-    
-    const user = await db.select().from(users).where(eq(users.id, payload.userId)).get();
-    if (!user) {
-      throw new AppError(401, 'User not found');
-    }
-
-    const tokens = generateTokens({ userId: user.id, email: user.email! });
-    const profile = await db.select().from(profiles).where(eq(profiles.id, user.id)).get();
+    const tokens = generateTokens({ userId: payload.userId, email: payload.email });
+    const profile = await db.select().from(schema.profiles).where(eq(schema.profiles.id, payload.userId)).limit(1);
 
     res.json({
       data: {
-        user: profile,
+        user: profile[0] || null,
         tokens,
       },
     });
@@ -128,39 +153,35 @@ router.post('/refresh', async (req, res, next) => {
   }
 });
 
-// GET /api/auth/me
+// GET /auth/me
 router.get('/me', requireAuth, async (req, res, next) => {
   try {
-    const profile = await db.select().from(profiles).where(eq(profiles.id, req.user!.userId)).get();
-    if (!profile) {
-      throw new AppError(404, 'Profile not found');
-    }
-    res.json({ data: profile });
+    const userId = req.user!.userId;
+    const profile = await db.select().from(schema.profiles).where(eq(schema.profiles.id, userId)).limit(1);
+    if (profile.length === 0) throw new AppError(404, 'Profile not found');
+
+    res.json({ data: profile[0] });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/auth/change-password
+// POST /auth/change-password
 router.post('/change-password', requireAuth, async (req, res, next) => {
   try {
-    const { current_password, new_password } = req.body;
-    if (!new_password) {
-      throw new AppError(400, 'New password required');
+    const { new_password } = req.body;
+    if (!new_password || new_password.length < 6) {
+      throw new AppError(400, 'Password must be at least 6 characters');
     }
 
-    const user = await db.select().from(users).where(eq(users.id, req.user!.userId)).get();
-    if (!user) throw new AppError(404, 'User not found');
+    const passwordHash = await bcrypt.hash(new_password, 10);
+    const now = new Date().toISOString();
 
-    if (current_password && user.password_hash) {
-      const valid = await bcrypt.compare(current_password, user.password_hash);
-      if (!valid) throw new AppError(401, 'Current password is incorrect');
-    }
+    await db.update(schema.users)
+      .set({ password_hash: passwordHash, updated_at: now })
+      .where(eq(schema.users.id, req.user!.userId));
 
-    const password_hash = await bcrypt.hash(new_password, 12);
-    await db.update(users).set({ password_hash, updated_at: new Date().toISOString() }).where(eq(users.id, user.id));
-
-    res.json({ message: 'Password updated' });
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }

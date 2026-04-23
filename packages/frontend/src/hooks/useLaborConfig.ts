@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiGet } from '@/services/apiClient';
 
 export interface LaborConfig {
   monthly_hours_limit: number;
@@ -27,23 +27,11 @@ export function useLaborConfig(branchId: string | null) {
   return useQuery<LaborConfig>({
     queryKey: ['labor-config', branchId],
     queryFn: async () => {
-      // Try branch-specific first
-      if (branchId) {
-        const { data: branchConfig } = await fromUntyped('labor_config')
-          .select('*')
-          .eq('branch_id', branchId)
-          .maybeSingle();
-        if (branchConfig) return branchConfig as LaborConfig;
-      }
+      const config = await apiGet<LaborConfig | null>(
+        `/config/${branchId ?? 'global'}/labor-config`,
+      ).catch(() => null);
 
-      // Fallback to global (branch_id IS NULL)
-      const { data: globalConfig } = await fromUntyped('labor_config')
-        .select('*')
-        .is('branch_id', null)
-        .maybeSingle();
-      if (globalConfig) return globalConfig as LaborConfig;
-
-      return DEFAULTS;
+      return config ?? DEFAULTS;
     },
     staleTime: 5 * 60 * 1000,
   });

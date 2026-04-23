@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiGet, apiPost, apiDelete } from '@/services/apiClient';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -26,15 +25,10 @@ export function useEmployeeConsumptionsByMonth(branchId: string, year: number, m
   return useQuery({
     queryKey: ['employee-consumptions', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await fromUntyped('employee_consumptions')
-        .select('id, branch_id, user_id, amount, consumption_date, description, source, created_by, created_at')
-        .eq('branch_id', branchId)
-        .gte('consumption_date', monthStart)
-        .lte('consumption_date', monthEnd)
-        .is('deleted_at', null)
-        .order('consumption_date', { ascending: false });
-      if (error) throw error;
-      return (data || []) as EmployeeConsumption[];
+      return apiGet<EmployeeConsumption[]>(`/hr/consumptions/${branchId}`, {
+        startDate: monthStart,
+        endDate: monthEnd,
+      });
     },
     enabled: !!branchId,
     staleTime: 60_000,
@@ -51,15 +45,14 @@ export function useSalaryAdvancesByMonth(branchId: string, year: number, month: 
   return useQuery({
     queryKey: ['salary-advances-month', branchId, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('salary_advances')
-        .select('id, user_id, amount, status, reason, created_at')
-        .eq('branch_id', branchId)
-        .neq('status', 'cancelled')
-        .gte('created_at', monthStart.toISOString())
-        .lte('created_at', monthEnd.toISOString());
-      if (error) throw error;
-      return data || [];
+      const all: { id: string; user_id: string; amount: number; status: string; reason: string | null; created_at: string }[] =
+        await apiGet('/hr/advances/' + branchId);
+      return all.filter(
+        (a) =>
+          a.status !== 'cancelled' &&
+          a.created_at >= monthStart.toISOString() &&
+          a.created_at <= monthEnd.toISOString(),
+      );
     },
     enabled: !!branchId,
     staleTime: 60_000,
@@ -80,20 +73,13 @@ export function useEmployeeConsumptionMutations() {
       consumptionDate: string;
       description?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No autenticado');
-
-      const { error } = await fromUntyped('employee_consumptions')
-        .insert({
-          branch_id: params.branchId,
-          user_id: params.userId,
-          amount: params.amount,
-          consumption_date: params.consumptionDate,
-          description: params.description || null,
-          source: 'manual',
-          created_by: user.id,
-        });
-      if (error) throw error;
+      await apiPost(`/hr/consumptions/${params.branchId}`, {
+        userId: params.userId,
+        amount: params.amount,
+        consumptionDate: params.consumptionDate,
+        description: params.description || null,
+        source: 'manual',
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['employee-consumptions'] });
@@ -104,10 +90,7 @@ export function useEmployeeConsumptionMutations() {
 
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await fromUntyped('employee_consumptions')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      await apiDelete(`/hr/consumptions/entry/${id}`);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['employee-consumptions'] });

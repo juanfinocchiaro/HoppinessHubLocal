@@ -1,1 +1,0 @@
-ALTER TABLE branch_printers ADD COLUMN IF NOT EXISTS configured_from_network TEXT;

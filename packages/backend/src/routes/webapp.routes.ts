@@ -1,242 +1,335 @@
 import { Router } from 'express';
 import { db } from '../db/connection.js';
-import {
-  webapp_config,
-  branches,
-  menu_categories,
-  menu_items,
-  menu_item_extras,
-  orders,
-  order_items,
-  webapp_order_messages,
-  delivery_tracking,
-  customer_addresses,
-} from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import * as schema from '../db/schema.js';
+import { eq, and, inArray, desc } from 'drizzle-orm';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-// GET /config/:slug — public webapp config by branch slug
-router.get('/config/:slug', async (req, res, next) => {
+// ═══════════════════════════════════════════════════════════════════════════════
+// Orders
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/orders/user/:userId', optionalAuth, async (req, res, next) => {
   try {
-    const config = await db
+    const limit = Number(req.query.limit) || 30;
+    const rows = await db
       .select()
-      .from(webapp_config)
-      .where(eq(webapp_config.slug, req.params.slug))
-      .get();
-    if (!config) throw new AppError(404, 'Webapp config not found');
-
-    const branch = await db
-      .select({
-        id: branches.id,
-        name: branches.name,
-        slug: branches.slug,
-        address: branches.address,
-        phone: branches.phone,
-        is_open: branches.is_open,
-        public_hours: branches.public_hours,
-      })
-      .from(branches)
-      .where(eq(branches.id, config.branch_id!))
-      .get();
-
-    res.json({ data: { ...config, branch } });
+      .from(schema.orders)
+      .where(eq(schema.orders.cliente_user_id, req.params.userId))
+      .orderBy(desc(schema.orders.created_at))
+      .limit(limit);
+    res.json({ data: rows });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /menu/:branchId — public menu (categories + items + extras)
-router.get('/menu/:branchId', async (req, res, next) => {
+router.get('/orders/user/:userId/active', optionalAuth, async (req, res, next) => {
   try {
-    const { branchId } = req.params;
-    const categories = await db
+    const states = (req.query.states as string)?.split(',').filter(Boolean) ?? [];
+    const rows = await db
       .select()
-      .from(menu_categories)
-      .where(eq(menu_categories.is_active, true));
+      .from(schema.orders)
+      .where(
+        and(
+          eq(schema.orders.cliente_user_id, req.params.userId),
+          states.length > 0 ? inArray(schema.orders.status, states) : undefined,
+        ),
+      );
+    res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/orders/user/:userId/active-with-branch', optionalAuth, async (req, res, next) => {
+  try {
+    const states = (req.query.states as string)?.split(',').filter(Boolean) ?? [];
+    const activeOrders = await db
+      .select()
+      .from(schema.orders)
+      .where(
+        and(
+          eq(schema.orders.cliente_user_id, req.params.userId),
+          states.length > 0 ? inArray(schema.orders.status, states) : undefined,
+        ),
+      )
+      .orderBy(desc(schema.orders.created_at))
+      .limit(1);
+
+    if (activeOrders.length === 0) return res.json({ data: null });
+
+    const order = activeOrders[0];
+    const branch = order.branch_id
+      ? await db
+          .select({ id: schema.branches.id, name: schema.branches.name, slug: schema.branches.slug })
+          .from(schema.branches)
+          .where(eq(schema.branches.id, order.branch_id))
+          .get()
+      : null;
 
     const items = await db
       .select()
-      .from(menu_items)
-      .where(eq(menu_items.is_active, true));
+      .from(schema.order_items)
+      .where(eq(schema.order_items.pedido_id, order.id));
 
-    const extras = await db
-      .select()
-      .from(menu_item_extras)
-      .where(eq(menu_item_extras.is_active, true));
-
-    res.json({ data: { branchId, categories, items, extras } });
+    res.json({ data: { ...order, branch, items } });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /orders — create webapp order
+router.get('/orders/user/:userId/last', optionalAuth, async (req, res, next) => {
+  try {
+    const row = await db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.cliente_user_id, req.params.userId))
+      .orderBy(desc(schema.orders.created_at))
+      .limit(1)
+      .get();
+    res.json({ data: row ?? null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/orders/tracking/:code/active', async (req, res, next) => {
+  try {
+    const states = (req.query.states as string)?.split(',').filter(Boolean) ?? [];
+    const rows = await db
+      .select()
+      .from(schema.orders)
+      .where(
+        and(
+          eq(schema.orders.webapp_tracking_code, req.params.code),
+          states.length > 0 ? inArray(schema.orders.status, states) : undefined,
+        ),
+      );
+    res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/orders/tracking/:code/with-branch', async (req, res, next) => {
+  try {
+    const states = (req.query.states as string)?.split(',').filter(Boolean) ?? [];
+    const order = await db
+      .select()
+      .from(schema.orders)
+      .where(
+        and(
+          eq(schema.orders.webapp_tracking_code, req.params.code),
+          states.length > 0 ? inArray(schema.orders.status, states) : undefined,
+        ),
+      )
+      .get();
+
+    if (!order) return res.json({ data: null });
+
+    const branch = order.branch_id
+      ? await db
+          .select({ id: schema.branches.id, name: schema.branches.name, slug: schema.branches.slug })
+          .from(schema.branches)
+          .where(eq(schema.branches.id, order.branch_id))
+          .get()
+      : null;
+
+    const items = await db
+      .select()
+      .from(schema.order_items)
+      .where(eq(schema.order_items.pedido_id, order.id));
+
+    res.json({ data: { ...order, branch, items } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/orders/statuses', async (req, res, next) => {
+  try {
+    const codes = (req.query.codes as string)?.split(',').filter(Boolean) ?? [];
+    if (codes.length === 0) return res.json({ data: [] });
+
+    const rows = await db
+      .select({
+        webapp_tracking_code: schema.orders.webapp_tracking_code,
+        status: schema.orders.status,
+      })
+      .from(schema.orders)
+      .where(inArray(schema.orders.webapp_tracking_code, codes));
+    res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/orders', optionalAuth, async (req, res, next) => {
   try {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const trackingCode = `HH-${Date.now().toString(36).toUpperCase()}`;
+    const { items, ...orderData } = req.body;
 
-    await db.insert(orders).values({
+    await db.insert(schema.orders).values({
       id,
-      ...req.body,
-      is_webapp: true,
+      ...orderData,
       webapp_tracking_code: trackingCode,
       source: 'webapp',
-      status: 'pending',
-      customer_user_id: req.user?.userId ?? null,
+      status: 'pendiente',
+      cliente_user_id: req.user?.userId ?? orderData.cliente_user_id ?? null,
       created_at: now,
-      updated_at: now,
     });
 
-    if (Array.isArray(req.body.items)) {
-      for (const item of req.body.items) {
-        await db.insert(order_items).values({
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        await db.insert(schema.order_items).values({
           id: crypto.randomUUID(),
-          order_id: id,
+          pedido_id: id,
           ...item,
           created_at: now,
         });
       }
     }
 
-    const created = await db.select().from(orders).where(eq(orders.id, id)).get();
+    const created = await db.select().from(schema.orders).where(eq(schema.orders.id, id)).get();
     res.status(201).json({ data: created });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /tracking/:code — track order by code
-router.get('/tracking/:code', async (req, res, next) => {
-  try {
-    const order = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.webapp_tracking_code, req.params.code))
-      .get();
-    if (!order) throw new AppError(404, 'Order not found');
+// ═══════════════════════════════════════════════════════════════════════════════
+// Branches (name / slug lookups)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    const items = await db.select().from(order_items).where(eq(order_items.order_id, order.id));
-    res.json({ data: { ...order, items } });
+router.get('/branches/names', async (req, res, next) => {
+  try {
+    const ids = (req.query.ids as string)?.split(',').filter(Boolean) ?? [];
+    if (ids.length === 0) return res.json({ data: {} });
+
+    const rows = await db
+      .select({ id: schema.branches.id, name: schema.branches.name, slug: schema.branches.slug })
+      .from(schema.branches)
+      .where(inArray(schema.branches.id, ids));
+
+    const map: Record<string, { name: string; slug: string | null }> = {};
+    for (const r of rows) {
+      map[r.id] = { name: r.name ?? '', slug: r.slug ?? null };
+    }
+    res.json({ data: map });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /orders/:orderId/messages — chat messages
-router.get('/orders/:orderId/messages', async (req, res, next) => {
+router.get('/branches/:branchId/name', async (req, res, next) => {
   try {
+    const row = await db
+      .select({ name: schema.branches.name, slug: schema.branches.slug })
+      .from(schema.branches)
+      .where(eq(schema.branches.id, req.params.branchId))
+      .get();
+    res.json({ data: row ?? { name: '', slug: null } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Webapp Config
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/config/:branchId/payments', async (req, res, next) => {
+  try {
+    const config = await db
+      .select()
+      .from(schema.webapp_config)
+      .where(eq(schema.webapp_config.branch_id, req.params.branchId))
+      .get();
+    res.json({ data: config ?? null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/google-maps-key', async (_req, res, next) => {
+  try {
+    const row = await db.select().from(schema.delivery_pricing_config).get();
+    res.json({ data: { apiKey: row?.google_api_key_encrypted ?? null } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Customer Addresses
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/addresses', optionalAuth, async (req, res, next) => {
+  try {
+    const userId = (req.query.user_id as string) || req.user?.userId;
+    if (!userId) return res.json({ data: [] });
+
     const rows = await db
       .select()
-      .from(webapp_order_messages)
-      .where(eq(webapp_order_messages.order_id, req.params.orderId));
+      .from(schema.customer_addresses)
+      .where(eq(schema.customer_addresses.user_id, userId));
     res.json({ data: rows });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /orders/:orderId/messages — post chat message
-router.post('/orders/:orderId/messages', async (req, res, next) => {
-  try {
-    const id = crypto.randomUUID();
-    await db.insert(webapp_order_messages).values({
-      id,
-      order_id: req.params.orderId,
-      ...req.body,
-      created_at: new Date().toISOString(),
-    });
-    const created = await db.select().from(webapp_order_messages).where(eq(webapp_order_messages.id, id)).get();
-    res.status(201).json({ data: created });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /delivery-tracking/:orderId — delivery GPS tracking
-router.get('/delivery-tracking/:orderId', async (req, res, next) => {
-  try {
-    const tracking = await db
-      .select()
-      .from(delivery_tracking)
-      .where(eq(delivery_tracking.order_id, req.params.orderId))
-      .get();
-    res.json({ data: tracking ?? null });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /addresses — list user addresses
-router.get('/addresses', requireAuth, async (req, res, next) => {
-  try {
-    const rows = await db
-      .select()
-      .from(customer_addresses)
-      .where(eq(customer_addresses.user_id, req.user!.userId));
-    res.json({ data: rows });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /addresses — create address
-router.post('/addresses', requireAuth, async (req, res, next) => {
+router.post('/addresses', optionalAuth, async (req, res, next) => {
   try {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
-    await db.insert(customer_addresses).values({
+    const userId = req.body.user_id || req.user?.userId;
+
+    await db.insert(schema.customer_addresses).values({
       id,
-      user_id: req.user!.userId,
       ...req.body,
+      user_id: userId,
       created_at: now,
       updated_at: now,
     });
-    const created = await db.select().from(customer_addresses).where(eq(customer_addresses.id, id)).get();
+
+    const created = await db
+      .select()
+      .from(schema.customer_addresses)
+      .where(eq(schema.customer_addresses.id, id))
+      .get();
     res.status(201).json({ data: created });
   } catch (err) {
     next(err);
   }
 });
 
-// PUT /addresses/:id — update address
-router.put('/addresses/:id', requireAuth, async (req, res, next) => {
+router.put('/addresses/:id', optionalAuth, async (req, res, next) => {
   try {
-    const existing = await db
-      .select()
-      .from(customer_addresses)
-      .where(and(eq(customer_addresses.id, req.params.id), eq(customer_addresses.user_id, req.user!.userId)))
-      .get();
-    if (!existing) throw new AppError(404, 'Address not found');
-
     await db
-      .update(customer_addresses)
+      .update(schema.customer_addresses)
       .set({ ...req.body, updated_at: new Date().toISOString() })
-      .where(eq(customer_addresses.id, req.params.id));
+      .where(eq(schema.customer_addresses.id, req.params.id));
 
-    const updated = await db.select().from(customer_addresses).where(eq(customer_addresses.id, req.params.id)).get();
+    const updated = await db
+      .select()
+      .from(schema.customer_addresses)
+      .where(eq(schema.customer_addresses.id, req.params.id))
+      .get();
     res.json({ data: updated });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /addresses/:id — delete address
 router.delete('/addresses/:id', requireAuth, async (req, res, next) => {
   try {
-    const existing = await db
-      .select()
-      .from(customer_addresses)
-      .where(and(eq(customer_addresses.id, req.params.id), eq(customer_addresses.user_id, req.user!.userId)))
-      .get();
-    if (!existing) throw new AppError(404, 'Address not found');
-
-    await db.delete(customer_addresses).where(eq(customer_addresses.id, req.params.id));
-    res.json({ message: 'Address deleted' });
+    await db.delete(schema.customer_addresses).where(eq(schema.customer_addresses.id, req.params.id));
+    res.json({ data: { message: 'Address deleted' } });
   } catch (err) {
     next(err);
   }

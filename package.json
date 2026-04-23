@@ -16,6 +16,9 @@
     "db:generate": "npm run db:generate -w @hoppiness/backend",
     "db:seed": "npm run db:seed -w @hoppiness/backend"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "concurrently": "^9.1.0"
   }

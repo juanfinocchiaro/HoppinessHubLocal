@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/select';
 import { getClockInUrl } from '@/lib/constants';
 import { fetchBranchClockInfo, fetchBranchStaffForClock } from '@/services/hrService';
-import { supabase } from '@/services/supabaseClient';
+import { apiPut } from '@/services/apiClient';
 import { useDynamicPermissions } from '@/hooks/useDynamicPermissions';
 import { useClockMutations } from '@/hooks/useClockMutations';
 import { useClockEntries, useDaySchedules, useDayRequests } from '@/hooks/useClockEntries';
@@ -104,14 +104,10 @@ export default function ClockInsPage() {
 
   const saveWindowMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
-        .from('branches')
-        .update({
-          clock_window_before_min: wcBefore ?? windowConfig.beforeMin,
-          clock_window_after_min: wcAfter ?? windowConfig.afterMin,
-        })
-        .eq('id', branchId);
-      if (error) throw error;
+      await apiPut(`/branches/${branchId}/clock-window`, {
+        clock_window_before_min: wcBefore ?? windowConfig.beforeMin,
+        clock_window_after_min: wcAfter ?? windowConfig.afterMin,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branch-clock-info'] });

@@ -1,1 +1,0 @@
-DROP TRIGGER IF EXISTS trg_prevent_delete_verified ON public.supplier_payments;

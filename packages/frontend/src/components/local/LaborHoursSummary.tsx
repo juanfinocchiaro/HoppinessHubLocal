@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiGet } from '@/services/apiClient';
 import { es } from 'date-fns/locale';
 import {
   ChevronLeft,
@@ -399,8 +399,8 @@ export default function LaborHoursSummary({ branchId }: LaborHoursSummaryProps) 
   const { data: branchName = '' } = useQuery({
     queryKey: ['branch-name', branchId],
     queryFn: async () => {
-      const { data } = await supabase.from('branches').select('name').eq('id', branchId).single();
-      return data?.name || '';
+      const branch: { name?: string } = await apiGet('/branches/' + branchId);
+      return branch?.name || '';
     },
     enabled: !!branchId,
     staleTime: 5 * 60 * 1000,

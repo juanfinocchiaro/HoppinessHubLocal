@@ -8,7 +8,7 @@ import { useExtraAssignableItems } from '@/hooks/useExtraAutoDiscovery';
 import { useToggleExtra } from '@/hooks/useToggleExtra';
 import type { DiscoveredExtra } from '@/hooks/useExtraAutoDiscovery';
 import { formatCurrency } from '@/lib/formatters';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiPut } from '@/services/apiClient';
 
 interface ItemCartaWithCategory {
   id: string;
@@ -65,9 +65,7 @@ export function ExtraRow({ d, itemId, toggleExtra }: { d: DiscoveredExtra; itemI
 
   const handleSaveNombre = async () => {
     if (!d.extra_id || localNombre === d.extra_name) return;
-    await fromUntyped('menu_items')
-      .update({ name: localNombre })
-      .eq('id', d.extra_id!);
+    await apiPut(`/menu/items/${d.extra_id}`, { name: localNombre });
   };
 
   return (

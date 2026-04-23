@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { supabase } from '@/services/supabaseClient';
+import { apiGet } from '@/services/apiClient';
 
 interface MonthData {
   entries: {
@@ -53,45 +53,12 @@ export function useFichajeDetalle(
     queryFn: async () => {
       const startDate = format(monthStart, 'yyyy-MM-dd');
       const endDate = format(monthEnd, 'yyyy-MM-dd');
-      const sb: any = supabase;
 
-      const [entriesRes, schedulesRes, requestsRes] = await Promise.all([
-        sb
-          .from('clock_entries')
-          .select(
-            'id, entry_type, photo_url, created_at, user_id, gps_status, is_manual, manual_by, manual_reason, original_created_at, schedule_id, resolved_type, anomaly_type, work_date',
-          )
-          .eq('branch_id', branchId)
-          .eq('user_id', userId)
-          .gte('work_date', startDate)
-          .lte('work_date', endDate)
-          .order('created_at', { ascending: true }),
-        sb
-          .from('employee_schedules')
-          .select('id, user_id, schedule_date, start_time, end_time, is_day_off')
-          .eq('branch_id', branchId)
-          .eq('user_id', userId)
-          .gte('schedule_date', startDate)
-          .lte('schedule_date', endDate),
-        sb
-          .from('schedule_requests')
-          .select('user_id, request_date, request_type, status')
-          .eq('branch_id', branchId)
-          .eq('user_id', userId)
-          .gte('request_date', startDate)
-          .lte('request_date', endDate)
-          .eq('status', 'approved'),
-      ]);
-
-      if (entriesRes.error) throw entriesRes.error;
-      if (schedulesRes.error) throw schedulesRes.error;
-      if (requestsRes.error) throw requestsRes.error;
-
-      return {
-        entries: entriesRes.data || [],
-        schedules: schedulesRes.data || [],
-        requests: requestsRes.data || [],
-      };
+      return apiGet<MonthData>(`/hr/clock/${branchId}/detail`, {
+        userId,
+        startDate,
+        endDate,
+      });
     },
     staleTime: 60_000,
   });

@@ -1,8 +1,0 @@
--- Email confirmation is configured in Supabase Dashboard > Authentication > Settings
--- This migration documents the requirement:
---   1. Enable "Confirm email" in Authentication > Email settings
---   2. Configure Cloudflare Turnstile captcha in Authentication > Bot Protection
---      - Set VITE_TURNSTILE_SITE_KEY in the frontend .env
---
--- No schema changes needed — Supabase Auth handles email_confirmed_at natively.
--- The frontend reads user.email_confirmed_at to show confirmation banners.

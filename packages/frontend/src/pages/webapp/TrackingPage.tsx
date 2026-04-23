@@ -140,12 +140,7 @@ export default function TrackingPage() {
   const fetchTracking = async () => {
     if (!trackingCode) return;
     try {
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const url = `${baseUrl}/functions/v1/webapp-order-tracking?code=${trackingCode}`;
-      const res = await fetch(url, {
-        headers: { apikey: apiKey },
-      });
+      const res = await fetch(`/api/webapp/tracking/${trackingCode}`);
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

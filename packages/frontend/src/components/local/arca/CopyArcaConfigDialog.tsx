@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiGet, apiPost, apiPut } from '@/services/apiClient';
 import { fetchBranchesByIds } from '@/services/configService';
 import {
   Dialog,
@@ -13,6 +13,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
+
+interface AfipConfigRow {
+  branch_id: string;
+  cuit: string;
+  business_name: string;
+  direccion_fiscal: string;
+  inicio_actividades: string;
+  punto_venta: number | null;
+}
 
 interface CopyArcaConfigDialogProps {
   open: boolean;
@@ -31,22 +40,20 @@ export function CopyArcaConfigDialog({
   const [isCopying, setIsCopying] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch branches with fiscal data configured (excluding current)
   const { data: configuredBranches, isLoading } = useQuery({
     queryKey: ['arca-configured-branches-fiscal', targetBranchId],
     queryFn: async () => {
-      const { data, error } = await (fromUntyped('afip_config')
-        .select('branch_id, cuit, business_name, direccion_fiscal, inicio_actividades, punto_venta')
-        .not('cuit', 'is', null)
-        .neq('branch_id', targetBranchId) as any);
-      if (error) throw error;
+      const data = await apiGet<AfipConfigRow[]>(
+        `/fiscal/afip-configs`,
+        { excludeBranchId: targetBranchId },
+      );
 
-      const branchIds = (data as Array<Record<string, unknown>>).map((d: any) => d.branch_id);
+      const branchIds = data.map((d) => d.branch_id);
       if (!branchIds.length) return [];
 
       const branches = await fetchBranchesByIds(branchIds);
 
-      return (data as Array<Record<string, unknown>>).map((cfg: any) => ({
+      return data.map((cfg) => ({
         ...cfg,
         branch_name: branches?.find((b) => b.id === cfg.branch_id)?.name || 'Sin nombre',
       }));
@@ -60,40 +67,19 @@ export function CopyArcaConfigDialog({
       return;
     }
 
-    const source = configuredBranches?.find((b: any) => b.branch_id === selectedBranchId);
+    const source = configuredBranches?.find((b) => b.branch_id === selectedBranchId);
     if (!source) return;
 
     setIsCopying(true);
     try {
-      // Only copy fiscal data â€” NOT certificates, private key, or punto_venta
-      const payload = {
-        branch_id: targetBranchId,
-        cuit: source.cuit,
-        business_name: source.business_name,
-        direccion_fiscal: source.direccion_fiscal,
-        inicio_actividades: source.inicio_actividades,
-      };
-
-      const { data: existing } = await (fromUntyped('afip_config')
-        .select('id')
-        .eq('branch_id', targetBranchId)
-        .maybeSingle() as any);
-
-      if (existing) {
-        const { error } = await (fromUntyped('afip_config')
-          .update(payload)
-          .eq('branch_id', targetBranchId) as any);
-        if (error) throw error;
-      } else {
-        const { error } = await fromUntyped('afip_config').insert(payload);
-        if (error) throw error;
-      }
+      await apiPost(`/fiscal/afip-config/${targetBranchId}/copy-from/${selectedBranchId}`);
 
       queryClient.invalidateQueries({ queryKey: ['afip-config', targetBranchId] });
       onOpenChange(false);
       onCopied();
-    } catch (err: any) {
-      toast.error(`Error al copiar: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Error al copiar: ${message}`);
     } finally {
       setIsCopying(false);
     }
@@ -120,7 +106,7 @@ export function CopyArcaConfigDialog({
 
         {!isLoading && configuredBranches && configuredBranches.length > 0 && (
           <div className="space-y-2">
-            {configuredBranches.map((b: any) => (
+            {configuredBranches.map((b) => (
               <button
                 key={b.branch_id}
                 onClick={() => setSelectedBranchId(b.branch_id)}

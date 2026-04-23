@@ -32,20 +32,16 @@ export default function CadeteTrackingPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestPos = useRef<{ lat: number; lng: number } | null>(null);
 
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
   const callApi = useCallback(
     async (method: string, body?: unknown) => {
       const url =
         method === 'GET'
-          ? `${baseUrl}/functions/v1/delivery-tracking?token=${token}`
-          : `${baseUrl}/functions/v1/delivery-tracking`;
+          ? `/api/delivery/tracking?token=${token}`
+          : `/api/delivery/tracking`;
 
       const res = await fetch(url, {
         method,
         headers: {
-          apikey: apiKey,
           'Content-Type': 'application/json',
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
@@ -53,7 +49,7 @@ export default function CadeteTrackingPage() {
 
       return res.json();
     },
-    [baseUrl, apiKey, token],
+    [token],
   );
 
   useEffect(() => {

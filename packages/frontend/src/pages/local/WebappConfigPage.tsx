@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { fromUntyped } from '@/lib/supabase-helpers';
+import { apiPost, apiPut } from '@/services/apiClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,13 +106,9 @@ export default function WebappConfigPage() {
       };
 
       if (config) {
-        const { error } = await fromUntyped('webapp_config')
-          .update(payload)
-          .eq('branch_id', branchId!);
-        if (error) throw error;
+        await apiPut(`/branches/${branchId}/config/webapp`, payload);
       } else {
-        const { error } = await fromUntyped('webapp_config').insert(payload);
-        if (error) throw error;
+        await apiPost(`/branches/${branchId}/config/webapp`, payload);
       }
     },
     onSuccess: () => {

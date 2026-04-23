@@ -1,12 +1,12 @@
-/**
- * useIsClockedInAtBranch - Reads employee_time_state to determine
- * if the user is currently clocked in at a branch.
- * Falls back to legacy last-entry check when the state table has no row.
- */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/supabaseClient';
+import { apiGet } from '@/services/apiClient';
 import { fetchLastClockEntry } from '@/services/hrService';
 import { useAuth } from './useAuth';
+
+interface TimeStateResponse {
+  current_state: string;
+  branch_id: string;
+}
 
 export function useIsClockedInAtBranch(branchId: string | undefined) {
   const { user } = useAuth();
@@ -16,17 +16,18 @@ export function useIsClockedInAtBranch(branchId: string | undefined) {
     queryFn: async (): Promise<boolean> => {
       if (!user?.id || !branchId) return false;
 
-      const { data: ets } = await supabase
-        .from('employee_time_state')
-        .select('current_state, branch_id')
-        .eq('employee_id', user.id)
-        .maybeSingle();
+      try {
+        const ets = await apiGet<TimeStateResponse | null>(
+          `/hr/clock/${branchId}/time-state`,
+        );
 
-      if (ets) {
-        return ets.current_state === 'working' && ets.branch_id === branchId;
+        if (ets) {
+          return ets.current_state === 'working' && ets.branch_id === branchId;
+        }
+      } catch {
+        // Fall through to legacy fallback
       }
 
-      // Legacy fallback
       const data = await fetchLastClockEntry(user.id, branchId);
       return data?.entry_type === 'clock_in';
     },

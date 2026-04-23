@@ -1,245 +1,27 @@
 import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // ============================================================================
-// AUTH
+// AUTH (local only)
 // ============================================================================
 
 export const users = sqliteTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   email: text('email').notNull(),
   password_hash: text('password_hash'),
   email_confirmed_at: text('email_confirmed_at'),
   last_sign_in_at: text('last_sign_in_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
 }, (table) => [
   uniqueIndex('users_email_idx').on(table.email),
 ]);
 
-export const profiles = sqliteTable('profiles', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  email: text('email'),
-  full_name: text('full_name'),
-  avatar_url: text('avatar_url'),
-  phone: text('phone'),
-  clock_pin: text('clock_pin'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  email_confirmed_at: text('email_confirmed_at'),
-  last_sign_in_at: text('last_sign_in_at'),
-  onboarding_completed: integer('onboarding_completed', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
 // ============================================================================
-// ROLES & PERMISSIONS
-// ============================================================================
-
-export const roles = sqliteTable('roles', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  key: text('key'),
-  label: text('label'),
-  description: text('description'),
-  scope: text('scope'),
-  is_system: integer('is_system', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const permissions = sqliteTable('permissions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  key: text('key'),
-  label: text('label'),
-  description: text('description'),
-  scope: text('scope'),
-  module: text('module'),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const role_permissions = sqliteTable('role_permissions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  role_id: text('role_id'),
-  permission_id: text('permission_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const user_role_assignments = sqliteTable('user_role_assignments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  role_id: text('role_id'),
-  branch_id: text('branch_id'),
-  assigned_by: text('assigned_by'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// BRANCHES & BRANCH CONFIG
-// ============================================================================
-
-export const branches = sqliteTable('branches', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  slug: text('slug'),
-  address: text('address'),
-  city: text('city'),
-  phone: text('phone'),
-  email: text('email'),
-  latitude: real('latitude'),
-  longitude: real('longitude'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  is_open: integer('is_open', { mode: 'boolean' }),
-  local_open_state: integer('local_open_state', { mode: 'boolean' }),
-  opening_time: text('opening_time'),
-  closing_time: text('closing_time'),
-  public_hours: text('public_hours', { mode: 'json' }),
-  public_status: text('public_status'),
-  clock_code: text('clock_code'),
-  clock_window_before_min: integer('clock_window_before_min'),
-  clock_window_after_min: integer('clock_window_after_min'),
-  cover_image_url: text('cover_image_url'),
-  google_place_id: text('google_place_id'),
-  enforce_labor_law: integer('enforce_labor_law', { mode: 'boolean' }),
-  expense_pin_threshold: real('expense_pin_threshold'),
-  admin_force_state: text('admin_force_state'),
-  admin_force_message: text('admin_force_message'),
-  admin_force_channels: text('admin_force_channels', { mode: 'json' }),
-  shifts_morning_enabled: integer('shifts_morning_enabled', { mode: 'boolean' }),
-  shifts_overnight_enabled: integer('shifts_overnight_enabled', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_shifts = sqliteTable('branch_shifts', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  name: text('name'),
-  start_time: text('start_time'),
-  end_time: text('end_time'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_printers = sqliteTable('branch_printers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  name: text('name'),
-  connection_type: text('connection_type'),
-  ip_address: text('ip_address'),
-  port: integer('port'),
-  paper_width: integer('paper_width'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  configured_from_network: text('configured_from_network'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_inspections = sqliteTable('branch_inspections', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  inspector_id: text('inspector_id'),
-  present_manager_id: text('present_manager_id'),
-  inspection_type: text('inspection_type'),
-  status: text('status'),
-  started_at: text('started_at'),
-  completed_at: text('completed_at'),
-  score_total: real('score_total'),
-  general_notes: text('general_notes'),
-  critical_findings: text('critical_findings'),
-  action_items: text('action_items', { mode: 'json' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_item_availability = sqliteTable('branch_item_availability', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  item_carta_id: text('item_carta_id'),
-  available: integer('available', { mode: 'boolean' }),
-  available_salon: integer('available_salon', { mode: 'boolean' }),
-  available_webapp: integer('available_webapp', { mode: 'boolean' }),
-  out_of_stock: integer('out_of_stock', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_monthly_sales = sqliteTable('branch_monthly_sales', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  period: text('period'),
-  source: text('source'),
-  total_sales: real('total_sales'),
-  cash_total: real('cash_total'),
-  online_total: real('online_total'),
-  cash: real('cash'),
-  cash_percentage: real('cash_percentage'),
-  notes: text('notes'),
-  loaded_by: text('loaded_by'),
-  loaded_at: text('loaded_at'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_closure_config = sqliteTable('branch_closure_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  config_id: text('config_id'),
-  enabled: integer('enabled', { mode: 'boolean' }),
-});
-
-export const branch_delivery_config = sqliteTable('branch_delivery_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  delivery_enabled: integer('delivery_enabled', { mode: 'boolean' }),
-  default_radius_km: real('default_radius_km'),
-  radius_override_km: real('radius_override_km'),
-  radius_override_by: text('radius_override_by'),
-  radius_override_until: text('radius_override_until'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const branch_delivery_neighborhoods = sqliteTable('branch_delivery_neighborhoods', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  neighborhood_id: text('neighborhood_id'),
-  status: text('status'),
-  distance_km: real('distance_km'),
-  decided_by: text('decided_by'),
-  block_reason: text('block_reason'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const brand_closure_config = sqliteTable('brand_closure_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  key: text('key'),
-  label: text('label'),
-  type: text('type'),
-  categoria_padre: text('categoria_padre'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const brand_sidebar_order = sqliteTable('brand_sidebar_order', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  section_id: text('section_id'),
-  sort_order: integer('sort_order'),
-  updated_by: text('updated_by'),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// AFIP & FISCAL
+// PG TABLES (exact column names from PostgreSQL dump)
 // ============================================================================
 
 export const afip_config = sqliteTable('afip_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
   cuit: text('cuit'),
   business_name: text('business_name'),
@@ -247,934 +29,610 @@ export const afip_config = sqliteTable('afip_config', {
   activity_start_date: text('activity_start_date'),
   point_of_sale: integer('point_of_sale'),
   certificado_crt: text('certificado_crt'),
-  csr_pem: text('csr_pem'),
   private_key_enc: text('private_key_enc'),
-  certificate_status: text('certificate_status'),
   connection_status: text('connection_status'),
-  is_production: integer('is_production', { mode: 'boolean' }),
   last_error: text('last_error'),
   last_verification: text('last_verification'),
-  invoicing_rules: text('invoicing_rules', { mode: 'json' }),
-  last_invoice_number_a: integer('last_invoice_number_a'),
-  last_invoice_number_b: integer('last_invoice_number_b'),
-  last_invoice_number_c: integer('last_invoice_number_c'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  last_invoice_number_a: text('last_invoice_number_a'),
+  last_invoice_number_b: text('last_invoice_number_b'),
+  last_invoice_number_c: text('last_invoice_number_c'),
+  is_production: integer('is_production', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  certificate_status: text('certificate_status'),
+  csr_pem: text('csr_pem'),
+  invoicing_rules: text('invoicing_rules'),
 });
 
 export const afip_errores_log = sqliteTable('afip_errores_log', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
   error_type: text('error_type'),
   afip_code: text('afip_code'),
   message: text('message'),
-  request_data: text('request_data', { mode: 'json' }),
-  response_data: text('response_data', { mode: 'json' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  request_data: text('request_data'),
+  response_data: text('response_data'),
+  created_at: text('created_at'),
 });
-
-export const fiscal_z_closings = sqliteTable('fiscal_z_closings', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  closing_date: text('closing_date'),
-  shift_label: text('shift_label'),
-  z_number: integer('z_number'),
-  total_a: real('total_a'),
-  total_b: real('total_b'),
-  total_c: real('total_c'),
-  invoices_a: integer('invoices_a'),
-  invoices_b: integer('invoices_b'),
-  invoices_c: integer('invoices_c'),
-  credit_notes_a: integer('credit_notes_a'),
-  credit_notes_b: integer('credit_notes_b'),
-  credit_notes_c: integer('credit_notes_c'),
-  from_number_a: integer('from_number_a'),
-  to_number_a: integer('to_number_a'),
-  from_number_b: integer('from_number_b'),
-  to_number_b: integer('to_number_b'),
-  from_number_c: integer('from_number_c'),
-  to_number_c: integer('to_number_c'),
-  total_amount: real('total_amount'),
-  total_invoices: integer('total_invoices'),
-  notes: text('notes'),
-  generated_by: text('generated_by'),
-  printed_at: text('printed_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const issued_invoices = sqliteTable('issued_invoices', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  invoice_type: text('invoice_type'),
-  receipt_type: text('receipt_type'),
-  point_of_sale: integer('point_of_sale'),
-  invoice_number: integer('invoice_number'),
-  issue_date: text('issue_date'),
-  customer_name: text('customer_name'),
-  customer_doc_type: text('customer_doc_type'),
-  customer_doc_number: text('customer_doc_number'),
-  total_amount: real('total_amount'),
-  net_amount: real('net_amount'),
-  iva_amount: real('iva_amount'),
-  other_taxes: real('other_taxes'),
-  cae: text('cae'),
-  cae_expiry: text('cae_expiry'),
-  afip_result: text('afip_result'),
-  afip_response: text('afip_response', { mode: 'json' }),
-  original_invoice_id: text('original_invoice_id'),
-  order_id: text('order_id'),
-  voided_at: text('voided_at'),
-  voided_by: text('voided_by'),
-  voided_reason: text('voided_reason'),
-  created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const invoice_items = sqliteTable('invoice_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  invoice_id: text('invoice_id'),
-  description: text('description'),
-  quantity: real('quantity'),
-  unit_price: real('unit_price'),
-  subtotal: real('subtotal'),
-  iva_rate: real('iva_rate'),
-  iva_amount: real('iva_amount'),
-  total: real('total'),
-  product_code: text('product_code'),
-  unit_code: text('unit_code'),
-  bonus_percentage: real('bonus_percentage'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const invoice_payment_links = sqliteTable('invoice_payment_links', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  invoice_id: text('invoice_id'),
-  payment_id: text('payment_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const tax_config = sqliteTable('tax_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  iibb_rate: real('iibb_rate'),
-  municipal_rate: real('municipal_rate'),
-  other_tax_rate: real('other_tax_rate'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// AUDIT & LOGGING
-// ============================================================================
 
 export const audit_logs = sqliteTable('audit_logs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   user_id: text('user_id'),
+  action: text('action'),
   table_name: text('table_name'),
-  action: text('action'),
   record_id: text('record_id'),
-  old_data: text('old_data', { mode: 'json' }),
-  new_data: text('new_data', { mode: 'json' }),
+  old_data: text('old_data'),
+  new_data: text('new_data'),
   ip_address: text('ip_address'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
 });
 
-export const financial_audit_log = sqliteTable('financial_audit_log', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  entity_type: text('entity_type'),
-  entity_id: text('entity_id'),
-  action: text('action'),
-  old_data: text('old_data', { mode: 'json' }),
-  new_data: text('new_data', { mode: 'json' }),
-  performed_by: text('performed_by'),
+export const branch_closure_config = sqliteTable('branch_closure_config', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  config_id: text('config_id'),
+  enabled: integer('enabled', { mode: 'boolean' }),
 });
 
-// ============================================================================
-// MENU & CATEGORIES
-// ============================================================================
-
-export const menu_categories = sqliteTable('menu_categories', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  icon: text('icon'),
-  color: text('color'),
-  parent_id: text('parent_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_items = sqliteTable('menu_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  category_id: text('category_id'),
-  base_price: real('base_price'),
-  image_url: text('image_url'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  kitchen_station_id: text('kitchen_station_id'),
-  preparation_time_min: integer('preparation_time_min'),
-  tags: text('tags', { mode: 'json' }),
-  allergens: text('allergens', { mode: 'json' }),
-  is_combo: integer('is_combo', { mode: 'boolean' }),
-  combo_items: text('combo_items', { mode: 'json' }),
-  cost: real('cost'),
-  margin_percentage: real('margin_percentage'),
-  sku: text('sku'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_item_extras = sqliteTable('menu_item_extras', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  extra_name: text('extra_name'),
-  extra_price: real('extra_price'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  category: text('category'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_item_option_groups = sqliteTable('menu_item_option_groups', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  name: text('name'),
-  is_required: integer('is_required', { mode: 'boolean' }),
-  min_selections: integer('min_selections'),
-  max_selections: integer('max_selections'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_item_option_group_items = sqliteTable('menu_item_option_group_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  group_id: text('group_id'),
-  name: text('name'),
-  price_adjustment: real('price_adjustment'),
-  is_default: integer('is_default', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_item_compositions = sqliteTable('menu_item_compositions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  recipe_id: text('recipe_id'),
-  quantity: real('quantity'),
-  unit: text('unit'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const menu_item_price_history = sqliteTable('menu_item_price_history', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  old_price: real('old_price'),
-  new_price: real('new_price'),
-  changed_by: text('changed_by'),
-  change_reason: text('change_reason'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const item_modifiers = sqliteTable('item_modifiers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  name: text('name'),
-  type: text('type'),
-  options: text('options', { mode: 'json' }),
-  is_required: integer('is_required', { mode: 'boolean' }),
-  max_selections: integer('max_selections'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const extra_assignments = sqliteTable('extra_assignments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  extra_item_id: text('extra_item_id'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const removable_items = sqliteTable('removable_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  menu_item_id: text('menu_item_id'),
-  ingredient_name: text('ingredient_name'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const kitchen_stations = sqliteTable('kitchen_stations', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const branch_delivery_config = sqliteTable('branch_delivery_config', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  name: text('name'),
-  color: text('color'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  default_radius_km: real('default_radius_km'),
+  radius_override_km: real('radius_override_km'),
+  radius_override_until: text('radius_override_until'),
+  radius_override_by: text('radius_override_by'),
+  delivery_enabled: integer('delivery_enabled', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
 });
 
-export const price_lists = sqliteTable('price_lists', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  channel_id: text('channel_id'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const price_list_items = sqliteTable('price_list_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  price_list_id: text('price_list_id'),
-  menu_item_id: text('menu_item_id'),
-  price: real('price'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const sales_channels = sqliteTable('sales_channels', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  slug: text('slug'),
-  description: text('description'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  icon: text('icon'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// RECIPES & SUPPLIES
-// ============================================================================
-
-export const recipe_categories = sqliteTable('recipe_categories', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const recipes = sqliteTable('recipes', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  category_id: text('category_id'),
-  yield_quantity: real('yield_quantity'),
-  yield_unit: text('yield_unit'),
-  cost_per_unit: real('cost_per_unit'),
-  total_cost: real('total_cost'),
-  instructions: text('instructions'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const recipe_ingredients = sqliteTable('recipe_ingredients', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  recipe_id: text('recipe_id'),
-  supply_id: text('supply_id'),
-  quantity: real('quantity'),
-  unit: text('unit'),
-  waste_percentage: real('waste_percentage'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const recipe_options = sqliteTable('recipe_options', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  recipe_id: text('recipe_id'),
-  name: text('name'),
-  additional_cost: real('additional_cost'),
-  is_default: integer('is_default', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const supply_categories = sqliteTable('supply_categories', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const supplies = sqliteTable('supplies', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  category_id: text('category_id'),
-  unit: text('unit'),
-  cost_per_unit: real('cost_per_unit'),
-  min_stock: real('min_stock'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sku: text('sku'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const supply_cost_history = sqliteTable('supply_cost_history', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  supply_id: text('supply_id'),
-  old_cost: real('old_cost'),
-  new_cost: real('new_cost'),
-  changed_by: text('changed_by'),
-  change_reason: text('change_reason'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// STOCK
-// ============================================================================
-
-export const stock_actual = sqliteTable('stock_actual', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const branch_delivery_neighborhoods = sqliteTable('branch_delivery_neighborhoods', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  supply_id: text('supply_id'),
-  current_quantity: real('current_quantity'),
-  unit: text('unit'),
-  last_updated_by: text('last_updated_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  neighborhood_id: text('neighborhood_id'),
+  status: text('status'),
+  distance_km: real('distance_km'),
+  decided_by: text('decided_by'),
+  block_reason: text('block_reason'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
 });
 
-export const stock_cierre_mensual = sqliteTable('stock_cierre_mensual', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const branch_inspections = sqliteTable('branch_inspections', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  inspection_type: text('inspection_type'),
+  inspector_id: text('inspector_id'),
+  started_at: text('started_at'),
+  completed_at: text('completed_at'),
+  status: text('status'),
+  score_total: real('score_total'),
+  present_manager_id: text('present_manager_id'),
+  general_notes: text('general_notes'),
+  critical_findings: text('critical_findings'),
+  action_items: text('action_items'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const branch_item_availability = sqliteTable('branch_item_availability', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  item_carta_id: text('item_carta_id'),
+  available: integer('available', { mode: 'boolean' }),
+  available_webapp: integer('available_webapp', { mode: 'boolean' }),
+  available_salon: integer('available_salon', { mode: 'boolean' }),
+  out_of_stock: integer('out_of_stock', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const branch_monthly_sales = sqliteTable('branch_monthly_sales', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
   period: text('period'),
-  supply_id: text('supply_id'),
-  quantity: real('quantity'),
-  unit: text('unit'),
-  closed_by: text('closed_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const stock_conteos = sqliteTable('stock_conteos', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  conteo_date: text('conteo_date'),
-  status: text('status'),
+  online_total: text('online_total'),
+  cash_total: text('cash_total'),
+  cash_percentage: real('cash_percentage'),
+  loaded_at: text('loaded_at'),
+  loaded_by: text('loaded_by'),
   notes: text('notes'),
-  created_by: text('created_by'),
-  approved_by: text('approved_by'),
-  approved_at: text('approved_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const stock_conteo_items = sqliteTable('stock_conteo_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  conteo_id: text('conteo_id'),
-  supply_id: text('supply_id'),
-  counted_quantity: real('counted_quantity'),
-  system_quantity: real('system_quantity'),
-  difference: real('difference'),
-  unit: text('unit'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const stock_movements = sqliteTable('stock_movements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  supply_id: text('supply_id'),
-  movement_type: text('movement_type'),
-  quantity: real('quantity'),
-  unit: text('unit'),
-  reference_id: text('reference_id'),
-  notes: text('notes'),
-  created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// ORDERS & POS
-// ============================================================================
-
-export const orders = sqliteTable('orders', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  order_number: integer('order_number'),
-  customer_name: text('customer_name'),
-  customer_phone: text('customer_phone'),
-  customer_email: text('customer_email'),
-  customer_address: text('customer_address'),
-  customer_floor: text('customer_floor'),
-  customer_reference: text('customer_reference'),
-  customer_latitude: real('customer_latitude'),
-  customer_longitude: real('customer_longitude'),
-  order_type: text('order_type'),
-  area: text('area'),
-  status: text('status'),
-  subtotal: real('subtotal'),
-  discount_amount: real('discount_amount'),
-  discount_code: text('discount_code'),
-  promotion_id: text('promotion_id'),
-  delivery_cost: real('delivery_cost'),
-  total: real('total'),
-  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+  total_sales: text('total_sales'),
+  cash: text('cash'),
   source: text('source'),
-  payment_method: text('payment_method'),
-  created_by: text('created_by'),
-  assigned_to: text('assigned_to'),
-  estimated_prep_time: integer('estimated_prep_time'),
-  confirmed_at: text('confirmed_at'),
-  preparing_at: text('preparing_at'),
-  ready_at: text('ready_at'),
-  picked_up_at: text('picked_up_at'),
-  delivered_at: text('delivered_at'),
-  cancelled_at: text('cancelled_at'),
-  cancel_reason: text('cancel_reason'),
-  delivery_driver_id: text('delivery_driver_id'),
-  delivery_tracking_code: text('delivery_tracking_code'),
-  webapp_tracking_code: text('webapp_tracking_code'),
-  is_webapp: integer('is_webapp', { mode: 'boolean' }),
-  pager_number: integer('pager_number'),
-  table_number: text('table_number'),
-  printed_at: text('printed_at'),
-  customer_user_id: text('customer_user_id'),
-  neighborhood_id: text('neighborhood_id'),
-  fiscal_status: text('fiscal_status'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
 
-export const order_items = sqliteTable('order_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_id: text('order_id'),
-  menu_item_id: text('menu_item_id'),
-  item_name: text('item_name'),
-  quantity: integer('quantity'),
-  unit_price: real('unit_price'),
-  subtotal: real('subtotal'),
-  notes: text('notes'),
-  kitchen_station_id: text('kitchen_station_id'),
-  status: text('status'),
-  extras: text('extras', { mode: 'json' }),
-  removals: text('removals', { mode: 'json' }),
-  is_gift: integer('is_gift', { mode: 'boolean' }),
-  gift_reason: text('gift_reason'),
-  discount_amount: real('discount_amount'),
-  original_price: real('original_price'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const order_item_modifiers = sqliteTable('order_item_modifiers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_item_id: text('order_item_id'),
-  modifier_name: text('modifier_name'),
-  modifier_type: text('modifier_type'),
-  selected_options: text('selected_options', { mode: 'json' }),
-  price_adjustment: real('price_adjustment'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const order_payments = sqliteTable('order_payments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_id: text('order_id'),
-  payment_method: text('payment_method'),
-  amount: real('amount'),
-  reference: text('reference'),
-  status: text('status'),
-  mp_payment_id: text('mp_payment_id'),
-  mp_status: text('mp_status'),
-  mp_status_detail: text('mp_status_detail'),
-  point_payment_intent_id: text('point_payment_intent_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const order_payment_edits = sqliteTable('order_payment_edits', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_id: text('order_id'),
-  original_payments: text('original_payments', { mode: 'json' }),
-  new_payments: text('new_payments', { mode: 'json' }),
-  edited_by: text('edited_by'),
-  edit_reason: text('edit_reason'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const pagers = sqliteTable('pagers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  pager_number: integer('pager_number'),
-  is_available: integer('is_available', { mode: 'boolean' }),
-  assigned_order_id: text('assigned_order_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const pos_config = sqliteTable('pos_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  auto_print_kitchen: integer('auto_print_kitchen', { mode: 'boolean' }),
-  auto_print_receipt: integer('auto_print_receipt', { mode: 'boolean' }),
-  default_order_type: text('default_order_type'),
-  webapp_enabled: integer('webapp_enabled', { mode: 'boolean' }),
-  webapp_auto_accept: integer('webapp_auto_accept', { mode: 'boolean' }),
-  show_item_cost: integer('show_item_cost', { mode: 'boolean' }),
-  require_customer_for_delivery: integer('require_customer_for_delivery', { mode: 'boolean' }),
-  default_area: text('default_area'),
-  kitchen_display_mode: text('kitchen_display_mode'),
-  pager_enabled: integer('pager_enabled', { mode: 'boolean' }),
-  pager_total: integer('pager_total'),
-  table_mode_enabled: integer('table_mode_enabled', { mode: 'boolean' }),
-  table_count: integer('table_count'),
-  auto_assign_pager: integer('auto_assign_pager', { mode: 'boolean' }),
-  receipt_show_address: integer('receipt_show_address', { mode: 'boolean' }),
-  receipt_show_phone: integer('receipt_show_phone', { mode: 'boolean' }),
-  receipt_footer_text: text('receipt_footer_text'),
-  receipt_header_text: text('receipt_header_text'),
-  cash_register_enabled: integer('cash_register_enabled', { mode: 'boolean' }),
-  show_delivery_map: integer('show_delivery_map', { mode: 'boolean' }),
-  stock_enabled: integer('stock_enabled', { mode: 'boolean' }),
-  allow_negative_stock: integer('allow_negative_stock', { mode: 'boolean' }),
-  ticket_copies: integer('ticket_copies'),
-  auto_print_webapp: integer('auto_print_webapp', { mode: 'boolean' }),
-  receipt_show_order_type: integer('receipt_show_order_type', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const operator_session_logs = sqliteTable('operator_session_logs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  branch_id: text('branch_id'),
-  action: text('action'),
-  verified_by: text('verified_by'),
-  verified_method: text('verified_method'),
-  metadata: text('metadata', { mode: 'json' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// CASH REGISTERS
-// ============================================================================
-
-export const cash_registers = sqliteTable('cash_registers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const branch_printers = sqliteTable('branch_printers', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
   name: text('name'),
+  connection_type: text('connection_type'),
+  ip_address: text('ip_address'),
+  port: integer('port'),
+  paper_width: integer('paper_width'),
   is_active: integer('is_active', { mode: 'boolean' }),
-  display_order: integer('display_order'),
-  register_type: text('register_type'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
+  configured_from_network: text('configured_from_network'),
 });
 
-export const cash_register_shifts = sqliteTable('cash_register_shifts', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const branch_shifts = sqliteTable('branch_shifts', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  cash_register_id: text('cash_register_id'),
-  opened_by: text('opened_by'),
-  opening_amount: real('opening_amount'),
-  closed_by: text('closed_by'),
-  closing_amount: real('closing_amount'),
-  expected_amount: real('expected_amount'),
-  difference: real('difference'),
-  status: text('status'),
+  name: text('name'),
+  start_time: text('start_time'),
+  end_time: text('end_time'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const branches = sqliteTable('branches', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  address: text('address'),
+  city: text('city'),
+  phone: text('phone'),
+  email: text('email'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  opening_time: text('opening_time'),
+  closing_time: text('closing_time'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  slug: text('slug'),
+  is_open: integer('is_open', { mode: 'boolean' }),
+  enforce_labor_law: integer('enforce_labor_law', { mode: 'boolean' }),
+  local_open_state: text('local_open_state'),
+  admin_force_state: text('admin_force_state'),
+  admin_force_channels: text('admin_force_channels'),
+  admin_force_message: text('admin_force_message'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  expense_pin_threshold: text('expense_pin_threshold'),
+  clock_code: text('clock_code'),
+  shifts_morning_enabled: text('shifts_morning_enabled'),
+  shifts_overnight_enabled: text('shifts_overnight_enabled'),
+  public_status: text('public_status'),
+  public_hours: text('public_hours'),
+  cover_image_url: text('cover_image_url'),
+  google_place_id: text('google_place_id'),
+  clock_window_before_min: integer('clock_window_before_min'),
+  clock_window_after_min: integer('clock_window_after_min'),
+});
+
+export const brand_closure_config = sqliteTable('brand_closure_config', {
+  id: text('id').primaryKey(),
+  type: text('type'),
+  key: text('key'),
+  label: text('label'),
+  categoria_padre: text('categoria_padre'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const brand_sidebar_order = sqliteTable('brand_sidebar_order', {
+  id: text('id').primaryKey(),
+  section_id: text('section_id'),
+  sort_order: integer('sort_order'),
+  updated_at: text('updated_at'),
+  updated_by: text('updated_by'),
+});
+
+export const canon_payments = sqliteTable('canon_payments', {
+  id: text('id').primaryKey(),
+  canon_settlement_id: text('canon_settlement_id'),
+  branch_id: text('branch_id'),
+  payment_date: text('payment_date'),
+  amount: real('amount'),
+  payment_method: text('payment_method'),
+  reference: text('reference'),
+  payment_data: text('payment_data'),
   notes: text('notes'),
-  closing_report: text('closing_report', { mode: 'json' }),
-  opened_at: text('opened_at'),
-  closed_at: text('closed_at'),
-  printed_at: text('printed_at'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  deleted_at: text('deleted_at'),
+  is_verified: integer('is_verified', { mode: 'boolean' }),
+  verified_by: text('verified_by'),
+  verified_at: text('verified_at'),
+  verified_notes: text('verified_notes'),
+});
+
+export const canon_settlements = sqliteTable('canon_settlements', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  period: text('period'),
+  monthly_sales_id: text('monthly_sales_id'),
+  online_total: text('online_total'),
+  cash_total: text('cash_total'),
+  cash_percentage: real('cash_percentage'),
+  canon_percentage: real('canon_percentage'),
+  canon_amount: real('canon_amount'),
+  marketing_percentage: real('marketing_percentage'),
+  marketing_amount: real('marketing_amount'),
+  total_canon: text('total_canon'),
+  suggested_transfer_payment: text('suggested_transfer_payment'),
+  suggested_cash_payment: text('suggested_cash_payment'),
+  status: text('status'),
+  pending_balance: real('pending_balance'),
+  due_date: text('due_date'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
 });
 
 export const cash_register_movements = sqliteTable('cash_register_movements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
+  id: text('id').primaryKey(),
   shift_id: text('shift_id'),
+  branch_id: text('branch_id'),
   type: text('type'),
-  concept: text('concept'),
-  amount: real('amount'),
   payment_method: text('payment_method'),
-  expense_category: text('expense_category'),
-  extra_notes: text('extra_notes'),
-  recorded_by: text('recorded_by'),
+  amount: real('amount'),
+  concept: text('concept'),
   order_id: text('order_id'),
+  recorded_by: text('recorded_by'),
+  created_at: text('created_at'),
   source_register_id: text('source_register_id'),
+  expense_category: text('expense_category'),
   rdo_category_code: text('rdo_category_code'),
   approval_status: text('approval_status'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  extra_notes: text('extra_notes'),
 });
 
-export const cashier_discrepancy_history = sqliteTable('cashier_discrepancy_history', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  user_id: text('user_id'),
-  shift_id: text('shift_id'),
+export const cash_register_shifts = sqliteTable('cash_register_shifts', {
+  id: text('id').primaryKey(),
   cash_register_id: text('cash_register_id'),
-  shift_date: text('shift_date'),
-  expected_amount: real('expected_amount'),
-  actual_amount: real('actual_amount'),
-  discrepancy: real('discrepancy'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const register_shifts_legacy = sqliteTable('register_shifts_legacy', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   branch_id: text('branch_id'),
-  register_name: text('register_name'),
   opened_by: text('opened_by'),
-  opening_amount: real('opening_amount'),
   closed_by: text('closed_by'),
+  opened_at: text('opened_at'),
+  closed_at: text('closed_at'),
+  opening_amount: real('opening_amount'),
   closing_amount: real('closing_amount'),
   expected_amount: real('expected_amount'),
   difference: real('difference'),
-  status: text('status'),
   notes: text('notes'),
-  opened_at: text('opened_at'),
-  closed_at: text('closed_at'),
-});
-
-// ============================================================================
-// PRINTING
-// ============================================================================
-
-export const print_config = sqliteTable('print_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  trigger_type: text('trigger_type'),
-  target_printer_id: text('target_printer_id'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  copies: integer('copies'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const print_jobs = sqliteTable('print_jobs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  printer_id: text('printer_id'),
-  job_type: text('job_type'),
   status: text('status'),
-  content: text('content', { mode: 'json' }),
-  order_id: text('order_id'),
-  error_message: text('error_message'),
-  retries: integer('retries'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  closing_report: text('closing_report'),
   printed_at: text('printed_at'),
 });
 
-// ============================================================================
-// DELIVERY
-// ============================================================================
-
-export const delivery_drivers = sqliteTable('delivery_drivers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const cash_registers = sqliteTable('cash_registers', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
   name: text('name'),
-  phone: text('phone'),
+  display_order: integer('display_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  register_type: text('register_type'),
+});
+
+export const cashier_discrepancy_history = sqliteTable('cashier_discrepancy_history', {
+  id: text('id').primaryKey(),
+  shift_id: text('shift_id'),
+  branch_id: text('branch_id'),
   user_id: text('user_id'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  is_available: integer('is_available', { mode: 'boolean' }),
-  orders_today: integer('orders_today'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const delivery_pricing_config = sqliteTable('delivery_pricing_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  brand_id: text('brand_id'),
-  base_price: real('base_price'),
-  base_distance_km: real('base_distance_km'),
-  price_per_extra_km: real('price_per_extra_km'),
-  max_allowed_radius_km: real('max_allowed_radius_km'),
-  prep_time_minutes: integer('prep_time_minutes'),
-  estimated_speed_kmh: real('estimated_speed_kmh'),
-  google_api_key_encrypted: text('google_api_key_encrypted'),
-  time_disclaimer: text('time_disclaimer'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const delivery_radius_overrides_log = sqliteTable('delivery_radius_overrides_log', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  action: text('action'),
-  previous_km: real('previous_km'),
-  new_km: real('new_km'),
-  performed_by: text('performed_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const delivery_zones = sqliteTable('delivery_zones', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  name: text('name'),
-  description: text('description'),
-  delivery_cost: real('delivery_cost'),
-  pedido_minimo: real('pedido_minimo'),
-  estimated_time_min: integer('estimated_time_min'),
-  barrios: text('barrios', { mode: 'json' }),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const delivery_tracking = sqliteTable('delivery_tracking', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_id: text('order_id'),
-  driver_id: text('driver_id'),
-  latitude: real('latitude'),
-  longitude: real('longitude'),
-  status: text('status'),
-  estimated_arrival: text('estimated_arrival'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  cash_register_id: text('cash_register_id'),
+  expected_amount: real('expected_amount'),
+  actual_amount: real('actual_amount'),
+  discrepancy: real('discrepancy'),
+  shift_date: text('shift_date'),
+  notes: text('notes'),
+  created_at: text('created_at'),
 });
 
 export const city_neighborhoods = sqliteTable('city_neighborhoods', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   name: text('name'),
   city: text('city'),
   centroid_lat: real('centroid_lat'),
   centroid_lng: real('centroid_lng'),
   source: text('source'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
 });
 
-// ============================================================================
-// PROMOTIONS & DISCOUNTS
-// ============================================================================
-
-export const promotions = sqliteTable('promotions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  discount_type: text('discount_type'),
-  discount_value: real('discount_value'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  start_date: text('start_date'),
-  end_date: text('end_date'),
-  branch_ids: text('branch_ids', { mode: 'json' }),
-  min_order_amount: real('min_order_amount'),
-  max_discount: real('max_discount'),
-  applies_to: text('applies_to'),
-  target_item_ids: text('target_item_ids', { mode: 'json' }),
-  buy_quantity: integer('buy_quantity'),
-  get_quantity: integer('get_quantity'),
-  image_url: text('image_url'),
-  channels: text('channels', { mode: 'json' }),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+export const clock_entries = sqliteTable('clock_entries', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  user_id: text('user_id'),
+  entry_type: text('entry_type'),
+  photo_url: text('photo_url'),
+  ip_address: text('ip_address'),
+  user_agent: text('user_agent'),
+  created_at: text('created_at'),
+  gps_status: text('gps_status'),
+  gps_message: text('gps_message'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  is_manual: integer('is_manual', { mode: 'boolean' }),
+  manual_by: text('manual_by'),
+  manual_reason: text('manual_reason'),
+  original_created_at: text('original_created_at'),
+  schedule_id: text('schedule_id'),
+  resolved_type: text('resolved_type'),
+  anomaly_type: text('anomaly_type'),
+  work_date: text('work_date'),
+  early_leave_authorized: integer('early_leave_authorized', { mode: 'boolean' }),
 });
 
-export const promotion_items = sqliteTable('promotion_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  promotion_id: text('promotion_id'),
-  menu_item_id: text('menu_item_id'),
-  quantity: integer('quantity'),
-  is_gift: integer('is_gift', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+export const coaching_competency_scores = sqliteTable('coaching_competency_scores', {
+  id: text('id').primaryKey(),
+  coaching_id: text('coaching_id'),
+  competency_type: text('competency_type'),
+  competency_id: text('competency_id'),
+  score: real('score'),
+  notes: text('notes'),
+  created_at: text('created_at'),
 });
 
-export const promotion_item_extras = sqliteTable('promotion_item_extras', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  promotion_item_id: text('promotion_item_id'),
-  extra_id: text('extra_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+export const coaching_station_scores = sqliteTable('coaching_station_scores', {
+  id: text('id').primaryKey(),
+  coaching_id: text('coaching_id'),
+  station_id: text('station_id'),
+  score: real('score'),
+  notes: text('notes'),
+  created_at: text('created_at'),
 });
 
-export const discount_codes = sqliteTable('discount_codes', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  code: text('code'),
+export const coachings = sqliteTable('coachings', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  branch_id: text('branch_id'),
+  evaluated_by: text('evaluated_by'),
+  coaching_date: text('coaching_date'),
+  coaching_month: integer('coaching_month'),
+  coaching_year: integer('coaching_year'),
+  general_score: real('general_score'),
+  station_score: real('station_score'),
+  overall_score: real('overall_score'),
+  strengths: text('strengths'),
+  areas_to_improve: text('areas_to_improve'),
+  action_plan: text('action_plan'),
+  manager_notes: text('manager_notes'),
+  acknowledged_at: text('acknowledged_at'),
+  acknowledged_notes: text('acknowledged_notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  previous_action_review: text('previous_action_review'),
+  coaching_type: text('coaching_type'),
+});
+
+export const communication_reads = sqliteTable('communication_reads', {
+  id: text('id').primaryKey(),
+  communication_id: text('communication_id'),
+  user_id: text('user_id'),
+  read_at: text('read_at'),
+  confirmed_at: text('confirmed_at'),
+});
+
+export const communications = sqliteTable('communications', {
+  id: text('id').primaryKey(),
+  title: text('title'),
+  body: text('body'),
   type: text('type'),
-  value: real('value'),
-  brand_id: text('brand_id'),
-  branch_ids: text('branch_ids', { mode: 'json' }),
-  start_date: text('start_date'),
-  end_date: text('end_date'),
-  max_uses: integer('max_uses'),
-  current_uses: integer('current_uses'),
-  min_order_amount: real('min_order_amount'),
-  single_use_per_user: integer('single_use_per_user', { mode: 'boolean' }),
-  is_active: integer('is_active', { mode: 'boolean' }),
+  target_branch_ids: text('target_branch_ids'),
+  target_roles: text('target_roles'),
+  is_published: integer('is_published', { mode: 'boolean' }),
+  published_at: text('published_at'),
+  expires_at: text('expires_at'),
   created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  custom_label: text('custom_label'),
+  tag: text('tag'),
+  source_type: text('source_type'),
+  source_branch_id: text('source_branch_id'),
+  requires_confirmation: integer('requires_confirmation', { mode: 'boolean' }),
+});
+
+export const contact_messages = sqliteTable('contact_messages', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  email: text('email'),
+  phone: text('phone'),
+  subject: text('subject'),
+  message: text('message'),
+  franchise_has_zone: text('franchise_has_zone'),
+  franchise_has_location: text('franchise_has_location'),
+  franchise_investment_capital: text('franchise_investment_capital'),
+  employment_branch_id: text('employment_branch_id'),
+  employment_position: text('employment_position'),
+  employment_cv_link: text('employment_cv_link'),
+  employment_motivation: text('employment_motivation'),
+  order_branch_id: text('order_branch_id'),
+  order_number: integer('order_number'),
+  order_date: text('order_date'),
+  order_issue: text('order_issue'),
+  status: text('status'),
+  priority: text('priority'),
+  assigned_to: text('assigned_to'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  read_at: text('read_at'),
+  replied_at: text('replied_at'),
+  replied_by: text('replied_by'),
+  attachment_url: text('attachment_url'),
+  attachment_name: text('attachment_name'),
+  investment_range: text('investment_range'),
+});
+
+export const customer_addresses = sqliteTable('customer_addresses', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  label: text('label'),
+  address: text('address'),
+  floor: text('floor'),
+  reference: text('reference'),
+  city: text('city'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  is_primary: integer('is_primary', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const delivery_drivers = sqliteTable('delivery_drivers', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  user_id: text('user_id'),
+  name: text('name'),
+  phone: text('phone'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  is_available: integer('is_available', { mode: 'boolean' }),
+  orders_today: integer('orders_today'),
+  created_at: text('created_at'),
+});
+
+export const delivery_pricing_config = sqliteTable('delivery_pricing_config', {
+  id: text('id').primaryKey(),
+  brand_id: text('brand_id'),
+  base_distance_km: real('base_distance_km'),
+  base_price: real('base_price'),
+  price_per_extra_km: real('price_per_extra_km'),
+  max_allowed_radius_km: real('max_allowed_radius_km'),
+  estimated_speed_kmh: text('estimated_speed_kmh'),
+  prep_time_minutes: integer('prep_time_minutes'),
+  time_disclaimer: text('time_disclaimer'),
+  google_api_key_encrypted: text('google_api_key_encrypted'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const delivery_radius_overrides_log = sqliteTable('delivery_radius_overrides_log', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  previous_km: real('previous_km'),
+  new_km: real('new_km'),
+  action: text('action'),
+  performed_by: text('performed_by'),
+  created_at: text('created_at'),
+});
+
+export const delivery_zones = sqliteTable('delivery_zones', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  name: text('name'),
+  delivery_cost: real('delivery_cost'),
+  pedido_minimo: text('pedido_minimo'),
+  estimated_time_min: integer('estimated_time_min'),
+  barrios: text('barrios'),
+  description: text('description'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
 });
 
 export const discount_code_uses = sqliteTable('discount_code_uses', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   code_id: text('code_id'),
   user_id: text('user_id'),
   pedido_id: text('pedido_id'),
   discount_amount: real('discount_amount'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
 });
 
-// ============================================================================
-// EMPLOYEES & HR
-// ============================================================================
+export const discount_codes = sqliteTable('discount_codes', {
+  id: text('id').primaryKey(),
+  brand_id: text('brand_id'),
+  code: text('code'),
+  type: text('type'),
+  value: text('value'),
+  max_uses: integer('max_uses'),
+  current_uses: integer('current_uses'),
+  single_use_per_user: integer('single_use_per_user', { mode: 'boolean' }),
+  min_order_amount: real('min_order_amount'),
+  start_date: text('start_date'),
+  end_date: text('end_date'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  branch_ids: text('branch_ids'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
 
-export const employee_data = sqliteTable('employee_data', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const employee_certifications = sqliteTable('employee_certifications', {
+  id: text('id').primaryKey(),
   user_id: text('user_id'),
   branch_id: text('branch_id'),
-  alias: text('alias'),
+  station_id: text('station_id'),
+  level: integer('level'),
+  certified_at: text('certified_at'),
+  certified_by: text('certified_by'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const employee_consumptions = sqliteTable('employee_consumptions', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  user_id: text('user_id'),
+  amount: real('amount'),
+  consumption_date: text('consumption_date'),
+  description: text('description'),
+  source: text('source'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const employee_data = sqliteTable('employee_data', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  branch_id: text('branch_id'),
   dni: text('dni'),
-  cuil: text('cuil'),
   birth_date: text('birth_date'),
   personal_address: text('personal_address'),
   emergency_contact: text('emergency_contact'),
   emergency_phone: text('emergency_phone'),
-  hire_date: text('hire_date'),
-  hourly_rate: real('hourly_rate'),
-  monthly_hours_target: real('monthly_hours_target'),
-  registered_hours: real('registered_hours'),
   bank_name: text('bank_name'),
   cbu: text('cbu'),
-  internal_notes: text('internal_notes', { mode: 'json' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  alias: text('alias'),
+  cuil: text('cuil'),
+  hire_date: text('hire_date'),
+  monthly_hours_target: real('monthly_hours_target'),
+  hourly_rate: real('hourly_rate'),
+  internal_notes: text('internal_notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  registered_hours: real('registered_hours'),
 });
 
 export const employee_schedules = sqliteTable('employee_schedules', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   employee_id: text('employee_id'),
+  day_of_week: integer('day_of_week'),
+  start_time: text('start_time'),
+  end_time: text('end_time'),
+  is_day_off: integer('is_day_off', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  shift_number: integer('shift_number'),
+  schedule_month: integer('schedule_month'),
+  schedule_year: integer('schedule_year'),
   user_id: text('user_id'),
   branch_id: text('branch_id'),
   schedule_date: text('schedule_date'),
-  schedule_month: integer('schedule_month'),
-  schedule_year: integer('schedule_year'),
-  day_of_week: integer('day_of_week'),
-  shift_number: integer('shift_number'),
-  start_time: text('start_time'),
-  end_time: text('end_time'),
+  published_at: text('published_at'),
+  published_by: text('published_by'),
+  modified_at: text('modified_at'),
+  modified_by: text('modified_by'),
+  modification_reason: text('modification_reason'),
+  notification_sent_at: text('notification_sent_at'),
+  work_position: text('work_position'),
   start_time_2: text('start_time_2'),
   end_time_2: text('end_time_2'),
   break_start: text('break_start'),
   break_end: text('break_end'),
-  is_day_off: integer('is_day_off', { mode: 'boolean' }),
-  work_position: text('work_position'),
-  published_at: text('published_at'),
-  published_by: text('published_by'),
-  notification_sent_at: text('notification_sent_at'),
-  modification_reason: text('modification_reason'),
-  modified_at: text('modified_at'),
-  modified_by: text('modified_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
 
 export const employee_time_state = sqliteTable('employee_time_state', {
@@ -1187,782 +645,1452 @@ export const employee_time_state = sqliteTable('employee_time_state', {
   last_updated: text('last_updated'),
 });
 
-export const employee_certifications = sqliteTable('employee_certifications', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
+export const expenses = sqliteTable('expenses', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  station_id: text('station_id'),
-  level: integer('level'),
+  period: text('period'),
+  main_category: text('main_category'),
+  subcategory: text('subcategory'),
+  concept: text('concept'),
+  amount: real('amount'),
+  date: text('date'),
+  details: text('details'),
+  payment_method: text('payment_method'),
+  payment_reference: text('payment_reference'),
+  attachments: text('attachments'),
   notes: text('notes'),
-  certified_by: text('certified_by'),
-  certified_at: text('certified_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  status: text('status'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+  due_date: text('due_date'),
+  payment_date: text('payment_date'),
+  related_expense_id: text('related_expense_id'),
+  rdo_category_code: text('rdo_category_code'),
+  proveedor_id: text('proveedor_id'),
+  payment_type: text('payment_type'),
+  affects_register: integer('affects_register', { mode: 'boolean' }),
+  transfer_cost: real('transfer_cost'),
+  shift_id: text('shift_id'),
+  rdo_section: text('rdo_section'),
 });
 
-export const employee_consumptions = sqliteTable('employee_consumptions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const extra_assignments = sqliteTable('extra_assignments', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  extra_id: text('extra_id'),
+  created_at: text('created_at'),
+});
+
+export const financial_audit_log = sqliteTable('financial_audit_log', {
+  id: text('id').primaryKey(),
+  tabla: text('tabla'),
+  registro_id: text('registro_id'),
+  operacion: text('operacion'),
+  datos_antes: text('datos_antes'),
+  datos_despues: text('datos_despues'),
+  campos_modificados: text('campos_modificados'),
   user_id: text('user_id'),
+  user_email: text('user_email'),
+  ip_address: text('ip_address'),
+  user_agent: text('user_agent'),
+  timestamp: text('timestamp'),
+  notes: text('notes'),
+});
+
+export const fiscal_z_closings = sqliteTable('fiscal_z_closings', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  amount: real('amount'),
+  pos_point_of_sale: text('pos_point_of_sale'),
+  z_number: integer('z_number'),
+  date: text('date'),
+  period_from: text('period_from'),
+  period_to: text('period_to'),
+  total_invoices: text('total_invoices'),
+  total_invoices_b: text('total_invoices_b'),
+  total_invoices_c: text('total_invoices_c'),
+  total_tickets: text('total_tickets'),
+  total_credit_notes_b: text('total_credit_notes_b'),
+  total_credit_notes_c: text('total_credit_notes_c'),
+  first_voucher_type: text('first_voucher_type'),
+  first_voucher_number: text('first_voucher_number'),
+  last_voucher_type: text('last_voucher_type'),
+  last_voucher_number: text('last_voucher_number'),
+  taxable_21: real('taxable_21'),
+  vat_21: real('vat_21'),
+  taxable_105: real('taxable_105'),
+  vat_105: real('vat_105'),
+  exempt: real('exempt'),
+  non_taxable: real('non_taxable'),
+  other_taxes: text('other_taxes'),
+  subtotal_net: text('subtotal_net'),
+  total_vat: text('total_vat'),
+  total_sales: text('total_sales'),
+  total_credit_notes_amount: real('total_credit_notes_amount'),
+  net_total: text('net_total'),
+  payment_cash: text('payment_cash'),
+  payment_debit: text('payment_debit'),
+  payment_credit: text('payment_credit'),
+  payment_qr: text('payment_qr'),
+  payment_transfer: text('payment_transfer'),
+  generated_by: text('generated_by'),
+  generated_at: text('generated_at'),
+  is_locked: integer('is_locked', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const general_competencies = sqliteTable('general_competencies', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  name: text('name'),
   description: text('description'),
-  consumption_date: text('consumption_date'),
-  source: text('source'),
+  weight: real('weight'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const inspection_items = sqliteTable('inspection_items', {
+  id: text('id').primaryKey(),
+  inspection_id: text('inspection_id'),
+  category: text('category'),
+  item_key: text('item_key'),
+  item_label: text('item_label'),
+  complies: integer('complies', { mode: 'boolean' }),
+  observations: text('observations'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  photo_urls: text('photo_urls'),
+});
+
+export const inspection_staff_present = sqliteTable('inspection_staff_present', {
+  id: text('id').primaryKey(),
+  inspection_id: text('inspection_id'),
+  user_id: text('user_id'),
+  observations: text('observations'),
+  created_at: text('created_at'),
+  uniform_ok: integer('uniform_ok', { mode: 'boolean' }),
+  station_clean: integer('station_clean', { mode: 'boolean' }),
+});
+
+export const inspection_templates = sqliteTable('inspection_templates', {
+  id: text('id').primaryKey(),
+  inspection_type: text('inspection_type'),
+  category: text('category'),
+  item_key: text('item_key'),
+  item_label: text('item_label'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const investments = sqliteTable('investments', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  description: text('description'),
+  investment_type: text('investment_type'),
+  total_amount: real('total_amount'),
+  date: text('date'),
+  period: text('period'),
+  vida_util_meses: integer('vida_util_meses'),
+  status: text('status'),
+  total_installments: integer('total_installments'),
+  installments_paid: integer('installments_paid'),
+  notes: text('notes'),
   created_by: text('created_by'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
   deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export const invoice_items = sqliteTable('invoice_items', {
+  id: text('id').primaryKey(),
+  invoice_id: text('invoice_id'),
+  insumo_id: text('insumo_id'),
+  quantity: real('quantity'),
+  unit: text('unit'),
+  unit_price: real('unit_price'),
+  subtotal: real('subtotal'),
+  affects_base_cost: integer('affects_base_cost', { mode: 'boolean' }),
+  pl_category: text('pl_category'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  item_type: text('item_type'),
+  service_concept_id: text('service_concept_id'),
+  rdo_category_code: text('rdo_category_code'),
+  alicuota_iva: text('alicuota_iva'),
+  vat_amount: real('vat_amount'),
+  gross_unit_price: real('gross_unit_price'),
+  gross_price: real('gross_price'),
+  descuento_porcentaje: text('descuento_porcentaje'),
+  discount_amount: real('discount_amount'),
+  net_price: real('net_price'),
+});
+
+export const invoice_payment_links = sqliteTable('invoice_payment_links', {
+  id: text('id').primaryKey(),
+  pago_id: text('pago_id'),
+  invoice_id: text('invoice_id'),
+  applied_amount: real('applied_amount'),
+});
+
+export const issued_invoices = sqliteTable('issued_invoices', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  pedido_id: text('pedido_id'),
+  receipt_type: text('receipt_type'),
+  point_of_sale: integer('point_of_sale'),
+  receipt_number: integer('receipt_number'),
+  cae: text('cae'),
+  cae_vencimiento: text('cae_vencimiento'),
+  issue_date: text('issue_date'),
+  receptor_cuit: text('receptor_cuit'),
+  receptor_razon_social: text('receptor_razon_social'),
+  receptor_condicion_iva: text('receptor_condicion_iva'),
+  neto: real('neto'),
+  iva: real('iva'),
+  total: real('total'),
+  moneda: text('moneda'),
+  afip_request: text('afip_request'),
+  afip_response: text('afip_response'),
+  emitido_por: text('emitido_por'),
+  created_at: text('created_at'),
+  linked_invoice_id: text('linked_invoice_id'),
+  anulada: integer('anulada', { mode: 'boolean' }),
+});
+
+export const item_modifiers = sqliteTable('item_modifiers', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  type: text('type'),
+  name: text('name'),
+  ingrediente_id: text('ingrediente_id'),
+  receta_id: text('receta_id'),
+  saving_quantity: text('saving_quantity'),
+  saving_unit: text('saving_unit'),
+  saving_cost: real('saving_cost'),
+  ingrediente_extra_id: text('ingrediente_extra_id'),
+  receta_extra_id: text('receta_extra_id'),
+  extra_quantity: text('extra_quantity'),
+  extra_unit: text('extra_unit'),
+  extra_price: real('extra_price'),
+  extra_cost: real('extra_cost'),
+  ingrediente_original_id: text('ingrediente_original_id'),
+  ingrediente_nuevo_id: text('ingrediente_nuevo_id'),
+  new_quantity: text('new_quantity'),
+  new_unit: text('new_unit'),
+  price_difference: text('price_difference'),
+  cost_difference: text('cost_difference'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const kitchen_stations = sqliteTable('kitchen_stations', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  name: text('name'),
+  icon: text('icon'),
+  sort_order: integer('sort_order'),
+  kds_enabled: integer('kds_enabled', { mode: 'boolean' }),
+  printer_id: text('printer_id'),
+  print_on: text('print_on'),
+  print_copies: text('print_copies'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const labor_config = sqliteTable('labor_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  monthly_hours_limit: integer('monthly_hours_limit'),
+  daily_hours_limit: integer('daily_hours_limit'),
+  overtime_surcharge_pct: real('overtime_surcharge_pct'),
+  holiday_surcharge_pct: real('holiday_surcharge_pct'),
+  late_tolerance_total_min: text('late_tolerance_total_min'),
+  late_tolerance_per_entry_min: text('late_tolerance_per_entry_min'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const manager_competencies = sqliteTable('manager_competencies', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  name: text('name'),
+  description: text('description'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  category: text('category'),
+  rubric_1: text('rubric_1'),
+  rubric_3: text('rubric_3'),
+  rubric_5: text('rubric_5'),
+  icon: text('icon'),
 });
 
 export const manual_consumptions = sqliteTable('manual_consumptions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
+  period: text('period'),
+  pl_category: text('pl_category'),
+  consumed_amount: real('consumed_amount'),
+  type: text('type'),
+  details: text('details'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const meeting_agreement_assignees = sqliteTable('meeting_agreement_assignees', {
+  id: text('id').primaryKey(),
+  agreement_id: text('agreement_id'),
+  user_id: text('user_id'),
+});
+
+export const meeting_agreements = sqliteTable('meeting_agreements', {
+  id: text('id').primaryKey(),
+  meeting_id: text('meeting_id'),
+  description: text('description'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+});
+
+export const meeting_participants = sqliteTable('meeting_participants', {
+  id: text('id').primaryKey(),
+  meeting_id: text('meeting_id'),
+  user_id: text('user_id'),
+  attended: integer('attended', { mode: 'boolean' }),
+  read_at: text('read_at'),
+  created_at: text('created_at'),
+  was_present: integer('was_present', { mode: 'boolean' }),
+  notified_at: text('notified_at'),
+  reminder_count: integer('reminder_count'),
+});
+
+export const meetings = sqliteTable('meetings', {
+  id: text('id').primaryKey(),
+  title: text('title'),
+  date: text('date'),
+  area: text('area'),
+  branch_id: text('branch_id'),
+  created_by: text('created_by'),
+  status: text('status'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  scheduled_at: text('scheduled_at'),
+  started_at: text('started_at'),
+  closed_at: text('closed_at'),
+  source: text('source'),
+});
+
+export const menu_categories = sqliteTable('menu_categories', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  description: text('description'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  is_visible_menu: integer('is_visible_menu', { mode: 'boolean' }),
+  print_type: text('print_type'),
+});
+
+export const menu_item_compositions = sqliteTable('menu_item_compositions', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  preparacion_id: text('preparacion_id'),
+  insumo_id: text('insumo_id'),
+  quantity: real('quantity'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  is_removable: integer('is_removable', { mode: 'boolean' }),
+});
+
+export const menu_item_extras = sqliteTable('menu_item_extras', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  preparacion_id: text('preparacion_id'),
+  insumo_id: text('insumo_id'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+});
+
+export const menu_item_option_group_items = sqliteTable('menu_item_option_group_items', {
+  id: text('id').primaryKey(),
+  grupo_id: text('grupo_id'),
+  insumo_id: text('insumo_id'),
+  preparacion_id: text('preparacion_id'),
+  quantity: real('quantity'),
+  unit_cost: real('unit_cost'),
+  created_at: text('created_at'),
+});
+
+export const menu_item_option_groups = sqliteTable('menu_item_option_groups', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  name: text('name'),
+  sort_order: integer('sort_order'),
+  average_cost: real('average_cost'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  is_required: integer('is_required', { mode: 'boolean' }),
+  max_selecciones: integer('max_selecciones'),
+});
+
+export const menu_item_price_history = sqliteTable('menu_item_price_history', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  previous_price: real('previous_price'),
+  new_price: real('new_price'),
+  reason: text('reason'),
+  user_id: text('user_id'),
+  created_at: text('created_at'),
+});
+
+export const menu_items = sqliteTable('menu_items', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  short_name: text('short_name'),
+  description: text('description'),
+  image_url: text('image_url'),
+  categoria_carta_id: text('categoria_carta_id'),
+  rdo_category_code: text('rdo_category_code'),
+  base_price: real('base_price'),
+  fc_objetivo: real('fc_objetivo'),
+  total_cost: real('total_cost'),
+  fc_actual: real('fc_actual'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  available_delivery: integer('available_delivery', { mode: 'boolean' }),
+  sort_order: integer('sort_order'),
+  deleted_at: text('deleted_at'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  type: text('type'),
+  composicion_ref_preparacion_id: text('composicion_ref_preparacion_id'),
+  composicion_ref_insumo_id: text('composicion_ref_insumo_id'),
+  closure_category: text('closure_category'),
+  reference_price: real('reference_price'),
+  kitchen_station_id: text('kitchen_station_id'),
+  available_webapp: integer('available_webapp', { mode: 'boolean' }),
+  promo_price: real('promo_price'),
+  promo_etiqueta: text('promo_etiqueta'),
+});
+
+export const mercadopago_config = sqliteTable('mercadopago_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  access_token: text('access_token'),
+  public_key: text('public_key'),
+  connection_status: text('connection_status'),
+  webhook_secret: text('webhook_secret'),
+  collector_id: text('collector_id'),
+  last_test: text('last_test'),
+  last_test_ok: text('last_test_ok'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  device_id: text('device_id'),
+  device_name: text('device_name'),
+  device_operating_mode: text('device_operating_mode'),
+});
+
+export const operator_session_logs = sqliteTable('operator_session_logs', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  current_user_id: text('current_user_id'),
+  previous_user_id: text('previous_user_id'),
+  action_type: text('action_type'),
+  triggered_by: text('triggered_by'),
+  created_at: text('created_at'),
+});
+
+export const order_item_modifiers = sqliteTable('order_item_modifiers', {
+  id: text('id').primaryKey(),
+  pedido_item_id: text('pedido_item_id'),
+  type: text('type'),
+  description: text('description'),
+  extra_price: real('extra_price'),
+  created_at: text('created_at'),
+});
+
+export const order_items = sqliteTable('order_items', {
+  id: text('id').primaryKey(),
+  pedido_id: text('pedido_id'),
+  item_carta_id: text('item_carta_id'),
+  name: text('name'),
+  quantity: real('quantity'),
+  unit_price: real('unit_price'),
+  subtotal: real('subtotal'),
+  notes: text('notes'),
+  estacion: text('estacion'),
+  status: text('status'),
+  created_at: text('created_at'),
+  reference_price: real('reference_price'),
+  categoria_carta_id: text('categoria_carta_id'),
+  articulo_id: text('articulo_id'),
+  articulo_tipo: text('articulo_tipo'),
+  promocion_id: text('promocion_id'),
+  promocion_item_id: text('promocion_item_id'),
+});
+
+export const order_payment_edits = sqliteTable('order_payment_edits', {
+  id: text('id').primaryKey(),
+  pedido_id: text('pedido_id'),
+  pagos_antes: text('pagos_antes'),
+  pagos_despues: text('pagos_despues'),
+  reason: text('reason'),
+  editado_por: text('editado_por'),
+  created_at: text('created_at'),
+});
+
+export const order_payments = sqliteTable('order_payments', {
+  id: text('id').primaryKey(),
+  pedido_id: text('pedido_id'),
+  method: text('method'),
+  amount: real('amount'),
+  received_amount: real('received_amount'),
+  vuelto: text('vuelto'),
+  tarjeta_ultimos_4: text('tarjeta_ultimos_4'),
+  tarjeta_marca: text('tarjeta_marca'),
+  mp_payment_id: text('mp_payment_id'),
+  transferencia_referencia: text('transferencia_referencia'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  conciliado: text('conciliado'),
+  conciliado_at: text('conciliado_at'),
+});
+
+export const orders = sqliteTable('orders', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  order_number: integer('order_number'),
+  caller_number: integer('caller_number'),
+  type: text('type'),
+  customer_name: text('customer_name'),
+  customer_phone: text('customer_phone'),
+  customer_address: text('customer_address'),
+  cliente_notas: text('cliente_notas'),
+  cadete_id: text('cadete_id'),
+  delivery_cost: real('delivery_cost'),
+  created_at: text('created_at'),
+  promised_time: text('promised_time'),
+  ready_at_time: text('ready_at_time'),
+  delivered_at_time: text('delivered_at_time'),
+  status: text('status'),
+  subtotal: real('subtotal'),
+  descuento: real('descuento'),
+  descuento_motivo: text('descuento_motivo'),
+  total: real('total'),
+  requires_invoice: integer('requires_invoice', { mode: 'boolean' }),
+  invoice_type: text('invoice_type'),
+  invoice_cuit: text('invoice_cuit'),
+  invoice_business_name: text('invoice_business_name'),
+  invoice_number: integer('invoice_number'),
+  invoice_cae: text('invoice_cae'),
+  invoice_cae_expiry: text('invoice_cae_expiry'),
+  created_by: text('created_by'),
+  canal_venta: text('canal_venta'),
+  service_type: text('service_type'),
+  canal_app: text('canal_app'),
+  propina: real('propina'),
+  prep_started_at_time: text('prep_started_at_time'),
+  source: text('source'),
+  pago_online_id: text('pago_online_id'),
+  pago_estado: text('pago_estado'),
+  webapp_tracking_code: text('webapp_tracking_code'),
+  cliente_email: text('cliente_email'),
+  delivery_zone_id: text('delivery_zone_id'),
+  confirmed_at_time: text('confirmed_at_time'),
+  on_route_at_time: text('on_route_at_time'),
+  cliente_user_id: text('cliente_user_id'),
+  delivery_lat: real('delivery_lat'),
+  delivery_lng: real('delivery_lng'),
+  delivery_distance_km: real('delivery_distance_km'),
+  delivery_address: text('delivery_address'),
+  delivery_neighborhood: text('delivery_neighborhood'),
+  mp_payment_intent_id: text('mp_payment_intent_id'),
+});
+
+export const pagers = sqliteTable('pagers', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  number: text('number'),
+  en_uso: text('en_uso'),
+  order_id: text('order_id'),
+  assigned_at: text('assigned_at'),
+});
+
+export const partner_movements = sqliteTable('partner_movements', {
+  id: text('id').primaryKey(),
+  socio_id: text('socio_id'),
+  branch_id: text('branch_id'),
+  type: text('type'),
+  date: text('date'),
+  amount: real('amount'),
+  details: text('details'),
+  period: text('period'),
+  resultado_periodo: text('resultado_periodo'),
+  cumulative_balance: real('cumulative_balance'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  deleted_at: text('deleted_at'),
+});
+
+export const partners = sqliteTable('partners', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  user_id: text('user_id'),
+  name: text('name'),
+  cuit: text('cuit'),
+  email: text('email'),
+  phone: text('phone'),
+  ownership_percentage: real('ownership_percentage'),
+  start_date: text('start_date'),
+  end_date: text('end_date'),
+  limite_retiro_mensual: text('limite_retiro_mensual'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const periods = sqliteTable('periods', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  period: text('period'),
+  status: text('status'),
+  closed_at: text('closed_at'),
+  closed_by: text('closed_by'),
+  close_reason: text('close_reason'),
+  approved_at: text('approved_at'),
+  approved_by: text('approved_by'),
+  reopened_at: text('reopened_at'),
+  reopened_by: text('reopened_by'),
+  reopen_reason: text('reopen_reason'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const permissions = sqliteTable('permissions', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  label: text('label'),
+  scope: text('scope'),
+  category: text('category'),
+  is_editable: integer('is_editable', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const pos_config = sqliteTable('pos_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  impresora_caja_ip: text('impresora_caja_ip'),
+  impresora_cocina_ip: text('impresora_cocina_ip'),
+  default_prep_time: text('default_prep_time'),
+  llamadores_habilitados: text('llamadores_habilitados'),
+  llamador_min: text('llamador_min'),
+  llamador_max: text('llamador_max'),
+  acepta_efectivo: text('acepta_efectivo'),
+  acepta_debito: text('acepta_debito'),
+  acepta_credito: text('acepta_credito'),
+  acepta_mercadopago: text('acepta_mercadopago'),
+  acepta_transferencia: text('acepta_transferencia'),
+  delivery_habilitado: text('delivery_habilitado'),
+  default_delivery_cost: real('default_delivery_cost'),
+  radio_delivery_km: real('radio_delivery_km'),
+  invoicing_enabled: text('invoicing_enabled'),
+  afip_punto_venta: text('afip_punto_venta'),
+  afip_cuit: text('afip_cuit'),
+  alertar_stock_minimo: text('alertar_stock_minimo'),
+  alertar_stock_critico: text('alertar_stock_critico'),
+  pos_enabled: text('pos_enabled'),
+  updated_at: text('updated_at'),
+});
+
+export const price_list_items = sqliteTable('price_list_items', {
+  id: text('id').primaryKey(),
+  price_list_id: text('price_list_id'),
+  item_carta_id: text('item_carta_id'),
+  price: real('price'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const price_lists = sqliteTable('price_lists', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  channel: text('channel'),
+  is_default: integer('is_default', { mode: 'boolean' }),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  pricing_mode: text('pricing_mode'),
+  pricing_value: text('pricing_value'),
+  mirror_channel: text('mirror_channel'),
+});
+
+export const print_config = sqliteTable('print_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  ticket_printer_id: text('ticket_printer_id'),
+  ticket_enabled: text('ticket_enabled'),
+  ticket_trigger: text('ticket_trigger'),
+  delivery_printer_id: text('delivery_printer_id'),
+  delivery_enabled: integer('delivery_enabled', { mode: 'boolean' }),
+  backup_printer_id: text('backup_printer_id'),
+  backup_enabled: text('backup_enabled'),
+  reprint_requires_pin: text('reprint_requires_pin'),
+  updated_at: text('updated_at'),
+  comanda_printer_id: text('comanda_printer_id'),
+  vale_printer_id: text('vale_printer_id'),
+  salon_vales_enabled: text('salon_vales_enabled'),
+  no_salon_todo_en_comanda: text('no_salon_todo_en_comanda'),
+});
+
+export const print_jobs = sqliteTable('print_jobs', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  printer_id: text('printer_id'),
+  job_type: text('job_type'),
+  pedido_id: text('pedido_id'),
+  payload: text('payload'),
+  status: text('status'),
+  attempts: text('attempts'),
+  error_message: text('error_message'),
+  created_at: text('created_at'),
+});
+
+export const profiles = sqliteTable('profiles', {
+  id: text('id').primaryKey(),
+  full_name: text('full_name'),
+  email: text('email'),
+  phone: text('phone'),
+  avatar_url: text('avatar_url'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  pin_hash: text('pin_hash'),
+  dni: text('dni'),
+  address: text('address'),
+  birth_date: text('birth_date'),
+  cuit: text('cuit'),
+  cbu: text('cbu'),
+  emergency_contact_name: text('emergency_contact_name'),
+  emergency_contact_phone: text('emergency_contact_phone'),
+  dni_front_url: text('dni_front_url'),
+  dni_back_url: text('dni_back_url'),
+  accepted_terms_at: text('accepted_terms_at'),
+  invitation_token: text('invitation_token'),
+  default_address: text('default_address'),
+  default_address_lat: text('default_address_lat'),
+  default_address_lng: text('default_address_lng'),
+  total_orders: text('total_orders'),
+  total_spent: text('total_spent'),
+  last_order_at: text('last_order_at'),
+  favorite_branch_id: text('favorite_branch_id'),
+  internal_notes: text('internal_notes'),
+  loyalty_points: text('loyalty_points'),
+  clock_pin: text('clock_pin'),
+  help_dismissed_pages: text('help_dismissed_pages'),
+  show_floating_help: integer('show_floating_help', { mode: 'boolean' }),
+  onboarding_completed_at: text('onboarding_completed_at'),
+  preferencia_pago: text('preferencia_pago'),
+});
+
+export const profit_distributions = sqliteTable('profit_distributions', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  period: text('period'),
+  resultado_neto: text('resultado_neto'),
+  reserva_legal: text('reserva_legal'),
+  otras_reservas: text('otras_reservas'),
+  distributable_amount: real('distributable_amount'),
+  distribution_date: text('distribution_date'),
+  distribuciones: text('distribuciones'),
+  procesado: integer('procesado', { mode: 'boolean' }),
+  process_date: text('process_date'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  deleted_at: text('deleted_at'),
+});
+
+export const promotion_item_extras = sqliteTable('promotion_item_extras', {
+  id: text('id').primaryKey(),
+  promocion_item_id: text('promocion_item_id'),
+  extra_item_carta_id: text('extra_item_carta_id'),
+  quantity: real('quantity'),
+  created_at: text('created_at'),
+});
+
+export const promotion_items = sqliteTable('promotion_items', {
+  id: text('id').primaryKey(),
+  promocion_id: text('promocion_id'),
+  item_carta_id: text('item_carta_id'),
+  promo_price: real('promo_price'),
+  created_at: text('created_at'),
+});
+
+export const promotions = sqliteTable('promotions', {
+  id: text('id').primaryKey(),
+  brand_id: text('brand_id'),
+  name: text('name'),
+  description: text('description'),
+  type: text('type'),
+  value: text('value'),
+  restriccion_pago: text('restriccion_pago'),
+  dias_semana: text('dias_semana'),
+  hora_inicio: text('hora_inicio'),
+  hora_fin: text('hora_fin'),
+  start_date: text('start_date'),
+  end_date: text('end_date'),
+  aplica_a: text('aplica_a'),
+  producto_ids: text('producto_ids'),
+  categoria_ids: text('categoria_ids'),
+  user_type: text('user_type'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  branch_ids: text('branch_ids'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+  canales: text('canales'),
+});
+
+export const push_subscriptions = sqliteTable('push_subscriptions', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  endpoint: text('endpoint'),
+  keys: text('keys'),
+  created_at: text('created_at'),
+});
+
+export const rdo_categories = sqliteTable('rdo_categories', {
+  code: text('code'),
+  name: text('name'),
+  parent_code: text('parent_code'),
+  level: integer('level'),
+  rdo_section: text('rdo_section'),
+  behavior: text('behavior'),
+  allowed_item_types: text('allowed_item_types'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
+export const rdo_movements = sqliteTable('rdo_movements', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  period: text('period'),
+  rdo_category_code: text('rdo_category_code'),
+  source: text('source'),
   amount: real('amount'),
   description: text('description'),
-  consumption_date: text('consumption_date'),
+  extra_data: text('extra_data'),
+  source_table: text('source_table'),
+  source_id: text('source_id'),
   created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const recipe_categories = sqliteTable('recipe_categories', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  deleted_at: text('deleted_at'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const recipe_ingredients = sqliteTable('recipe_ingredients', {
+  id: text('id').primaryKey(),
+  preparacion_id: text('preparacion_id'),
+  insumo_id: text('insumo_id'),
+  quantity: real('quantity'),
+  unit: text('unit'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  sub_preparacion_id: text('sub_preparacion_id'),
+});
+
+export const recipe_options = sqliteTable('recipe_options', {
+  id: text('id').primaryKey(),
+  preparacion_id: text('preparacion_id'),
+  insumo_id: text('insumo_id'),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+});
+
+export const recipes = sqliteTable('recipes', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  description: text('description'),
+  type: text('type'),
+  is_interchangeable: integer('is_interchangeable', { mode: 'boolean' }),
+  costing_method: text('costing_method'),
+  manual_cost: real('manual_cost'),
+  calculated_cost: real('calculated_cost'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  deleted_at: text('deleted_at'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  categoria_preparacion_id: text('categoria_preparacion_id'),
+  extra_price: real('extra_price'),
+  can_be_extra: integer('can_be_extra', { mode: 'boolean' }),
+  extra_target_fc: text('extra_target_fc'),
+});
+
+export const register_shifts_legacy = sqliteTable('register_shifts_legacy', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  cashier_id: text('cashier_id'),
+  opened_at: text('opened_at'),
+  opening_fund: text('opening_fund'),
+  closed_at: text('closed_at'),
+  total_cash: text('total_cash'),
+  total_debit: text('total_debit'),
+  total_credit: text('total_credit'),
+  total_mercadopago: text('total_mercadopago'),
+  total_transfer: text('total_transfer'),
+  total_sales: text('total_sales'),
+  cash_counted: text('cash_counted'),
+  difference: real('difference'),
+  difference_reason: text('difference_reason'),
+  cash_withdrawals: text('cash_withdrawals'),
+  status: text('status'),
+});
+
+export const regulation_signatures = sqliteTable('regulation_signatures', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  regulation_id: text('regulation_id'),
+  branch_id: text('branch_id'),
+  signed_document_url: text('signed_document_url'),
+  signed_at: text('signed_at'),
+  uploaded_by: text('uploaded_by'),
+  created_at: text('created_at'),
+  regulation_version: text('regulation_version'),
+});
+
+export const regulations = sqliteTable('regulations', {
+  id: text('id').primaryKey(),
+  version: text('version'),
+  title: text('title'),
+  document_url: text('document_url'),
+  effective_date: text('effective_date'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  description: text('description'),
+  pdf_url: text('pdf_url'),
+  published_at: text('published_at'),
+});
+
+export const removable_items = sqliteTable('removable_items', {
+  id: text('id').primaryKey(),
+  item_carta_id: text('item_carta_id'),
+  insumo_id: text('insumo_id'),
+  display_name: text('display_name'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  preparacion_id: text('preparacion_id'),
+});
+
+export const role_permissions = sqliteTable('role_permissions', {
+  role_id: text('role_id'),
+  permission_id: text('permission_id'),
+});
+
+export const roles = sqliteTable('roles', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  display_name: text('display_name'),
+  scope: text('scope'),
+  hierarchy_level: integer('hierarchy_level'),
+  is_system: integer('is_system', { mode: 'boolean' }),
+  created_at: text('created_at'),
 });
 
 export const salary_advances = sqliteTable('salary_advances', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
+  employee_id: text('employee_id'),
   amount: real('amount'),
-  advance_date: text('advance_date'),
+  reason: text('reason'),
+  payment_method: text('payment_method'),
+  status: text('status'),
+  authorized_by: text('authorized_by'),
+  authorized_at: text('authorized_at'),
+  paid_by: text('paid_by'),
+  paid_at: text('paid_at'),
+  shift_id: text('shift_id'),
+  transferred_by: text('transferred_by'),
+  transferred_at: text('transferred_at'),
+  transfer_reference: text('transfer_reference'),
+  deducted_in_payroll_id: text('deducted_in_payroll_id'),
+  deducted_at: text('deducted_at'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  notes: text('notes'),
+  user_id: text('user_id'),
+});
+
+export const sales_channels = sqliteTable('sales_channels', {
+  id: text('id').primaryKey(),
+  code: text('code'),
+  name: text('name'),
+  adjustment_type: text('adjustment_type'),
+  adjustment_value: text('adjustment_value'),
+  is_base: integer('is_base', { mode: 'boolean' }),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const schedule_requests = sqliteTable('schedule_requests', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  user_id: text('user_id'),
+  request_type: text('request_type'),
+  request_date: text('request_date'),
   reason: text('reason'),
   status: text('status'),
-  approved_by: text('approved_by'),
-  approved_at: text('approved_at'),
-  rejected_reason: text('rejected_reason'),
-  payment_method: text('payment_method'),
-  reference: text('reference'),
-  notes: text('notes'),
-  created_by: text('created_by'),
+  response_note: text('response_note'),
+  responded_by: text('responded_by'),
+  responded_at: text('responded_at'),
+  created_at: text('created_at'),
+  evidence_url: text('evidence_url'),
+  absence_type: text('absence_type'),
+});
+
+export const service_concepts = sqliteTable('service_concepts', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  description: text('description'),
+  expense_category: text('expense_category'),
+  subcategory: text('subcategory'),
+  type: text('type'),
+  is_calculated: integer('is_calculated', { mode: 'boolean' }),
+  formula_calculo: text('formula_calculo'),
+  proveedor_id: text('proveedor_id'),
+  periodicidad: text('periodicidad'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
   deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  rdo_category_code: text('rdo_category_code'),
+  is_visible_local: integer('is_visible_local', { mode: 'boolean' }),
+});
+
+export const shift_closures = sqliteTable('shift_closures', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  date: text('date'),
+  shift: text('shift'),
+  burgers: text('burgers'),
+  local_sales: text('local_sales'),
+  app_sales: text('app_sales'),
+  total_invoiced: text('total_invoiced'),
+  total_burgers: text('total_burgers'),
+  total_sold: text('total_sold'),
+  total_cash: text('total_cash'),
+  total_digital: text('total_digital'),
+  expected_invoicing: text('expected_invoicing'),
+  invoicing_difference: text('invoicing_difference'),
+  has_invoicing_alert: integer('has_invoicing_alert', { mode: 'boolean' }),
+  notes: text('notes'),
+  closed_by: text('closed_by'),
+  closed_at: text('closed_at'),
+  updated_at: text('updated_at'),
+  updated_by: text('updated_by'),
+  register_reconciliation: text('register_reconciliation'),
+  posnet_difference: text('posnet_difference'),
+  apps_difference: text('apps_difference'),
+  has_posnet_alert: integer('has_posnet_alert', { mode: 'boolean' }),
+  has_apps_alert: integer('has_apps_alert', { mode: 'boolean' }),
+  has_register_alert: integer('has_register_alert', { mode: 'boolean' }),
+  source: text('source'),
+});
+
+export const special_days = sqliteTable('special_days', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  day_date: text('day_date'),
+  day_type: text('day_type'),
+  description: text('description'),
+  user_id: text('user_id'),
+  created_by: text('created_by'),
+  created_at: text('created_at'),
 });
 
 export const staff_invitations = sqliteTable('staff_invitations', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   email: text('email'),
-  phone: text('phone'),
-  full_name: text('full_name'),
   branch_id: text('branch_id'),
-  role_key: text('role_key'),
   invited_by: text('invited_by'),
   token: text('token'),
   status: text('status'),
   expires_at: text('expires_at'),
   accepted_at: text('accepted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const warnings = sqliteTable('warnings', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  branch_id: text('branch_id'),
-  warning_type: text('warning_type'),
-  severity: text('severity'),
-  description: text('description'),
-  issued_by: text('issued_by'),
-  issued_date: text('issued_date'),
-  acknowledgement_date: text('acknowledgement_date'),
-  acknowledgement_signature_url: text('acknowledgement_signature_url'),
-  status: text('status'),
-  notes: text('notes'),
-  expiry_date: text('expiry_date'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const schedule_requests = sqliteTable('schedule_requests', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  employee_id: text('employee_id'),
-  branch_id: text('branch_id'),
-  request_type: text('request_type'),
-  start_date: text('start_date'),
-  end_date: text('end_date'),
-  reason: text('reason'),
-  status: text('status'),
-  reviewed_by: text('reviewed_by'),
-  reviewed_at: text('reviewed_at'),
-  review_notes: text('review_notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// CLOCK & LABOR
-// ============================================================================
-
-export const clock_entries = sqliteTable('clock_entries', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  branch_id: text('branch_id'),
-  entry_type: text('entry_type'),
-  is_manual: integer('is_manual', { mode: 'boolean' }),
-  manual_by: text('manual_by'),
-  manual_reason: text('manual_reason'),
-  latitude: real('latitude'),
-  longitude: real('longitude'),
-  gps_status: text('gps_status'),
-  gps_message: text('gps_message'),
-  photo_url: text('photo_url'),
-  user_agent: text('user_agent'),
-  ip_address: text('ip_address'),
-  schedule_id: text('schedule_id'),
-  work_date: text('work_date'),
-  anomaly_type: text('anomaly_type'),
-  resolved_type: text('resolved_type'),
-  early_leave_authorized: integer('early_leave_authorized', { mode: 'boolean' }),
-  original_created_at: text('original_created_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const labor_config = sqliteTable('labor_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  overtime_threshold_daily: real('overtime_threshold_daily'),
-  overtime_threshold_weekly: real('overtime_threshold_weekly'),
-  overtime_multiplier: real('overtime_multiplier'),
-  night_start: text('night_start'),
-  night_end: text('night_end'),
-  night_multiplier: real('night_multiplier'),
-  holiday_multiplier: real('holiday_multiplier'),
-  round_to_minutes: integer('round_to_minutes'),
-  auto_deduct_break: integer('auto_deduct_break', { mode: 'boolean' }),
-  break_deduct_minutes: integer('break_deduct_minutes'),
-  tolerance_minutes: integer('tolerance_minutes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const special_days = sqliteTable('special_days', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  date: text('date'),
-  name: text('name'),
-  type: text('type'),
-  is_recurring: integer('is_recurring', { mode: 'boolean' }),
-  applies_to_branches: text('applies_to_branches', { mode: 'json' }),
-  created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// SHIFT CLOSURES & PERIODS
-// ============================================================================
-
-export const shift_closures = sqliteTable('shift_closures', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  shift_id: text('shift_id'),
-  closure_date: text('closure_date'),
-  data: text('data', { mode: 'json' }),
-  notes: text('notes'),
-  closed_by: text('closed_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const periods = sqliteTable('periods', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  period: text('period'),
-  start_date: text('start_date'),
-  end_date: text('end_date'),
-  status: text('status'),
-  closed_at: text('closed_at'),
-  closed_by: text('closed_by'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// COACHING & COMPETENCIES
-// ============================================================================
-
-export const coachings = sqliteTable('coachings', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  branch_id: text('branch_id'),
-  evaluated_by: text('evaluated_by'),
-  coaching_date: text('coaching_date'),
-  coaching_month: integer('coaching_month'),
-  coaching_year: integer('coaching_year'),
-  coaching_type: text('coaching_type'),
-  general_score: real('general_score'),
-  station_score: real('station_score'),
-  overall_score: real('overall_score'),
-  strengths: text('strengths'),
-  areas_to_improve: text('areas_to_improve'),
-  action_plan: text('action_plan'),
-  previous_action_review: text('previous_action_review'),
-  manager_notes: text('manager_notes'),
-  acknowledged_at: text('acknowledged_at'),
-  acknowledged_notes: text('acknowledged_notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const coaching_competency_scores = sqliteTable('coaching_competency_scores', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  coaching_id: text('coaching_id'),
-  competency_id: text('competency_id'),
-  competency_type: text('competency_type'),
-  score: integer('score'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const coaching_station_scores = sqliteTable('coaching_station_scores', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  coaching_id: text('coaching_id'),
-  station_id: text('station_id'),
-  score: integer('score'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const general_competencies = sqliteTable('general_competencies', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const manager_competencies = sqliteTable('manager_competencies', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  accepted_by: text('accepted_by'),
+  created_at: text('created_at'),
+  role: text('role'),
+  full_name: text('full_name'),
 });
 
 export const station_competencies = sqliteTable('station_competencies', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id').primaryKey(),
   station_id: text('station_id'),
-  competency_id: text('competency_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const work_stations = sqliteTable('work_stations', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  key: text('key'),
   name: text('name'),
   description: text('description'),
-  is_active: integer('is_active', { mode: 'boolean' }),
   sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const work_positions = sqliteTable('work_positions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  type: text('type'),
-  branch_id: text('branch_id'),
   is_active: integer('is_active', { mode: 'boolean' }),
-  sort_order: integer('sort_order'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_at: text('created_at'),
 });
 
-// ============================================================================
-// INSPECTIONS
-// ============================================================================
-
-export const inspection_templates = sqliteTable('inspection_templates', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  description: text('description'),
-  sections: text('sections', { mode: 'json' }),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const inspection_items = sqliteTable('inspection_items', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  inspection_id: text('inspection_id'),
-  template_item_id: text('template_item_id'),
-  section: text('section'),
-  item_label: text('item_label'),
-  score: integer('score'),
-  max_score: integer('max_score'),
-  is_critical: integer('is_critical', { mode: 'boolean' }),
-  notes: text('notes'),
-  photo_url: text('photo_url'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const inspection_staff_present = sqliteTable('inspection_staff_present', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  inspection_id: text('inspection_id'),
-  user_id: text('user_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// MEETINGS
-// ============================================================================
-
-export const meetings = sqliteTable('meetings', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const stock_actual = sqliteTable('stock_actual', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  title: text('title'),
-  description: text('description'),
-  meeting_date: text('meeting_date'),
-  start_time: text('start_time'),
-  end_time: text('end_time'),
-  status: text('status'),
-  location: text('location'),
-  meeting_type: text('meeting_type'),
-  created_by: text('created_by'),
-  minutes: text('minutes'),
-  closed_at: text('closed_at'),
-  closed_by: text('closed_by'),
-  notification_sent_at: text('notification_sent_at'),
-  minutes_notification_sent_at: text('minutes_notification_sent_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  insumo_id: text('insumo_id'),
+  quantity: real('quantity'),
+  unit: text('unit'),
+  stock_minimo: text('stock_minimo'),
+  stock_critico: text('stock_critico'),
+  updated_at: text('updated_at'),
+  stock_minimo_local: text('stock_minimo_local'),
+  stock_critico_local: text('stock_critico_local'),
 });
 
-export const meeting_participants = sqliteTable('meeting_participants', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  meeting_id: text('meeting_id'),
-  user_id: text('user_id'),
-  attendance: text('attendance'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const meeting_agreements = sqliteTable('meeting_agreements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  meeting_id: text('meeting_id'),
-  description: text('description'),
-  responsible_id: text('responsible_id'),
-  due_date: text('due_date'),
-  status: text('status'),
-  completed_at: text('completed_at'),
-  completed_by: text('completed_by'),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const meeting_agreement_assignees = sqliteTable('meeting_agreement_assignees', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  agreement_id: text('agreement_id'),
-  user_id: text('user_id'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// COMMUNICATIONS
-// ============================================================================
-
-export const communications = sqliteTable('communications', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  title: text('title'),
-  body: text('body'),
-  type: text('type'),
-  tag: text('tag'),
-  custom_label: text('custom_label'),
-  source_type: text('source_type'),
-  source_branch_id: text('source_branch_id'),
-  created_by: text('created_by'),
-  target_branch_ids: text('target_branch_ids', { mode: 'json' }),
-  target_roles: text('target_roles', { mode: 'json' }),
-  is_published: integer('is_published', { mode: 'boolean' }),
-  published_at: text('published_at'),
-  requires_confirmation: integer('requires_confirmation', { mode: 'boolean' }),
-  expires_at: text('expires_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const communication_reads = sqliteTable('communication_reads', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  communication_id: text('communication_id'),
-  user_id: text('user_id'),
-  read_at: text('read_at'),
-  confirmed_at: text('confirmed_at'),
-});
-
-export const push_subscriptions = sqliteTable('push_subscriptions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  endpoint: text('endpoint'),
-  keys: text('keys', { mode: 'json' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const whatsapp_templates = sqliteTable('whatsapp_templates', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  template_key: text('template_key'),
-  template_text: text('template_text'),
-  updated_by: text('updated_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// REGULATIONS
-// ============================================================================
-
-export const regulations = sqliteTable('regulations', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  title: text('title'),
-  content: text('content'),
-  file_url: text('file_url'),
-  version: text('version'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  requires_signature: integer('requires_signature', { mode: 'boolean' }),
-  scope: text('scope'),
-  target_branch_ids: text('target_branch_ids', { mode: 'json' }),
-  created_by: text('created_by'),
-  published_at: text('published_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const regulation_signatures = sqliteTable('regulation_signatures', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  regulation_id: text('regulation_id'),
-  user_id: text('user_id'),
-  signature_url: text('signature_url'),
-  signed_at: text('signed_at'),
-  ip_address: text('ip_address'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// CONTACT
-// ============================================================================
-
-export const contact_messages = sqliteTable('contact_messages', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  email: text('email'),
-  phone: text('phone'),
-  subject: text('subject'),
-  message: text('message'),
-  status: text('status'),
-  priority: text('priority'),
-  read_at: text('read_at'),
-  replied_at: text('replied_at'),
-  replied_by: text('replied_by'),
-  assigned_to: text('assigned_to'),
-  notes: text('notes'),
-  attachment_url: text('attachment_url'),
-  attachment_name: text('attachment_name'),
-  franchise_has_location: text('franchise_has_location'),
-  franchise_has_zone: text('franchise_has_zone'),
-  franchise_investment_capital: text('franchise_investment_capital'),
-  investment_range: text('investment_range'),
-  employment_position: text('employment_position'),
-  employment_branch_id: text('employment_branch_id'),
-  employment_cv_link: text('employment_cv_link'),
-  employment_motivation: text('employment_motivation'),
-  order_number: text('order_number'),
-  order_date: text('order_date'),
-  order_branch_id: text('order_branch_id'),
-  order_issue: text('order_issue'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// CUSTOMER & WEBAPP
-// ============================================================================
-
-export const customer_addresses = sqliteTable('customer_addresses', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  user_id: text('user_id'),
-  label: text('label'),
-  address: text('address'),
-  city: text('city'),
-  floor: text('floor'),
-  reference: text('reference'),
-  latitude: real('latitude'),
-  longitude: real('longitude'),
-  is_primary: integer('is_primary', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const webapp_config = sqliteTable('webapp_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const stock_cierre_mensual = sqliteTable('stock_cierre_mensual', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  slug: text('slug'),
-  hero_image_url: text('hero_image_url'),
-  welcome_message: text('welcome_message'),
-  min_order_amount: real('min_order_amount'),
-  delivery_enabled: integer('delivery_enabled', { mode: 'boolean' }),
-  takeaway_enabled: integer('takeaway_enabled', { mode: 'boolean' }),
-  salon_enabled: integer('salon_enabled', { mode: 'boolean' }),
-  estimated_delivery_time: integer('estimated_delivery_time'),
-  estimated_takeaway_time: integer('estimated_takeaway_time'),
-  payment_methods: text('payment_methods', { mode: 'json' }),
-  custom_css: text('custom_css'),
-  maintenance_message: text('maintenance_message'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const webapp_order_messages = sqliteTable('webapp_order_messages', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  order_id: text('order_id'),
-  tracking_code: text('tracking_code'),
-  sender_type: text('sender_type'),
-  sender_name: text('sender_name'),
-  message: text('message'),
-  is_read: integer('is_read', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// PAYMENTS & MERCADOPAGO
-// ============================================================================
-
-export const mercadopago_config = sqliteTable('mercadopago_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  access_token_encrypted: text('access_token_encrypted'),
-  public_key: text('public_key'),
-  collector_id: text('collector_id'),
-  external_pos_id: text('external_pos_id'),
-  terminal_serial: text('terminal_serial'),
-  operating_mode: text('operating_mode'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  last_tested_at: text('last_tested_at'),
-  test_result: text('test_result'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// CANON & FINANCIAL
-// ============================================================================
-
-export const canon_settlements = sqliteTable('canon_settlements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
+  insumo_id: text('insumo_id'),
   period: text('period'),
-  cash_total: real('cash_total'),
-  online_total: real('online_total'),
-  canon_percentage: real('canon_percentage'),
-  canon_amount: real('canon_amount'),
-  marketing_percentage: real('marketing_percentage'),
-  marketing_amount: real('marketing_amount'),
-  total_canon: real('total_canon'),
-  cash_percentage: real('cash_percentage'),
-  suggested_cash_payment: real('suggested_cash_payment'),
-  suggested_transfer_payment: real('suggested_transfer_payment'),
-  pending_balance: real('pending_balance'),
-  status: text('status'),
-  due_date: text('due_date'),
-  notes: text('notes'),
-  monthly_sales_id: text('monthly_sales_id'),
+  stock_apertura: text('stock_apertura'),
+  compras: text('compras'),
+  consumo_ventas: text('consumo_ventas'),
+  stock_esperado: text('stock_esperado'),
+  stock_cierre_fisico: text('stock_cierre_fisico'),
+  merma: text('merma'),
+  created_at: text('created_at'),
   created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
 
-export const canon_payments = sqliteTable('canon_payments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const stock_conteo_items = sqliteTable('stock_conteo_items', {
+  id: text('id').primaryKey(),
+  conteo_id: text('conteo_id'),
+  insumo_id: text('insumo_id'),
+  stock_teorico: text('stock_teorico'),
+  stock_real: text('stock_real'),
+  unit_cost: real('unit_cost'),
+});
+
+export const stock_conteos = sqliteTable('stock_conteos', {
+  id: text('id').primaryKey(),
   branch_id: text('branch_id'),
-  canon_settlement_id: text('canon_settlement_id'),
+  date: text('date'),
+  period: text('period'),
+  nota_general: text('nota_general'),
+  resumen: text('resumen'),
+  status: text('status'),
+  created_by: text('created_by'),
+  confirmed_at: text('confirmed_at'),
+  created_at: text('created_at'),
+});
+
+export const stock_movements = sqliteTable('stock_movements', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  insumo_id: text('insumo_id'),
+  type: text('type'),
+  quantity: real('quantity'),
+  quantity_before: text('quantity_before'),
+  quantity_after: text('quantity_after'),
+  pedido_id: text('pedido_id'),
+  supplier_invoice_id: text('supplier_invoice_id'),
+  reason: text('reason'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  note: text('note'),
+});
+
+export const supplier_branch_terms = sqliteTable('supplier_branch_terms', {
+  id: text('id').primaryKey(),
+  proveedor_id: text('proveedor_id'),
+  branch_id: text('branch_id'),
+  permite_cuenta_corriente: text('permite_cuenta_corriente'),
+  dias_pago_habitual: text('dias_pago_habitual'),
+  descuento_pago_contado: text('descuento_pago_contado'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const supplier_invoices = sqliteTable('supplier_invoices', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  proveedor_id: text('proveedor_id'),
+  invoice_type: text('invoice_type'),
+  invoice_number: integer('invoice_number'),
+  invoice_date: text('invoice_date'),
+  invoice_url: text('invoice_url'),
+  subtotal: real('subtotal'),
+  iva: real('iva'),
+  otros_impuestos: text('otros_impuestos'),
+  total: real('total'),
+  payment_terms: text('payment_terms'),
+  due_date: text('due_date'),
+  payment_status: text('payment_status'),
+  pending_balance: real('pending_balance'),
+  type: text('type'),
+  extraordinary_reason: text('extraordinary_reason'),
+  period: text('period'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+  subtotal_bruto: real('subtotal_bruto'),
+  total_descuentos: real('total_descuentos'),
+  subtotal_neto: real('subtotal_neto'),
+  imp_internos: real('imp_internos'),
+  iva_21: text('iva_21'),
+  iva_105: text('iva_105'),
+  perc_iva: real('perc_iva'),
+  perc_provincial: real('perc_provincial'),
+  perc_municipal: real('perc_municipal'),
+  invoice_total: real('invoice_total'),
+  actual_cost: real('actual_cost'),
+});
+
+export const supplier_payments = sqliteTable('supplier_payments', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  proveedor_id: text('proveedor_id'),
+  invoice_id: text('invoice_id'),
   payment_date: text('payment_date'),
   amount: real('amount'),
   payment_method: text('payment_method'),
   reference: text('reference'),
+  payment_data: text('payment_data'),
   notes: text('notes'),
-  payment_data: text('payment_data', { mode: 'json' }),
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  deleted_at: text('deleted_at'),
   is_verified: integer('is_verified', { mode: 'boolean' }),
   verified_by: text('verified_by'),
   verified_at: text('verified_at'),
   verified_notes: text('verified_notes'),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  payment_due_date: text('payment_due_date'),
 });
-
-export const expenses = sqliteTable('expenses', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  concept: text('concept'),
-  amount: real('amount'),
-  payment_method: text('payment_method'),
-  expense_category: text('expense_category'),
-  affects_register: integer('affects_register', { mode: 'boolean' }),
-  notes: text('notes'),
-  attachments: text('attachments', { mode: 'json' }),
-  rdo_category_code: text('rdo_category_code'),
-  expense_date: text('expense_date'),
-  created_by: text('created_by'),
-  approved_by: text('approved_by'),
-  approval_status: text('approval_status'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const investments = sqliteTable('investments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  concept: text('concept'),
-  amount: real('amount'),
-  investment_date: text('investment_date'),
-  notes: text('notes'),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const partners = sqliteTable('partners', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  document_number: text('document_number'),
-  ownership_percentage: real('ownership_percentage'),
-  investment_amount: real('investment_amount'),
-  join_date: text('join_date'),
-  phone: text('phone'),
-  email: text('email'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const partner_movements = sqliteTable('partner_movements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  partner_id: text('partner_id'),
-  type: text('type'),
-  amount: real('amount'),
-  description: text('description'),
-  reference_date: text('reference_date'),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const profit_distributions = sqliteTable('profit_distributions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  period: text('period'),
-  total_profit: real('total_profit'),
-  distribution_date: text('distribution_date'),
-  notes: text('notes'),
-  created_by: text('created_by'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// RDO (RESULTADO DIARIO OPERATIVO)
-// ============================================================================
-
-export const rdo_categories = sqliteTable('rdo_categories', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  code: text('code'),
-  label: text('label'),
-  type: text('type'),
-  parent_code: text('parent_code'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const rdo_movements = sqliteTable('rdo_movements', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  branch_id: text('branch_id'),
-  period: text('period'),
-  category_code: text('category_code'),
-  amount: real('amount'),
-  notes: text('notes'),
-  source: text('source'),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const service_concepts = sqliteTable('service_concepts', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  code: text('code'),
-  label: text('label'),
-  type: text('type'),
-  sort_order: integer('sort_order'),
-  is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-
-// ============================================================================
-// SUPPLIERS
-// ============================================================================
 
 export const suppliers = sqliteTable('suppliers', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
+  id: text('id').primaryKey(),
+  ambito: text('ambito'),
+  branch_id: text('branch_id'),
+  business_name: text('business_name'),
   cuit: text('cuit'),
+  contact: text('contact'),
   phone: text('phone'),
   email: text('email'),
   address: text('address'),
-  category: text('category'),
-  payment_terms: text('payment_terms'),
-  notes: text('notes'),
+  medios_pago_aceptados: text('medios_pago_aceptados'),
+  permite_cuenta_corriente: text('permite_cuenta_corriente'),
+  dias_pago_habitual: text('dias_pago_habitual'),
+  descuento_pago_contado: text('descuento_pago_contado'),
   is_active: integer('is_active', { mode: 'boolean' }),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const supplier_branch_terms = sqliteTable('supplier_branch_terms', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  supplier_id: text('supplier_id'),
-  branch_id: text('branch_id'),
-  delivery_days: text('delivery_days', { mode: 'json' }),
-  payment_terms: text('payment_terms'),
   notes: text('notes'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
-});
-
-export const supplier_invoices = sqliteTable('supplier_invoices', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  supplier_id: text('supplier_id'),
-  branch_id: text('branch_id'),
-  invoice_number: text('invoice_number'),
-  invoice_date: text('invoice_date'),
-  due_date: text('due_date'),
-  subtotal: real('subtotal'),
-  tax_amount: real('tax_amount'),
-  total_amount: real('total_amount'),
-  status: text('status'),
-  notes: text('notes'),
-  period: text('period'),
+  created_at: text('created_at'),
   created_by: text('created_by'),
+  updated_at: text('updated_at'),
   deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
-  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  special_type: text('special_type'),
+  banco: text('banco'),
+  account_number: text('account_number'),
+  cbu: text('cbu'),
+  alias_cbu: text('alias_cbu'),
+  titular_cuenta: text('titular_cuenta'),
+  secondary_phone: text('secondary_phone'),
+  secondary_contact: text('secondary_contact'),
+  supplier_type: text('supplier_type'),
+  rdo_categories_default: text('rdo_categories_default'),
 });
 
-export const supplier_payments = sqliteTable('supplier_payments', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  supplier_id: text('supplier_id'),
+export const supplies = sqliteTable('supplies', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  categoria_id: text('categoria_id'),
+  base_unit: text('base_unit'),
+  pl_category: text('pl_category'),
+  creado_por: text('creado_por'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  proveedor_sugerido_id: text('proveedor_sugerido_id'),
+  reference_price: real('reference_price'),
+  description: text('description'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+  nivel_control: text('nivel_control'),
+  especificacion: text('especificacion'),
+  proveedor_obligatorio_id: text('proveedor_obligatorio_id'),
+  max_suggested_price: real('max_suggested_price'),
+  control_reason: text('control_reason'),
+  item_type: text('item_type'),
+  rdo_category_code: text('rdo_category_code'),
+  tracks_stock: integer('tracks_stock', { mode: 'boolean' }),
+  purchase_unit: text('purchase_unit'),
+  purchase_unit_content: text('purchase_unit_content'),
+  purchase_unit_price: real('purchase_unit_price'),
+  base_unit_cost: real('base_unit_cost'),
+  default_alicuota_iva: text('default_alicuota_iva'),
+  sale_price: real('sale_price'),
+  margen_bruto: real('margen_bruto'),
+  margen_porcentaje: real('margen_porcentaje'),
+  extra_price: real('extra_price'),
+  can_be_extra: integer('can_be_extra', { mode: 'boolean' }),
+  extra_target_fc: text('extra_target_fc'),
+});
+
+export const supply_categories = sqliteTable('supply_categories', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  type: text('type'),
+  description: text('description'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const supply_cost_history = sqliteTable('supply_cost_history', {
+  id: text('id').primaryKey(),
+  insumo_id: text('insumo_id'),
   branch_id: text('branch_id'),
-  amount: real('amount'),
-  payment_date: text('payment_date'),
-  payment_method: text('payment_method'),
-  reference: text('reference'),
-  notes: text('notes'),
+  previous_cost: real('previous_cost'),
+  new_cost: real('new_cost'),
   invoice_id: text('invoice_id'),
-  created_by: text('created_by'),
-  deleted_at: text('deleted_at'),
-  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  reason: text('reason'),
+  created_at: text('created_at'),
 });
+
+export const tax_config = sqliteTable('tax_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  iibb_alicuota: text('iibb_alicuota'),
+  tasas_municipales: text('tasas_municipales'),
+  otros_impuestos: text('otros_impuestos'),
+  vigencia_desde: text('vigencia_desde'),
+  vigencia_hasta: text('vigencia_hasta'),
+  notes: text('notes'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  deleted_at: text('deleted_at'),
+});
+
+export const user_role_assignments = sqliteTable('user_role_assignments', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  role_id: text('role_id'),
+  branch_id: text('branch_id'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  clock_pin: text('clock_pin'),
+  default_position: text('default_position'),
+});
+
+export const warnings = sqliteTable('warnings', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id'),
+  branch_id: text('branch_id'),
+  warning_type: text('warning_type'),
+  description: text('description'),
+  warning_date: text('warning_date'),
+  issued_by: text('issued_by'),
+  acknowledged_at: text('acknowledged_at'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  signed_document_url: text('signed_document_url'),
+});
+
+export const webapp_config = sqliteTable('webapp_config', {
+  id: text('id').primaryKey(),
+  branch_id: text('branch_id'),
+  status: text('status'),
+  delivery_habilitado: text('delivery_habilitado'),
+  delivery_radio_km: real('delivery_radio_km'),
+  delivery_costo: text('delivery_costo'),
+  delivery_pedido_minimo: text('delivery_pedido_minimo'),
+  retiro_habilitado: text('retiro_habilitado'),
+  comer_aca_habilitado: text('comer_aca_habilitado'),
+  recepcion_modo: text('recepcion_modo'),
+  estimated_pickup_time_min: text('estimated_pickup_time_min'),
+  estimated_delivery_time_min: text('estimated_delivery_time_min'),
+  horarios: text('horarios'),
+  pause_message: text('pause_message'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+  webapp_activa: text('webapp_activa'),
+  service_schedules: text('service_schedules'),
+  prep_time_retiro: text('prep_time_retiro'),
+  prep_time_delivery: text('prep_time_delivery'),
+  prep_time_comer_aca: text('prep_time_comer_aca'),
+  auto_accept_orders: integer('auto_accept_orders', { mode: 'boolean' }),
+  auto_print_orders: integer('auto_print_orders', { mode: 'boolean' }),
+});
+
+export const webapp_order_messages = sqliteTable('webapp_order_messages', {
+  id: text('id').primaryKey(),
+  pedido_id: text('pedido_id'),
+  branch_id: text('branch_id'),
+  sender_type: text('sender_type'),
+  sender_id: text('sender_id'),
+  sender_name: text('sender_name'),
+  message: text('message'),
+  leido: text('leido'),
+  created_at: text('created_at'),
+});
+
+export const whatsapp_templates = sqliteTable('whatsapp_templates', {
+  id: text('id').primaryKey(),
+  subject_type: text('subject_type'),
+  template_text: text('template_text'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  updated_by: text('updated_by'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const work_positions = sqliteTable('work_positions', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  label: text('label'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const work_stations = sqliteTable('work_stations', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  name: text('name'),
+  icon: text('icon'),
+  sort_order: integer('sort_order'),
+  is_active: integer('is_active', { mode: 'boolean' }),
+  created_at: text('created_at'),
+});
+
