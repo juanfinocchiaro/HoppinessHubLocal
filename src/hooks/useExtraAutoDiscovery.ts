@@ -98,6 +98,8 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
       };
     });
   }, [deepGroups, composicion, allItems, asignaciones]);
+
+  return { data, error: asigQuery.error, isError: asigQuery.isError };
 }
 
 /**
