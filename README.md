@@ -1,59 +1,108 @@
-# Hoppiness Hub
+# Hoppiness Hub Platform — Local Monorepo
 
-Sistema integral de gestión para franquicias gastronómicas. Incluye POS, KDS, gestión de marca, locales, empleados, stock, finanzas y webapp de pedidos para clientes.
+Plataforma de gestión integral para Hoppiness Club. Corre 100% en tu PC, sin dependencias de servicios cloud.
 
 ## Stack
 
-- **Frontend:** React 18 + TypeScript + Vite + Tailwind
-- **Backend:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
-- **Facturación:** AFIP (Factura electrónica)
-
-## Instalación
-
-```bash
-git clone [repo]
-cd hoppiness-hub
-npm install
-cp .env.example .env.local
-# Completar variables en .env.local
-npm run dev
-```
-
-## Variables de entorno
-
-Ver `.env.example` para la lista completa de variables necesarias.
-
-## Scripts
-
-```bash
-npm run dev          # Desarrollo local
-npm run build        # Build de producción
-npm run preview      # Preview del build
-npm run release      # Generar nueva versión + changelog
-npm run docs:db      # Regenerar documentación de DB
-```
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui |
+| Backend | Express + TypeScript + Socket.io |
+| Base de datos | SQLite (via better-sqlite3 + Drizzle ORM) |
+| Auth | JWT (jsonwebtoken + bcryptjs) |
+| Storage | Filesystem local (multer) |
+| Monorepo | npm workspaces |
 
 ## Estructura
 
 ```
-src/
-├── components/      # Componentes reutilizables
-├── pages/           # Páginas de la aplicación
-├── hooks/           # Custom hooks
-├── lib/             # Utilidades y configuración
-├── types/           # TypeScript types
-└── integrations/    # Supabase client y tipos
-
-supabase/
-├── migrations/      # Schema de base de datos
-└── functions/       # Edge Functions
+packages/
+  shared/      → Tipos y constantes compartidas
+  backend/     → API Express + SQLite + Socket.io
+  frontend/    → React SPA (Vite)
 ```
 
-## Documentación
+## Setup rápido
 
-- `BUSINESS_RULES.md` - Reglas de negocio
-- `PERSONAS.md` - Usuarios y roles del sistema
-- `CHANGELOG.md` - Historial de cambios
-- `docs/DATABASE.md` - Schema de base de datos (auto-generado)
-- `docs/API.md` - Edge Functions y endpoints
-- `docs/DEPLOYMENT.md` - Guía de deployment
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Crear la base de datos
+npx tsx packages/backend/src/db/setup.ts
+
+# 3. Cargar datos iniciales
+npm run db:seed
+
+# 4. Levantar todo
+npm run dev
+```
+
+Esto levanta:
+- **Frontend** en `http://localhost:5173`
+- **Backend** en `http://localhost:3001`
+- **SQLite** en `packages/backend/data/hoppiness.db`
+
+## Credenciales por defecto
+
+Después de correr el seed:
+
+- **Email:** `admin@hoppiness.com`
+- **Password:** `admin123`
+- **Rol:** Superadmin
+
+## Scripts disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Levanta frontend + backend en paralelo |
+| `npm run dev:frontend` | Solo el frontend |
+| `npm run dev:backend` | Solo el backend |
+| `npm run build` | Build de producción |
+| `npm run db:seed` | Carga datos iniciales |
+
+## Servicios externos (opcionales)
+
+Estas integraciones necesitan internet. Cuando no hay conexión, la app funciona sin ellas:
+
+- **MercadoPago** — Pagos online y Point
+- **AFIP/ARCA** — Facturación electrónica
+- **Resend** — Emails transaccionales
+- **Google Maps** — Mapas y geolocalización
+- **Web Push** — Notificaciones push
+
+Configurar en `.env` (copiar desde `.env.example`).
+
+## API
+
+El backend expone endpoints REST bajo `/api/`:
+
+| Ruta | Módulo |
+|------|--------|
+| `/api/auth` | Autenticación (login, signup, refresh) |
+| `/api/branches` | Sucursales y configuración |
+| `/api/menu` | Carta, recetas, insumos |
+| `/api/orders` | Pedidos POS y webapp |
+| `/api/hr` | Fichajes, horarios, RRHH |
+| `/api/financial` | Finanzas, RDO, canon |
+| `/api/coaching` | Coaching y competencias |
+| `/api/meetings` | Reuniones |
+| `/api/communications` | Comunicados |
+| `/api/inspections` | Supervisiones |
+| `/api/suppliers` | Proveedores |
+| `/api/stock` | Stock |
+| `/api/promotions` | Promociones y descuentos |
+| `/api/webapp` | Webapp pública de pedidos |
+| `/api/payments` | MercadoPago |
+| `/api/fiscal` | AFIP/ARCA |
+| `/api/storage` | Upload/download de archivos |
+| `/api/delivery` | Delivery y zonas |
+
+## Realtime
+
+Socket.io corre en el mismo puerto que el backend (`:3001`). El frontend se conecta automáticamente via el proxy de Vite.
+
+Canales disponibles:
+- `branch:{branchId}` — Estado de sucursal
+- `kitchen:{branchId}` — Pedidos de cocina
+- `order:{orderId}` — Tracking de pedido

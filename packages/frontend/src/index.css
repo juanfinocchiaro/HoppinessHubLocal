@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Disable blue highlight on mobile taps */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Prevent iOS overscroll bounce on full-page views */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for background images during scroll */
+.fixed-bg {
+  background-attachment: fixed;
+  -webkit-background-size: cover;
+  background-size: cover;
+}
+
+/* =============================================
+   HOPPINESS CLUB - Design System
+   Brand Manual Colors: #00139b (azul), #ff521d (naranja), #ffd41f (amarillo)
+   ============================================= */
+
+@font-face {
+  font-family: 'HamburgHand';
+  src: url('/fonts/HamburgHand-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HamburgHand';
+  src: url('/fonts/HamburgHand-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Core brand colors - Hoppiness Official */
+    --background: 220 14% 98%;
+    --foreground: 224 71% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 12%;
+
+    /* Primary - Hoppiness Blue (#00139b) */
+    --primary: 234 100% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 12%;
+
+    /* Muted */
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent - Hoppiness Orange (#ff521d) */
+    --accent: 17 100% 56%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Warning/Highlight - Hoppiness Yellow (#ffd41f) */
+    --warning: 48 100% 56%;
+    --warning-foreground: 234 100% 15%;
+
+    /* Info - Hoppiness Celeste (#1FB4FF) */
+    --info: 202 100% 56%;
+    --info-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 234 100% 30%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar - Dark blue */
+    --sidebar-background: 234 100% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 234 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 234 50% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 234 50% 20%;
+    --sidebar-ring: 234 100% 50%;
+
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(234, 100%, 30%) 0%, hsl(234, 100%, 40%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(234, 100%, 30%) 0%, hsl(234, 100%, 15%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(17, 100%, 56%) 0%, hsl(48, 100%, 56%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+    --shadow-card: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+    --shadow-elevated: 0 12px 40px -10px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark {
+    --background: 234 50% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 234 50% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 234 50% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 234 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 234 30% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 234 30% 12%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 17 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --warning: 48 100% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 234 30% 20%;
+    --input: 234 30% 20%;
+    --ring: 234 100% 50%;
+
+    --sidebar-background: 234 50% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 234 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 234 30% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 234 30% 15%;
+    --sidebar-ring: 234 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Global micro-transition for interactive elements */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role='button'],
+  [tabindex] {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Typography - Space Mono for titles like brand manual suggests */
+  .font-brand {
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* HamburgHand - Display font for hero/section titles */
+  .font-display {
+    font-family: 'HamburgHand', 'Space Mono', monospace;
+    font-weight: 700;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Micro typography scale for badges, labels, and compact UI */
+  .text-micro {
+    font-size: 0.625rem; /* 10px */
+    line-height: 1rem;
+  }
+  .text-mini {
+    font-size: 0.6875rem; /* 11px */
+    line-height: 1rem;
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Brand specific utilities */
+  .bg-hoppiness-blue {
+    background-color: #00139b;
+  }
+
+  .bg-hoppiness-orange {
+    background-color: #ff521d;
+  }
+
+  .bg-hoppiness-yellow {
+    background-color: #ffd41f;
+  }
+
+  .bg-hoppiness-celeste {
+    background-color: #1fb4ff;
+  }
+
+  .text-hoppiness-blue {
+    color: #00139b;
+  }
+
+  .text-hoppiness-orange {
+    color: #ff521d;
+  }
+
+  /* Hoppiness Loader Animations */
+  @keyframes hoppiness-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes hoppiness-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0;
+    }
+  }
+
+  .animate-hoppiness-rotate {
+    animation: hoppiness-rotate 4s linear infinite;
+  }
+
+  .animate-hoppiness-pulse {
+    animation: hoppiness-pulse 2s ease-in-out infinite;
+  }
+}
