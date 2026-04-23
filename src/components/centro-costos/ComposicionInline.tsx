@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/select';
 import { LoadingButton } from '@/components/ui/loading-button';
 import { FormSection } from '@/components/ui/forms-pro';
-import { Layers, Tag, Plus, Trash2, Save, Sparkles, Ban } from 'lucide-react';
+import { Layers, Tag, Plus, Trash2, Save, Sparkles, Ban, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   useItemCartaComposicion,
   useItemCartaMutations,
@@ -50,16 +51,18 @@ interface RemovibleRecord {
 
 export function ComposicionInline({ item, mutations }: { item: any; mutations: ItemCartaMutations }) {
   const { data: composicionActual } = useItemCartaComposicion(item?.id);
-  const { data: grupos } = useGruposOpcionales(item?.id);
+  const gruposQuery = useGruposOpcionales(item?.id);
+  const grupos = gruposQuery.data;
   const { data: preparaciones } = usePreparaciones();
   const { data: insumos } = useInsumos();
   const gruposMutations = useGruposOpcionalesMutations();
 
   const { data: deepGroups } = useItemIngredientesDeepList(item?.id);
-  const { data: removibles } = useItemRemovibles(item?.id);
+  const removiblesQuery = useItemRemovibles(item?.id);
+  const removibles = removiblesQuery.data;
   const removiblesMutations = useItemRemoviblesMutations();
 
-  const discoveredExtras = useExtraAutoDiscovery(item?.id);
+  const { data: discoveredExtras = [], isError: extrasError } = useExtraAutoDiscovery(item?.id);
   const toggleExtra = useToggleExtra();
 
   const [rows, setRows] = useState<CompositionRow[]>([]);
