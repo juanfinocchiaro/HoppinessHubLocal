@@ -72,12 +72,12 @@ export function groupByCat(items: EI[], categorias?: any[]): CG[] {
   (categorias || []).forEach((c: any) => catMap.set(c.id, c));
   return Array.from(m.entries())
     .map(([id, ciRaw]) => {
-      // Ordenar items por precio descendente (los sin precio van al final)
+      // Ordenar items por costo ascendente (menor a mayor); los sin costo van al final
       const ci = [...ciRaw].sort((a, b) => {
-        if (a.precio === 0 && b.precio === 0) return a.name.localeCompare(b.name);
-        if (a.precio === 0) return 1;
-        if (b.precio === 0) return -1;
-        return b.precio - a.precio;
+        if (a.costo === 0 && b.costo === 0) return a.name.localeCompare(b.name);
+        if (a.costo === 0) return 1;
+        if (b.costo === 0) return -1;
+        return a.costo - b.costo;
       });
       const w = ci.filter((i) => i.hasComp && i.hasPrice);
       const n = w.length || 1;
