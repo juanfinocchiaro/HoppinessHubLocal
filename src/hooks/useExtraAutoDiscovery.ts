@@ -30,13 +30,14 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
   const { data: allItems } = useItemsCarta();
 
   // Fetch assignments for this item
-  const { data: asignaciones } = useQuery({
+  const asigQuery = useQuery({
     queryKey: ['item-extra-asignaciones', itemId],
     queryFn: () => fetchExtraAssignmentsWithJoin(itemId!),
     enabled: !!itemId,
   });
+  const asignaciones = asigQuery.data;
 
-  return useMemo((): DiscoveredExtra[] => {
+  const data = useMemo((): DiscoveredExtra[] => {
     const discovered: {
       tipo: 'preparacion' | 'insumo';
       ref_id: string;
@@ -97,6 +98,8 @@ export function useExtraAutoDiscovery(itemId: string | undefined) {
       };
     });
   }, [deepGroups, composicion, allItems, asignaciones]);
+
+  return { data, error: asigQuery.error, isError: asigQuery.isError };
 }
 
 /**
