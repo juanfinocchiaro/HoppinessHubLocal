@@ -7,6 +7,7 @@ import {
   fetchItemsCartaForPricing,
   updatePriceListConfig as updatePriceListConfigService,
   bulkUpsertPriceListItems,
+  updatePriceListItem,
   deletePriceOverride as deletePriceOverrideService,
   fetchActiveItemsPrices,
   fetchPriceListsByChannels,
@@ -52,6 +53,11 @@ export interface PriceListItem {
   price_list_id: string;
   item_carta_id: string;
   precio: number;
+  /** Fase 3: si false, el ítem está oculto en este canal. */
+  is_visible?: boolean;
+  custom_name?: string | null;
+  custom_image_url?: string | null;
+  custom_description?: string | null;
 }
 
 export function computeChannelPrice(
@@ -117,6 +123,12 @@ export function usePriceListItems(priceListId: string | undefined) {
   });
 }
 
+/**
+ * Devuelve un map `priceListId → { itemCartaId → PriceListItem }` con todas
+ * las filas de override por canal × ítem. A partir de Fase 3, cada celda
+ * incluye `is_visible` y los overrides visuales (`custom_name`, etc.)
+ * además del `precio`.
+ */
 export function useAllPriceListItems(priceListIds: string[]) {
   return useQuery({
     queryKey: ['all-price-list-items', priceListIds],
@@ -124,10 +136,10 @@ export function useAllPriceListItems(priceListIds: string[]) {
       if (priceListIds.length === 0) return {};
       const data = await fetchAllPriceListItemsService(priceListIds);
 
-      const map: Record<string, Record<string, number>> = {};
+      const map: Record<string, Record<string, PriceListItem>> = {};
       for (const row of data as unknown as PriceListItem[]) {
         if (!map[row.price_list_id]) map[row.price_list_id] = {};
-        map[row.price_list_id][row.item_carta_id] = row.precio;
+        map[row.price_list_id][row.item_carta_id] = row;
       }
       return map;
     },
@@ -170,6 +182,16 @@ export function useUpdatePriceListConfig() {
   });
 }
 
+/**
+ * P1 #4: tras cualquier mutation de pricing por canal, invalidar también
+ * la cache canónica `sellable-menu` que consumen POS y WebApp. Así un
+ * cambio de precio en admin se refleja inmediatamente en consumers.
+ */
+function invalidateSellableCaches(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['sellable-menu'] });
+  qc.invalidateQueries({ queryKey: ['webapp-menu-items'] });
+}
+
 export function useBulkUpdatePriceList() {
   const qc = useQueryClient();
   return useMutation({
@@ -180,6 +202,7 @@ export function useBulkUpdatePriceList() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['price-list-items', vars.price_list_id] });
       qc.invalidateQueries({ queryKey: ['all-price-list-items'] });
+      invalidateSellableCaches(qc);
       toast.success('Precios actualizados');
     },
   });
@@ -193,6 +216,47 @@ export function useDeletePriceOverride() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['price-list-items', vars.price_list_id] });
       qc.invalidateQueries({ queryKey: ['all-price-list-items'] });
+      invalidateSellableCaches(qc);
+    },
+  });
+}
+
+/**
+ * Fase 5: toggle activo/inactivo de una price_list (canal). Reemplaza el
+ * switch "disabled" que había en `CanalesVentaPage` tab "Canales y Comisiones".
+ */
+export function useTogglePriceListActive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string; is_active: boolean }) => {
+      const { apiPut } = await import('@/services/apiClient');
+      return apiPut(`/promotions/price-lists/${params.id}`, { is_active: params.is_active });
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['price-lists'] });
+      invalidateSellableCaches(qc);
+      toast.success(vars.is_active ? 'Canal activado' : 'Canal desactivado');
+    },
+    onError: () => toast.error('Error al cambiar estado del canal'),
+  });
+}
+
+/**
+ * Fase 3: patch puntual de un ítem dentro de un canal (visibilidad y
+ * overrides visuales). No requiere pasar el precio.
+ */
+export function useUpdatePriceListItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      price_list_id: string;
+      item_carta_id: string;
+      patch: Parameters<typeof updatePriceListItem>[2];
+    }) => updatePriceListItem(params.price_list_id, params.item_carta_id, params.patch),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['price-list-items', vars.price_list_id] });
+      qc.invalidateQueries({ queryKey: ['all-price-list-items'] });
+      invalidateSellableCaches(qc);
     },
   });
 }

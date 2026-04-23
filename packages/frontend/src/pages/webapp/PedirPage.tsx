@@ -4,10 +4,11 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { fetchGoogleMapsApiKey } from '@/services/checkoutService';
-import { useWebappConfig, useWebappMenuItems } from '@/hooks/useWebappMenu';
+import { useWebappConfig } from '@/hooks/useWebappMenu';
 import { useWebappCart } from '@/hooks/useWebappCart';
 import { useMercadoPagoStatus } from '@/hooks/useMercadoPagoConfig';
-import { useActivePromoItems } from '@/hooks/usePromociones';
+import { useSellableMenu } from '@/hooks/useSellableMenu';
+import { sellableItemsToWebapp } from '@/lib/menu/sellableToWebapp';
 import { BranchLanding } from '@/components/webapp/BranchLanding';
 import { WebappMenuView } from '@/components/webapp/WebappMenuView';
 import { CartBar } from '@/components/webapp/CartBar';
@@ -23,50 +24,19 @@ export default function PedirPage() {
   const { branchSlug } = useParams<{ branchSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading, error } = useWebappConfig(branchSlug);
-  const { data: rawMenuItems, isLoading: menuLoading } = useWebappMenuItems(data?.branch?.id);
   const { data: mpStatus } = useMercadoPagoStatus(data?.branch?.id);
-  const { data: promoItems = [] } = useActivePromoItems(data?.branch?.id, 'webapp');
-
-  // Build sellable menu: promo articles are distinct entries and base items are not mutated.
-  const menuItems = useMemo(() => {
-    if (!rawMenuItems) return [];
-    const baseById = new Map(rawMenuItems.map((item) => [item.id, item]));
-
-    const promoArticles: WebappMenuItem[] = promoItems
-      .map((pi) => {
-        const base = baseById.get(pi.item_carta_id);
-        if (!base || pi.precio_base == null || pi.precio_promo >= Number(base.base_price))
-          return null;
-        const extras = pi.preconfigExtras || [];
-        const extrasTotal = extras.reduce((sum, ex) => sum + (ex.precio ?? 0) * ex.cantidad, 0);
-        const precioSinPromo = Number(base.base_price) + extrasTotal;
-        const included = extras
-          .filter((ex) => ex.nombre)
-          .map((ex) => ({ name: ex.nombre!, quantity: ex.cantidad }));
-        const includedLabel = included.length
-          ? `Incluye: ${included.map((ex) => `${ex.quantity > 1 ? `${ex.quantity}x ` : ''}${ex.name}`).join(', ')}`
-          : null;
-
-        return {
-          ...base,
-          id: `promo:${pi.id}`,
-          source_item_id: base.id,
-          is_promo_article: true,
-          promocion_id: pi.promocion_id,
-          promocion_item_id: pi.id,
-          promo_included_modifiers: included,
-          name: pi.promocion_nombre || `${base.name} (PROMO)`,
-          short_name: base.short_name || base.name,
-          description: includedLabel || base.description,
-          base_price: precioSinPromo,
-          precio_promo: Number(pi.precio_promo),
-          promo_etiqueta: 'PROMO',
-        } satisfies WebappMenuItem;
-      })
-      .filter(Boolean) as WebappMenuItem[];
-
-    return [...promoArticles, ...rawMenuItems];
-  }, [rawMenuItems, promoItems]);
+  // Fase 1: contrato canónico server-authoritative. Un solo hook que
+  // reemplaza `useWebappMenuItems` + `useActivePromoItems` + `buildSellableArticles`.
+  // Ya respeta is_visible por canal, custom_name, custom_image_url, combos
+  // y promos activas resueltas en backend.
+  const { data: sellable, isLoading: menuLoading } = useSellableMenu({
+    channel: 'webapp',
+    branch: data?.branch?.id ?? null,
+  });
+  const menuItems = useMemo<WebappMenuItem[]>(
+    () => (sellable ? sellableItemsToWebapp(sellable.items) : []),
+    [sellable],
+  );
   const cart = useWebappCart();
   const navigate = useNavigate();
   const mpEnabled = mpStatus?.connection_status === 'conectado';

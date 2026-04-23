@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd ../.. && npm run build -w @restostack/marketing",
+  "outputDirectory": "packages/marketing/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}

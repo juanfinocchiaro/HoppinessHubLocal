@@ -21,6 +21,11 @@ export function useProveedores(branchId?: string) {
   return query;
 }
 
+/** Lista proveedores de nivel cuenta (compartidos entre todas las locations). */
+export function useAccountProveedores() {
+  return useProveedores('__account_scope__');
+}
+
 export function useProveedorMutations() {
   const qc = useQueryClient();
   const { user } = useAuth();

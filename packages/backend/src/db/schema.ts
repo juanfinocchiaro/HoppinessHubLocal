@@ -1,6 +1,116 @@
 import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // ============================================================================
+// BILLING — SaaS monetization tables
+// ============================================================================
+
+export const accounts = sqliteTable('accounts', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  country_code: text('country_code').notNull().default('AR'),
+  currency_code: text('currency_code').notNull().default('ARS'),
+  timezone: text('timezone').notNull().default('America/Argentina/Cordoba'),
+  business_type: text('business_type'),
+  is_grandfathered: integer('is_grandfathered', { mode: 'boolean' }).notNull().default(false),
+  billing_email: text('billing_email'),
+  created_at: text('created_at').notNull(),
+  updated_at: text('updated_at').notNull(),
+});
+
+export const plans = sqliteTable('plans', {
+  id: text('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  description: text('description'),
+  tier: integer('tier').notNull(),
+  price_monthly_usd: real('price_monthly_usd').notNull().default(0),
+  price_yearly_usd: real('price_yearly_usd').notNull().default(0),
+  max_locations: integer('max_locations'),
+  features_json: text('features_json').notNull().default('[]'),
+  mercadopago_plan_id_ars: text('mercadopago_plan_id_ars'),
+  is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  created_at: text('created_at').notNull(),
+  updated_at: text('updated_at').notNull(),
+});
+
+export const subscriptions = sqliteTable('subscriptions', {
+  id: text('id').primaryKey(),
+  account_id: text('account_id').notNull().unique().references(() => accounts.id),
+  plan_id: text('plan_id').notNull().references(() => plans.id),
+  status: text('status').notNull().default('trialing'),
+  mercadopago_preapproval_id: text('mercadopago_preapproval_id'),
+  trial_ends_at: text('trial_ends_at'),
+  current_period_start: text('current_period_start'),
+  current_period_end: text('current_period_end'),
+  billing_cycle: text('billing_cycle').notNull().default('monthly'),
+  cancel_at_period_end: integer('cancel_at_period_end', { mode: 'boolean' }).notNull().default(false),
+  cancelled_at: text('cancelled_at'),
+  created_at: text('created_at').notNull(),
+  updated_at: text('updated_at').notNull(),
+});
+
+export const billing_invoices = sqliteTable('billing_invoices', {
+  id: text('id').primaryKey(),
+  subscription_id: text('subscription_id').notNull().references(() => subscriptions.id),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  amount_usd: real('amount_usd').notNull(),
+  amount_local: real('amount_local'),
+  currency_local: text('currency_local'),
+  fx_rate: real('fx_rate'),
+  status: text('status').notNull().default('pending'),
+  mercadopago_payment_id: text('mercadopago_payment_id'),
+  paid_at: text('paid_at'),
+  failed_at: text('failed_at'),
+  retry_count: integer('retry_count').notNull().default(0),
+  afip_cae: text('afip_cae'),
+  afip_invoice_number: text('afip_invoice_number'),
+  period_start: text('period_start'),
+  period_end: text('period_end'),
+  created_at: text('created_at').notNull(),
+});
+
+export const billing_payment_events = sqliteTable('billing_payment_events', {
+  id: text('id').primaryKey(),
+  event_type: text('event_type').notNull(),
+  mercadopago_resource_id: text('mercadopago_resource_id'),
+  subscription_id: text('subscription_id').references(() => subscriptions.id),
+  account_id: text('account_id').references(() => accounts.id),
+  payload_json: text('payload_json'),
+  processed_at: text('processed_at'),
+  created_at: text('created_at').notNull(),
+});
+
+export const subscription_addons = sqliteTable('subscription_addons', {
+  id: text('id').primaryKey(),
+  subscription_id: text('subscription_id').notNull().references(() => subscriptions.id),
+  addon_slug: text('addon_slug').notNull(),
+  price_usd: real('price_usd').notNull().default(0),
+  activated_at: text('activated_at').notNull(),
+  cancelled_at: text('cancelled_at'),
+});
+
+export const feature_flags = sqliteTable('feature_flags', {
+  id: text('id').primaryKey(),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  feature_slug: text('feature_slug').notNull(),
+  is_enabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(true),
+  source: text('source').notNull(),
+  created_at: text('created_at').notNull(),
+  updated_at: text('updated_at').notNull(),
+});
+
+export const admin_actions = sqliteTable('admin_actions', {
+  id: text('id').primaryKey(),
+  admin_user_id: text('admin_user_id').notNull(),
+  target_account_id: text('target_account_id').references(() => accounts.id),
+  action: text('action').notNull(),
+  details_json: text('details_json'),
+  impersonating_user_id: text('impersonating_user_id'),
+  created_at: text('created_at').notNull(),
+});
+
+// ============================================================================
 // AUTH (local only)
 // ============================================================================
 
@@ -170,8 +280,11 @@ export const branch_shifts = sqliteTable('branch_shifts', {
   updated_at: text('updated_at'),
 });
 
-export const branches = sqliteTable('branches', {
+// Canonical name post-tenancy refactor. The SQL table was renamed from
+// `branches` to `locations` via migration-tenancy-s1-accounts.
+export const locations = sqliteTable('locations', {
   id: text('id').primaryKey(),
+  account_id: text('account_id').references(() => accounts.id),
   name: text('name'),
   address: text('address'),
   city: text('city'),
@@ -202,6 +315,11 @@ export const branches = sqliteTable('branches', {
   clock_window_before_min: integer('clock_window_before_min'),
   clock_window_after_min: integer('clock_window_after_min'),
 });
+
+// Backward-compat alias — existing routes use `schema.branches`; they will
+// query the `locations` SQL table transparently. Remove when all call sites
+// are updated to `schema.locations`.
+export const branches = locations;
 
 export const brand_closure_config = sqliteTable('brand_closure_config', {
   id: text('id').primaryKey(),
@@ -492,7 +610,9 @@ export const delivery_drivers = sqliteTable('delivery_drivers', {
 
 export const delivery_pricing_config = sqliteTable('delivery_pricing_config', {
   id: text('id').primaryKey(),
+  // brand_id kept for backward compat; account_id is the canonical field.
   brand_id: text('brand_id'),
+  account_id: text('account_id').references(() => accounts.id),
   base_distance_km: real('base_distance_km'),
   base_price: real('base_price'),
   price_per_extra_km: real('price_per_extra_km'),
@@ -541,7 +661,9 @@ export const discount_code_uses = sqliteTable('discount_code_uses', {
 
 export const discount_codes = sqliteTable('discount_codes', {
   id: text('id').primaryKey(),
+  // brand_id kept for backward compat; account_id is the canonical field.
   brand_id: text('brand_id'),
+  account_id: text('account_id').references(() => accounts.id),
   code: text('code'),
   type: text('type'),
   value: text('value'),
@@ -1079,7 +1201,23 @@ export const menu_items = sqliteTable('menu_items', {
   available_webapp: integer('available_webapp', { mode: 'boolean' }),
   promo_price: real('promo_price'),
   promo_etiqueta: text('promo_etiqueta'),
+  // Sprint 2 — Catalog presence model (Square CatalogObject pattern).
+  // true  = present in ALL locations by default (exceptions in product_location_presence).
+  // false = NOT present in any location by default (exceptions in product_location_presence).
+  present_at_all_locations: integer('present_at_all_locations', { mode: 'boolean' }).notNull().default(true),
 });
+
+// One row per (product × location) EXCEPTION.
+// Only rows that differ from `menu_items.present_at_all_locations` are inserted.
+export const product_location_presence = sqliteTable('product_location_presence', {
+  product_id: text('product_id').notNull().references(() => menu_items.id),
+  location_id: text('location_id').notNull().references(() => locations.id),
+  // Override: true = force present, false = force absent.
+  is_present: integer('is_present', { mode: 'boolean' }).notNull(),
+  created_at: text('created_at'),
+}, (t) => [
+  uniqueIndex('plp_product_location_idx').on(t.product_id, t.location_id),
+]);
 
 export const mercadopago_config = sqliteTable('mercadopago_config', {
   id: text('id').primaryKey(),
@@ -1314,11 +1452,25 @@ export const pos_config = sqliteTable('pos_config', {
   updated_at: text('updated_at'),
 });
 
+/**
+ * Matriz artículo × canal. Cada fila representa cómo se comporta un ítem
+ * (`item_carta_id`) dentro de un canal (`price_list_id → price_lists.channel`).
+ *
+ * Fase 3: se extendió con `is_visible` (para soportar artículos canal-exclusivos
+ * o desactivados por canal) y overrides visuales por canal (`custom_name`,
+ * `custom_image_url`, `custom_description`).
+ */
 export const price_list_items = sqliteTable('price_list_items', {
   id: text('id').primaryKey(),
   price_list_id: text('price_list_id'),
   item_carta_id: text('item_carta_id'),
   price: real('price'),
+  // Fase 3: si false, el ítem no se muestra en el canal (canal-exclusivos
+  // vía invertir flags). Default true para preservar comportamiento legacy.
+  is_visible: integer('is_visible', { mode: 'boolean' }),
+  custom_name: text('custom_name'),
+  custom_image_url: text('custom_image_url'),
+  custom_description: text('custom_description'),
   created_at: text('created_at'),
   updated_at: text('updated_at'),
 });
@@ -1438,9 +1590,173 @@ export const promotion_items = sqliteTable('promotion_items', {
   created_at: text('created_at'),
 });
 
+/**
+ * Fase 7 (rework): Modifier unification.
+ *
+ * Reemplaza 4 tablas legacy (`menu_item_option_groups` + `..._items`,
+ * `extra_assignments`, `removable_items`, `item_modifiers`) por un modelo
+ * único inspirado en Toast `Modifier Groups` + Square `CatalogModifierList`.
+ *
+ * Semántica:
+ *  - `modifier_group` es una entidad reusable (ej. "Salsas", "Tamaño").
+ *  - `modifier_group_modifier` es cada opción dentro del grupo (Ketchup,
+ *    Chimi) con `price_delta` positivo (extra), negativo (remove) o cero
+ *    (incluido default).
+ *  - `item_modifier_group` conecta un `menu_item` con un `modifier_group`
+ *    (muchos a muchos).
+ *
+ * Legacy tables quedan como shadow 1 release para rollback.
+ */
+export const modifier_groups = sqliteTable('modifier_groups', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  min_selected: integer('min_selected').notNull().default(0),
+  max_selected: integer('max_selected'),
+  is_required: integer('is_required', { mode: 'boolean' }).notNull().default(false),
+  pricing_mode: text('pricing_mode'), // 'individual' | 'group_average'
+  scope_type: text('scope_type'),
+  scope_id: text('scope_id'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+export const modifier_group_modifiers = sqliteTable('modifier_group_modifiers', {
+  id: text('id').primaryKey(),
+  modifier_group_id: text('modifier_group_id').notNull(),
+  modifier_type: text('modifier_type').notNull(), // 'supply' | 'recipe' | 'menu_item' | 'text_only'
+  ref_id: text('ref_id'),
+  display_name: text('display_name'),
+  price_delta: real('price_delta').notNull().default(0),
+  is_default_selected: integer('is_default_selected', { mode: 'boolean' }).notNull().default(false),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+});
+
+export const item_modifier_groups = sqliteTable('item_modifier_groups', {
+  id: text('id').primaryKey(),
+  menu_item_id: text('menu_item_id').notNull(),
+  modifier_group_id: text('modifier_group_id').notNull(),
+  sort_order: integer('sort_order'),
+});
+
+/**
+ * Fase 6 (rework): Publish workflow / menu snapshot.
+ *
+ * Snapshot JSON del menú vendible resuelto para un (scope, channel) en un
+ * momento dado. POS y WebApp prefieren leer de acá que del builder live,
+ * garantizando que el consumer ve estado "committed" aunque admin siga
+ * editando.
+ *
+ * Invariantes:
+ *  - Por cada (scope_type, scope_id, channel_code) hay a lo sumo UN
+ *    `is_current = true`. Al publicar, el anterior pasa a `is_current = false`.
+ *  - `payload` es JSON del `SellableMenuResponse` de @hoppiness/shared.
+ *  - Si no existe snapshot para un canal, `GET /api/menu/sellable` cae al
+ *    builder on-the-fly (backward compat).
+ */
+export const menu_snapshot = sqliteTable('menu_snapshot', {
+  id: text('id').primaryKey(),
+  scope_type: text('scope_type').notNull(),
+  scope_id: text('scope_id').notNull(),
+  channel_code: text('channel_code').notNull(),
+  payload: text('payload').notNull(),
+  item_count: integer('item_count'),
+  published_at: text('published_at').notNull(),
+  published_by: text('published_by'),
+  is_current: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+});
+
+/**
+ * Fase 3 (rework): visibility unificada.
+ *
+ * Reemplaza los 4 patrones dispersos (`menu_categories.is_visible_menu`,
+ * `menu_items.available_delivery`, `price_list_items.is_visible`,
+ * `promotions.show_in_webapp_section`) por un único contrato entity × canal.
+ *
+ * Semántica:
+ *  - Ausencia de fila = visible (default).
+ *  - `is_visible = false` explícito = oculto en el canal indicado.
+ *  - Permite scoping opcional (marca vs. sucursal específica) para Fase 0.
+ */
+export const entity_channel_visibility = sqliteTable('entity_channel_visibility', {
+  id: text('id').primaryKey(),
+  entity_type: text('entity_type').notNull(), // 'menu_item' | 'menu_category' | 'promotion'
+  entity_id: text('entity_id').notNull(),
+  channel_code: text('channel_code').notNull(),
+  is_visible: integer('is_visible', { mode: 'boolean' }).notNull().default(true),
+  scope_type: text('scope_type'),     // 'brand' | 'branch' | null (global)
+  scope_id: text('scope_id'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+/**
+ * Fase 2 (rework): audit trail del cost rollup engine. Cada vez que el
+ * motor persiste un nuevo `total_cost` distinto del anterior, registra la
+ * delta. Sirve para trazabilidad y para detectar cambios en cascada.
+ */
+export const cost_rollup_audit = sqliteTable('cost_rollup_audit', {
+  id: text('id').primaryKey(),
+  item_id: text('item_id').notNull(),
+  trigger: text('trigger').notNull(),
+  old_cost: real('old_cost'),
+  new_cost: real('new_cost').notNull(),
+  triggered_by: text('triggered_by'),
+  at: text('at').notNull(),
+});
+
+/**
+ * Fase 6: composición de un combo (ítem de carta tipo `combo`).
+ * Cada fila representa que el combo `combo_id` incluye `quantity` unidades
+ * del `component_id` (otro `menu_item` simple). El costo del combo se
+ * calcula como `SUM(component.total_cost * quantity)` vía `recalculateComboCost`.
+ */
+export const menu_item_components = sqliteTable('menu_item_components', {
+  id: text('id').primaryKey(),
+  combo_id: text('combo_id').notNull(),
+  component_id: text('component_id').notNull(),
+  quantity: integer('quantity').notNull(),
+  sort_order: integer('sort_order'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+});
+
+/**
+ * Fase 5: log de cambios pendientes por canal (para Rappi/PedidosYa/MPD).
+ * Cada vez que un cambio impacta un canal de apps, se registra una fila.
+ * Al generar el PDF "checklist" se marcan como incluidas (`included_in_pdf_id`).
+ */
+export const channel_pending_changes = sqliteTable('channel_pending_changes', {
+  id: text('id').primaryKey(),
+  channel_code: text('channel_code').notNull(),
+  change_type: text('change_type').notNull(), // 'new_article' | 'price_change' | 'deactivation' | 'new_promotion' | 'promotion_change' | 'promotion_end'
+  entity_type: text('entity_type').notNull(), // 'menu_item' | 'promotion'
+  entity_id: text('entity_id').notNull(),
+  payload: text('payload').notNull(),          // JSON serializado con snapshot del cambio
+  created_at: text('created_at'),
+  created_by: text('created_by'),
+  included_in_pdf_id: text('included_in_pdf_id'),
+});
+
+/**
+ * Fase 5: registro de cada PDF generado. Permite trackear qué le enviaste
+ * a cada encargado y cuándo confirmó que lo cargó.
+ */
+export const channel_pdf_exports = sqliteTable('channel_pdf_exports', {
+  id: text('id').primaryKey(),
+  channel_code: text('channel_code').notNull(),
+  generated_at: text('generated_at'),
+  generated_by: text('generated_by'),
+  delivered_to: text('delivered_to'),
+  confirmed_loaded_at: text('confirmed_loaded_at'),
+  change_count: integer('change_count'),
+});
+
 export const promotions = sqliteTable('promotions', {
   id: text('id').primaryKey(),
+  // brand_id kept for backward compat; account_id is the canonical field.
   brand_id: text('brand_id'),
+  account_id: text('account_id').references(() => accounts.id),
   name: text('name'),
   description: text('description'),
   type: text('type'),
@@ -1461,7 +1777,40 @@ export const promotions = sqliteTable('promotions', {
   created_at: text('created_at'),
   updated_at: text('updated_at'),
   deleted_at: text('deleted_at'),
+  // Legacy: array de canales serializado como JSON. Reemplazado por
+  // `promotion_channel_config` (ver abajo). Se conserva como shadow durante
+  // 1 release para rollback y compat. Si hay filas en promotion_channel_config
+  // para la promo, ésas tienen precedencia.
   canales: text('canales'),
+  // Quién banca el descuento por default (puede sobrescribirse por canal).
+  // Valores: 'restaurant' | 'channel' | 'split'.
+  funded_by: text('funded_by'),
+  // Formato de presentación por default. 'percentage' | 'final_price' | 'both' | 'banner_only'.
+  display_format: text('display_format'),
+  // Si true, la promo se destaca en la sección "PROMOS DE HOY" de la WebApp.
+  show_in_webapp_section: integer('show_in_webapp_section', { mode: 'boolean' }),
+});
+
+// Config por (promoción × canal). Reemplaza al array `promotions.canales`.
+// Una fila por canal donde la promo aplica, con overrides opcionales.
+export const promotion_channel_config = sqliteTable('promotion_channel_config', {
+  id: text('id').primaryKey(),
+  promotion_id: text('promotion_id').notNull(),
+  // Código del canal (slug). Ej: 'webapp', 'dine_in', 'rappi', 'pedidos_ya', 'mp_delivery'.
+  // Se guarda como string por simplicidad de lookup (matching `sales_channels.code`
+  // y el array legacy `promotions.canales`).
+  channel_code: text('channel_code').notNull(),
+  // Si false, la promo está configurada para este canal pero apagada.
+  is_active_in_channel: integer('is_active_in_channel', { mode: 'boolean' }).notNull().default(true),
+  // Overrides opcionales por canal (si null, usa los defaults de la promo).
+  custom_discount_value: real('custom_discount_value'),
+  custom_final_price: real('custom_final_price'),
+  funded_by: text('funded_by'),
+  display_format: text('display_format'),
+  banner_image_url: text('banner_image_url'),
+  promo_text: text('promo_text'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
 });
 
 export const push_subscriptions = sqliteTable('push_subscriptions', {
@@ -1899,7 +2248,11 @@ export const supplier_payments = sqliteTable('supplier_payments', {
 
 export const suppliers = sqliteTable('suppliers', {
   id: text('id').primaryKey(),
-  ambito: text('ambito'),
+  // account_id: tenant root. Replaces `ambito='marca'` pattern.
+  // NULL = legacy row (treat as Hoppiness account during transition).
+  account_id: text('account_id').references(() => accounts.id),
+  // location_id: NULL = account-level (visible to all locations of the account).
+  // NOT NULL = exclusive to that location. Replaces `ambito` + branch_id dual.
   branch_id: text('branch_id'),
   business_name: text('business_name'),
   cuit: text('cuit'),
@@ -2093,4 +2446,36 @@ export const work_stations = sqliteTable('work_stations', {
   is_active: integer('is_active', { mode: 'boolean' }),
   created_at: text('created_at'),
 });
+
+// ============================================================================
+// SPRINT 3 — Capability-based permissions (replaces role enum + branch_permissions)
+// ============================================================================
+
+// Per-location write permissions for a user.
+// capabilities stored as JSON TEXT array, e.g.
+//   '["operate_pos","manage_inventory"]'
+export const user_location_access = sqliteTable('user_location_access', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.id),
+  location_id: text('location_id').notNull().references(() => locations.id),
+  // JSON array of LocationCapability strings
+  capabilities: text('capabilities').notNull().default('[]'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+}, (t) => [
+  uniqueIndex('ula_user_location_idx').on(t.user_id, t.location_id),
+]);
+
+// Account-level read/aggregate permissions for a user.
+export const user_account_access = sqliteTable('user_account_access', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.id),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  // JSON array of AccountCapability strings
+  capabilities: text('capabilities').notNull().default('[]'),
+  created_at: text('created_at'),
+  updated_at: text('updated_at'),
+}, (t) => [
+  uniqueIndex('uaa_user_account_idx').on(t.user_id, t.account_id),
+]);
 

@@ -621,9 +621,17 @@ router.get('/brand-closures', requireAuth, requireSuperadmin, async (req, res, n
 // ── Recalculate Costs ────────────────────────────────────────────────
 
 // POST /admin/recalculate-all-costs
-router.post('/recalculate-all-costs', requireAuth, requireSuperadmin, async (_req, res, next) => {
+// Fase 2 (rework): antes era stub. Ahora ejecuta el cost rollup engine
+// completo (recetas → items → combos, leaf-first).
+router.post('/recalculate-all-costs', requireAuth, requireSuperadmin, async (req, res, next) => {
   try {
-    res.json({ success: true, message: 'Cost recalculation triggered' });
+    const { rollupAll } = await import('../services/costRollup.js');
+    const stats = await rollupAll(req.user?.userId ?? null);
+    res.json({
+      success: true,
+      message: 'Cost recalculation completed',
+      stats,
+    });
   } catch (err) { next(err); }
 });
 

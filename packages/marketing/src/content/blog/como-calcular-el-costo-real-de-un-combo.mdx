@@ -1,0 +1,67 @@
+---
+title: Cómo calcular el costo real de un combo
+description: La mayoría de los restaurantes calculan el costo de un combo sumando los ingredientes. Eso está mal. Este artículo explica por qué y cómo hacerlo bien.
+date: 2026-04-01
+author: Equipo RestoStack
+tags: [costeo, operación, gestión]
+excerpt: La mayoría de los restaurantes calculan el costo de un combo sumando los ingredientes. Eso está mal.
+---
+
+El combo más vendido de tu carta probablemente tiene un costo equivocado.
+
+No porque lo hayas calculado mal. Sino porque la forma en que casi todos calculan el costo de un combo está incompleta.
+
+## El error más común
+
+Cuando alguien calcula el costo de un combo, empieza por los ingredientes:
+
+- Pan: $150
+- Carne: $800
+- Queso: $120
+- Tomate: $40
+- Lechuga: $20
+- Aderezo: $30
+
+Total: $1.160
+
+Y ese número está mal. No porque los precios sean incorrectos. Sino porque le faltan capas.
+
+## Lo que falta: los componentes no directos
+
+Hay insumos que van en el combo pero que no se suelen cargar por unidad:
+
+**Packaging**: La caja, el papel, la bolsita de papas, el sello de entrega — todo eso tiene costo. Si vendés 400 combos por día y cada packaging cuesta $180, son $72.000 por día que no estás viendo en tu costeo.
+
+**Condimentos de mesa / mostrador**: El ketchup que la gente pone extra. El servilletero que se renueva. La sal. Minucias individuales, costos reales a escala.
+
+**Mermas de producción**: Si hacés 100 hamburguesas y tirás 3 porque se rompieron en la cocción, tu merma es del 3%. Ese 3% tiene que estar en tu costo. Si no está, tu margen es una mentira.
+
+## La fórmula real
+
+```
+Costo real del combo = 
+  suma de ingredientes 
+  + packaging proporcional
+  + condimentos estimados
+  + merma histórica (%)
+  + overhead variable (gas, electricidad por unidad)
+```
+
+## Por qué esto importa
+
+Si tu combo cuesta $1.160 según tus cálculos actuales y lo vendés a $4.200, tu margen aparente es del 72%. Bonito.
+
+Pero si el costo real con packaging, merma y overhead es $1.580, tu margen real es del 62%. Diez puntos menos. En un negocio con 400 combos diarios, eso es plata real.
+
+## Cómo RestoStack lo resuelve
+
+En RestoStack, las recetas tienen componentes en cascada. Podés cargar:
+
+- Los ingredientes por unidad
+- El packaging como componente del combo (no del producto)
+- La merma histórica por insumo
+- Los overheads variables en el costeo general
+
+Y el sistema calcula el costo real en tiempo real. Cuando cambia el precio de la carne, cambia el costo de cada producto, cada combo y cada variante que la incluye — automáticamente.
+
+El número que ves en tu tablero es el número real.

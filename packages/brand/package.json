@@ -1,0 +1,19 @@
+{
+  "name": "@restostack/brand",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css"
+  },
+  "scripts": {},
+  "devDependencies": {
+    "@types/react": "^18.3.23",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

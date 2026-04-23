@@ -1,0 +1,56 @@
+---
+title: Por qué multi-canal no es lo mismo que multi-POS
+description: Tener Rappi, PedidosYa y mostrador no significa que operás multi-canal. Significa que operás tres negocios distintos desde la misma cocina.
+date: 2026-04-10
+author: Equipo RestoStack
+tags: [multi-canal, operación, integración]
+excerpt: Tener Rappi, PedidosYa y mostrador no significa que operás multi-canal.
+---
+
+Si vendés por mostrador, Rappi y PedidosYa, ¿eso es multi-canal?
+
+Técnicamente sí. Operativamente, probablemente no.
+
+## Tres canales, tres sistemas, tres problemas
+
+La mayoría de los operadores que tienen múltiples canales los operan así:
+
+- **Mostrador**: POS que cobra y manda comanda a cocina
+- **Rappi**: tablet separada con catálogo propio
+- **PedidosYa**: otra tablet, otro catálogo
+
+Resultado: tres sistemas, tres precios que se desincronían, tres historial de ventas que no suman, y alguien que a las 23 hs tiene que reconciliar todo a mano en una planilla.
+
+Eso no es multi-canal. Eso es multi-POS.
+
+## Qué es multi-canal de verdad
+
+Multi-canal nativo significa que hay **un solo catálogo** que se publica en todos los canales. Cuando cambiás el precio de la Crispy Burger, cambia en el POS, en Rappi y en PedidosYa. Al mismo tiempo.
+
+Y cuando cerrás el día, hay **un solo dashboard** con las ventas de todos los canales. Sin sumar planillas.
+
+## El problema del catálogo duplicado
+
+Cuando el catálogo existe por separado en cada canal, pasan cosas malas:
+
+1. **Precios divergentes**: El combo sale $4.200 en el mostrador y $4.800 en Rappi. ¿Correcto? Tal vez. ¿Intencional? Quizás no.
+
+2. **Disponibilidad desincronizada**: Sacás el combo del menú de mostrador porque se agotó el pan. Rappi sigue aceptando pedidos. La cocina tiene que rechazarlos.
+
+3. **Doble trabajo de actualización**: Cada vez que cambia un precio, hay que entrarlo en cada plataforma. El error es cuestión de tiempo.
+
+## El diferencial de multi-canal nativo
+
+Con multi-canal nativo, el flujo es:
+
+1. Cargás tu catálogo una vez en RestoStack
+2. Configurás los overrides por canal (precio diferente en Rappi, imágenes distintas, qué combos aplican a delivery)
+3. RestoStack sincroniza todo automáticamente
+
+Y cuando el stock de un ítem baja de un umbral, lo podés ocultar en todos los canales o solo en algunos — desde un mismo lugar.
+
+## El impacto en operación
+
+Un operador que manejaba 3 canales manualmente nos contó que pasaba 45 minutos por día actualizando catálogos. 45 × 365 = 16.425 minutos/año. Casi 11 días hábiles de trabajo tirado a actualizar precios a mano.
+
+Con RestoStack, ese tiempo es cero.

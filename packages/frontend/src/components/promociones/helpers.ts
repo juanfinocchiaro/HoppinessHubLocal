@@ -1,6 +1,11 @@
-import type { PromocionFormData } from '@/hooks/usePromociones';
+import type {
+  PromocionFormData,
+  PromotionChannelConfig,
+  PromotionFundedBy,
+  PromotionDisplayFormat,
+} from '@/hooks/usePromociones';
 import type { PromoItemDraft } from './types';
-import { ALL_CANALES, CANAL_LABELS } from './constants';
+import { ALL_CANALES, CANAL_LABELS, emptyChannelConfig } from './constants';
 
 export function formatTimeRange(inicio: string, fin: string): string {
   const h0 = inicio?.slice(0, 5) || '00:00';
@@ -33,6 +38,19 @@ export function buildItemLabel(item: {
   return parts.join(' + ');
 }
 
+function normalizeChannelConfig(c: PromotionChannelConfig) {
+  return {
+    channel_code: c.channel_code,
+    is_active_in_channel: c.is_active_in_channel,
+    custom_final_price: c.custom_final_price,
+    custom_discount_value: c.custom_discount_value,
+    funded_by: c.funded_by,
+    display_format: c.display_format,
+    banner_image_url: c.banner_image_url,
+    promo_text: c.promo_text,
+  };
+}
+
 export function getDraftSignature(form: PromocionFormData, promoItems: PromoItemDraft[]) {
   const normalized = {
     form: {
@@ -42,6 +60,9 @@ export function getDraftSignature(form: PromocionFormData, promoItems: PromoItem
       categoria_ids: [...form.categoria_ids].sort(),
       branch_ids: [...form.branch_ids].sort(),
       canales: [...form.canales].sort(),
+      channel_configs: [...(form.channel_configs || [])]
+        .map(normalizeChannelConfig)
+        .sort((a, b) => a.channel_code.localeCompare(b.channel_code)),
     },
     promoItems: [...promoItems]
       .map((item) => ({
@@ -59,16 +80,66 @@ export function getDraftSignature(form: PromocionFormData, promoItems: PromoItem
   return JSON.stringify(normalized);
 }
 
+/**
+ * Sincroniza `canales` (array legacy) con `channel_configs`:
+ * - Agrega configs faltantes para cada canal en `canales`.
+ * - Marca inactivos (is_active_in_channel=false) los configs de canales que
+ *   NO están en `canales`.
+ *
+ * Esto permite editar la lista de canales con checkboxes (UX vieja) sin
+ * perder los overrides por canal ya configurados.
+ */
+export function syncChannelConfigsWithCanales(
+  canales: string[],
+  existing: PromotionChannelConfig[] | undefined,
+): PromotionChannelConfig[] {
+  const byCode = new Map((existing || []).map((c) => [c.channel_code, c] as const));
+  const result: PromotionChannelConfig[] = [];
+
+  for (const code of canales) {
+    const found = byCode.get(code);
+    result.push(found ? { ...found, is_active_in_channel: true } : emptyChannelConfig(code, true));
+  }
+
+  for (const cfg of existing || []) {
+    if (!canales.includes(cfg.channel_code)) {
+      result.push({ ...cfg, is_active_in_channel: false });
+    }
+  }
+
+  return result;
+}
+
 export function buildFormFromPromo(promo: {
-  name: string; description: string | null; tipo: string; valor: number;
-  restriccion_pago: string; dias_semana: number[]; hora_inicio: string; hora_fin: string;
-  fecha_inicio: string | null; fecha_fin: string | null; aplica_a: string;
-  producto_ids: string[]; categoria_ids: string[]; tipo_usuario: string;
-  activa: boolean; branch_ids: string[]; canales: string[] | null;
+  name: string;
+  description?: string | null;
+  descripcion?: string | null;
+  tipo: string;
+  valor: number;
+  restriccion_pago: string;
+  dias_semana: number[];
+  hora_inicio: string;
+  hora_fin: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  aplica_a: string;
+  producto_ids: string[];
+  categoria_ids: string[];
+  tipo_usuario: string;
+  /** Backend usa `is_active`; algunos callers legacy usan `activa`. */
+  is_active?: boolean;
+  activa?: boolean;
+  branch_ids: string[];
+  canales: string[] | null;
+  channel_configs?: PromotionChannelConfig[];
+  funded_by?: PromotionFundedBy | null;
+  display_format?: PromotionDisplayFormat | null;
+  show_in_webapp_section?: boolean;
 }): PromocionFormData {
+  const canales = promo.canales || ALL_CANALES;
   return {
     name: promo.name,
-    descripcion: promo.description,
+    descripcion: promo.descripcion ?? promo.description ?? null,
     tipo: promo.tipo as PromocionFormData['tipo'],
     valor: promo.valor,
     restriccion_pago: promo.restriccion_pago as PromocionFormData['restriccion_pago'],
@@ -81,8 +152,12 @@ export function buildFormFromPromo(promo: {
     producto_ids: promo.producto_ids,
     categoria_ids: promo.categoria_ids,
     tipo_usuario: promo.tipo_usuario as PromocionFormData['tipo_usuario'],
-    is_active: promo.activa,
+    is_active: promo.is_active ?? promo.activa ?? true,
     branch_ids: promo.branch_ids,
-    canales: promo.canales || ALL_CANALES,
+    canales,
+    channel_configs: syncChannelConfigsWithCanales(canales, promo.channel_configs),
+    funded_by: promo.funded_by ?? 'restaurant',
+    display_format: promo.display_format ?? 'final_price',
+    show_in_webapp_section: promo.show_in_webapp_section ?? true,
   };
 }

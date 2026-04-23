@@ -8,9 +8,22 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 // Proveedores
 // ---------------------------------------------------------------------------
 
-export async function fetchProveedores(branchId?: string) {
+/**
+ * Fetches suppliers scoped by location or account.
+ *
+ * @param locationId - UUID of the location to fetch suppliers for
+ *   (includes account-level suppliers shared across locations).
+ *   Pass `'__account_scope__'` to fetch only account-level suppliers.
+ *   If undefined, returns all visible suppliers (admin use).
+ */
+export async function fetchProveedores(locationId?: string) {
   const params: Record<string, string> = {};
-  if (branchId) params.branch_id = branchId;
+  if (locationId === '__account_scope__') {
+    params.scope = 'account';
+  } else if (locationId) {
+    params.scope = 'location';
+    params.branch_id = locationId;
+  }
   return apiGet('/suppliers', params);
 }
 

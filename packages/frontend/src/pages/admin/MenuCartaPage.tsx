@@ -24,6 +24,10 @@ import {
   Calculator,
 } from 'lucide-react';
 import { ProductPreviewPanel } from '@/components/menu/ProductPreviewPanel';
+import { TipoImpresionBadge, TIPO_IMPRESION_OPTIONS, type TipoImpresion } from '@/components/menu/TipoImpresionBadge';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { useItemsCarta } from '@/hooks/useItemsCarta';
 import { useMenuCategorias, useMenuCategoriaMutations } from '@/hooks/useMenu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -60,7 +64,9 @@ interface SortableCatProps {
   onToggle: () => void;
   editingId: string | null;
   editingNombre: string;
+  editingTipoImpresion: TipoImpresion;
   setEditingNombre: (v: string) => void;
+  setEditingTipoImpresion: (v: TipoImpresion) => void;
   setEditingId: (v: string | null) => void;
   handleUpdate: () => void;
   setDeleting: (v: MenuCategoria | null) => void;
@@ -76,7 +82,9 @@ function SortableCategoryCard({
   onToggle,
   editingId,
   editingNombre,
+  editingTipoImpresion,
   setEditingNombre,
+  setEditingTipoImpresion,
   setEditingId,
   handleUpdate,
   setDeleting,
@@ -121,6 +129,19 @@ function SortableCategoryCard({
                   if (e.key === 'Escape') setEditingId(null);
                 }}
               />
+              <Select
+                value={editingTipoImpresion}
+                onValueChange={(v) => setEditingTipoImpresion(v as TipoImpresion)}
+              >
+                <SelectTrigger className="h-7 w-36 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIPO_IMPRESION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleUpdate}>
                 <Check className="w-3.5 h-3.5 text-green-600" />
               </Button>
@@ -141,6 +162,7 @@ function SortableCategoryCard({
                   <Badge variant="secondary" className="text-xs font-normal">
                     {items.length} {items.length === 1 ? 'item' : 'items'}
                   </Badge>
+                  <TipoImpresionBadge tipo={cat.print_type} />
                   <ChevronDown
                     className={`w-4 h-4 text-muted-foreground ml-auto transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                   />
@@ -151,10 +173,10 @@ function SortableCategoryCard({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
-                  title={cat.visible_en_carta === false ? 'Mostrar en Carta' : 'Ocultar de Carta'}
+                  title={cat.is_visible_menu === false ? 'Mostrar en Carta' : 'Ocultar de Carta'}
                   onClick={() => onToggleVisibility(cat)}
                 >
-                  {cat.visible_en_carta === false ? (
+                  {cat.is_visible_menu === false ? (
                     <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
                   ) : (
                     <Eye className="w-3.5 h-3.5" />
@@ -167,6 +189,7 @@ function SortableCategoryCard({
                   onClick={() => {
                     setEditingId(cat.id);
                     setEditingNombre(cat.name);
+                    setEditingTipoImpresion((cat.print_type as TipoImpresion) || 'comanda');
                   }}
                 >
                   <Pencil className="w-3.5 h-3.5" />
@@ -258,8 +281,10 @@ export default function MenuCartaPage() {
   // Category inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingNombre, setEditingNombre] = useState('');
+  const [editingTipoImpresion, setEditingTipoImpresion] = useState<TipoImpresion>('comanda');
   const [showNew, setShowNew] = useState(false);
   const [newNombre, setNewNombre] = useState('');
+  const [newTipoImpresion, setNewTipoImpresion] = useState<TipoImpresion>('comanda');
   const [deleting, setDeleting] = useState<MenuCategoria | null>(null);
 
   const sensors = useSensors(
@@ -296,14 +321,22 @@ export default function MenuCartaPage() {
 
   const handleCreate = async () => {
     if (!newNombre.trim()) return;
-    await create.mutateAsync({ name: newNombre.trim(), sort_order: (categorias?.length || 0) + 1 });
+    await create.mutateAsync({
+      name: newNombre.trim(),
+      sort_order: (categorias?.length || 0) + 1,
+      print_type: newTipoImpresion,
+    } as Parameters<typeof create.mutateAsync>[0]);
     setNewNombre('');
+    setNewTipoImpresion('comanda');
     setShowNew(false);
   };
 
   const handleUpdate = async () => {
     if (!editingId || !editingNombre.trim()) return;
-    await update.mutateAsync({ id: editingId, data: { name: editingNombre.trim() } });
+    await update.mutateAsync({
+      id: editingId,
+      data: { name: editingNombre.trim(), print_type: editingTipoImpresion },
+    } as Parameters<typeof update.mutateAsync>[0]);
     setEditingId(null);
   };
 
@@ -372,6 +405,19 @@ export default function MenuCartaPage() {
                 }
               }}
             />
+            <Select
+              value={newTipoImpresion}
+              onValueChange={(v) => setNewTipoImpresion(v as TipoImpresion)}
+            >
+              <SelectTrigger className="w-36 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIPO_IMPRESION_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               size="sm"
               onClick={handleCreate}
@@ -416,7 +462,7 @@ export default function MenuCartaPage() {
           >
             <div className="space-y-3">
               {categorias
-                ?.filter((cat) => cat.visible_en_carta !== false)
+                ?.filter((cat) => cat.is_visible_menu !== false)
                 .map((cat) => (
                   <SortableCategoryCard
                     key={cat.id}
@@ -426,12 +472,14 @@ export default function MenuCartaPage() {
                     onToggle={() => toggleCat(cat.id)}
                     editingId={editingId}
                     editingNombre={editingNombre}
+                    editingTipoImpresion={editingTipoImpresion}
                     setEditingNombre={setEditingNombre}
+                    setEditingTipoImpresion={setEditingTipoImpresion}
                     setEditingId={setEditingId}
                     handleUpdate={handleUpdate}
                     setDeleting={setDeleting}
                     onToggleVisibility={(c) =>
-                      toggleVisibility.mutate({ id: c.id, visible: !c.visible_en_carta })
+                      toggleVisibility.mutate({ id: c.id, visible: c.is_visible_menu === false })
                     }
                     expandedItemId={expandedItemId}
                     setExpandedItemId={setExpandedItemId}
@@ -439,14 +487,14 @@ export default function MenuCartaPage() {
                 ))}
 
               {/* Hidden categories section */}
-              {categorias?.some((cat) => cat.visible_en_carta === false) && (
+              {categorias?.some((cat) => cat.is_visible_menu === false) && (
                 <div className="pt-4 border-t">
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
                     <EyeOff className="w-3.5 h-3.5" /> Categorías ocultas
                   </p>
                   <div className="space-y-2">
                     {categorias
-                      ?.filter((cat) => cat.visible_en_carta === false)
+                      ?.filter((cat) => cat.is_visible_menu === false)
                       .map((cat) => (
                         <div
                           key={cat.id}

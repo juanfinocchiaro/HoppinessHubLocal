@@ -4,13 +4,16 @@
   "version": "0.0.1",
   "workspaces": [
     "packages/shared",
+    "packages/brand",
     "packages/backend",
-    "packages/frontend"
+    "packages/frontend",
+    "packages/marketing"
   ],
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev -w @hoppiness/frontend",
     "dev:backend": "npm run dev -w @hoppiness/backend",
+    "dev:marketing": "npm run dev -w @restostack/marketing",
     "build": "npm run build -w @hoppiness/shared && npm run build -w @hoppiness/backend && npm run build -w @hoppiness/frontend",
     "db:migrate": "npm run db:migrate -w @hoppiness/backend",
     "db:generate": "npm run db:generate -w @hoppiness/backend",

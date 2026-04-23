@@ -9,12 +9,16 @@ const REFRESH_TOKEN_EXPIRY = '30d';
 export interface JWTPayload {
   userId: string;
   email: string;
+  accountId?: string;
+  impersonatingUserId?: string;
+  originalAdminId?: string;
 }
 
 declare global {
   namespace Express {
     interface Request {
       user?: JWTPayload;
+      accountId?: string;
     }
   }
 }
@@ -43,6 +47,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const payload = verifyAccessToken(token);
     req.user = payload;
+    if (payload.accountId) {
+      req.accountId = payload.accountId;
+    }
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });

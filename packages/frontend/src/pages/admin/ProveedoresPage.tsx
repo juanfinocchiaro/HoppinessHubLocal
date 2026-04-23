@@ -12,14 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
-import { useProveedores, useProveedorMutations } from '@/hooks/useProveedores';
+import { useBrandProveedores, useProveedorMutations } from '@/hooks/useProveedores';
 import { ProveedorFormModal } from '@/components/finanzas/ProveedorFormModal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/states';
 import type { Proveedor } from '@/types/financial';
 
 export default function ProveedoresPage() {
-  const { data: proveedores, isLoading, error: _error } = useProveedores('__marca_only__');
+  const { data: proveedores, isLoading, error: _error } = useBrandProveedores();
   const { softDelete } = useProveedorMutations();
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);

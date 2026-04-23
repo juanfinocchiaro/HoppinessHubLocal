@@ -9,6 +9,8 @@ import {
   ChevronUp,
   Trash2,
   Store,
+  Package,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useItemCartaMutations } from '@/hooks/useItemsCarta';
 import type { LucideIcon } from 'lucide-react';
@@ -19,8 +21,10 @@ import { AsignadosInline } from './AsignadosSection';
 import { EditarInline } from './EditarInline';
 import { HistorialInline } from './HistorialInline';
 import { ChannelPricesInline } from './ChannelPricesInline';
+import { ComboInline } from './ComboInline';
+import { ModifiersInline } from './ModifiersInline';
 
-type PanelTab = 'composicion' | 'asignados' | 'editar' | 'historial' | 'canales';
+type PanelTab = 'composicion' | 'combo' | 'asignados' | 'editar' | 'historial' | 'canales' | 'modifiers';
 
 interface Props {
   item: any;
@@ -29,13 +33,14 @@ interface Props {
 }
 
 export function ItemExpandedPanel({ item, onClose, onDeleted }: Props) {
+  const isExtra = item.type === 'extra';
+  const isCombo = item.type === 'combo';
   const [activeTab, setActiveTab] = useState<PanelTab>(
-    item.type === 'extra' ? 'asignados' : 'composicion',
+    isExtra ? 'asignados' : isCombo ? 'combo' : 'composicion',
   );
   const [showDelete, setShowDelete] = useState(false);
   const mutations = useItemCartaMutations();
 
-  const isExtra = item.type === 'extra';
   const isAutoExtra =
     isExtra && (item.composicion_ref_preparacion_id || item.composicion_ref_insumo_id);
 
@@ -46,12 +51,20 @@ export function ItemExpandedPanel({ item, onClose, onDeleted }: Props) {
         { id: 'editar', label: 'Editar', icon: DollarSign },
         { id: 'historial', label: 'Historial', icon: Clock },
       ]
-    : [
-        { id: 'composicion', label: 'Composición', icon: Layers },
-        { id: 'canales', label: 'Canales', icon: Store },
-        { id: 'editar', label: 'Editar', icon: DollarSign },
-        { id: 'historial', label: 'Historial', icon: Clock },
-      ];
+    : isCombo
+      ? [
+          { id: 'combo', label: 'Combo', icon: Package },
+          { id: 'canales', label: 'Canales', icon: Store },
+          { id: 'editar', label: 'Editar', icon: DollarSign },
+          { id: 'historial', label: 'Historial', icon: Clock },
+        ]
+      : [
+          { id: 'composicion', label: 'Composición', icon: Layers },
+          { id: 'modifiers', label: 'Modifiers', icon: SlidersHorizontal },
+          { id: 'canales', label: 'Canales', icon: Store },
+          { id: 'editar', label: 'Editar', icon: DollarSign },
+          { id: 'historial', label: 'Historial', icon: Clock },
+        ];
 
   return (
     <div className="bg-muted/30 border-x border-b rounded-b-lg">
@@ -96,6 +109,8 @@ export function ItemExpandedPanel({ item, onClose, onDeleted }: Props) {
 
       <div className="p-4">
         {activeTab === 'composicion' && <ComposicionInline item={item} mutations={mutations} />}
+        {activeTab === 'combo' && <ComboInline item={item} />}
+        {activeTab === 'modifiers' && <ModifiersInline itemId={item.id} />}
         {activeTab === 'asignados' && <AsignadosInline item={item} />}
         {activeTab === 'canales' && <ChannelPricesInline item={item} />}
         {activeTab === 'editar' && (

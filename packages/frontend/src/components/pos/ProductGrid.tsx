@@ -1,8 +1,12 @@
 /**
- * ProductGrid - Grilla de productos con fotos, tabs de categoría, búsqueda y scroll spy
+ * ProductGrid - Grilla de productos con fotos, tabs de categoría, búsqueda y scroll spy.
+ *
+ * Fase 1 follow-up: consume el contrato canónico `useSellableMenu` via
+ * `sellableItemsToPos()`. Ya no lee `menu_items` crudo ni combina promos
+ * ad-hoc; el backend resuelve todo (visibility, custom_*, combos, promos
+ * activas por canal).
  */
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { useItemsCarta } from '@/hooks/useItemsCarta';
 import { useQueryClient } from '@tanstack/react-query';
 import { fetchItemExtraAssignments, fetchItemRemovibles } from '@/services/posService';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,23 +15,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Search, X, Tag, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
-import { useActivePromoItems, type PromocionItem, type PromocionItemExtra } from '@/hooks/usePromociones';
+import type { PromocionItem, PromocionItemExtra } from '@/hooks/usePromociones';
+import { useSellableMenu } from '@/hooks/useSellableMenu';
+import { sellableItemsToPos, type PosGridItem, type PosPromoArticle } from '@/lib/menu/sellableToPos';
 import { useDebounce } from '@/hooks/useDebounce';
-type ItemCarta = any;
 
-type MenuItemWithCategory = ItemCarta & {
-  menu_categories: { id: string; nombre: string; orden: number | null } | null;
-  rdo_categories: { code: string; name: string } | null;
-};
-
-type PromoArticle = MenuItemWithCategory & {
-  _isPromoArticle: true;
-  _sourceItemId: string;
-  _promoData: PromocionItem;
-  _precioSinPromo: number;
-  _includedLabel: string | null;
-};
-
+type MenuItemWithCategory = PosGridItem;
+type PromoArticle = PosPromoArticle;
 type GridItem = MenuItemWithCategory | PromoArticle;
 
 interface SelectableItem extends Record<string, any> {
@@ -79,8 +73,13 @@ export function ProductGrid({
   disabled,
   promoChannel,
 }: ProductGridProps) {
-  const { data: items, isLoading } = useItemsCarta();
-  const { data: promoItems = [] } = useActivePromoItems(branchId, promoChannel);
+  // Fase 1: canal para el menú resuelto. POS usa 'salon' → 'mostrador';
+  // apps usan el slug directo; undefined cae a 'mostrador' (disabled state).
+  const resolvedChannel = promoChannel === 'salon' ? 'mostrador' : (promoChannel ?? 'mostrador');
+  const { data: sellable, isLoading } = useSellableMenu({
+    channel: resolvedChannel,
+    branch: branchId,
+  });
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,39 +124,12 @@ export function ProductGrid({
     return map;
   }, [cart]);
 
-  const allItems = useMemo(
-    () => ((items ?? []) as MenuItemWithCategory[]).filter((item) => item.tipo !== 'extra'),
-    [items],
-  );
-
-  const promoArticles = useMemo(() => {
-    if (!allItems.length || !promoItems.length) return [];
-    const baseById = new Map(allItems.map((item) => [item.id, item]));
-    return promoItems
-      .map((pi) => {
-        const base = baseById.get(pi.item_carta_id);
-        if (!base || pi.precio_promo >= Number(base.base_price ?? 0)) return null;
-        const extras = pi.preconfigExtras || [];
-        const extrasTotal = extras.reduce((sum, ex) => sum + (ex.precio ?? 0) * ex.cantidad, 0);
-        const precioSinPromo = Number(base.base_price ?? 0) + extrasTotal;
-        const included = extras
-          .filter((ex) => ex.nombre)
-          .map((ex) => (ex.cantidad > 1 ? `${ex.cantidad}x ${ex.nombre}` : ex.nombre));
-        return {
-          ...base,
-          id: `promo:${pi.id}`,
-          _isPromoArticle: true,
-          _sourceItemId: base.id,
-          _promoData: pi,
-          _precioSinPromo: precioSinPromo,
-          _includedLabel: included.length > 0 ? `Incluye: ${included.join(', ')}` : null,
-          name: pi.promocion_nombre || `${base.short_name || base.name} (PROMO)`,
-          short_name: pi.promocion_nombre || `${base.short_name || base.name} (PROMO)`,
-          base_price: precioSinPromo,
-        };
-      })
-      .filter(Boolean) as PromoArticle[];
-  }, [allItems, promoItems]);
+  // Fase 1: el backend ya resolvió visibility + promos. Simplemente
+  // adaptamos al shape que espera el POS.
+  const { baseItems: allItems, promoArticles } = useMemo(() => {
+    if (!sellable?.items) return { baseItems: [] as PosGridItem[], promoArticles: [] as PosPromoArticle[] };
+    return sellableItemsToPos(sellable.items);
+  }, [sellable]);
 
   const searchResults = useMemo(() => {
     if (!debouncedSearch.trim()) return [];

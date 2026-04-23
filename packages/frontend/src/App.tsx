@@ -7,9 +7,9 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { AuthModalProvider } from '@/contexts/AuthModalContext';
 import { AccountSheetsProvider } from '@/contexts/AccountSheetsContext';
+import { CurrentLocationProvider } from '@/contexts/CurrentLocationContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AdminRoute, LocalRoute, RequireQRAccess, RequireAuth } from '@/components/guards';
 import { FloatingOrderChat } from '@/components/webapp/FloatingOrderChat';
 import { SpinnerLoader, TopBarLoader } from '@/components/ui/loaders';
@@ -39,12 +39,17 @@ function RouteChangeIndicator() {
   return show ? <TopBarLoader /> : null;
 }
 
-// Páginas públicas — eagerly loaded (landing / auth)
-import Index from './pages/Index';
+// Páginas de auth — eagerly loaded
 import Ingresar from './pages/Ingresar';
 import AuthPopup from './pages/AuthPopup';
 import Pedir from './pages/Pedir';
 import NotFound from './pages/NotFound';
+
+// Billing + Signup
+const Signup = lazy(() => import('./pages/Signup'));
+const WelcomeWizard = lazy(() => import('./pages/WelcomeWizard'));
+const BillingPage = lazy(() => import('./pages/billing/BillingPage'));
+const SaasAdminPage = lazy(() => import('./pages/saas-admin/SaasAdminPage'));
 
 // Lazy-loaded pages
 const OlvidePassword = lazy(() => import('./pages/OlvidePassword'));
@@ -53,9 +58,6 @@ const RegistroStaff = lazy(() => import('./pages/RegistroStaff'));
 const PedirPage = lazy(() => import('./pages/webapp/PedirPage'));
 const TrackingPage = lazy(() => import('./pages/webapp/TrackingPage'));
 const CadeteTrackingPage = lazy(() => import('./pages/webapp/CadeteTrackingPage'));
-const Franquicias = lazy(() => import('./pages/Franquicias'));
-const Nosotros = lazy(() => import('./pages/Nosotros'));
-const Contacto = lazy(() => import('./pages/Contacto'));
 const FichajeEmpleado = lazy(() => import('./pages/FichajeEmpleado'));
 
 // Mi Local
@@ -134,9 +136,9 @@ const MenuCartaPage = lazy(() => import('./pages/admin/MenuCartaPage'));
 const CentroCostosPage = lazy(() => import('./pages/admin/CentroCostosPage'));
 const PreparacionesPage = lazy(() => import('./pages/admin/PreparacionesPage'));
 const PromocionesPage = lazy(() => import('./pages/admin/PromocionesPage'));
-const CodigosDescuentoPage = lazy(() => import('./pages/admin/CodigosDescuentoPage'));
-const CategoriasCartaPage = lazy(() => import('./pages/admin/CategoriasCartaPage'));
 const CanalesVentaPage = lazy(() => import('./pages/admin/CanalesVentaPage'));
+const ChannelPendingChangesPage = lazy(() => import('./pages/admin/ChannelPendingChangesPage'));
+const ProductoDetailPage = lazy(() => import('./pages/admin/ProductoDetailPage'));
 const DeliveryConfigPage = lazy(() => import('./pages/admin/DeliveryConfigPage'));
 const BranchDeliveryDetailPage = lazy(() => import('./pages/admin/BranchDeliveryDetailPage'));
 
@@ -174,6 +176,7 @@ const App = () => (
       <AuthProvider>
         <ImpersonationProvider>
           <AuthModalProvider>
+            <CurrentLocationProvider>
             <Sonner />
             <BrowserRouter>
               <ErrorBoundary>
@@ -183,14 +186,16 @@ const App = () => (
                   <AuthModal />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
-                      {/* Rutas Públicas con header transparente unificado */}
-                      <Route path="/" element={<PublicLayout />}>
-                        <Route index element={<Index />} />
-                        <Route path="nosotros" element={<Nosotros />} />
-                        <Route path="franquicias" element={<Franquicias />} />
-                        <Route path="contacto" element={<Contacto />} />
-                      </Route>
+                      {/* Rutas públicas → redirect al marketing site RestoStack */}
+                      <Route path="/" element={<Navigate to="/ingresar" replace />} />
+                      <Route path="/nosotros" element={<Navigate to="https://restostack.com/nosotros" replace />} />
+                      <Route path="/franquicias" element={<Navigate to="https://restostack.com/para-chains" replace />} />
+                      <Route path="/contacto" element={<Navigate to="https://restostack.com/contacto" replace />} />
                       <Route path="/ingresar" element={<Ingresar />} />
+                      <Route path="/registro" element={<Signup />} />
+                      <Route path="/bienvenido" element={<RequireAuth><WelcomeWizard /></RequireAuth>} />
+                      <Route path="/billing" element={<RequireAuth><BillingPage /></RequireAuth>} />
+                      <Route path="/saas-admin" element={<RequireAuth><SaasAdminPage /></RequireAuth>} />
                       <Route path="/auth-popup" element={<AuthPopup />} />
                       <Route path="/olvide-password" element={<OlvidePassword />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
@@ -378,18 +383,24 @@ const App = () => (
 
                         {/* Carta */}
                         <Route path="carta" element={<MenuCartaPage />} />
-                        <Route path="categorias-carta" element={<CategoriasCartaPage />} />
+                        {/* Fase 4 follow-up: consolidated into /carta. Route preserved for backward compat. */}
+                        <Route path="categorias-carta" element={<Navigate to="/mimarca/carta" replace />} />
 
-                        {/* Promociones y Códigos */}
+                        {/* Promociones y Códigos (códigos es tab dentro de /promociones desde Fase 4 follow-up) */}
                         <Route path="promociones" element={<PromocionesPage />} />
-                        <Route path="codigos-descuento" element={<CodigosDescuentoPage />} />
+                        <Route path="codigos-descuento" element={<Navigate to="/mimarca/promociones" replace />} />
 
                         {/* Centro de Costos */}
                         <Route path="centro-costos" element={<CentroCostosPage />} />
 
+                        {/* Fase 4: Hub de producto (Productos es el nuevo nombre canónico) */}
+                        <Route path="productos" element={<CentroCostosPage />} />
+                        <Route path="productos/:id" element={<ProductoDetailPage />} />
+
                         {/* Canales de Venta */}
                         <Route path="canales-venta" element={<CanalesVentaPage />} />
                         <Route path="precios-canal" element={<CanalesVentaPage />} />
+                        <Route path="cambios-canal" element={<ChannelPendingChangesPage />} />
 
                         {/* Delivery */}
                         <Route path="delivery" element={<DeliveryConfigPage />} />
@@ -402,12 +413,27 @@ const App = () => (
                         <Route path="configuracion/permisos" element={<PermissionsConfigPage />} />
                       </Route>
 
+                      {/* ── Sprint 4: /app/* canonical routes ────────────────
+                          Legacy routes (/mimarca, /milocal) continue to work.
+                          /app/* redirects to the equivalent legacy paths while
+                          full UX consolidation is completed incrementally. */}
+                      <Route path="/app" element={<Navigate to="/mimarca" replace />} />
+                      <Route path="/app/productos" element={<Navigate to="/mimarca/productos" replace />} />
+                      <Route path="/app/productos/:id" element={<Navigate to="/mimarca/productos/:id" replace />} />
+                      <Route path="/app/carta" element={<Navigate to="/mimarca/carta" replace />} />
+                      <Route path="/app/promociones" element={<Navigate to="/mimarca/promociones" replace />} />
+                      <Route path="/app/canales-venta" element={<Navigate to="/mimarca/canales-venta" replace />} />
+                      <Route path="/app/proveedores" element={<Navigate to="/mimarca/finanzas/proveedores" replace />} />
+                      <Route path="/app/insumos" element={<Navigate to="/mimarca/finanzas/insumos" replace />} />
+                      <Route path="/app/recetas" element={<Navigate to="/mimarca/recetas" replace />} />
+
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
                 </AccountSheetsProvider>
               </ErrorBoundary>
             </BrowserRouter>
+            </CurrentLocationProvider>
           </AuthModalProvider>
         </ImpersonationProvider>
       </AuthProvider>

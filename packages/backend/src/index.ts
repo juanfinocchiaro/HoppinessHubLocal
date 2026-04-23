@@ -32,14 +32,34 @@ import { contactRoutes } from './routes/contacts.routes.js';
 import { notificationRoutes } from './routes/notifications.routes.js';
 import { whatsappRoutes } from './routes/whatsapp.routes.js';
 import { deliveryRoutes } from './routes/delivery.routes.js';
+import { channelRoutes } from './routes/channels.routes.js';
+import { billingRoutes } from './routes/billing.routes.js';
+import { saasSignupRoutes } from './routes/saas-signup.routes.js';
+import { publicRoutes } from './routes/public.routes.js';
+import { startBillingCron } from './services/billingCronJob.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const httpServer = createServer(app);
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',  // marketing dev
+  'https://restostack.com',
+  'https://www.restostack.com',
+  /^https:\/\/restostack.*\.vercel\.app$/,  // Vercel preview deployments
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:8080'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = ALLOWED_ORIGINS.some((o) =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    );
+    callback(allowed ? null : new Error('CORS not allowed'), allowed);
+  },
   credentials: true,
 }));
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -77,6 +97,10 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/channels', channelRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/saas', saasSignupRoutes);
+app.use('/api/public', publicRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -87,8 +111,9 @@ app.use(errorHandler);
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 httpServer.listen(PORT, () => {
-  console.log(`Hoppiness backend running on http://localhost:${PORT}`);
+  console.log(`RestoStack backend running on http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV ?? 'development'}`);
+  startBillingCron();
 });
 
 export { app };

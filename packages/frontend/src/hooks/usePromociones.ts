@@ -18,6 +18,29 @@ import {
   softDeletePromocion,
 } from '@/services/promoService';
 
+/**
+ * Config de una promo para un canal específico. Proviene de la tabla
+ * `promotion_channel_config` (Fase 2). Es la fuente de verdad por sobre el
+ * array legacy `canales` a partir de Fase 2.
+ */
+export interface PromotionChannelConfig {
+  channel_code: string;
+  is_active_in_channel: boolean;
+  /** Override del precio final para este canal (si null usa reglas base). */
+  custom_final_price: number | null;
+  /** Override del valor de descuento (% o $) para este canal. */
+  custom_discount_value: number | null;
+  /** Quién banca este descuento: 'restaurant' | 'channel' | 'split'. */
+  funded_by: 'restaurant' | 'channel' | 'split' | null;
+  /** Formato de presentación: 'percentage' | 'final_price' | 'both' | 'banner_only'. */
+  display_format: 'percentage' | 'final_price' | 'both' | 'banner_only' | null;
+  banner_image_url: string | null;
+  promo_text: string | null;
+}
+
+export type PromotionFundedBy = NonNullable<PromotionChannelConfig['funded_by']>;
+export type PromotionDisplayFormat = NonNullable<PromotionChannelConfig['display_format']>;
+
 export interface Promocion {
   id: string;
   name: string;
@@ -36,7 +59,12 @@ export interface Promocion {
   tipo_usuario: 'todos' | 'nuevo' | 'recurrente' | 'staff' | 'custom_segment';
   is_active: boolean;
   branch_ids: string[];
+  /** @deprecated Usar `channel_configs`. Se mantiene como shadow en DB. */
   canales: string[];
+  channel_configs: PromotionChannelConfig[];
+  funded_by: PromotionFundedBy | null;
+  display_format: PromotionDisplayFormat | null;
+  show_in_webapp_section: boolean;
   created_at: string;
 }
 
@@ -63,15 +91,86 @@ export interface PromocionItem {
 
 export type PromocionFormData = Omit<Promocion, 'id' | 'created_at'>;
 
+/**
+ * Devuelve true si la promo aplica al canal indicado según su
+ * `channel_configs` (nueva fuente de verdad). Si la promo fue normalizada a
+ * partir de `canales` legacy, `channel_configs` incluye todos activos, así
+ * que el comportamiento es compatible.
+ */
+function promoAppliesToChannel(promo: Promocion, canal: string | undefined): boolean {
+  if (!canal) return true;
+  const configs = promo.channel_configs;
+  if (!configs?.length) return true;
+  const match = configs.find((c) => c.channel_code === canal);
+  return !!match && match.is_active_in_channel;
+}
+
+/**
+ * Normaliza una promo tal como viene del backend:
+ * - Parsea `canales` (TEXT) a array.
+ * - Si no hay `channel_configs` (legacy), los deriva del array `canales`.
+ * - Garantiza que el caller siempre ve ambos (compat durante Fase 2).
+ */
+function normalizePromo(raw: Record<string, unknown>): Promocion {
+  const canalesRaw = raw.canales;
+  const canales: string[] = Array.isArray(canalesRaw)
+    ? (canalesRaw as string[])
+    : typeof canalesRaw === 'string' && canalesRaw.trim()
+      ? parseCanalesString(canalesRaw)
+      : ['webapp', 'dine_in', 'rappi', 'pedidos_ya'];
+
+  const rawConfigs = raw.channel_configs as Array<Record<string, unknown>> | undefined;
+  const channel_configs: PromotionChannelConfig[] = Array.isArray(rawConfigs) && rawConfigs.length
+    ? rawConfigs.map((c) => ({
+        channel_code: c.channel_code as string,
+        is_active_in_channel: c.is_active_in_channel !== false,
+        custom_final_price: (c.custom_final_price as number | null) ?? null,
+        custom_discount_value: (c.custom_discount_value as number | null) ?? null,
+        funded_by: (c.funded_by as PromotionChannelConfig['funded_by']) ?? null,
+        display_format: (c.display_format as PromotionChannelConfig['display_format']) ?? null,
+        banner_image_url: (c.banner_image_url as string | null) ?? null,
+        promo_text: (c.promo_text as string | null) ?? null,
+      }))
+    : canales.map((code) => ({
+        channel_code: code,
+        is_active_in_channel: true,
+        custom_final_price: null,
+        custom_discount_value: null,
+        funded_by: null,
+        display_format: null,
+        banner_image_url: null,
+        promo_text: null,
+      }));
+
+  return {
+    ...(raw as unknown as Promocion),
+    canales,
+    channel_configs,
+    funded_by: (raw.funded_by as PromotionFundedBy | null) ?? null,
+    display_format: (raw.display_format as PromotionDisplayFormat | null) ?? null,
+    show_in_webapp_section: raw.show_in_webapp_section !== false,
+  };
+}
+
+function parseCanalesString(raw: string): string[] {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.filter((x): x is string => typeof x === 'string');
+    } catch {
+      /* falls through to CSV */
+    }
+  }
+  return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
 export function usePromociones() {
   return useQuery({
     queryKey: ['promociones'],
     queryFn: async () => {
       const data = await fetchPromocionesService();
-      return (data as any[]).map((p: any) => ({
-        ...p,
-        canales: p.canales ?? ['webapp', 'salon', 'rappi', 'pedidos_ya'],
-      })) as Promocion[];
+      return (data as Array<Record<string, unknown>>).map(normalizePromo);
     },
   });
 }
@@ -143,12 +242,12 @@ export function useActivePromos(branchId: string | undefined, canal?: string) {
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const today = now.toISOString().slice(0, 10);
 
-      return (data as any[])
-        .filter((p: any) => {
+      return (data as Array<Record<string, unknown>>)
+        .map(normalizePromo)
+        .filter((p) => {
           const bids = p.branch_ids ?? [];
           if (bids.length > 0 && (!branchId || !bids.includes(branchId))) return false;
-          const ch = p.canales ?? [];
-          if (canal && ch.length > 0 && !ch.includes(canal)) return false;
+          if (!promoAppliesToChannel(p, canal)) return false;
           const dias = p.dias_semana ?? [];
           if (dias.length > 0 && !dias.includes(currentDay)) return false;
           const hi = (p.hora_inicio ?? '').slice(0, 5);
@@ -158,11 +257,7 @@ export function useActivePromos(branchId: string | undefined, canal?: string) {
           if (p.fecha_inicio && today < p.fecha_inicio) return false;
           if (p.fecha_fin && today > p.fecha_fin) return false;
           return true;
-        })
-        .map((p) => ({
-          ...p,
-          canales: p.canales ?? ['webapp', 'salon', 'rappi', 'pedidos_ya'],
-        }));
+        });
     },
     enabled: !!branchId,
     refetchInterval: 5 * 60 * 1000,
@@ -251,6 +346,10 @@ export function usePromocionMutations() {
     qc.invalidateQueries({ queryKey: ['active-promos'] });
     qc.invalidateQueries({ queryKey: ['promocion-items'] });
     qc.invalidateQueries({ queryKey: ['active-promo-items'] });
+    // P1 #4: el sellable-menu canónico también cambia cuando una promo
+    // se crea/edita/desactiva. POS y WebApp ven el cambio sin F5.
+    qc.invalidateQueries({ queryKey: ['sellable-menu'] });
+    qc.invalidateQueries({ queryKey: ['webapp-menu-items'] });
   };
 
   const savePreconfigExtrasHelper = async (

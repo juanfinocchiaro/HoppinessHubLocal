@@ -60,6 +60,19 @@ export function useItemCartaHistorial(itemId: string | undefined) {
   });
 }
 
+/**
+ * Fase 1 follow-up / P1 #4: tras cualquier mutation que afecte el menú
+ * vendible, invalidar también las caches que consumen POS y WebApp.
+ * Así un cambio en admin se refleja sin F5.
+ */
+function invalidateSellableCaches(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['items-carta'] });
+  qc.invalidateQueries({ queryKey: ['sellable-menu'] });
+  qc.invalidateQueries({ queryKey: ['webapp-menu-items'] });
+  qc.invalidateQueries({ queryKey: ['active-promos'] });
+  qc.invalidateQueries({ queryKey: ['active-promo-items'] });
+}
+
 export function useItemCartaMutations() {
   const qc = useQueryClient();
 
@@ -76,7 +89,7 @@ export function useItemCartaMutations() {
       tipo?: string;
     }) => createItemCarta(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['items-carta'] });
+      invalidateSellableCaches(qc);
       toast.success('Item de carta creado');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -85,7 +98,7 @@ export function useItemCartaMutations() {
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => updateItemCarta(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['items-carta'] });
+      invalidateSellableCaches(qc);
       toast.success('Item actualizado');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -94,7 +107,7 @@ export function useItemCartaMutations() {
   const softDelete = useMutation({
     mutationFn: (id: string) => softDeleteItemCarta(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['items-carta'] });
+      invalidateSellableCaches(qc);
       toast.success('Item eliminado');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -111,7 +124,7 @@ export function useItemCartaMutations() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['item-carta-composicion', vars.item_carta_id] });
       qc.invalidateQueries({ queryKey: ['item-ingredientes-deep', vars.item_carta_id] });
-      qc.invalidateQueries({ queryKey: ['items-carta'] });
+      invalidateSellableCaches(qc);
       toast.success('Composición guardada');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -126,8 +139,8 @@ export function useItemCartaMutations() {
       userId?: string;
     }) => cambiarPrecioItemCarta(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['items-carta'] });
       qc.invalidateQueries({ queryKey: ['item-carta-historial'] });
+      invalidateSellableCaches(qc);
       toast.success('Precio actualizado');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),

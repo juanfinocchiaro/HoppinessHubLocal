@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db/connection.js';
 import * as schema from '../db/schema.js';
 import { requireAuth } from '../middleware/auth.js';
-import { getUserRoles, requireSuperadmin } from '../middleware/permissions.js';
+import { getUserRoles, getUserAccess, requireSuperadmin } from '../middleware/permissions.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { eq, and, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -285,6 +285,51 @@ router.post('/branch-role', requireAuth, requireSuperadmin, async (req, res, nex
     });
 
     res.status(201).json({ id });
+  } catch (err) { next(err); }
+});
+
+// GET /permissions/my-access
+// Returns capability-based access for the current user (Sprint 3).
+router.get('/my-access', requireAuth, async (req, res, next) => {
+  try {
+    const access = await getUserAccess(req.user!.userId);
+
+    // Enrich with location names
+    const locationIds = access.locations.map((l) => l.location_id);
+    let locationNames: Record<string, string> = {};
+    if (locationIds.length > 0) {
+      const locRows = await db
+        .select({ id: schema.locations.id, name: schema.locations.name })
+        .from(schema.locations)
+        .where(inArray(schema.locations.id, locationIds));
+      locationNames = Object.fromEntries(locRows.map((r) => [r.id, r.name ?? r.id]));
+    }
+
+    // Enrich with account name
+    let accountName: string | null = null;
+    if (access.account) {
+      const accRow = await db
+        .select({ name: schema.accounts.name })
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, access.account.account_id))
+        .get();
+      accountName = accRow?.name ?? null;
+    }
+
+    res.json({
+      locations: access.locations.map((l) => ({
+        id: l.location_id,
+        name: locationNames[l.location_id] ?? l.location_id,
+        capabilities: l.capabilities,
+      })),
+      account: access.account
+        ? {
+            id: access.account.account_id,
+            name: accountName,
+            capabilities: access.account.capabilities,
+          }
+        : null,
+    });
   } catch (err) { next(err); }
 });
 

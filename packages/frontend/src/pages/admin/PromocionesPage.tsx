@@ -1,11 +1,19 @@
 import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
+import { lazy, Suspense } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/states';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Tag } from 'lucide-react';
+
+/**
+ * Fase 4 follow-up: la página de Códigos Descuento se integra como tab.
+ * Lazy porque es pesada y solo se monta si el usuario abre el tab.
+ */
+const CodigosDescuentoPage = lazy(() => import('./CodigosDescuentoPage'));
 import { toast } from 'sonner';
 import {
   usePromociones, usePromocionMutations,
@@ -169,15 +177,30 @@ export default function PromocionesPage() {
       <PageHeader title="Promociones" subtitle="Importá productos de la carta y crea promociones por canal"
         actions={<Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Nueva Promoción</Button>} />
 
-      {isLoading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => (<Card key={i}><CardContent className="h-20 animate-pulse" /></Card>))}</div>
-      ) : !promos?.length ? (
-        <EmptyState icon={Tag} title="Sin promociones" description="Creá tu primera promoción" />
-      ) : (
-        <PromosByDay promos={promos} openPromoIds={openPromoIds} renderInlineForm={renderInlineForm}
-          onEdit={(promo) => { if (openPromoIds.includes(promo.id)) requestClosePromo(promo); else openEdit(promo); }}
-          onDuplicate={openDuplicate} onDelete={setDeleting} onToggle={(id, active) => toggleActive.mutate({ id, is_active: active })} />
-      )}
+      <Tabs defaultValue="automaticas" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="automaticas">Automáticas</TabsTrigger>
+          <TabsTrigger value="codigos">Con código</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="automaticas" className="space-y-4">
+          {isLoading ? (
+            <div className="space-y-3">{[1, 2, 3].map((i) => (<Card key={i}><CardContent className="h-20 animate-pulse" /></Card>))}</div>
+          ) : !promos?.length ? (
+            <EmptyState icon={Tag} title="Sin promociones" description="Creá tu primera promoción" />
+          ) : (
+            <PromosByDay promos={promos} openPromoIds={openPromoIds} renderInlineForm={renderInlineForm}
+              onEdit={(promo) => { if (openPromoIds.includes(promo.id)) requestClosePromo(promo); else openEdit(promo); }}
+              onDuplicate={openDuplicate} onDelete={setDeleting} onToggle={(id, active) => toggleActive.mutate({ id, is_active: active })} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="codigos">
+          <Suspense fallback={<Card><CardContent className="h-20 animate-pulse" /></Card>}>
+            <CodigosDescuentoPage />
+          </Suspense>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={creatingNew} onOpenChange={setCreatingNew}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

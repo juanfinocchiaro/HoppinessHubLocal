@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { db } from '../db/connection.js';
 import * as schema from '../db/schema.js';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { parseScopeFromQuery, whereScope } from '../services/scoping.js';
 
 const router = Router();
 
@@ -13,14 +14,14 @@ const router = Router();
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const branchId = req.query.branch_id as string | undefined;
-    const conditions = [isNull(schema.suppliers.deleted_at)];
-    if (branchId) {
-      conditions.push(
-        sql`(${schema.suppliers.branch_id} = ${branchId} OR ${schema.suppliers.ambito} = 'marca')`,
-      );
-    }
-    const rows = await db.select().from(schema.suppliers).where(and(...conditions));
+    const scope = parseScopeFromQuery(req.query as Record<string, unknown>);
+    const rows = await db.select().from(schema.suppliers).where(and(
+      isNull(schema.suppliers.deleted_at),
+      whereScope(scope, {
+        branchIdColumn: schema.suppliers.branch_id,
+        accountIdColumn: schema.suppliers.account_id,
+      }),
+    ));
     res.json({ data: rows });
   } catch (err) { next(err); }
 });

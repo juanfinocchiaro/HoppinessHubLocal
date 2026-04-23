@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -10,11 +11,16 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Search, Calendar, ChevronDown } from 'lucide-react';
-import type { PromocionFormData } from '@/hooks/usePromociones';
+import type {
+  PromocionFormData,
+  PromotionChannelConfig,
+  PromotionFundedBy,
+  PromotionDisplayFormat,
+} from '@/hooks/usePromociones';
 import { PromoItemRow } from './PromoItemRow';
-import { formatTimeRange, formatChannels } from './helpers';
+import { formatTimeRange, formatChannels, syncChannelConfigsWithCanales } from './helpers';
 import {
-  TIPO_LABELS, PAGO_LABELS, CANAL_LABELS, ALL_CANALES, DIAS,
+  TIPO_LABELS, PAGO_LABELS, CANAL_LABELS, FUNDED_BY_LABELS, DISPLAY_FORMAT_LABELS, ALL_CANALES, DIAS,
 } from './constants';
 import type { PromoItemDraft } from './types';
 
@@ -55,7 +61,25 @@ export function PromoFormFields({
     : false;
   const summary = `${daysLabel} · ${timeLabel} · ${channelsLabel}${discountLabel ? ` · ${discountLabel}` : ''} · ${itemsLabel}${hasOverrides ? ' · precios ajustados' : ''}`;
 
-  const toggleCanal = (canal: string) => setForm((prev) => ({ ...prev, canales: prev.canales.includes(canal) ? prev.canales.filter((c) => c !== canal) : [...prev.canales, canal] }));
+  const toggleCanal = (canal: string) => setForm((prev) => {
+    const nextCanales = prev.canales.includes(canal)
+      ? prev.canales.filter((c) => c !== canal)
+      : [...prev.canales, canal];
+    return {
+      ...prev,
+      canales: nextCanales,
+      channel_configs: syncChannelConfigsWithCanales(nextCanales, prev.channel_configs),
+    };
+  });
+  const updateChannelConfig = (
+    channel_code: string,
+    patch: Partial<PromotionChannelConfig>,
+  ) => setForm((prev) => ({
+    ...prev,
+    channel_configs: (prev.channel_configs || []).map((c) =>
+      c.channel_code === channel_code ? { ...c, ...patch } : c,
+    ),
+  }));
   const toggleDay = (day: number) => setForm((prev) => ({ ...prev, dias_semana: prev.dias_semana.includes(day) ? prev.dias_semana.filter((d) => d !== day) : [...prev.dias_semana, day].sort() }));
   const updatePromoItem = (itemCartaId: string, updated: PromoItemDraft) => setPromoItems((prev) => prev.map((i) => i.item_carta_id === itemCartaId ? updated : i));
   const removeItem = (itemCartaId: string) => setPromoItems((prev) => prev.filter((i) => i.item_carta_id !== itemCartaId));
@@ -94,12 +118,22 @@ export function PromoFormFields({
   const whereSection = (
     <div className="space-y-2">
       <Label className="font-medium">Canales</Label>
-      <div className="flex gap-3 flex-wrap">
+      <p className="text-[11px] text-muted-foreground">
+        Activá los canales donde la promo aplica. Opcionalmente podés configurar overrides por canal
+        (quién banca, formato de presentación, precio fijo).
+      </p>
+      <div className="space-y-1.5">
         {ALL_CANALES.map((canal) => (
-          <label key={canal} className="flex items-center gap-2 text-sm cursor-pointer">
-            <Checkbox checked={form.canales.includes(canal)} onCheckedChange={() => toggleCanal(canal)} />
-            {CANAL_LABELS[canal]}
-          </label>
+          <ChannelConfigCard
+            key={canal}
+            canal={canal}
+            active={form.canales.includes(canal)}
+            config={(form.channel_configs || []).find((c) => c.channel_code === canal)}
+            defaultFundedBy={form.funded_by ?? 'restaurant'}
+            defaultDisplayFormat={form.display_format ?? 'final_price'}
+            onToggle={() => toggleCanal(canal)}
+            onUpdate={(patch) => updateChannelConfig(canal, patch)}
+          />
         ))}
       </div>
     </div>
@@ -131,6 +165,43 @@ export function PromoFormFields({
 
   const advancedSection = (
     <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Quién banca (default)</Label>
+          <Select
+            value={form.funded_by ?? 'restaurant'}
+            onValueChange={(v) => setForm((f) => ({ ...f, funded_by: v as PromotionFundedBy }))}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(FUNDED_BY_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Formato presentación</Label>
+          <Select
+            value={form.display_format ?? 'final_price'}
+            onValueChange={(v) => setForm((f) => ({ ...f, display_format: v as PromotionDisplayFormat }))}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(DISPLAY_FORMAT_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <Checkbox
+          checked={form.show_in_webapp_section}
+          onCheckedChange={(checked) => setForm((f) => ({ ...f, show_in_webapp_section: checked === true }))}
+        />
+        Destacar en sección "PROMOS DE HOY" de la WebApp
+      </label>
       <div className="space-y-1.5">
         <Label>Restricción de pago</Label>
         <Select value={form.restriccion_pago} onValueChange={(v) => setForm((f) => ({ ...f, restriccion_pago: v as PromocionFormData['restriccion_pago'] }))}>
@@ -159,13 +230,13 @@ export function PromoFormFields({
             <Label>Nombre *</Label>
             <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej: Miércoles de Doble Royal" />
           </div>
+          {/* P2 #16 fix: antes era un checkbox sr-only invisible. Ahora usa el mismo Switch que la card del listado para UX consistente. */}
           <div className="pt-6 flex items-center gap-2 shrink-0">
             <span className="text-xs text-muted-foreground">Activa</span>
-            <select className="hidden"><option /></select>
-            <input type="checkbox" className="hidden" />
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))} className="sr-only peer" />
-            </label>
+            <Switch
+              checked={form.is_active}
+              onCheckedChange={(checked) => setForm((f) => ({ ...f, is_active: checked }))}
+            />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -226,5 +297,118 @@ export function PromoFormFields({
         </div>
       </div>
     </div>
+  );
+}
+
+interface ChannelConfigCardProps {
+  canal: string;
+  active: boolean;
+  config: PromotionChannelConfig | undefined;
+  defaultFundedBy: PromotionFundedBy;
+  defaultDisplayFormat: PromotionDisplayFormat;
+  onToggle: () => void;
+  onUpdate: (patch: Partial<PromotionChannelConfig>) => void;
+}
+
+/**
+ * Card por canal (WebApp, Rappi, etc.). Permite toggle on/off y,
+ * si está activo, expandir para configurar overrides específicos del canal:
+ * quién banca, formato de presentación, precio final fijo, texto promo.
+ */
+function ChannelConfigCard({
+  canal, active, config, defaultFundedBy, defaultDisplayFormat, onToggle, onUpdate,
+}: ChannelConfigCardProps) {
+  const hasOverrides = !!config && (
+    (config.funded_by !== null && config.funded_by !== undefined) ||
+    (config.display_format !== null && config.display_format !== undefined) ||
+    (config.custom_final_price !== null && config.custom_final_price !== undefined) ||
+    (config.custom_discount_value !== null && config.custom_discount_value !== undefined) ||
+    !!config.promo_text
+  );
+
+  const summary = active
+    ? hasOverrides
+      ? 'Con overrides'
+      : `Usa defaults (${FUNDED_BY_LABELS[defaultFundedBy]} · ${DISPLAY_FORMAT_LABELS[defaultDisplayFormat]})`
+    : 'Apagado';
+
+  return (
+    <details className="rounded-lg border bg-card" open={false}>
+      <summary className="cursor-pointer select-none px-3 py-2 flex items-center gap-3">
+        <Checkbox
+          checked={active}
+          onCheckedChange={onToggle}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="text-sm font-medium flex-1">{CANAL_LABELS[canal] ?? canal}</span>
+        <span className="text-[11px] text-muted-foreground">{summary}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+      </summary>
+      {active && config ? (
+        <div className="px-3 pb-3 pt-1 space-y-2 border-t">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[11px]">Quién banca</Label>
+              <Select
+                value={config.funded_by ?? ''}
+                onValueChange={(v) => onUpdate({ funded_by: (v || null) as PromotionFundedBy | null })}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={`Default (${FUNDED_BY_LABELS[defaultFundedBy]})`} /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FUNDED_BY_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px]">Formato</Label>
+              <Select
+                value={config.display_format ?? ''}
+                onValueChange={(v) => onUpdate({ display_format: (v || null) as PromotionDisplayFormat | null })}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={`Default (${DISPLAY_FORMAT_LABELS[defaultDisplayFormat]})`} /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(DISPLAY_FORMAT_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[11px]">Precio final (override)</Label>
+              <Input
+                type="number"
+                className="h-8 text-xs"
+                placeholder="Auto"
+                value={config.custom_final_price ?? ''}
+                onChange={(e) => onUpdate({ custom_final_price: e.target.value === '' ? null : Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px]">Descuento (override)</Label>
+              <Input
+                type="number"
+                className="h-8 text-xs"
+                placeholder="Auto"
+                value={config.custom_discount_value ?? ''}
+                onChange={(e) => onUpdate({ custom_discount_value: e.target.value === '' ? null : Number(e.target.value) })}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px]">Texto para este canal (opcional)</Label>
+            <Input
+              className="h-8 text-xs"
+              placeholder="Ej: '25% OFF pagando con MP'"
+              value={config.promo_text ?? ''}
+              onChange={(e) => onUpdate({ promo_text: e.target.value || null })}
+            />
+          </div>
+        </div>
+      ) : null}
+    </details>
   );
 }

@@ -75,7 +75,17 @@ export function PreparacionFullModal({
     if (isEdit || savedId) {
       await mutations.update.mutateAsync({ id: savedId || preparacion.id, data: form });
     } else {
-      const result = await mutations.create.mutateAsync({ nombre: form.name, descripcion: form.description, tipo: form.type, is_interchangeable: form.is_interchangeable, metodo_costeo: form.costing_method });
+      const result = await mutations.create.mutateAsync({
+        nombre: form.name,
+        descripcion: form.description,
+        tipo: form.type,
+        is_interchangeable: form.is_interchangeable,
+        metodo_costeo: form.costing_method,
+        // P2 #12 fix: el `categoria_preparacion_id` elegido en el form se
+        // pasaba al update pero no al create. Ahora la categoría queda
+        // fija desde el primer guardado.
+        categoria_preparacion_id: form.categoria_preparacion_id || null,
+      } as Parameters<typeof mutations.create.mutateAsync>[0]);
       setSavedId(result.id);
       setActiveTab('ficha');
     }

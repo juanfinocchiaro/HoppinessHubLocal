@@ -127,10 +127,11 @@ export function BrandSidebar() {
     p.includes('/mimarca/finanzas/proveedores') ||
     p.includes('/mimarca/recetas') ||
     p.includes('/mimarca/carta') ||
-    p.includes('/mimarca/categorias-carta') ||
     p === '/mimarca/centro-costos' ||
     p.includes('/mimarca/precios-canal') ||
     p.includes('/mimarca/canales-venta') ||
+    p.includes('/mimarca/cambios-canal') ||
+    p.includes('/mimarca/productos') ||
     p.includes('/mimarca/promociones') ||
     p.includes('/mimarca/codigos-descuento');
   const isGestionRedActive =
@@ -206,13 +207,20 @@ export function BrandSidebar() {
           icon={Beef}
           forceOpen={isMenuEngActive}
         >
-          {bp.canViewInsumos && <NavItemButton to="/mimarca/carta" icon={BookOpen} label="Carta" />}
+          {bp.canViewInsumos && isSuperadmin && (
+            <NavItemButton to="/mimarca/productos" icon={Boxes} label="Productos" />
+          )}
+          {bp.canViewInsumos && <NavItemButton to="/mimarca/carta" icon={BookOpen} label="Menú (Carta)" />}
           {bp.canViewInsumos && (
             <NavItemButton to="/mimarca/canales-venta" icon={Store} label="Canales de Venta" />
           )}
-          {bp.canViewInsumos && isSuperadmin && (
-            <NavItemButton to="/mimarca/categorias-carta" icon={Tag} label="Categorías Carta" />
+          {bp.canViewInsumos && (
+            <NavItemButton to="/mimarca/cambios-canal" icon={FileText} label="Cambios por canal" />
           )}
+          {/*
+           * Fase 4 (follow-up): CategoriasCartaPage consolidada en
+           * MenuCartaPage. La ruta sigue activa pero redirige.
+           */}
           {bp.canViewInsumos && isSuperadmin && (
             <NavItemButton to="/mimarca/recetas" icon={ChefHat} label="Recetas" />
           )}
@@ -229,9 +237,7 @@ export function BrandSidebar() {
           {bp.canViewInsumos && (
             <NavItemButton to="/mimarca/promociones" icon={Tag} label="Promociones" />
           )}
-          {bp.canViewInsumos && (
-            <NavItemButton to="/mimarca/codigos-descuento" icon={Tag} label="Códigos Descuento" />
-          )}
+          {/* Fase 4 (follow-up): Códigos Descuento es tab dentro de /promociones */}
           {bp.canViewInsumos && isSuperadmin && (
             <NavItemButton
               to="/mimarca/centro-costos"

@@ -3,18 +3,177 @@ import { db } from '../db/connection.js';
 import {
   supply_categories, supplies,
   recipes, recipe_ingredients, recipe_options, recipe_categories,
-  menu_categories, menu_items, menu_item_compositions, menu_item_extras,
+  menu_categories, menu_items, menu_item_compositions, menu_item_components, menu_item_extras,
   menu_item_option_groups, menu_item_option_group_items, menu_item_price_history,
   extra_assignments, removable_items, item_modifiers,
   sales_channels, price_lists, price_list_items,
   branch_item_availability,
   branches, webapp_config,
+  product_location_presence, locations,
 } from '../db/schema.js';
 import { eq, and, desc, sql, isNull, inArray } from 'drizzle-orm';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { buildSellableMenu } from '../services/sellableMenu.js';
+import { rollupItemCost, rollupRecipeChange, rollupComboChange, rollupSupplyChange } from '../services/costRollup.js';
+import { publishMenu, getCurrentSnapshot, listRecentSnapshots } from '../services/menuSnapshot.js';
+import { getModifiersForItem } from '../services/modifiers.js';
 
 const router = Router();
+
+// ============================================================================
+// SELLABLE MENU (Fase 1 — contrato canónico)
+// ============================================================================
+
+/**
+ * Devuelve el menú vendible resuelto para (channel, branch, at).
+ * Fuente única de verdad para POS y WebApp. Reemplaza la lectura cruda de
+ * `menu_items` + cruces ad-hoc. Ver `services/sellableMenu.ts`.
+ */
+router.get('/sellable', optionalAuth, async (req, res, next) => {
+  try {
+    const channel = (req.query.channel as string | undefined) || 'mostrador';
+    const branch = (req.query.branch as string | undefined) || null;
+    const at = (req.query.at as string | undefined) || undefined;
+    const useSnapshot = req.query.live !== 'true' && !at;
+
+    // Fase 6: si hay snapshot current para (scope, channel), lo devolvemos.
+    // Caller puede pedir `?live=true` para forzar el builder (útil en preview).
+    if (useSnapshot && branch) {
+      const snapshot = await getCurrentSnapshot('branch', branch, channel);
+      if (snapshot) {
+        res.json({ data: snapshot });
+        return;
+      }
+    }
+
+    const response = await buildSellableMenu({ channelCode: channel, branchId: branch, at });
+    res.json({ data: response });
+  } catch (err) { next(err); }
+});
+
+// ============================================================================
+// PUBLISH WORKFLOW (Fase 6)
+// ============================================================================
+
+/**
+ * Publica el estado actual del menú para (scope, channel). Genera un nuevo
+ * `menu_snapshot is_current=true` y baja al anterior. POS y WebApp leen del
+ * snapshot en la próxima request a `/menu/sellable`.
+ */
+router.post('/publish', requireAuth, async (req, res, next) => {
+  try {
+    const { scope_type, scope_id, channel_code } = req.body as {
+      scope_type: 'brand' | 'branch';
+      scope_id: string;
+      channel_code: string;
+    };
+    if (!scope_type || !scope_id || !channel_code) {
+      throw new AppError(400, 'scope_type, scope_id and channel_code are required');
+    }
+    const result = await publishMenu({
+      scopeType: scope_type,
+      scopeId: scope_id,
+      channelCode: channel_code,
+      publishedBy: req.user?.userId,
+    });
+    res.status(201).json({ data: result });
+  } catch (err) { next(err); }
+});
+
+// ============================================================================
+// MODIFIERS (Fase 7 — unificados)
+// ============================================================================
+
+/**
+ * Devuelve los modifier groups de un item (fuente única de verdad Fase 7).
+ * POS/WebApp/Admin deberían migrar a consumir este endpoint en vez de leer
+ * las 4 tablas legacy por separado.
+ */
+router.get('/items/:id/modifiers', optionalAuth, async (req, res, next) => {
+  try {
+    const data = await getModifiersForItem(req.params.id);
+    res.json({ data });
+  } catch (err) { next(err); }
+});
+
+router.get('/snapshots', requireAuth, async (req, res, next) => {
+  try {
+    const scopeType = (req.query.scope_type as string) || 'branch';
+    const scopeId = req.query.scope_id as string;
+    const channel = req.query.channel_code as string | undefined;
+    if (!scopeId) throw new AppError(400, 'scope_id is required');
+    const rows = await listRecentSnapshots(scopeType, scopeId, channel);
+    res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+// ============================================================================
+// VISIBILITY (Fase 3 — entity_channel_visibility)
+// ============================================================================
+
+import * as schemaExt from '../db/schema.js';
+
+/**
+ * Devuelve para una entidad (item/category/promo) el mapa canal → is_visible.
+ * Ausencia de fila = visible por default.
+ */
+router.get('/visibility/:entityType/:entityId', requireAuth, async (req, res, next) => {
+  try {
+    const { entityType, entityId } = req.params;
+    const rows = await db.select().from(schemaExt.entity_channel_visibility).where(and(
+      eq(schemaExt.entity_channel_visibility.entity_type, entityType),
+      eq(schemaExt.entity_channel_visibility.entity_id, entityId),
+    ));
+    res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+/**
+ * Upsert de visibilidad para (entity, channel). `is_visible = true` borra
+ * la fila explícita (vuelve al default visible). `is_visible = false` la
+ * persiste como override.
+ */
+router.put('/visibility/:entityType/:entityId/:channelCode', requireAuth, async (req, res, next) => {
+  try {
+    const { entityType, entityId, channelCode } = req.params;
+    const { is_visible } = req.body as { is_visible: boolean };
+    const now = new Date().toISOString();
+
+    if (is_visible === true) {
+      await db.delete(schemaExt.entity_channel_visibility).where(and(
+        eq(schemaExt.entity_channel_visibility.entity_type, entityType),
+        eq(schemaExt.entity_channel_visibility.entity_id, entityId),
+        eq(schemaExt.entity_channel_visibility.channel_code, channelCode),
+      ));
+      res.json({ data: { entity_type: entityType, entity_id: entityId, channel_code: channelCode, is_visible: true } });
+      return;
+    }
+
+    const existing = await db.select().from(schemaExt.entity_channel_visibility).where(and(
+      eq(schemaExt.entity_channel_visibility.entity_type, entityType),
+      eq(schemaExt.entity_channel_visibility.entity_id, entityId),
+      eq(schemaExt.entity_channel_visibility.channel_code, channelCode),
+    )).get();
+
+    if (existing) {
+      await db.update(schemaExt.entity_channel_visibility)
+        .set({ is_visible: false, updated_at: now })
+        .where(eq(schemaExt.entity_channel_visibility.id, existing.id));
+    } else {
+      await db.insert(schemaExt.entity_channel_visibility).values({
+        id: crypto.randomUUID(),
+        entity_type: entityType,
+        entity_id: entityId,
+        channel_code: channelCode,
+        is_visible: false,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+    res.json({ data: { entity_type: entityType, entity_id: entityId, channel_code: channelCode, is_visible: false } });
+  } catch (err) { next(err); }
+});
 
 // ============================================================================
 // SUPPLY CATEGORIES
@@ -118,6 +277,7 @@ router.put('/supplies/:id', requireAuth, async (req, res, next) => {
       nivel_control, especificacion, proveedor_sugerido_id, proveedor_obligatorio_id,
       max_suggested_price, control_reason, sale_price, is_active, can_be_extra,
       extra_price, extra_target_fc, margen_bruto, margen_porcentaje } = req.body;
+    const prev = await db.select().from(supplies).where(eq(supplies.id, req.params.id)).get();
     const now = new Date().toISOString();
     await db.update(supplies).set({
       ...(name !== undefined && { name }),
@@ -151,6 +311,14 @@ router.put('/supplies/:id', requireAuth, async (req, res, next) => {
     }).where(eq(supplies.id, req.params.id));
     const row = await db.select().from(supplies).where(eq(supplies.id, req.params.id)).get();
     if (!row) throw new AppError(404, 'Supply not found');
+    // Fase 2: si cambió base_unit_cost, dispara rollup para todas las recetas
+    // e items que dependen de este insumo.
+    if (
+      base_unit_cost !== undefined &&
+      prev && Number(prev.base_unit_cost ?? 0) !== Number(base_unit_cost ?? 0)
+    ) {
+      await rollupSupplyChange(req.params.id, { triggeredBy: req.user?.userId });
+    }
     res.json({ data: row });
   } catch (err) { next(err); }
 });
@@ -287,6 +455,8 @@ router.post('/recipes/:id/ingredients', requireAuth, async (req, res, next) => {
         created_at: now,
       });
     }
+    // Fase 2: dispara rollup de la receta. Propaga a items y combos aguas arriba.
+    await rollupRecipeChange(req.params.id, { triggeredBy: req.user?.userId });
     const rows = await db.select().from(recipe_ingredients)
       .where(eq(recipe_ingredients.preparacion_id, req.params.id));
     res.json({ data: rows });
@@ -659,6 +829,12 @@ router.post('/items/:id/composition', requireAuth, async (req, res, next) => {
         created_at: now,
       });
     }
+    // Fase 2: dispara el rollup engine automáticamente. Reemplaza el patrón
+    // anterior donde el frontend tenía que llamar explícito a recalculate-cost.
+    await rollupItemCost(req.params.id, {
+      trigger: 'item_composition_changed',
+      triggeredBy: req.user?.userId,
+    });
     const rows = await db.select().from(menu_item_compositions)
       .where(eq(menu_item_compositions.item_carta_id, req.params.id));
     res.json({ data: rows });
@@ -721,45 +897,94 @@ router.post('/items/:id/change-price', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── Recalculate Cost ──
+// ── Recalculate Cost (Fase 2: usa cost rollup engine) ──
 
 router.post('/items/:id/recalculate-cost', requireAuth, async (req, res, next) => {
   try {
-    const compositions = await db.select().from(menu_item_compositions)
-      .where(eq(menu_item_compositions.item_carta_id, req.params.id));
+    await rollupItemCost(req.params.id, {
+      trigger: 'manual_full_rollup',
+      triggeredBy: req.user?.userId,
+    });
+    const updated = await db.select().from(menu_items).where(eq(menu_items.id, req.params.id)).get();
+    res.json({ data: updated });
+  } catch (err) { next(err); }
+});
 
-    let totalCost = 0;
-    for (const comp of compositions) {
-      const qty = comp.quantity ?? 1;
-      if (comp.preparacion_id) {
-        const recipe = await db.select().from(recipes)
-          .where(eq(recipes.id, comp.preparacion_id)).get();
-        if (recipe) {
-          totalCost += (recipe.calculated_cost ?? recipe.manual_cost ?? 0) * qty;
-        }
-      } else if (comp.insumo_id) {
-        const supply = await db.select().from(supplies)
-          .where(eq(supplies.id, comp.insumo_id)).get();
-        if (supply) {
-          totalCost += (supply.base_unit_cost ?? 0) * qty;
-        }
-      }
-    }
+// ── Combo components (Fase 6) ──
 
-    const optGroups = await db.select().from(menu_item_option_groups)
-      .where(eq(menu_item_option_groups.item_carta_id, req.params.id));
-    for (const g of optGroups) {
-      totalCost += g.average_cost ?? 0;
-    }
+/**
+ * Lista los componentes de un combo, enriquecidos con info del producto base.
+ */
+router.get('/items/:id/combo-components', requireAuth, async (req, res, next) => {
+  try {
+    const rows = await db.select().from(menu_item_components)
+      .where(eq(menu_item_components.combo_id, req.params.id))
+      .orderBy(menu_item_components.sort_order);
+    if (rows.length === 0) return res.json({ data: [] });
 
-    const item = await db.select().from(menu_items).where(eq(menu_items.id, req.params.id)).get();
-    const fcActual = item?.base_price ? Math.round((totalCost / item.base_price) * 10000) / 100 : null;
+    const componentIds = rows.map((r) => r.component_id);
+    const menuData = await db.select({
+      id: menu_items.id,
+      name: menu_items.name,
+      base_price: menu_items.base_price,
+      total_cost: menu_items.total_cost,
+      image_url: menu_items.image_url,
+    }).from(menu_items).where(inArray(menu_items.id, componentIds));
+
+    const menuById = new Map(menuData.map((m) => [m.id, m]));
+    const enriched = rows.map((r) => ({
+      ...r,
+      component: menuById.get(r.component_id) ?? null,
+    }));
+    res.json({ data: enriched });
+  } catch (err) { next(err); }
+});
+
+/**
+ * Reemplaza todos los componentes del combo por el array recibido.
+ * Idempotente: el caller manda el estado deseado.
+ */
+router.put('/items/:id/combo-components', requireAuth, async (req, res, next) => {
+  try {
+    const comboId = req.params.id;
+    const { components } = req.body as {
+      components: Array<{ component_id: string; quantity: number; sort_order?: number | null }>;
+    };
+    const existing = await db.select().from(menu_items).where(eq(menu_items.id, comboId)).get();
+    if (!existing) throw new AppError(404, 'Combo item not found');
 
     const now = new Date().toISOString();
-    await db.update(menu_items)
-      .set({ total_cost: Math.round(totalCost * 100) / 100, fc_actual: fcActual, updated_at: now })
-      .where(eq(menu_items.id, req.params.id));
+    await db.delete(menu_item_components)
+      .where(eq(menu_item_components.combo_id, comboId));
 
+    for (const [idx, comp] of components.entries()) {
+      if (!comp.component_id || !comp.quantity || comp.quantity <= 0) continue;
+      await db.insert(menu_item_components).values({
+        id: crypto.randomUUID(),
+        combo_id: comboId,
+        component_id: comp.component_id,
+        quantity: comp.quantity,
+        sort_order: comp.sort_order ?? idx,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+
+    // Fase 2: rollup automático del combo al guardar sus componentes.
+    await rollupComboChange(comboId, { triggeredBy: req.user?.userId });
+    const rows = await db.select().from(menu_item_components)
+      .where(eq(menu_item_components.combo_id, comboId));
+    res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+/**
+ * Fase 2: mantenido como endpoint explícito para force-recalc. Internamente
+ * usa el cost rollup engine en vez del cálculo ad-hoc anterior.
+ */
+router.post('/items/:id/recalculate-combo-cost', requireAuth, async (req, res, next) => {
+  try {
+    await rollupComboChange(req.params.id, { triggeredBy: req.user?.userId });
     const updated = await db.select().from(menu_items).where(eq(menu_items.id, req.params.id)).get();
     res.json({ data: updated });
   } catch (err) { next(err); }
@@ -1420,6 +1645,88 @@ router.post('/price-lists/:id/items', requireAuth, async (req, res, next) => {
     const rows = await db.select().from(price_list_items)
       .where(eq(price_list_items.price_list_id, req.params.id));
     res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+// ============================================================================
+// PRODUCT LOCATION PRESENCE (Sprint 2 — catalog presence model)
+// ============================================================================
+
+/**
+ * GET /menu/items/:id/presence
+ * Returns the presence configuration for a product:
+ * {
+ *   present_at_all_locations: boolean,
+ *   exceptions: Array<{ location_id, is_present }>
+ * }
+ */
+router.get('/items/:id/presence', requireAuth, async (req, res, next) => {
+  try {
+    const item = await db
+      .select({ id: menu_items.id, present_at_all_locations: menu_items.present_at_all_locations })
+      .from(menu_items)
+      .where(eq(menu_items.id, req.params.id))
+      .get();
+    if (!item) throw new AppError(404, 'Item not found');
+
+    const exceptions = await db
+      .select()
+      .from(product_location_presence)
+      .where(eq(product_location_presence.product_id, req.params.id));
+
+    res.json({
+      data: {
+        present_at_all_locations: !!item.present_at_all_locations,
+        exceptions,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+/**
+ * PUT /menu/items/:id/presence
+ * Body: { present_at_all_locations: boolean, exceptions: Array<{ location_id, is_present }> }
+ */
+router.put('/items/:id/presence', requireAuth, async (req, res, next) => {
+  try {
+    const { present_at_all_locations, exceptions } = req.body as {
+      present_at_all_locations: boolean;
+      exceptions: Array<{ location_id: string; is_present: boolean }>;
+    };
+
+    const item = await db
+      .select({ id: menu_items.id })
+      .from(menu_items)
+      .where(eq(menu_items.id, req.params.id))
+      .get();
+    if (!item) throw new AppError(404, 'Item not found');
+
+    await db
+      .update(menu_items)
+      .set({
+        present_at_all_locations: present_at_all_locations,
+        updated_at: new Date().toISOString(),
+      })
+      .where(eq(menu_items.id, req.params.id));
+
+    // Replace exceptions
+    await db
+      .delete(product_location_presence)
+      .where(eq(product_location_presence.product_id, req.params.id));
+
+    if (exceptions.length > 0) {
+      const now = new Date().toISOString();
+      await db.insert(product_location_presence).values(
+        exceptions.map((ex) => ({
+          product_id: req.params.id,
+          location_id: ex.location_id,
+          is_present: ex.is_present ? 1 : 0,
+          created_at: now,
+        }))
+      );
+    }
+
+    res.json({ data: { present_at_all_locations, exceptions } });
   } catch (err) { next(err); }
 });
 

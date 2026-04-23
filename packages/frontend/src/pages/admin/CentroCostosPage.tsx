@@ -4,14 +4,11 @@ import { PageHeader } from '@/components/ui/page-header';
 import { recalcularTodosLosCostos } from '@/services/adminService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Plus, BookOpen, RefreshCw, BarChart3, Calculator, DollarSign } from 'lucide-react';
 import {
   useItemsCarta,
   useItemCartaMutations,
 } from '@/hooks/useItemsCarta';
-import { usePreparaciones } from '@/hooks/usePreparaciones';
-import { useInsumos } from '@/hooks/useInsumos';
 import { useMenuCategorias } from '@/hooks/useMenu';
 import { useRdoCategories } from '@/hooks/useRdoCategories';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,14 +21,14 @@ import { AnalisisTab } from '@/components/centro-costos/AnalisisTab';
 import { SimuladorTab } from '@/components/centro-costos/SimuladorTab';
 import { ActualizarTab } from '@/components/centro-costos/ActualizarTab';
 import { ItemFormModal } from '@/components/centro-costos/ItemFormModal';
-import { ComposicionModal } from '@/components/centro-costos/ComposicionModal';
-import { HistorialModal } from '@/components/centro-costos/HistorialModal';
+// P2 #9 cleanup: ComposicionModal / HistorialModal existían acá pero sus
+// setters (setCompItem / setHistItem) no se invocaban en ningún flujo.
+// Los flujos reales viven en `ItemExpandedPanel` via tabs. Removido para
+// no confundir lectores.
 
 
 export default function CentroCostosPage() {
   const { data: items, isLoading, refetch, isFetching } = useItemsCarta();
-  const { data: preparaciones } = usePreparaciones();
-  const { data: insumos } = useInsumos();
   const { data: categorias } = useMenuCategorias();
   const { data: rdoCategories } = useRdoCategories();
   const { user } = useAuth();
@@ -51,9 +48,6 @@ export default function CentroCostosPage() {
   const [tab, setTab] = useState<Tab>('analisis');
   const [createOpen, setCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
-  const [compItem, setCompItem] = useState<any | null>(null);
-  const [histItem, setHistItem] = useState<any | null>(null);
-  const [delItem, setDelItem] = useState<any | null>(null);
   const [simPrices, setSimPrices] = useState<Record<string, number>>({});
   const [pending, setPending] = useState<Record<string, number>>({});
 
@@ -138,17 +132,6 @@ export default function CentroCostosPage() {
 
       <ItemFormModal open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditingItem(null); }}
         item={editingItem} categorias={categorias} cmvCats={cmvCats} mutations={mutations} />
-      {compItem && (
-        <ComposicionModal open={!!compItem} onOpenChange={() => setCompItem(null)}
-          item={compItem} preparaciones={preparaciones || []} insumos={insumos || []} mutations={mutations} />
-      )}
-      {histItem && (
-        <HistorialModal open={!!histItem} onOpenChange={() => setHistItem(null)} item={histItem} />
-      )}
-      <ConfirmDialog open={!!delItem} onOpenChange={() => setDelItem(null)}
-        title="Eliminar item" description={`¿Eliminar "${delItem?.name}"?`}
-        confirmLabel="Eliminar" variant="destructive"
-        onConfirm={async () => { await mutations.softDelete.mutateAsync(delItem!.id); setDelItem(null); }} />
     </div>
   );
 }

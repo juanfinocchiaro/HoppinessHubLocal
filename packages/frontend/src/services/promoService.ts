@@ -113,13 +113,34 @@ export async function fetchPriceLists() {
   return apiGet<unknown[]>('/promotions/price-lists');
 }
 
+/**
+ * Fase 3: normaliza la row de `price_list_items` (la DB usa `price`; el
+ * resto del frontend se construyó sobre `precio`). Mantiene ambos por compat
+ * y expone los nuevos campos `is_visible` + overrides visuales.
+ */
+function normalizePriceListItemRow(row: Record<string, unknown>) {
+  const rawPrice = row.price ?? row.precio;
+  const priceNum = rawPrice != null ? Number(rawPrice) : 0;
+  return {
+    ...row,
+    price: priceNum,
+    precio: priceNum,
+    is_visible: row.is_visible !== false,
+    custom_name: (row.custom_name as string | null) ?? null,
+    custom_image_url: (row.custom_image_url as string | null) ?? null,
+    custom_description: (row.custom_description as string | null) ?? null,
+  };
+}
+
 export async function fetchPriceListItems(priceListId: string) {
-  return apiGet<unknown[]>(`/promotions/price-lists/${priceListId}/items`);
+  const data = await apiGet<Array<Record<string, unknown>>>(`/promotions/price-lists/${priceListId}/items`);
+  return (data || []).map(normalizePriceListItemRow);
 }
 
 export async function fetchAllPriceListItems(priceListIds: string[]) {
   if (priceListIds.length === 0) return [];
-  return apiPost<unknown[]>('/promotions/price-lists/items-batch', { priceListIds });
+  const data = await apiPost<Array<Record<string, unknown>>>('/promotions/price-lists/items-batch', { priceListIds });
+  return (data || []).map(normalizePriceListItemRow);
 }
 
 export async function fetchItemsCartaForPricing() {
@@ -137,9 +158,34 @@ export async function updatePriceListConfig(params: {
 
 export async function bulkUpsertPriceListItems(
   price_list_id: string,
-  items: Array<{ item_carta_id: string; precio: number }>,
+  items: Array<{
+    item_carta_id: string;
+    precio: number;
+    is_visible?: boolean;
+    custom_name?: string | null;
+    custom_image_url?: string | null;
+    custom_description?: string | null;
+  }>,
 ) {
   return apiPost(`/promotions/price-lists/${price_list_id}/items/bulk`, { items });
+}
+
+/**
+ * Fase 3: patch puntual para un ítem dentro de un canal.
+ * Permite cambiar `is_visible` o los overrides visuales sin tocar el precio.
+ */
+export async function updatePriceListItem(
+  price_list_id: string,
+  item_carta_id: string,
+  patch: {
+    is_visible?: boolean;
+    custom_name?: string | null;
+    custom_image_url?: string | null;
+    custom_description?: string | null;
+    price?: number;
+  },
+) {
+  return apiPut(`/promotions/price-lists/${price_list_id}/items/${item_carta_id}`, patch);
 }
 
 export async function deletePriceOverride(price_list_id: string, item_carta_id: string) {

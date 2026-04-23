@@ -11,6 +11,8 @@ import {
   FileText,
   Search,
   Pencil,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -46,6 +48,8 @@ import {
   useMenuItemsForPricing,
   useAllPriceListItems,
   useBulkUpdatePriceList,
+  useUpdatePriceListItem,
+  useTogglePriceListActive,
   useInitializePriceLists,
   computeChannelPrice,
   resolveChannelMode,
@@ -154,18 +158,42 @@ export default function CanalesVentaPage() {
   );
 
   const getChannelPrice = useCallback(
-    (itemId: string, basePrice: number, channel: Channel): { price: number; isOverride: boolean } => {
-      if (!priceLists) return { price: basePrice, isOverride: false };
+    (itemId: string, basePrice: number, channel: Channel): { price: number; isOverride: boolean; isVisible: boolean } => {
+      if (!priceLists) return { price: basePrice, isOverride: false, isVisible: true };
       const { mode, value } = resolveChannelMode(channel, priceLists);
       const list = priceLists.find((l) => l.channel === channel);
-      const override = list && allOverrides?.[list.id]?.[itemId];
+      const cell = list ? allOverrides?.[list.id]?.[itemId] : undefined;
+      const override = cell?.precio;
       const price = computeChannelPrice(basePrice, mode, value, override);
-      return { price, isOverride: override !== undefined };
+      return {
+        price,
+        isOverride: override !== undefined,
+        isVisible: cell?.is_visible !== false,
+      };
     },
     [priceLists, allOverrides],
   );
 
   const bulkUpdate = useBulkUpdatePriceList();
+  const updateItem = useUpdatePriceListItem();
+  const toggleActive = useTogglePriceListActive();
+
+  const handleToggleVisibility = (itemId: string, channel: Channel, nextVisible: boolean) => {
+    const list = priceLists?.find((l) => l.channel === channel);
+    if (!list) return;
+    updateItem.mutate(
+      {
+        price_list_id: list.id,
+        item_carta_id: itemId,
+        patch: { is_visible: nextVisible },
+      },
+      {
+        onSuccess: () =>
+          toast.success(nextVisible ? 'Producto visible en el canal' : 'Producto oculto en el canal'),
+        onError: () => toast.error('Error al cambiar visibilidad'),
+      },
+    );
+  };
 
   // ── Channel management handlers ──
   const handleAddChannel = async () => {
@@ -465,7 +493,12 @@ export default function CanalesVentaPage() {
                           )}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Switch checked={list.is_active} disabled className="mx-auto" />
+                          <Switch
+                            checked={list.is_active}
+                            onCheckedChange={(next) => toggleActive.mutate({ id: list.id, is_active: next })}
+                            disabled={toggleActive.isPending}
+                            className="mx-auto"
+                          />
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center gap-1 justify-end">
@@ -683,7 +716,7 @@ export default function CanalesVentaPage() {
                                   {fmtCurrency(item.base_price)}
                                 </TableCell>
                                 {tableChannels.map((ch) => {
-                                  const { price, isOverride } = getChannelPrice(
+                                  const { price, isOverride, isVisible } = getChannelPrice(
                                     item.id,
                                     item.base_price,
                                     ch.channel as Channel,
@@ -693,7 +726,7 @@ export default function CanalesVentaPage() {
                                     editCell?.itemId === item.id && editCell?.channel === ch.channel;
 
                                   return (
-                                    <TableCell key={ch.id} className="text-right py-1.5 pr-3">
+                                    <TableCell key={ch.id} className={`text-right py-1.5 pr-3 ${!isVisible ? 'opacity-50' : ''}`}>
                                       {isEditing ? (
                                         <div className="flex items-center gap-1 justify-end">
                                           <Input
@@ -719,33 +752,57 @@ export default function CanalesVentaPage() {
                                           </Button>
                                         </div>
                                       ) : (
-                                        <TooltipProvider delayDuration={300}>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <button
-                                                className="inline-flex items-center gap-1 tabular-nums text-sm hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors group"
-                                                onClick={() => {
-                                                  setEditCell({ itemId: item.id, channel: ch.channel as Channel });
-                                                  setEditValue(String(price));
-                                                }}
-                                              >
-                                                <span className={isOverride ? 'font-semibold text-primary' : ''}>
-                                                  {fmtCurrency(price)}
-                                                </span>
-                                                {isOverride && <span className="text-[9px] text-primary">●</span>}
-                                                {diffLabel && !isOverride && (
-                                                  <span className="text-[10px] text-muted-foreground ml-0.5">{diffLabel}</span>
-                                                )}
-                                                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
-                                              </button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="text-xs">
-                                              {isOverride
-                                                ? 'Precio manual (override). Click para editar.'
-                                                : 'Click para poner un precio manual'}
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
+                                        <div className="inline-flex items-center gap-0.5 justify-end">
+                                          <TooltipProvider delayDuration={300}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <button
+                                                  className="inline-flex items-center gap-1 tabular-nums text-sm hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors group"
+                                                  onClick={() => {
+                                                    setEditCell({ itemId: item.id, channel: ch.channel as Channel });
+                                                    setEditValue(String(price));
+                                                  }}
+                                                >
+                                                  <span className={isOverride ? 'font-semibold text-primary' : ''}>
+                                                    {isVisible ? fmtCurrency(price) : '—'}
+                                                  </span>
+                                                  {isOverride && isVisible && <span className="text-[9px] text-primary">●</span>}
+                                                  {diffLabel && !isOverride && isVisible && (
+                                                    <span className="text-[10px] text-muted-foreground ml-0.5">{diffLabel}</span>
+                                                  )}
+                                                  <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+                                                </button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="top" className="text-xs">
+                                                {!isVisible
+                                                  ? 'Este producto está oculto en este canal'
+                                                  : isOverride
+                                                    ? 'Precio manual (override). Click para editar.'
+                                                    : 'Click para poner un precio manual'}
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                          <TooltipProvider delayDuration={300}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <button
+                                                  className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted/50 transition-colors"
+                                                  onClick={() => handleToggleVisibility(item.id, ch.channel as Channel, !isVisible)}
+                                                  aria-label={isVisible ? 'Ocultar en canal' : 'Mostrar en canal'}
+                                                >
+                                                  {isVisible ? (
+                                                    <Eye className="h-3 w-3 text-muted-foreground" />
+                                                  ) : (
+                                                    <EyeOff className="h-3 w-3 text-destructive" />
+                                                  )}
+                                                </button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="top" className="text-xs">
+                                                {isVisible ? 'Ocultar en este canal' : 'Mostrar en este canal'}
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        </div>
                                       )}
                                     </TableCell>
                                   );

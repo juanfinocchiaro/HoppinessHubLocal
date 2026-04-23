@@ -79,7 +79,7 @@ export function ChannelPricesInline({ item }: Props) {
         precioVenta = editedPrice;
       } else if (list) {
         const { mode, value } = resolveChannelMode(ch, activeLists);
-        const override = allOverrides?.[list.id]?.[item.id];
+        const override = allOverrides?.[list.id]?.[item.id]?.precio;
         precioVenta = computeChannelPrice(basePrice, mode, value, override);
       } else {
         precioVenta = basePrice;
@@ -97,7 +97,7 @@ export function ChannelPricesInline({ item }: Props) {
       const margen = precioNeto - totalCost;
 
       // Current override from DB
-      const currentOverride = list ? allOverrides?.[list.id]?.[item.id] : undefined;
+      const currentOverride = list ? allOverrides?.[list.id]?.[item.id]?.precio : undefined;
 
       return {
         channel: ch,

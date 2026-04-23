@@ -25,8 +25,8 @@ body {
 }
 
 /* =============================================
-   HOPPINESS CLUB - Design System
-   Brand Manual Colors: #00139b (azul), #ff521d (naranja), #ffd41f (amarillo)
+   RESTOSTACK - Design System
+   Brand Manual: restostack-brand-manual.html
    ============================================= */
 
 @font-face {
@@ -47,68 +47,82 @@ body {
 
 @layer base {
   :root {
-    /* Core brand colors - Hoppiness Official */
-    --background: 220 14% 98%;
-    --foreground: 224 71% 12%;
+    /* RestoStack brand tokens */
+    --rs-carbon:  #0C0B09;
+    --rs-grafito: #161412;
+    --rs-humo:    #2A2623;
+    --rs-ceniza:  #5A5450;
+    --rs-piedra:  #8A827C;
+    --rs-hueso:   #D4CDBF;
+    --rs-crema:   #F2EDE4;
+    --rs-papel:   #FAF8F4;
+    --rs-brasa:   #CF4E2E;
+    --rs-ember:   #B33F20;
+    --rs-ascua:   #E67855;
+    --rs-ok:      #4A7C59;
+
+    /* shadcn compatibility layer — primarios mapeados a RestoStack */
+    --background: 38 47% 97%;        /* papel */
+    --foreground: 24 18% 5%;        /* carbon */
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 12%;
+    --card-foreground: 24 18% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 12%;
+    --popover-foreground: 24 18% 5%;
 
-    /* Primary - Hoppiness Blue (#00139b) */
-    --primary: 234 100% 30%;
+    /* Primary - Brasa (#CF4E2E) */
+    --primary: 14 62% 49%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 12%;
+    /* Secondary */
+    --secondary: 35 28% 91%;        /* crema */
+    --secondary-foreground: 24 18% 5%;
 
     /* Muted */
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 35 24% 87%;            /* hueso */
+    --muted-foreground: 18 12% 45%; /* ceniza */
 
-    /* Accent - Hoppiness Orange (#ff521d) */
-    --accent: 17 100% 56%;
+    /* Accent - Ascua (#E67855) */
+    --accent: 14 74% 62%;
     --accent-foreground: 0 0% 100%;
 
-    /* Warning/Highlight - Hoppiness Yellow (#ffd41f) */
-    --warning: 48 100% 56%;
-    --warning-foreground: 234 100% 15%;
+    /* Warning */
+    --warning: 42 67% 56%;
+    --warning-foreground: 24 18% 5%;
 
-    /* Info - Hoppiness Celeste (#1FB4FF) */
-    --info: 202 100% 56%;
+    /* Info */
+    --info: 202 100% 50%;
     --info-foreground: 0 0% 100%;
 
     /* Success */
-    --success: 142 70% 45%;
+    --success: 143 24% 38%;         /* ok */
     --success-foreground: 0 0% 100%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%;
+    /* Destructive - Ember (#B33F20) */
+    --destructive: 14 70% 41%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 89%;
-    --input: 220 13% 89%;
-    --ring: 234 100% 30%;
+    --border: 35 22% 84%;
+    --input: 35 22% 84%;
+    --ring: 14 62% 49%;             /* brasa */
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    /* Sidebar - Dark blue */
-    --sidebar-background: 234 100% 10%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 234 100% 50%;
+    /* Sidebar - Carbón (#0C0B09) */
+    --sidebar-background: 24 18% 5%;    /* carbon */
+    --sidebar-foreground: 38 47% 97%;   /* papel */
+    --sidebar-primary: 14 62% 49%;      /* brasa */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 234 50% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 234 50% 20%;
-    --sidebar-ring: 234 100% 50%;
+    --sidebar-accent: 20 28% 13%;       /* humo */
+    --sidebar-accent-foreground: 38 47% 97%;
+    --sidebar-border: 20 20% 17%;       /* grafito */
+    --sidebar-ring: 14 62% 49%;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(234, 100%, 30%) 0%, hsl(234, 100%, 40%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(234, 100%, 30%) 0%, hsl(234, 100%, 15%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(17, 100%, 56%) 0%, hsl(48, 100%, 56%) 100%);
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(14, 62%, 49%) 0%, hsl(14, 62%, 55%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(24, 18%, 5%) 0%, hsl(20, 20%, 9%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(14, 74%, 62%) 0%, hsl(42, 67%, 56%) 100%);
 
     /* Shadows */
     --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.06);
@@ -117,48 +131,48 @@ body {
   }
 
   .dark {
-    --background: 234 50% 5%;
-    --foreground: 0 0% 98%;
+    --background: 24 18% 5%;        /* carbon */
+    --foreground: 38 47% 97%;       /* papel */
 
-    --card: 234 50% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 20 20% 9%;              /* grafito */
+    --card-foreground: 38 47% 97%;
 
-    --popover: 234 50% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 20 20% 9%;
+    --popover-foreground: 38 47% 97%;
 
-    --primary: 234 100% 50%;
+    --primary: 14 62% 49%;          /* brasa */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 234 30% 15%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 20 28% 13%;        /* humo */
+    --secondary-foreground: 38 47% 97%;
 
-    --muted: 234 30% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 20 22% 15%;
+    --muted-foreground: 22 9% 60%;  /* piedra */
 
-    --accent: 17 100% 60%;
+    --accent: 14 74% 62%;           /* ascua */
     --accent-foreground: 0 0% 100%;
 
-    --warning: 48 100% 56%;
-    --warning-foreground: 0 0% 0%;
+    --warning: 42 67% 56%;
+    --warning-foreground: 24 18% 5%;
 
-    --success: 142 70% 40%;
+    --success: 143 24% 38%;
     --success-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 45%;
+    --destructive: 14 70% 41%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 234 30% 20%;
-    --input: 234 30% 20%;
-    --ring: 234 100% 50%;
+    --border: 20 20% 17%;           /* grafito-mid */
+    --input: 20 20% 17%;
+    --ring: 14 62% 49%;
 
-    --sidebar-background: 234 50% 4%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 234 100% 55%;
+    --sidebar-background: 24 18% 4%;
+    --sidebar-foreground: 38 47% 97%;
+    --sidebar-primary: 14 62% 49%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 234 30% 12%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 234 30% 15%;
-    --sidebar-ring: 234 100% 55%;
+    --sidebar-accent: 20 28% 13%;
+    --sidebar-accent-foreground: 38 47% 97%;
+    --sidebar-border: 20 20% 17%;
+    --sidebar-ring: 14 62% 49%;
   }
 }
 

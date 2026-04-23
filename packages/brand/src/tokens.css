@@ -1,0 +1,54 @@
+/* RestoStack Design Tokens — CSS Variables
+ * Fuente autoritativa: restostack-brand-manual.html
+ * Copiar literal a globals.css de cualquier paquete que use esta marca.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ===== COLORES PRIMARIOS ===== */
+  --carbon: #0C0B09;
+  --grafito: #161412;
+  --humo: #2A2623;
+  --ceniza: #5A5450;
+  --piedra: #8A827C;
+  --hueso: #D4CDBF;
+  --crema: #F2EDE4;
+  --papel: #FAF8F4;
+
+  /* ===== ACENTO ===== */
+  --brasa: #CF4E2E;
+  --ember: #B33F20;
+  --ascua: #E67855;
+
+  /* ===== SEMÁNTICOS ===== */
+  --ok: #4A7C59;
+  --alerta: #D4A647;
+  --error: #B33F20;
+
+  /* ===== TIPOGRAFÍA ===== */
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  /* ===== ESPACIADO ===== */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --space-section: 140px;
+
+  /* ===== RADIOS ===== */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  /* ===== DOTS PATTERN (fondo Carbón) ===== */
+  --dots-dark: radial-gradient(circle at 1px 1px, rgba(242, 237, 228, 0.04) 1px, transparent 0);
+  --dots-light: radial-gradient(circle at 1px 1px, rgba(138, 130, 124, 0.15) 1px, transparent 0);
+  --dots-size: 24px 24px;
+}

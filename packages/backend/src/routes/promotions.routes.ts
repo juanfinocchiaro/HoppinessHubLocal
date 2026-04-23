@@ -4,6 +4,7 @@ import * as schema from '../db/schema.js';
 import { eq, and, inArray, isNull, desc, gte, lte } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { logChannelChange, logChannelChangeBulk, isAppChannel } from '../services/channelChanges.js';
 
 const router = Router();
 
@@ -11,10 +12,159 @@ const router = Router();
 // Promotions CRUD
 // ═══════════════════════════════════════════════════════════════════════
 
+/**
+ * Trae, para un conjunto de promos, todas sus filas de
+ * `promotion_channel_config` y las devuelve como un map `promoId -> configs[]`.
+ */
+async function fetchChannelConfigsMap(promoIds: string[]) {
+  if (!promoIds.length) return new Map<string, Array<typeof schema.promotion_channel_config.$inferSelect>>();
+  const rows = await db.select().from(schema.promotion_channel_config)
+    .where(inArray(schema.promotion_channel_config.promotion_id, promoIds));
+  const map = new Map<string, Array<typeof schema.promotion_channel_config.$inferSelect>>();
+  for (const row of rows) {
+    const list = map.get(row.promotion_id) ?? [];
+    list.push(row);
+    map.set(row.promotion_id, list);
+  }
+  return map;
+}
+
+/**
+ * Reemplaza todas las filas de `promotion_channel_config` para una promo por
+ * el array recibido (upsert por channel_code). Mantiene sincronizado el array
+ * legacy `promotions.canales` para compat y rollback. También registra
+ * cambios pendientes en canales externos (Fase 5).
+ */
+async function replaceChannelConfigs(
+  promoId: string,
+  configs: Array<{
+    channel_code: string;
+    is_active_in_channel?: boolean;
+    custom_discount_value?: number | null;
+    custom_final_price?: number | null;
+    funded_by?: string | null;
+    display_format?: string | null;
+    banner_image_url?: string | null;
+    promo_text?: string | null;
+  }>,
+  context: { createdBy?: string; isNewPromotion: boolean },
+) {
+  const now = new Date().toISOString();
+
+  const previousConfigs = await db.select().from(schema.promotion_channel_config)
+    .where(eq(schema.promotion_channel_config.promotion_id, promoId));
+  const previousActiveByChannel = new Map(
+    previousConfigs.map((c) => [c.channel_code, c.is_active_in_channel !== false] as const),
+  );
+
+  const promoRow = await db.select().from(schema.promotions).where(eq(schema.promotions.id, promoId)).get();
+
+  await db.delete(schema.promotion_channel_config)
+    .where(eq(schema.promotion_channel_config.promotion_id, promoId));
+  for (const cfg of configs) {
+    await db.insert(schema.promotion_channel_config).values({
+      id: crypto.randomUUID(),
+      promotion_id: promoId,
+      channel_code: cfg.channel_code,
+      is_active_in_channel: cfg.is_active_in_channel ?? true,
+      custom_discount_value: cfg.custom_discount_value ?? null,
+      custom_final_price: cfg.custom_final_price ?? null,
+      funded_by: cfg.funded_by ?? null,
+      display_format: cfg.display_format ?? null,
+      banner_image_url: cfg.banner_image_url ?? null,
+      promo_text: cfg.promo_text ?? null,
+      created_at: now,
+      updated_at: now,
+    });
+  }
+  // Shadow sync: mantener `canales` como array con los canales activos.
+  const activeChannels = configs.filter((c) => c.is_active_in_channel !== false).map((c) => c.channel_code);
+  await db.update(schema.promotions)
+    .set({ canales: JSON.stringify(activeChannels), updated_at: now })
+    .where(eq(schema.promotions.id, promoId));
+
+  for (const cfg of configs) {
+    if (!isAppChannel(cfg.channel_code)) continue;
+    const wasActive = previousActiveByChannel.get(cfg.channel_code) ?? false;
+    const nowActive = cfg.is_active_in_channel !== false;
+
+    if (context.isNewPromotion || (!wasActive && nowActive)) {
+      await logChannelChange({
+        channelCode: cfg.channel_code,
+        changeType: 'new_promotion',
+        entityType: 'promotion',
+        entityId: promoId,
+        payload: buildPromotionPayload(promoRow, cfg),
+        createdBy: context.createdBy,
+      });
+    } else if (wasActive && !nowActive) {
+      await logChannelChange({
+        channelCode: cfg.channel_code,
+        changeType: 'promotion_end',
+        entityType: 'promotion',
+        entityId: promoId,
+        payload: buildPromotionPayload(promoRow, cfg),
+        createdBy: context.createdBy,
+      });
+    } else if (wasActive && nowActive) {
+      await logChannelChange({
+        channelCode: cfg.channel_code,
+        changeType: 'promotion_change',
+        entityType: 'promotion',
+        entityId: promoId,
+        payload: buildPromotionPayload(promoRow, cfg),
+        createdBy: context.createdBy,
+      });
+    }
+  }
+
+  for (const prev of previousConfigs) {
+    if (!isAppChannel(prev.channel_code)) continue;
+    const stillPresent = configs.some((c) => c.channel_code === prev.channel_code);
+    if (!stillPresent && prev.is_active_in_channel !== false) {
+      await logChannelChange({
+        channelCode: prev.channel_code,
+        changeType: 'promotion_end',
+        entityType: 'promotion',
+        entityId: promoId,
+        payload: buildPromotionPayload(promoRow, prev),
+        createdBy: context.createdBy,
+      });
+    }
+  }
+}
+
+function buildPromotionPayload(
+  promo: typeof schema.promotions.$inferSelect | null | undefined,
+  cfg: {
+    channel_code: string;
+    custom_final_price?: number | null;
+    custom_discount_value?: number | null;
+    display_format?: string | null;
+    promo_text?: string | null;
+  },
+) {
+  return {
+    promotion_name: promo?.name ?? null,
+    promotion_type: promo?.type ?? null,
+    promotion_value: promo?.value ?? null,
+    dias_semana: promo?.dias_semana ?? null,
+    hora_inicio: promo?.hora_inicio ?? null,
+    hora_fin: promo?.hora_fin ?? null,
+    channel_code: cfg.channel_code,
+    custom_final_price: cfg.custom_final_price ?? null,
+    custom_discount_value: cfg.custom_discount_value ?? null,
+    display_format: cfg.display_format ?? null,
+    promo_text: cfg.promo_text ?? null,
+  };
+}
+
 router.get('/', requireAuth, async (_req, res, next) => {
   try {
     const rows = await db.select().from(schema.promotions).where(isNull(schema.promotions.deleted_at));
-    res.json({ data: rows });
+    const configsMap = await fetchChannelConfigsMap(rows.map((r) => r.id));
+    const enriched = rows.map((r) => ({ ...r, channel_configs: configsMap.get(r.id) ?? [] }));
+    res.json({ data: enriched });
   } catch (err) { next(err); }
 });
 
@@ -25,7 +175,9 @@ router.get('/active', requireAuth, async (_req, res, next) => {
         eq(schema.promotions.is_active, true),
         isNull(schema.promotions.deleted_at),
       ));
-    res.json({ data: rows });
+    const configsMap = await fetchChannelConfigsMap(rows.map((r) => r.id));
+    const enriched = rows.map((r) => ({ ...r, channel_configs: configsMap.get(r.id) ?? [] }));
+    res.json({ data: enriched });
   } catch (err) { next(err); }
 });
 
@@ -33,13 +185,25 @@ router.post('/', requireAuth, async (req, res, next) => {
   try {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    // Separamos `channel_configs` porque no es columna de `promotions`.
+    const { channel_configs, ...promoFields } = req.body as Record<string, unknown> & {
+      channel_configs?: Parameters<typeof replaceChannelConfigs>[1];
+    };
     await db.insert(schema.promotions).values({
-      id, ...req.body,
-      created_by: req.body.created_by ?? req.user!.userId,
+      id, ...promoFields,
+      created_by: (promoFields.created_by as string | undefined) ?? req.user!.userId,
       created_at: now, updated_at: now,
     });
+    if (Array.isArray(channel_configs)) {
+      await replaceChannelConfigs(id, channel_configs, {
+        createdBy: req.user!.userId,
+        isNewPromotion: true,
+      });
+    }
     const created = await db.select().from(schema.promotions).where(eq(schema.promotions.id, id)).get();
-    res.status(201).json({ data: created });
+    const channelConfigs = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, id));
+    res.status(201).json({ data: { ...created, channel_configs: channelConfigs } });
   } catch (err) { next(err); }
 });
 
@@ -219,8 +383,21 @@ router.put('/price-lists/:id', requireAuth, async (req, res, next) => {
 router.post('/price-lists/:priceListId/items/bulk', requireAuth, async (req, res, next) => {
   try {
     const priceListId = req.params.priceListId;
-    const { items } = req.body as { items: Array<{ item_carta_id: string; precio: number }> };
+    const { items } = req.body as {
+      items: Array<{
+        item_carta_id: string;
+        precio: number;
+        is_visible?: boolean;
+        custom_name?: string | null;
+        custom_image_url?: string | null;
+        custom_description?: string | null;
+      }>;
+    };
     const now = new Date().toISOString();
+
+    const priceList = await db.select().from(schema.price_lists)
+      .where(eq(schema.price_lists.id, priceListId)).get();
+    const channelCode = priceList?.channel ?? null;
 
     for (const item of items) {
       const existing = await db.select().from(schema.price_list_items)
@@ -229,9 +406,15 @@ router.post('/price-lists/:priceListId/items/bulk', requireAuth, async (req, res
           eq(schema.price_list_items.item_carta_id, item.item_carta_id),
         )).get();
 
+      const patch: Record<string, unknown> = { price: item.precio, updated_at: now };
+      if (item.is_visible !== undefined) patch.is_visible = item.is_visible;
+      if (item.custom_name !== undefined) patch.custom_name = item.custom_name;
+      if (item.custom_image_url !== undefined) patch.custom_image_url = item.custom_image_url;
+      if (item.custom_description !== undefined) patch.custom_description = item.custom_description;
+
       if (existing) {
         await db.update(schema.price_list_items)
-          .set({ price: item.precio, updated_at: now })
+          .set(patch)
           .where(eq(schema.price_list_items.id, existing.id));
       } else {
         await db.insert(schema.price_list_items).values({
@@ -239,14 +422,139 @@ router.post('/price-lists/:priceListId/items/bulk', requireAuth, async (req, res
           price_list_id: priceListId,
           item_carta_id: item.item_carta_id,
           price: item.precio,
+          is_visible: item.is_visible ?? true,
+          custom_name: item.custom_name ?? null,
+          custom_image_url: item.custom_image_url ?? null,
+          custom_description: item.custom_description ?? null,
           created_at: now, updated_at: now,
         });
+      }
+
+      if (channelCode && isAppChannel(channelCode)) {
+        const priceChanged = !existing || existing.price !== item.precio;
+        const visibilityChanged = item.is_visible !== undefined && existing && existing.is_visible !== item.is_visible;
+        if (priceChanged || visibilityChanged) {
+          const menuItem = await db.select().from(schema.menu_items)
+            .where(eq(schema.menu_items.id, item.item_carta_id)).get();
+          await logChannelChange({
+            channelCode,
+            changeType: item.is_visible === false
+              ? 'deactivation'
+              : !existing
+                ? 'new_article'
+                : 'price_change',
+            entityType: 'menu_item',
+            entityId: item.item_carta_id,
+            payload: {
+              item_name: menuItem?.name ?? null,
+              channel_code: channelCode,
+              previous_price: existing?.price ?? null,
+              new_price: item.precio,
+              is_visible: item.is_visible,
+              custom_name: item.custom_name ?? null,
+              custom_description: item.custom_description ?? null,
+            },
+            createdBy: req.user!.userId,
+          });
+        }
       }
     }
 
     const rows = await db.select().from(schema.price_list_items)
       .where(eq(schema.price_list_items.price_list_id, priceListId));
     res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+/**
+ * Fase 3: patch puntual para un ítem × canal. Upsert que permite cambiar
+ * `is_visible` y/o los overrides visuales sin tocar `price`.
+ */
+router.put('/price-lists/:priceListId/items/:itemCartaId', requireAuth, async (req, res, next) => {
+  try {
+    const { priceListId, itemCartaId } = req.params;
+    const {
+      is_visible,
+      custom_name,
+      custom_image_url,
+      custom_description,
+      price,
+    } = req.body as {
+      is_visible?: boolean;
+      custom_name?: string | null;
+      custom_image_url?: string | null;
+      custom_description?: string | null;
+      price?: number;
+    };
+    const now = new Date().toISOString();
+
+    const priceList = await db.select().from(schema.price_lists)
+      .where(eq(schema.price_lists.id, priceListId)).get();
+    const channelCode = priceList?.channel ?? null;
+
+    const existing = await db.select().from(schema.price_list_items)
+      .where(and(
+        eq(schema.price_list_items.price_list_id, priceListId),
+        eq(schema.price_list_items.item_carta_id, itemCartaId),
+      )).get();
+
+    const patch: Record<string, unknown> = { updated_at: now };
+    if (is_visible !== undefined) patch.is_visible = is_visible;
+    if (custom_name !== undefined) patch.custom_name = custom_name;
+    if (custom_image_url !== undefined) patch.custom_image_url = custom_image_url;
+    if (custom_description !== undefined) patch.custom_description = custom_description;
+    if (price !== undefined) patch.price = price;
+
+    if (existing) {
+      await db.update(schema.price_list_items)
+        .set(patch)
+        .where(eq(schema.price_list_items.id, existing.id));
+    } else {
+      await db.insert(schema.price_list_items).values({
+        id: crypto.randomUUID(),
+        price_list_id: priceListId,
+        item_carta_id: itemCartaId,
+        price: price ?? null,
+        is_visible: is_visible ?? true,
+        custom_name: custom_name ?? null,
+        custom_image_url: custom_image_url ?? null,
+        custom_description: custom_description ?? null,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+
+    if (channelCode && isAppChannel(channelCode)) {
+      const visibilityChanged = is_visible !== undefined && existing?.is_visible !== is_visible;
+      const priceChanged = price !== undefined && existing?.price !== price;
+      if (visibilityChanged || priceChanged) {
+        const menuItem = await db.select().from(schema.menu_items)
+          .where(eq(schema.menu_items.id, itemCartaId)).get();
+        await logChannelChange({
+          channelCode,
+          changeType: is_visible === false ? 'deactivation' : is_visible === true && existing?.is_visible === false ? 'activation' : priceChanged ? 'price_change' : 'price_change',
+          entityType: 'menu_item',
+          entityId: itemCartaId,
+          payload: {
+            item_name: menuItem?.name ?? null,
+            channel_code: channelCode,
+            previous_price: existing?.price ?? null,
+            new_price: price ?? existing?.price ?? null,
+            is_visible,
+            custom_name,
+            custom_description,
+          },
+          createdBy: req.user!.userId,
+        });
+      }
+    }
+
+    const updated = await db.select().from(schema.price_list_items)
+      .where(and(
+        eq(schema.price_list_items.price_list_id, priceListId),
+        eq(schema.price_list_items.item_carta_id, itemCartaId),
+      )).get();
+    res.json({ data: updated });
   } catch (err) { next(err); }
 });
 
@@ -456,8 +764,49 @@ router.put('/:id/toggle-active', requireAuth, async (req, res, next) => {
     await db.update(schema.promotions)
       .set({ is_active: req.body.is_active, updated_at: new Date().toISOString() })
       .where(eq(schema.promotions.id, req.params.id));
+
+    const configs = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, req.params.id));
+    const appConfigs = configs.filter((c) => isAppChannel(c.channel_code) && c.is_active_in_channel !== false);
+    if (appConfigs.length > 0) {
+      await logChannelChangeBulk(
+        appConfigs.map((c) => c.channel_code),
+        {
+          changeType: req.body.is_active ? 'new_promotion' : 'promotion_end',
+          entityType: 'promotion',
+          entityId: req.params.id,
+          payload: buildPromotionPayload(existing, { channel_code: 'all' }),
+          createdBy: req.user!.userId,
+        },
+      );
+    }
+
     const updated = await db.select().from(schema.promotions).where(eq(schema.promotions.id, req.params.id)).get();
     res.json({ data: updated });
+  } catch (err) { next(err); }
+});
+
+router.get('/:id/channels', requireAuth, async (req, res, next) => {
+  try {
+    const rows = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, req.params.id));
+    res.json({ data: rows });
+  } catch (err) { next(err); }
+});
+
+router.put('/:id/channels', requireAuth, async (req, res, next) => {
+  try {
+    const existing = await db.select().from(schema.promotions).where(eq(schema.promotions.id, req.params.id)).get();
+    if (!existing) throw new AppError(404, 'Promotion not found');
+    const { configs } = req.body as { configs: Parameters<typeof replaceChannelConfigs>[1] };
+    if (!Array.isArray(configs)) throw new AppError(400, 'configs must be an array');
+    await replaceChannelConfigs(req.params.id, configs, {
+      createdBy: req.user!.userId,
+      isNewPromotion: false,
+    });
+    const rows = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, req.params.id));
+    res.json({ data: rows });
   } catch (err) { next(err); }
 });
 
@@ -465,11 +814,22 @@ router.put('/:id', requireAuth, async (req, res, next) => {
   try {
     const existing = await db.select().from(schema.promotions).where(eq(schema.promotions.id, req.params.id)).get();
     if (!existing) throw new AppError(404, 'Promotion not found');
+    const { channel_configs, ...promoFields } = req.body as Record<string, unknown> & {
+      channel_configs?: Parameters<typeof replaceChannelConfigs>[1];
+    };
     await db.update(schema.promotions)
-      .set({ ...req.body, updated_at: new Date().toISOString() })
+      .set({ ...promoFields, updated_at: new Date().toISOString() })
       .where(eq(schema.promotions.id, req.params.id));
+    if (Array.isArray(channel_configs)) {
+      await replaceChannelConfigs(req.params.id, channel_configs, {
+        createdBy: req.user!.userId,
+        isNewPromotion: false,
+      });
+    }
     const updated = await db.select().from(schema.promotions).where(eq(schema.promotions.id, req.params.id)).get();
-    res.json({ data: updated });
+    const rows = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, req.params.id));
+    res.json({ data: { ...updated, channel_configs: rows } });
   } catch (err) { next(err); }
 });
 
@@ -477,6 +837,23 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
     const existing = await db.select().from(schema.promotions).where(eq(schema.promotions.id, req.params.id)).get();
     if (!existing) throw new AppError(404, 'Promotion not found');
+
+    const configs = await db.select().from(schema.promotion_channel_config)
+      .where(eq(schema.promotion_channel_config.promotion_id, req.params.id));
+    const appConfigs = configs.filter((c) => isAppChannel(c.channel_code) && c.is_active_in_channel !== false);
+    if (appConfigs.length > 0) {
+      await logChannelChangeBulk(
+        appConfigs.map((c) => c.channel_code),
+        {
+          changeType: 'promotion_end',
+          entityType: 'promotion',
+          entityId: req.params.id,
+          payload: buildPromotionPayload(existing, { channel_code: 'all' }),
+          createdBy: req.user!.userId,
+        },
+      );
+    }
+
     await db.update(schema.promotions)
       .set({ deleted_at: new Date().toISOString() })
       .where(eq(schema.promotions.id, req.params.id));

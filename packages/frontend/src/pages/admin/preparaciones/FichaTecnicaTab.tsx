@@ -51,7 +51,11 @@ export function FichaTecnicaTab({
         tipo_linea: item.sub_preparacion_id ? 'preparacion' : 'insumo',
         insumo_id: item.insumo_id || '',
         sub_preparacion_id: item.sub_preparacion_id || '',
-        cantidad: item.quantity,
+        // P2 #11 fix: antes se mapeaba a `cantidad: item.quantity` pero el
+        // resto del componente lee `item.quantity`. Eso dejaba `quantity`
+        // undefined y los totales se renderizaban con 0 hasta que el
+        // usuario editaba la fila. Uso el nombre canónico.
+        quantity: item.quantity,
         unidad: item.unit,
         insumo: item.supplies,
         sub_preparacion: item.recipes,

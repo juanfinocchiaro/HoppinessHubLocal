@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* ===== RestoStack Design Tokens ===== */
+:root {
+  /* Colores */
+  --carbon: #0C0B09;
+  --grafito: #161412;
+  --humo: #2A2623;
+  --ceniza: #5A5450;
+  --piedra: #8A827C;
+  --hueso: #D4CDBF;
+  --crema: #F2EDE4;
+  --papel: #FAF8F4;
+
+  --brasa: #CF4E2E;
+  --ember: #B33F20;
+  --ascua: #E67855;
+
+  --ok: #4A7C59;
+  --alerta: #D4A647;
+  --error: #B33F20;
+
+  /* Tipografía */
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), Menlo, monospace;
+
+  /* Dots pattern (brand manual literal) */
+  --dots-dark: radial-gradient(circle at 1px 1px, rgba(242, 237, 228, 0.04) 1px, transparent 0);
+  --dots-light: radial-gradient(circle at 1px 1px, rgba(138, 130, 124, 0.15) 1px, transparent 0);
+  --dots-size: 24px 24px;
+}
+
+/* ===== Tailwind v4 theme extension (tokens → utilities) ===== */
+@theme inline {
+  /* Colores de marca */
+  --color-carbon:  var(--carbon);
+  --color-grafito: var(--grafito);
+  --color-humo:    var(--humo);
+  --color-ceniza:  var(--ceniza);
+  --color-piedra:  var(--piedra);
+  --color-hueso:   var(--hueso);
+  --color-crema:   var(--crema);
+  --color-papel:   var(--papel);
+
+  --color-brasa: var(--brasa);
+  --color-ember: var(--ember);
+  --color-ascua: var(--ascua);
+
+  --color-ok:     var(--ok);
+  --color-alerta: var(--alerta);
+  --color-error:  var(--error);
+
+  /* Fuentes */
+  --font-serif: var(--font-serif);
+  --font-sans:  var(--font-sans);
+  --font-mono:  var(--font-mono);
+}
+
+/* ===== Reset / Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  background: var(--papel);
+  color: var(--carbon);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ===== Tipografía helper classes ===== */
+.kicker {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ceniza);
+}
+
+.display-xl {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+/* ===== Dots pattern ===== */
+.bg-dots-dark {
+  background-image: var(--dots-dark);
+  background-size: var(--dots-size);
+}
+
+.bg-dots-light {
+  background-image: var(--dots-light);
+  background-size: var(--dots-size);
+}
+
+/* ===== Accesibilidad: prefers-reduced-motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.15s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.15s !important;
+  }
+}

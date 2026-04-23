@@ -1,0 +1,141 @@
+{
+  "burger": {
+    "label": "Hamburguesería",
+    "categories": ["Hamburguesas", "Acompañamientos", "Bebidas", "Postres"],
+    "modifier_groups": [
+      {
+        "name": "Punto de cocción",
+        "min_selected": 1,
+        "max_selected": 1,
+        "is_required": true,
+        "options": ["Jugoso", "A punto", "Bien cocido"]
+      },
+      {
+        "name": "Queso extra",
+        "min_selected": 0,
+        "max_selected": 1,
+        "is_required": false,
+        "options": ["Cheddar", "Provolone", "Azul"]
+      },
+      {
+        "name": "Salsas",
+        "min_selected": 0,
+        "max_selected": 3,
+        "is_required": false,
+        "options": ["Ketchup", "Mostaza", "Mayonesa", "Barbacoa", "Chimichurri"]
+      }
+    ],
+    "sample_products": [
+      { "name": "Clásica Smash", "category": "Hamburguesas", "base_price": 8500, "description": "Medallón de carne 120g, lechuga, tomate, pickles, cheddar" },
+      { "name": "Doble Smash", "category": "Hamburguesas", "base_price": 11500, "description": "Doble medallón 120g, doble cheddar, salsa especial" },
+      { "name": "Papas fritas", "category": "Acompañamientos", "base_price": 3500, "description": "Papas crinkle crujientes con sal marina" },
+      { "name": "Coca Cola 500ml", "category": "Bebidas", "base_price": 2500 },
+      { "name": "Agua mineral", "category": "Bebidas", "base_price": 1500 }
+    ],
+    "channels": ["Mostrador", "Delivery propio", "Takeaway"]
+  },
+  "pizza": {
+    "label": "Pizzería",
+    "categories": ["Pizzas", "Empanadas", "Bebidas", "Postres"],
+    "modifier_groups": [
+      {
+        "name": "Tamaño",
+        "min_selected": 1,
+        "max_selected": 1,
+        "is_required": true,
+        "options": ["Individual (6 porciones)", "Familiar (8 porciones)", "XXL (10 porciones)"]
+      },
+      {
+        "name": "Borde",
+        "min_selected": 0,
+        "max_selected": 1,
+        "is_required": false,
+        "options": ["Clásico", "Relleno de queso", "Relleno de salchicha"]
+      }
+    ],
+    "sample_products": [
+      { "name": "Mozzarella", "category": "Pizzas", "base_price": 9000, "description": "Salsa de tomate, mozzarella fresca, albahaca" },
+      { "name": "Napolitana", "category": "Pizzas", "base_price": 10500, "description": "Salsa de tomate, mozzarella, tomate, ajo, albahaca" },
+      { "name": "Empanada de carne", "category": "Empanadas", "base_price": 1800 },
+      { "name": "Coca Cola 1.5L", "category": "Bebidas", "base_price": 3500 }
+    ],
+    "channels": ["Mostrador", "Delivery propio", "Takeaway"]
+  },
+  "cafe": {
+    "label": "Cafetería",
+    "categories": ["Cafés y infusiones", "Desayunos", "Medialunas y facturas", "Bebidas frías"],
+    "modifier_groups": [
+      {
+        "name": "Tipo de leche",
+        "min_selected": 0,
+        "max_selected": 1,
+        "is_required": false,
+        "options": ["Entera", "Descremada", "De avena", "De almendras", "Sin lactosa"]
+      },
+      {
+        "name": "Tamaño",
+        "min_selected": 1,
+        "max_selected": 1,
+        "is_required": true,
+        "options": ["Chico", "Mediano", "Grande"]
+      }
+    ],
+    "sample_products": [
+      { "name": "Café con leche", "category": "Cafés y infusiones", "base_price": 2800 },
+      { "name": "Cappuccino", "category": "Cafés y infusiones", "base_price": 3200 },
+      { "name": "Tostado mixto", "category": "Desayunos", "base_price": 4500, "description": "Jamón y queso, tostado en pan brioche" },
+      { "name": "Medialuna de manteca", "category": "Medialunas y facturas", "base_price": 800 },
+      { "name": "Limonada natural", "category": "Bebidas frías", "base_price": 2200 }
+    ],
+    "channels": ["Mostrador", "Takeaway", "Mesa"]
+  },
+  "restaurant": {
+    "label": "Restaurante",
+    "categories": ["Entradas", "Platos principales", "Guarniciones", "Postres", "Bebidas"],
+    "modifier_groups": [
+      {
+        "name": "Punto de cocción",
+        "min_selected": 0,
+        "max_selected": 1,
+        "is_required": false,
+        "options": ["Jugoso", "A punto", "Bien cocido"]
+      },
+      {
+        "name": "Sin ingrediente",
+        "min_selected": 0,
+        "max_selected": 5,
+        "is_required": false,
+        "options": ["Sin cebolla", "Sin ajo", "Sin gluten", "Sin picante", "Sin lácteos"]
+      }
+    ],
+    "sample_products": [
+      { "name": "Tabla de fiambres", "category": "Entradas", "base_price": 7500, "description": "Selección de fiambres y quesos de la casa" },
+      { "name": "Lomo al champignon", "category": "Platos principales", "base_price": 14500, "description": "Lomo 200g con salsa de champiñones y papas noisette" },
+      { "name": "Ensalada mixta", "category": "Guarniciones", "base_price": 4500 },
+      { "name": "Tiramisú", "category": "Postres", "base_price": 5500 },
+      { "name": "Copa de vino", "category": "Bebidas", "base_price": 4000 }
+    ],
+    "channels": ["Salón", "Delivery propio", "Takeaway"]
+  },
+  "bar": {
+    "label": "Bar / Cervecería",
+    "categories": ["Cervezas", "Cócteles", "Picadas y snacks", "Comidas"],
+    "modifier_groups": [
+      {
+        "name": "Formato",
+        "min_selected": 1,
+        "max_selected": 1,
+        "is_required": true,
+        "options": ["Pinta (500ml)", "Media pinta (300ml)", "Jarra (1L)"]
+      }
+    ],
+    "sample_products": [
+      { "name": "IPA artesanal", "category": "Cervezas", "base_price": 3800, "description": "India Pale Ale de lúpulo cítrico, 6.5% ABV" },
+      { "name": "Stout de la casa", "category": "Cervezas", "base_price": 3600, "description": "Tostada y cremosa, 5.8% ABV" },
+      { "name": "Gin tónico", "category": "Cócteles", "base_price": 5500 },
+      { "name": "Picada chica", "category": "Picadas y snacks", "base_price": 8500, "description": "Para 2 personas: papas, maní, aceitunas, queso" },
+      { "name": "Hamburguesa del bar", "category": "Comidas", "base_price": 9500 }
+    ],
+    "channels": ["Mostrador", "Mesa", "Delivery propio"]
+  }
+}
