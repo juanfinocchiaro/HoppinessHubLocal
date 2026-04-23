@@ -377,6 +377,14 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
           Componentes que se pueden ofrecer como extra con cargo. Los extras se gestionan y les
           ponés precio en EXTRAS/MODIFICADORES del Análisis.
         </p>
+        {extrasError ? (
+          <Alert variant="destructive" className="mb-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No se pudieron cargar las asignaciones de extras. Verificá los permisos.
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {discoveredExtras.length === 0 ? (
           <div className="py-3 text-center text-xs text-muted-foreground border rounded-lg">
             Sin componentes descubiertos. Agregá recetas a la composición.
@@ -407,6 +415,14 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
         <p className="text-xs text-muted-foreground mb-2">
           Ingredientes que el cliente puede pedir SIN (sin descuento).
         </p>
+        {removiblesQuery.isError ? (
+          <Alert variant="destructive" className="mb-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No se pudieron cargar los removibles. Verificá los permisos.
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {uniqueIngredients.length === 0 && deepSubPreps.length === 0 ? (
           <div className="py-3 text-center text-xs text-muted-foreground border rounded-lg">
             Sin ingredientes descubiertos. Agregá recetas a la composición.
@@ -472,6 +488,14 @@ export function ComposicionInline({ item, mutations }: { item: any; mutations: I
         <p className="text-xs text-muted-foreground mb-2">
           Para componentes variables (ej: bebida).
         </p>
+        {gruposQuery.isError ? (
+          <Alert variant="destructive" className="mb-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No se pudieron cargar los grupos opcionales. Verificá los permisos.
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {(grupos || []).map((grupo: GrupoOpcional) => (
           <GrupoEditorInline
             key={grupo.id}
