@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db/connection.js';
+import { db, sqlite } from '../db/connection.js';
 import * as schema from '../db/schema.js';
 import { eq, and, isNull } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
@@ -274,6 +274,39 @@ router.get('/:proveedorId/movements', requireAuth, async (req, res, next) => {
     const links = await db.select().from(schema.invoice_payment_links);
 
     res.json({ data: { invoices, payments, links } });
+  } catch (err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// Sprint 5 — Last-used supplier per supply per location
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /suppliers/last-used?location_id=<uuid>
+ *
+ * Returns the most-recently-used supplier for each insumo in a given location,
+ * derived from supplier_invoices × invoice_items history.
+ * Powers the "último usado" heuristic in the purchase registration UI.
+ */
+router.get('/last-used', requireAuth, async (req, res, next) => {
+  try {
+    const locationId = req.query.location_id as string | undefined;
+    if (!locationId) throw new AppError(400, 'location_id query param required');
+
+    const rows = sqlite
+      .prepare(
+        `SELECT location_id, insumo_id, proveedor_id, last_used_date
+         FROM v_last_supplier_per_supply_per_location
+         WHERE location_id = ?`
+      )
+      .all(locationId) as Array<{
+        location_id: string;
+        insumo_id: string;
+        proveedor_id: string;
+        last_used_date: string;
+      }>;
+
+    res.json({ data: rows });
   } catch (err) { next(err); }
 });
 

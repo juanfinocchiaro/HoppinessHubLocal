@@ -8,6 +8,29 @@ import {
   updateProveedor,
   softDeleteProveedor,
 } from '@/services/proveedoresService';
+import { apiGet } from '@/services/apiClient';
+
+export interface LastUsedSupplierEntry {
+  location_id: string;
+  insumo_id: string;
+  proveedor_id: string;
+  last_used_date: string;
+}
+
+/** Returns the last-used supplier per insumo for a given location (Sprint 5). */
+export function useLastUsedSuppliers(locationId: string | undefined) {
+  return useQuery({
+    queryKey: ['suppliers-last-used', locationId],
+    queryFn: async () => {
+      const res = await apiGet<{ data: LastUsedSupplierEntry[] }>(
+        `/suppliers/last-used?location_id=${locationId}`
+      );
+      return res.data;
+    },
+    enabled: !!locationId,
+    staleTime: 2 * 60 * 1000,
+  });
+}
 
 export function useProveedores(branchId?: string) {
   const { user } = useAuth();

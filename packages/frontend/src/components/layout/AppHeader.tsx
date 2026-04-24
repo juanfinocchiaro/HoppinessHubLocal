@@ -23,6 +23,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { UserMenuDropdown } from '@/components/webapp/UserMenuDropdown';
+import { LocationSwitcher } from '@/components/layout/LocationSwitcher';
 import logoHoppiness from '@/assets/logo-hoppiness-blue.png';
 
 // ----- Public mode nav items (desktop horizontal + mobile drawer) -----
@@ -373,8 +374,12 @@ function WorkCenter({ breadcrumb, onToggleSidebar }: WorkModeProps) {
       </Link>
 
       {breadcrumb && (
-        <span className="text-sm font-semibold text-foreground truncate">{breadcrumb}</span>
+        <span className="text-sm font-semibold text-foreground truncate hidden sm:inline">
+          {breadcrumb}
+        </span>
       )}
+
+      <LocationSwitcher className="ml-2" />
     </div>
   );
 }
