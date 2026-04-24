@@ -8,6 +8,7 @@ import { staggerContainer, fadeUpVariants, viewportOpts } from '@/lib/animations
 export function FinalCTA() {
   return (
     <section
+      data-section="final-cta"
       style={{
         background: 'var(--carbon)',
         padding: '160px 32px',

@@ -14,9 +14,13 @@ const NAV_LINKS = [
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [atHero, setAtHero] = useState(true);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 16);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 16);
+      setAtHero(window.scrollY < (window.innerHeight * 0.7));
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -77,14 +81,14 @@ export function Nav() {
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 500,
                 fontSize: 14,
-                color: 'var(--ceniza)',
+                color: atHero && !scrolled ? 'var(--piedra)' : 'var(--ceniza)',
                 textDecoration: 'none',
                 padding: '6px 12px',
                 borderRadius: 6,
                 transition: 'color 0.15s ease',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--carbon)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ceniza)')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = atHero && !scrolled ? 'var(--hueso)' : 'var(--carbon)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = atHero && !scrolled ? 'var(--piedra)' : 'var(--ceniza)')}
             >
               {link.label}
             </Link>
@@ -99,13 +103,13 @@ export function Nav() {
               fontFamily: 'var(--font-sans)',
               fontWeight: 500,
               fontSize: 14,
-              color: 'var(--ceniza)',
+              color: atHero && !scrolled ? 'var(--piedra)' : 'var(--ceniza)',
               textDecoration: 'none',
               padding: '6px 12px',
               transition: 'color 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--carbon)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ceniza)')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = atHero && !scrolled ? 'var(--hueso)' : 'var(--carbon)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = atHero && !scrolled ? 'var(--piedra)' : 'var(--ceniza)')}
           >
             Ingresar
           </Link>
@@ -153,8 +157,8 @@ export function Nav() {
               display: 'block',
               width: 22,
               height: 1.5,
-              background: 'var(--carbon)',
-              transition: 'transform 0.2s ease, opacity 0.2s ease',
+              background: atHero && !scrolled ? 'var(--hueso)' : 'var(--carbon)',
+              transition: 'transform 0.2s ease, opacity 0.2s ease, background 0.3s ease',
               transform: menuOpen ? 'translateY(6.5px) rotate(45deg)' : 'none',
             }}
           />
@@ -163,8 +167,8 @@ export function Nav() {
               display: 'block',
               width: 22,
               height: 1.5,
-              background: 'var(--carbon)',
-              transition: 'opacity 0.2s ease',
+              background: atHero && !scrolled ? 'var(--hueso)' : 'var(--carbon)',
+              transition: 'opacity 0.2s ease, background 0.3s ease',
               opacity: menuOpen ? 0 : 1,
             }}
           />
@@ -173,8 +177,8 @@ export function Nav() {
               display: 'block',
               width: 22,
               height: 1.5,
-              background: 'var(--carbon)',
-              transition: 'transform 0.2s ease, opacity 0.2s ease',
+              background: atHero && !scrolled ? 'var(--hueso)' : 'var(--carbon)',
+              transition: 'transform 0.2s ease, opacity 0.2s ease, background 0.3s ease',
               transform: menuOpen ? 'translateY(-6.5px) rotate(-45deg)' : 'none',
             }}
           />

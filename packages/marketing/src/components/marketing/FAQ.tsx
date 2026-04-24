@@ -44,6 +44,7 @@ export function FAQ() {
 
   return (
     <section
+      data-section="faq"
       style={{
         background: 'var(--papel)',
         padding: '140px 32px',

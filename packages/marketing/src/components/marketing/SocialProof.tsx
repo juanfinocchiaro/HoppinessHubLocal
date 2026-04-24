@@ -4,35 +4,26 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { fadeUpVariants, viewportOpts } from '@/lib/animations';
 
-const CLIENTS = [
-  { name: 'Hoppiness Club', label: 'Hoppiness Club — 8 locales en Córdoba' },
-  // Slots para logos adicionales cuando Juan los consiga
-  { name: 'Cliente 2', label: 'Próximamente' },
-  { name: 'Cliente 3', label: 'Próximamente' },
-];
-
-function HoppinessLogo({ grayscale }: { grayscale: boolean }) {
+function HoppinessLogo({ hovered }: { hovered: boolean }) {
   return (
     <svg
-      width="120"
-      height="32"
-      viewBox="0 0 120 32"
+      width="130"
+      height="36"
+      viewBox="0 0 130 36"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{
-        filter: grayscale ? 'grayscale(1) opacity(0.5)' : 'none',
-        transition: 'filter 0.2s ease',
-      }}
+      aria-label="Hoppiness Club"
+      style={{ transition: 'opacity 0.2s ease', opacity: hovered ? 1 : 0.45 }}
     >
-      {/* Placeholder wordmark until Juan provides vector logo */}
       <text
         x="0"
-        y="24"
+        y="28"
         fontFamily="var(--font-serif)"
-        fontSize="22"
+        fontSize="26"
         fontWeight="700"
-        fill={grayscale ? '#8A827C' : '#CF4E2E'}
+        fill={hovered ? '#CF4E2E' : '#5A5450'}
         letterSpacing="-0.02em"
+        style={{ transition: 'fill 0.2s ease' }}
       >
         Hoppiness
       </text>
@@ -40,42 +31,12 @@ function HoppinessLogo({ grayscale }: { grayscale: boolean }) {
   );
 }
 
-function PlaceholderLogo({ grayscale }: { grayscale: boolean }) {
-  return (
-    <div
-      style={{
-        width: 100,
-        height: 32,
-        background: grayscale ? 'rgba(138, 130, 124, 0.2)' : 'rgba(138, 130, 124, 0.3)',
-        borderRadius: 4,
-        transition: 'background 0.2s ease',
-      }}
-    />
-  );
-}
-
-function ClientLogo({ name, index }: { name: string; index: number }) {
+export function SocialProof() {
   const [hovered, setHovered] = React.useState(false);
 
   return (
-    <div
-      key={name}
-      style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {index === 0 ? (
-        <HoppinessLogo grayscale={!hovered} />
-      ) : (
-        <PlaceholderLogo grayscale={!hovered} />
-      )}
-    </div>
-  );
-}
-
-export function SocialProof() {
-  return (
     <section
+      data-section="social-proof"
       style={{
         background: 'var(--crema)',
         padding: '80px 32px',
@@ -108,17 +69,19 @@ export function SocialProof() {
           whileInView="visible"
           viewport={viewportOpts}
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 32,
+            display: 'flex',
+            justifyContent: 'center',
             alignItems: 'center',
-            maxWidth: 640,
-            margin: '0 auto',
+            gap: 48,
           }}
         >
-          {CLIENTS.map((client, i) => (
-            <ClientLogo key={client.name} name={client.name} index={i} />
-          ))}
+          <div
+            style={{ cursor: 'default' }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <HoppinessLogo hovered={hovered} />
+          </div>
         </motion.div>
 
         <motion.p
@@ -135,7 +98,7 @@ export function SocialProof() {
             fontStyle: 'italic',
           }}
         >
-          Hoppiness Club · 8 locales · más de 40.000 tickets por mes
+          Hoppiness Club · 8 locales en Córdoba · más de 40.000 tickets por mes
         </motion.p>
       </div>
     </section>

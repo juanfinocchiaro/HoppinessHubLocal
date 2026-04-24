@@ -16,6 +16,7 @@ const ROWS = [
 export function Comparison() {
   return (
     <section
+      data-section="comparison"
       style={{
         background: 'var(--carbon)',
         padding: '140px 32px',
@@ -73,10 +74,12 @@ export function Comparison() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewportOpts}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
         >
           <table
             style={{
               width: '100%',
+              minWidth: 540,
               borderCollapse: 'collapse',
               background: 'var(--grafito)',
               borderRadius: 8,

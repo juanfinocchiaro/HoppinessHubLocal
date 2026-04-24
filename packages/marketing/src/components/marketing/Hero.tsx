@@ -9,6 +9,7 @@ import { staggerHero, fadeUpVariants } from '@/lib/animations';
 export function Hero() {
   return (
     <section
+      data-section="hero"
       style={{
         position: 'relative',
         minHeight: '100dvh',
@@ -49,12 +50,11 @@ export function Hero() {
       />
 
       <div
+        className="grid grid-cols-1 md:grid-cols-2"
         style={{
           maxWidth: 1280,
           margin: '0 auto',
           padding: '80px 32px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
           gap: 80,
           alignItems: 'center',
           position: 'relative',

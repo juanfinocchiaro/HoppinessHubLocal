@@ -13,6 +13,7 @@ export interface ProductSectionProps {
   image?: string | null;
   direction: 'left' | 'right';
   background: 'papel' | 'crema';
+  dataSectionId?: string;
 }
 
 function ScreenshotPlaceholder({ label }: { label: string }) {
@@ -64,12 +65,14 @@ export function ProductSection({
   image,
   direction,
   background,
+  dataSectionId,
 }: ProductSectionProps) {
   const bg = background === 'papel' ? 'var(--papel)' : 'var(--crema)';
   const isLeft = direction === 'left';
 
   return (
     <section
+      data-section={dataSectionId ?? kicker.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
       style={{
         background: bg,
         padding: '140px 32px',
@@ -77,11 +80,10 @@ export function ProductSection({
       }}
     >
       <div
+        className="grid grid-cols-1 md:grid-cols-2"
         style={{
           maxWidth: 1280,
           margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
           gap: 80,
           alignItems: 'center',
         }}

@@ -9,6 +9,7 @@ import { PRICING_TIERS } from '@/lib/pricing';
 export function PricingPreview() {
   return (
     <section
+      data-section="pricing-preview"
       style={{
         background: 'var(--crema)',
         padding: '140px 32px',
@@ -51,9 +52,8 @@ export function PricingPreview() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewportOpts}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: 16,
             marginBottom: 40,
           }}

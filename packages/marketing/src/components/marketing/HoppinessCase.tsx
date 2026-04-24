@@ -88,6 +88,7 @@ export function HoppinessCase() {
 
   return (
     <section
+      data-section="case-hoppiness"
       style={{
         background: 'var(--papel)',
         padding: '140px 32px',
@@ -152,11 +153,8 @@ export function HoppinessCase() {
         {/* Stats grid */}
         <div
           ref={ref}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 48,
-          }}
+          className="grid grid-cols-2 md:grid-cols-4"
+          style={{ gap: 48 }}
         >
           {STATS.map((stat) => (
             <AnimatedStat

@@ -100,6 +100,7 @@ export function ProblemStatement() {
   return (
     <section
       id="funciones"
+      data-section="problem"
       ref={ref}
       style={{
         background: 'var(--papel)',
